@@ -337,7 +337,7 @@ class PathCam {
   }
   update(dt) {
     if (this.path) {
-      this.t += dt;
+      this.t += this.hold ? 0 : dt * (this.speed ?? 1);   // LITE15: the showcase holds a path while it loads, plays it slower
       const dur = this.path.duration || 12;
       const u = PathCam.easeEnds(Math.min(1, Math.max(0, this.t / dur)), this.path.ease ?? 0.14);
       const p = this.curve.getPointAt(u);
@@ -350,8 +350,8 @@ class PathCam {
       const ly = l.y + (this.path.abs ? 0 : (this.lookGround ?? this.ground ?? 0));
       const dx = l.x - this.pos.x, dy = ly - this.pos.y, dz = l.z - this.pos.z;
       const hor = Math.hypot(dx, dz) || 1e-6;
-      this.yaw = Math.atan2(-dx, -dz);
-      this.pitch = Math.atan2(dy, hor);
+      this.yaw = Math.atan2(-dx, -dz) + (this.hoverYaw || 0);
+      this.pitch = Math.atan2(dy, hor) + (this.hoverPitch || 0);
     }
     engine.camera.position.copy(this.pos);
     engine.camera.rotation.set(0, 0, 0);
@@ -578,7 +578,7 @@ async function boot() {
   bootMark('sims');
   if (isApi) {
     controller = new ApiCam();           // src/api/bridge.js sets its pose and streaming centre
-  } else if (isRecord) {
+  } else if (isRecord || Q.has('showcase')) {
     controller = new PathCam();          // window.__SET_PATH installs the spline
   } else if (isFly) {
     controller = new FlyCam();
@@ -706,6 +706,12 @@ async function boot() {
       console.log('[scenario] applied', Q.get('scenario'));
     } catch (e) { console.warn('scenario failed', e); }
   }
+  // LITE15: the light showcase (?showcase=1): the trailer's camera moves played live in a curated tour (game/showcase.js)
+  let showcase = null;
+  if (Q.has('showcase') && controller instanceof PathCam) {
+    import('./game/showcase.js').then((m) => { showcase = m.startShowcase({ engine, streamer, sky, controller, traffic, peds, Q }); })
+      .catch((e) => console.warn('showcase unavailable', e));
+  }
   // ---- camera products: P photo mode, L copy deep link, O auto tour
   let tour = null;
   addEventListener('keydown', (e) => {
@@ -796,6 +802,7 @@ async function boot() {
     tick('weather', () => weather.update(dt));
     tick('life', () => life?.update(dt));
     tourStep(dt);
+    showcase?.step(dt);   // LITE15
     if (apiHooks) tick('api', () => apiHooks.preStep(dt));
     const p = tick('controller', () => controller ? controller.update(dt) : { x: px, z: pz });
     spawnGuard.update(engine.camera);   // film takes: traffic / walkers never spawn in view (window.__SPAWNGUARD)

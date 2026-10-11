@@ -1353,7 +1353,9 @@ class DepthNear {
 export class Engine {
   constructor(el, opts = {}) {
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
+    // LITE15 (the light showcase build): ?pr= caps the pixel ratio (default 1.6), ?sm= sets the near shadow map
+    const LQ = new URLSearchParams(location.search);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, Number(LQ.get('pr')) || 1.6));
     this.renderer.setSize(innerWidth, innerHeight);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1417,6 +1419,7 @@ export class Engine {
     this.sun.castShadow = true;
     const sh = this.sun.shadow;
     sh.mapSize.set(4096, 4096);
+    { const smq = Number(new URLSearchParams(location.search).get('sm')); if (smq >= 512) sh.mapSize.set(smq, smq); }   // LITE15
     if (BS && BS.sm >= 1024) sh.mapSize.set(BS.sm, BS.sm);   // BS36: the film's near shadow map
     // DEPTH RANGE (lighting-r6 1b/1c). This was 350..1150 with the light 700 m
     // up-sun of the camera, i.e. a slab from 350 m up-sun to 450 m down-sun.

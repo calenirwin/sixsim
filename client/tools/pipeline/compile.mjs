@@ -2066,7 +2066,7 @@ const FURN_LIFT = FLAT ? 0.28 : CURB; // furniture base = sidewalk top (flat: BA
 // faces; ANALYTIC_WALKS=1 restores the old emitters for comparison
 const CONTOUR_WALKS = !process.env.ANALYTIC_WALKS;
 // XW11 crosswalk depth (the marked width of the crossing, measured ALONG the road it crosses).
-// MEASURED on client/ref_lenox.png, the near-nadir Google Earth plate of 125th & Lenox —
+// MEASURED on client/ref_lenox.png, the near-nadir reference plate of 125th & Lenox —
 // the only reference steep enough to measure both axes (scale anchored on parked vehicles,
 // 8.2 px/m N-S, and on the 22.7 m carriageway+median span, 9.3 px/m E-W):
 //   crossing of W 125 ST  bar length 76.5 px -> 8.2 m (27 ft), ladder span 18.3 m = the CSCL width

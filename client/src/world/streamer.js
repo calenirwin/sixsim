@@ -6,9 +6,10 @@ import { TILE, MACRO } from '../shared/geo.js';
 import { buildMacroCrowns } from './towers.js';
 import { NO_TOWER_FX } from './materials.js';
 
-const NEAR_R = 1000;      // near-detail radius (m)
-const UNLOAD_R = 1320;    // hysteresis
-const MACRO_R = 13000;    // far-LoD visibility radius (fog hides beyond)
+// LITE15: ?near= narrows the near-detail radius for the light showcase build (default 1000 m)
+const NEAR_R = Math.max(300, Number(new URLSearchParams(location.search).get('near')) || 1000);      // near-detail radius (m)
+const UNLOAD_R = NEAR_R + 320;    // hysteresis
+const MACRO_R = Math.max(2000, Number(new URLSearchParams(location.search).get('macro')) || 13000);   // LITE15: ?macro=    // far-LoD visibility radius (fog hides beyond)
 const FETCH_CONC = 5;
 
 export class Streamer {
