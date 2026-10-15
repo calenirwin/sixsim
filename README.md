@@ -23,6 +23,7 @@ streetscape studies in which every modelled element can be traced to a public re
 Links:
 
 - Documentation: <https://mkturkcan.github.io/valdrada/>
+- Videos: <https://mkturkcan.github.io/valdrada/media/>
 - Demo in the browser (WebGL2): <https://huggingface.co/spaces/mehmetkeremturkcan/valdrada>
 - Compiled city, models and textures: <https://huggingface.co/datasets/mehmetkeremturkcan/valdrada>
 - Simulation server for Windows x64, compiled city included: <https://github.com/mkturkcan/valdrada/releases>

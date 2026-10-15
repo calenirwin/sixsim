@@ -92,6 +92,7 @@ validation:
 
 nav:
   - Home: index.md
+  - Media: media.md
   - Guide:
       - Quick start: quickstart.md
       - Installation: install.md
