@@ -17,7 +17,11 @@ python PythonAPI/examples/intersection_120_amsterdam.py
 | `PythonAPI/` | the `valdrada` package (source and wheel) and the examples |
 | `Docs/` | `getting_started.md`, `python_api.md`, `protocol.md` |
 
-**Content.** `Content/` (3.1 GB) is also published as the Hugging Face dataset `mehmetkeremturkcan/valdrada`
+The release comes in two archives, `Valdrada-{{VERSION}}-win64.zip` and `Valdrada-{{VERSION}}-win64-tiles.zip` (the
+compiled city's tiles, `Content/tiles/`), because one archive of the five boroughs exceeds GitHub's 2 GiB limit for a
+release file. Both hold the folder `Valdrada_{{VERSION}}_win64`: extract both into the same place.
+
+**Content.** `Content/` (4.9 GB) is also published as the Hugging Face dataset `mehmetkeremturkcan/valdrada`
 (tag `v{{VERSION}}`). To restore it in this folder:
 
 ```

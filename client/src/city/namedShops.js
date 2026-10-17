@@ -16,6 +16,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { applyLightTrim, applySkyGlass, ENV } from '../world/materials.js';
+import { disposeOwned } from '../world/disposeOwned.js';   // SPACE r2
+import { dropAfterUpload } from '../world/cpuFree.js';   // SPACE r2: the light build's memory peak
 
 const D2R = Math.PI / 180;
 const dirOf = (compass) => [Math.sin(compass * D2R), -Math.cos(compass * D2R)];   // world (x, z); north = -z
@@ -120,6 +122,9 @@ function paint(hex, rough = 0.62, metal = 0) {
 function texMat(canvas, { rough = 0.55, lit = null, litDay = 0, litNight = 1, ds = false } = {}) {
   const map = new THREE.CanvasTexture(canvas);
   map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 8;
+  // SPACE r2 (world/cpuFree.js, ?lowmem=1): painted once here for this build of the front, never repainted or read, and
+  // gone with it (remove: disposeOwned); its canvases go once uploaded
+  dropAfterUpload(map);
   const m = applyLightTrim(new THREE.MeshStandardMaterial({
     map, roughness: rough, side: ds ? THREE.DoubleSide : THREE.FrontSide,
     emissive: lit ? 0xffffff : 0x000000, emissiveIntensity: litDay,
@@ -127,6 +132,7 @@ function texMat(canvas, { rough = 0.55, lit = null, litDay = 0, litNight = 1, ds
   if (lit) {
     const em = new THREE.CanvasTexture(lit);
     em.colorSpace = THREE.SRGBColorSpace;
+    dropAfterUpload(em);
     m.emissiveMap = em;
     m.userData.lit = [litDay, litNight];
   }
@@ -672,6 +678,7 @@ export function initNamedShops({ scene, streamer, instancer }) {
     if (!b) return;
     scene.remove(b.group);
     b.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+    disposeOwned(b.group, scene);   // SPACE r2: the canvas-textured materials painted for this build (texMat) go with it
     for (const [pool, id] of b.claims) instancer?.release(pool, id);
     built.delete(k);
   }

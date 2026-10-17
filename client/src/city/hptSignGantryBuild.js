@@ -12,7 +12,7 @@ import { Builder } from './hptSignSteel.js';
 import { nightPatch, frameM } from './hptSignBuild.js';
 
 const NEON_ON = 'clamp((kNight - 0.12) / 0.38, 0.0, 1.0)';
-// the lettering's typeface; the page waits for it
+// condensed capitals); the page waits for it
 let FONT = null;
 export const gantryReady = (typeof fetch === 'undefined' ? Promise.resolve() : fetch('fonts/ar33/o/BarlowCondensed-700.json')
   .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })

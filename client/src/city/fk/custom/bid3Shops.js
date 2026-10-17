@@ -1,7 +1,6 @@
 // AR34 BID3: the small street-front builders of the segment (docs/notes/ar33-bid3.md): the billboard tower at 2089 Adam Clayton
 // Powell Jr. Blvd ('bid3:boards'), the fenced vacant lot beside 158 W 125th ('bid3:lot158') and the closed roll-down
 // shutters of the vacant stores at 124 and 120 W 125th ('bid3:shut124', 'bid3:shut120'). Measured on the 2026-08 / 2024-08
-// every board carries an
 // invented brand (billboards and ad panels never name real advertisers). u from the face's left end as seen from the street,
 // y over the sidewalk, w out of the wall.
 import * as THREE from 'three';
@@ -10,7 +9,6 @@ import { applyLightTrim } from '../../../world/materials.js';
 import { wallMat, hash, quadMesh, towerGlass, curtain, paleMullion, selfLit, panelMat } from './bid3Util.js';
 import { graffitiShutter, stuccoWall, corrugatedMetal, woodSlats, textDecal, muralTall, scriptF } from './bid3Paint.js';
 
-// the hoarding of the vacant lot: 2.4 m, beige plywood sheets under a 0.45 m green top
 // rail, the first 3.2 m (the corner nearest Apollo Beauty) painted green and papered with posters and tags, laundry hung on it
 let _F = null;
 const FENCE_L = 15.2;
@@ -90,14 +88,11 @@ function leafMass(r, seed, tone) {
 
 // ================================================================== 2089 Adam Clayton Powell Jr. Blvd: the billboard tower
 // The 125th Street face is clad from the black Verizon fascia (5.4 m) to 21 m in a grey metal billboard frame with stacked
-// panels: a pale blank panel, a red one, a white one, a red one, a black one at the top.
 export function boards(group, ctx, spec, frame) {
   const K = frame.kit, L = frame.L;
   const metal = K.mat('panel_alu', { tint: '#6b7076', dirt: 0.3 });
   const pale = K.mat('panel_alu', { tint: '#b9bcbe', dirt: 0.25 });
   const y0 = 5.9, y1 = 18.3, d = 0.3;
-  // the frame: a shallow metal box standing proud of the wall, panels flush with its face. Heights read off h209
-  // red 6.0-8.0, white 8.1-8.9, red 9.0-11.0, pale grey 11.1-12.8, black 12.9-17.7
   K.box(metal, -0.1, L + 0.1, y0, y1, -0.02, d, { c: 0.02, skip: 4 });
   K.box(pale, 0.12, L - 0.12, 11.1, 12.8, d, d + 0.03, { c: 0.004 });
   const P = (lines, font, fg, bg, ya, yb, o = {}) => K.sign({ kind: 'painted', lines, font, fg, bg, u0: 0.12, u1: L - 0.12, y: ya, h: yb - ya, ...o }, { z: d + 0.02 });
@@ -106,7 +101,7 @@ export function boards(group, ctx, spec, frame) {
   P(['LOW PRICE', 'GUARANTEE'], 'Inter-900', '#ffffff', '#d33a2c', 9.0, 11.0);
   P(['STRIDE', 'SPORT', 'OPEN IN HARLEM'], 'Inter-900', '#f4f4f0', '#12151a', 12.9, 17.7);
   // the east wall (the party wall over the vacant lot, ring edge 0, u from its south end): a tall invented mural of stacked bubble
-  // letters in blue, chrome and green high on the wall
+  // of the 30.9 m wall, 8.6-19.0 m; the twin drew it at u 8.2-13.4, near the wall's far end)
   { const E = frame.face(0);
     const mm = E ? muralTall(3.8, 10.4, 7, { pxm: 56 }) : null;
     if (E && mm) {
@@ -121,11 +116,9 @@ export function boards(group, ctx, spec, frame) {
 }
 
 // ================================================================== the vacant lot beside 158 W 125th (south-u 206.3-221.6)
-// A 2.4 m plywood hoarding on the building line, posts every 2.44 m and a top rail, posters and tags.
 // The frame is the shops' (158 W: 15.6 m); the fence continues along the same line to the 2089 ACP party wall.
 export function lot158(group, ctx, spec, frame) {
   const K = frame.kit, L = frame.L;
-  // Apollo Beauty's board: a black cap along its top and four gooseneck lamps over it
   { const blk = K.mat('plain', { tint: '#151515', rough: 0.5 });
     K.box(blk, 0.35, 8.15, 5.38, 5.5, -0.02, 0.32, { c: 0.01 });
     for (const u of [1.6, 3.5, 5.4, 7.3]) {
@@ -301,9 +294,7 @@ function lotVolunteers(K, ctx, frame, u0, u1, H, spots) {
 // ================================================================== the closed shutters of 124 and 120 W 125th
 // 124 W: the vacant store (u 10.8-24.2 from the east end) behind three plain silver roll gates, 4.3 m high: u 10.8-15.3, 15.9-18.2,
 // 18.8-24.2; its east end (u 0-8.6) is clad above the glass in vertical silver corrugated metal over a timber-slat fascia under a
-// black canopy, the Cane's tower (grey) at u 8.6-11.0.
 // 120 W: the former Fino, two roll gates covered in layered graffiti (u 0.3-6.9, 7.5-14.4), a weathered stucco fascia with the ghost
-// of a painted script sign, black SHOES letters, a red MOVED notice and the sign pole at the kerb.
 const front = (m) => { m.polygonOffset = true; m.polygonOffsetFactor = -2; m.polygonOffsetUnits = -2; return m; };
 function gates(frame, list, H, seed, o = {}) {
   const K = frame.kit;
@@ -314,15 +305,13 @@ function gates(frame, list, H, seed, o = {}) {
 }
 export function shut124(group, ctx, spec, frame) {
   const K = frame.kit;
-  // the roof: a ribbed metal deck, rust-brown and grey in long stripes along the depth
   { const rm = corrugatedMetal(8, 8, 17, { base: [128, 104, 86], per: 0.18, pxm: 60 }), wm = K.mat('panel_alu', { tint: '#d9d9d4', dirt: 0.35 });
     K.box(rm, 11.7, 23.3, 7.5, 7.55, -61.0, -1.2, { c: 0, skip: 1 | 2 | 4 | 16 | 32 });
     K.box(wm, 0.4, 11.7, 7.5, 7.55, -61.0, -1.2, { c: 0, skip: 1 | 2 | 4 | 16 | 32 });
     K.box(wm, 23.3, 30.3, 7.5, 7.55, -61.0, -1.2, { c: 0, skip: 1 | 2 | 4 | 16 | 32 }); }
-  // (AR34 batch 3) heights re-read with the foot of the front as the datum: the gates to 3.0 m, the black box to 7.05 m, Cane's canopy 3.15-3.6, timber 3.6-4.5, corrugated
+  // with the lens 0.4-0.5 m too high): the gates to 3.0 m, the black box to 7.05 m, Cane's canopy 3.15-3.6, timber 3.6-4.5, corrugated
   // metal 4.5-6.95, Panda Express's oak 3.2-6.45
   gates(frame, [[10.8, 15.3], [15.9, 18.2], [18.8, 24.2]], 3.0, 1, { base: '#85868a', density: 0, rough: 0.62, metal: 0.08 });
-  // Raising Cane's, the east end: silver corrugated
   // metal 5.9-8.7 and timber slats 4.8-5.9 over u 0.6-6.5, a black canopy ledge over the glass (4.3-4.8), the grey tower panel
   // u 6.5-10.6 (4.4-8.8) carrying the oval; the red double doors are the kit's (spec bay 2)
   const blk = K.mat('panel_alu', { tint: '#1e1f21', dirt: 0.2 });
@@ -333,7 +322,6 @@ export function shut124(group, ctx, spec, frame) {
   K.box(blk, 0.6, 6.6, 3.3, 3.7, 0.0, 0.62, { c: 0.01 });
   K.box(K.mat('panel_alu', { tint: '#e8e8e4', dirt: 0.1 }), 0.6, 6.6, 3.3, 3.34, 0.58, 0.62, { c: 0 });
   // gooseneck lamps over the timber band: a black arm out of the corrugated cladding's foot and a dish shade over the slats, five over
-  // the band and two on the tower
   { const arm = K.mat('plain', { tint: '#151515', rough: 0.5 });
     for (const u of [1.3, 2.5, 3.7, 4.9, 6.1, 7.6, 9.6]) {
       const yb = u < 6.5 ? 4.62 : 4.45, wo = u < 6.5 ? 0.06 : 0.22;
@@ -347,7 +335,6 @@ export function shut124(group, ctx, spec, frame) {
   K.box(K.mat('panel_alu', { tint: '#3e4146', dirt: 0.2 }), 6.5, 10.6, 3.3, 7.6, -0.1, 0.2, { c: 0.01 });
   for (const y of [4.9, 6.25]) K.box(blk, 6.5, 10.6, y, y + 0.02, 0.2, 0.21, { c: 0 });
   K.sign({ kind: 'painted', text: '', logo: 'bid3:canesMark', logoAt: 'fill', bg: null, u0: 6.7, u1: 10.4, y: 5.55, h: 1.75 }, { z: 0.23 });
-  // the red double doors (the kit's black leaves behind): frames and a window each, 124 over them
   const red = K.mat('alu_clear', { tint: '#b5232a' }), gl = K.mat('glass_storefront');
   for (const a of [7.55, 8.45]) {
     K.box(red, a, a + 0.1, 0, 2.4, -0.1, -0.02, { c: 0.008 }); K.box(red, a + 0.8, a + 0.9, 0, 2.4, -0.1, -0.02, { c: 0.008 });
@@ -360,7 +347,6 @@ export function shut124(group, ctx, spec, frame) {
   K.sign({ kind: 'channel', text: 'EXPRESS', font: 'Oswald-600', fg: '#d52b1e', bg: null, tracking: 0.25, u0: 27.4, u1: 30.6, y: 3.95, h: 0.45, lit: 'none' }, { z: 0.06 });
   K.sign({ kind: 'numbers', text: '124', font: 'Inter-700', fg: '#f2f2ee', bg: null, u0: 7.55, u1: 8.3, y: 2.55, h: 0.22, depth: 0.02, lit: 'none' }, { z: 0.02 });
   // the PANDA EXPRESS vertical sign at the east end of Panda's front: a black panel flat on the wall, the name in white running down it
-  // (s124: u 24.2-24.85, 3.3-6.4 m); the letters stacked upright
   K.box(K.mat('plain', { tint: '#121212', rough: 0.5 }), 24.2, 24.85, 3.3, 6.4, 0.0, 0.1, { c: 0.01 });
   K.sign({ kind: 'painted', lines: ['P', 'A', 'N', 'D', 'A'], font: 'Oswald-700', fg: '#f4f4f0', bg: null, u0: 24.3, u1: 24.75, y: 4.95, h: 1.35 }, { z: 0.11 });
   K.sign({ kind: 'painted', lines: ['E', 'X', 'P', 'R', 'E', 'S', 'S'], font: 'Oswald-700', fg: '#f4f4f0', bg: null, u0: 24.33, u1: 24.72, y: 3.4, h: 1.45 }, { z: 0.11 });
@@ -381,11 +367,9 @@ export function shut120(group, ctx, spec, frame) {
   K.box(steel, 8.0, 8.45, 0, GT, -0.02, 0.08, { c: 0.008 });
   K.box(steel, 14.75, F1, 0, GT, -0.02, 0.05, { c: 0.008 });
   K.box(steel, F0, F1, GT - 0.07, GT + 0.03, 0, 0.1, { c: 0.006 });
-  // two floodlights on a bar at the middle pier's top, over the fascia's foot, angled down at the gates
   { const hous = K.mat('plain', { tint: '#8e8f8b', rough: 0.5 });
     K.box(steel, 7.7, 8.75, 3.46, 3.52, 0.04, 0.14, { c: 0.004 });
     for (const a of [7.62, 8.42]) { K.box(hous, a, a + 0.4, 3.38, 3.74, 0.12, 0.44, { c: 0.025 }); K.box(K.mat('plain', { tint: '#d8d6cc', rough: 0.3 }), a + 0.04, a + 0.36, 3.39, 3.42, 0.14, 0.42, { c: 0 }); } }
-  // the stucco fascia, light warm grey;
   // the ghost of the old script name after the capital (u 7.8-10.5, partly under the MOVED sheet)
   const fm = front(stuccoWall(F1 - F0, FT - GT, 120, { base: [152, 143, 132], ghost: [7.8 - F0, 10.5 - F0], ghostA: 0.09, streaks: 0.35, topSoot: 0.07 }));
   K.add(quadMesh(frame, fm, F0, F1, GT, FT, 0.012, { uv: [0, 1, 0, 1] }));
@@ -400,7 +384,7 @@ export function shut120(group, ctx, spec, frame) {
   K.sign({ kind: 'painted', lines: ['We have', 'MOVED', 'Visit our new location at', '136 W. 125th Street'], font: 'Inter-700', fg: '#ffffff', bg: '#d9322a', u0: 9.65, u1: 11.35, y: 3.5, h: 1.02 }, { z: 0.035 });
   // the poster on the west pier (dark navy, white block capitals: VISIT OUR BIG & TALL DEPT ON THE ...; s120 x 945-990, c124east)
   K.sign({ kind: 'painted', lines: ['VISIT', 'OUR', 'BIG', '&', 'TALL', 'DEPT', 'ON THE'], font: 'Inter-900', fg: '#eeeee8', bg: '#1d2536', u0: 14.82, u1: 15.52, y: 1.45, h: 1.8 }, { z: 0.06 });   // (0.62-0.78 m wide on c120 / c124east)
-  // the sign pole at the kerb
+  // the sign pole at the kerb (s120: the post at x 733 on the ray to the facade's u 12.08; 5.6 m out from the wall that is u 12.84; the
   regPole(frame, 12.84, 5.6, 3.3, 'NO STANDING', 'Anytime');
   void group; void ctx; void spec;
 }
@@ -408,7 +392,6 @@ export function shut120(group, ctx, spec, frame) {
 
 // ================================================================== a NYC regulation sign on its pole (a small prop; props part: later)
 // a 14 x 12 in (0.35 x 0.305 m) aluminium blank with rounded corners, a thin white border, white legend and the arrow, bolted to a
-// 0.07 m steel post (two clamp bands, two bolt heads);
 // plate standing to the right of the post at its top (centre 0.19 m off the axis), facing the street (+w). u, w: the post's place.
 let _RS = null;
 function regTex(l1, l2) {
@@ -440,7 +423,7 @@ function regPole(frame, u, w, yTop, l1, l2) {
     _RS = {
       face: applyLightTrim(new THREE.MeshStandardMaterial(tex ? { map: tex, roughness: 0.4, metalness: 0.2 } : { color: 0xc4232c, roughness: 0.4, metalness: 0.2 })),
       back: applyLightTrim(new THREE.MeshStandardMaterial({ color: 0xb4b8bb, roughness: 0.45, metalness: 0.6 })),
-      steel: applyLightTrim(new THREE.MeshStandardMaterial({ color: 0x8c9194, roughness: 0.5, metalness: 0.55 })),   // galvanised grey
+      steel: applyLightTrim(new THREE.MeshStandardMaterial({ color: 0x8c9194, roughness: 0.5, metalness: 0.55 })),
       bolt: applyLightTrim(new THREE.MeshStandardMaterial({ color: 0x9a9fa3, roughness: 0.35, metalness: 0.8 })),
     };
   }
@@ -468,13 +451,13 @@ function regPole(frame, u, w, yTop, l1, l2) {
 
 // ================================================================== 148 W 125th: the blue glass curtain wall
 // 1972, four storeys (5.4-18.1 m): blue glass in a 1.67 m grid, narrow dark spandrels at each floor line, thin pale mullions
-// The kit's spec draws the base, the shops and the cornice.
 export function w148(group, ctx, spec, frame) {
   const K = frame.kit, L = frame.L;
-  // McDonald's red awning band over its glass; the kit hangs its awnings from the fascia's top, over the letters, so it is drawn here (spec awning 'none')
+  // fascia above it); the kit hangs its awnings from the fascia's top, over the letters, so it is drawn here (spec awning 'none')
   { const red = K.mat('panel_alu', { tint: '#b3162c', dirt: 0.2 }), dk = K.mat('panel_alu', { tint: '#3a1418', dirt: 0.2 });
     K.box(red, 8.4, 14.9, 3.4, 3.85, 0.0, 0.7, { c: 0.01 });
     K.box(dk, 8.45, 14.85, 3.37, 3.4, 0.05, 0.68, { c: 0 }); }
+  // p25-p75 (32-60, 63-96, 77-124): bodies much darker and less blue, the sky's reflection does the rest)
   const set = [['#1c3446', '#223d52', '#182e3e'], ['#203a4e', '#28445a', '#1c3446']].map((c, k) => ({
     vision: towerGlass('glass_tower_blue', c[0], 81 + k * 10), visionB: towerGlass('glass_tower_blue', c[1], 82 + k * 10), visionC: towerGlass('glass_tower_blue', c[2], 83 + k * 10),
     lit: towerGlass('glass_tower_blue', c[1], 84 + k * 10, [0xfff0dd, 0.5]),
@@ -489,7 +472,7 @@ export function w148(group, ctx, spec, frame) {
 }
 
 // ================================================================== 117 W 124th St, the 125th Street front: the drapes
-// Floors 2-3 of the glass front carry pink and magenta pleated drapes behind the glass; the kit's curtain wall draws the glass, the shops and the canopy.
+// dressing runs up both floors); the kit's curtain wall draws the glass, the shops and the canopy.
 let _D = null;
 function drapeMat() {
   if (_D) return _D;
@@ -521,12 +504,11 @@ export function w117(group, ctx, spec, frame) {
   const K = frame.kit, L = frame.L;
   const u0 = 12.1, u1 = Math.min(L - 0.8, 29.6), y0 = 3.7, y1 = 11.0;
   K.add(quadMesh(frame, drapeMat(), u0, u1, y0, y1, -0.3, { uv: [0, (u1 - u0) / 6.0, 0, 1] }));
-  // Victoria's Secret's entrance canopy: a flat thin canopy over the revolving doors at about 3.75-3.95 m,
   // 1.3 m deep, a pale metal soffit and a fascia edge (the kit's awnings are sloped cloth; the spec's awning is 'none')
   { const cm = K.mat('panel_alu', { tint: '#d9dcdf', dirt: 0.15 });
     K.box(cm, 16.4, 22.6, 3.75, 3.95, 0.0, 1.3, { c: 0.01 });
     K.box(K.mat('panel_alu', { tint: '#9aa0a6', dirt: 0.2 }), 16.4, 22.6, 3.72, 3.75, 0.05, 1.25, { c: 0 }); }
-  // the glass above (floors 4-7, 11.0-27.9): pale blue-grey tower glass in a 1.95 m grid with pale mullions
+  // the glass above (floors 4-7, 11.0-27.9): pale blue-grey tower glass in a 1.95 m grid with pale mullions (the rectified
   const set = [['#7d93a6', '#899fb1', '#70869a']].map((c, k) => ({
     vision: towerGlass('glass_tower_blue', c[0], 91 + k * 10), visionB: towerGlass('glass_tower_blue', c[1], 92 + k * 10), visionC: towerGlass('glass_tower_blue', c[2], 93 + k * 10),
     lit: towerGlass('glass_tower_blue', c[1], 94 + k * 10, [0xfff0dd, 0.5]),
@@ -537,14 +519,12 @@ export function w117(group, ctx, spec, frame) {
 }
 
 // ================================================================== 105 W 125th, the white two-storey block: the leasing graphics
-// A magenta-to-navy wrap on the west store's glass and a poster on the white wall.
 export function w105a(group, ctx, spec, frame) {
   const K = frame.kit, L = frame.L;
-  // the white painted panels of the upper wall, a layer 12 mm
   // proud of the kit's wall with the clerestory's opening cut
   K.wall({ u0: 0.0, u1: L, y0: 4.7, y1: 13.2, holes: [{ u0: 0.4, u1: 18.2, y0: 5.05, y1: 8.15 }], mat: panelMat([236, 235, 230], 6.1, 3.75, { cols: 2, rows: 1, seed: 5, tone: 0.025, joint: 0.022, px: 90, amp: 4.5 }), w: 0.012 });
   // the clerestory band over the west two bays (u 0.4-18.2, 5.05-8.15 m): pale blue-grey mirror glass in 1.45 m panes between thin
-  // pale mullions
+  // the library lit the body as a sunlit wall; fixed there 2026-10-02 03:19 (MATS). Batch 4: back on the library's glass_tower_grey
   { const gl = towerGlass('glass_tower_grey', '#4a5250', 211), gl2 = towerGlass('glass_tower_grey', '#40474a', 212), mu = paleMullion();
     const a = 1.0, b = 18.0, n = Math.round((b - a) / 1.45), pw = (b - a) / n;
     for (let i = 0; i < n; i++) K.box(hash(i, 3, 5) < 0.3 ? gl2 : gl, a + i * pw + 0.03, a + (i + 1) * pw - 0.03, 5.1, 8.1, 0.02, 0.06, { c: 0, skip: 16 });
@@ -555,8 +535,7 @@ export function w105a(group, ctx, spec, frame) {
   if (BF36) { const Wf = frame.face([2032.49, -2835.72, 2044.61, -2857.59]); if (Wf) w105aWest(Wf); }
   void group; void ctx; void spec;
 }
-// (BF36) the west wall over the State Office plaza: the white panels of the upper
-// wall north of the glazed bays (as the front's), and a painted mural at the plaza's level north of them
+// wall north of the glazed bays (as the front's), and a painted mural at the plaza's level north of them (an invented scene drawn
 const BF36 = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('bf36') === '0');
 function w105aWest(Wf) {
   // (the kit's u runs from the wall's north end: the glazed bays end at the 125th corner, u = L)

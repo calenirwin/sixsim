@@ -25,6 +25,7 @@
 //         client/shots/ad/probe/<name>_<time>.png
 import { chromium } from 'playwright';
 import { acquireGpu } from '../gpulock.mjs';
+import { expandTakes, takeHold } from './takes.mjs';
 import { installGuard, watchPage } from '../harness_guard.mjs';
 import { spawn, spawnSync } from 'node:child_process';
 import { promises as fs } from 'node:fs';
@@ -76,7 +77,7 @@ const isProbe = has('probe');
 const probeFrames = Number(opt('probe', '1')) || 1;
 
 // ---- what to shoot ---------------------------------------------------------
-const pool = { ...SHOTS, ...(isProbe ? PROBES : {}) };
+const pool = expandTakes({ ...SHOTS, ...(isProbe ? PROBES : {}) }, root);   // CONTROL: player takes (tools/ad/takes.mjs)
 let names;
 if (opt('shot')) names = opt('shot').split(',');
 else if (opt('group')) names = Object.keys(SHOTS).filter((k) => SHOTS[k].act === opt('group'));
@@ -270,9 +271,13 @@ const settleWorld = async (page, budget, minDwellMs = 9000, needQuiet = 8) => {
 const holdOf = (P) => ({
   duration: 1e6, ease: 0, abs: P.abs, tension: P.tension, fov: P.fov,   // FL26: the take's own lens through the warm-up
   keys: [P.keys[0], { p: [P.keys[0].p[0] + 1e-6, P.keys[0].p[1] + 1e-6, P.keys[0].p[2]], look: P.keys[0].look }],
+  ...takeHold(P),   // CONTROL: a player take holds its first frame, the body standing in the sims
 });
 // FP26: a hold at any key (or a point between keys) of a take's path
 const holdAt = (P, K) => ({ duration: 1e6, ease: 0, abs: P.abs, tension: P.tension, fov: P.fov, keys: [K, { p: [K.p[0] + 1e-6, K.p[1] + 1e-6, K.p[2]], look: K.look }] });
+// TSQADS: a shot's sim time at its first frame, whole seconds in [120, 360) from its name (FNV-1a); the same function is
+// in client/tools/ar34/export/harvest.mjs
+const simTimeOf = (name) => { let h = 0x811c9dc5; for (const ch of String(name)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return 120 + (h % 240); };
 const midKey = (a, b) => ({ p: a.p.map((v, i) => (v + b.p[i]) / 2), look: a.look.map((v, i) => (v + b.look[i]) / 2) });
 // engine.frames only advances on a frame that reached composer.render(). If it
 // is stuck, a screenshot silently captures the LAST GOOD image — which is how
@@ -408,6 +413,17 @@ try {
         console.log(`     [fast] warm-up: ${warm} steps in ${(w.ms / 1000).toFixed(1)} s (${w.drawn} drawn)`);
       } else
       for (let i = 0; i < warm; i++) await page.evaluate((nd) => window.__advance(1 / 30, nd), i < warm - 60);
+      // TSQADS (2026-10-08): the sim time (ENV.windT: the Times Square boards' playlist, the wind, the water) set to the
+      // shot's own constant once the warm-up is done, as the export's harvest.mjs does, so a take of the same shot in
+      // Unreal or Cycles shows the same ad on the same frame (frame i at simT0 + i dt; the settle below steps no time).
+      // The jump restarts the AC26 mean (simStepped), else the first frame averaged the old state in; _simt.json beside
+      // the frames records it
+      const simT0 = simTimeOf(take.name);
+      const simPin = (i) => page.evaluate((v) => { const E = window.__ENV; if (!E || !E.windT) return null; E.windT.value = v; if (window.__ENGINE) window.__ENGINE.simStepped = true; return v; }, simT0 + i * dt).catch(() => null);
+      if (!isProbe) {
+        const sv = await simPin(0);
+        await fs.writeFile(path.join(outDir, '_simt.json'), JSON.stringify({ shot: take.name, simT0, dt, start: startAt, set: sv !== null })).catch(() => {});
+      }
       // 4. reinstall the real path: setPath() resets t to 0
       await page.evaluate((p) => window.__SET_PATH(p), P);
       await page.evaluate(() => window.__advance(0));
@@ -471,6 +487,7 @@ try {
         await page.evaluate(() => window.__advance(0));
         await page.evaluate(() => window.__SPAWNGUARD?.(true));
         for (let k = 0; k < i; k++) await page.evaluate((d) => window.__advance(d), dt);
+        if (!isProbe) await simPin(i);   // TSQADS: the sim time back on the take's clock
         await settleWorld(page, 30000, 2000, 5);
         sizes.length = 0;
       };

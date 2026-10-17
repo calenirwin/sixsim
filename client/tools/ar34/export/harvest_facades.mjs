@@ -28,6 +28,8 @@
 // The kit's window glass materials are tagged with their shader constants (f0, rough, dirt, canyon) in userData before the
 // first static capture, so the harvest's material table carries them (usd_windows.py / blender_windows.py build thin glass).
 //   flags (harvest.mjs): --nobxwin, --bxsize 4096, --bxatlases 12, --bxdens 16,12,8,4,2.5
+// FD14 (round 14, owner: Bryant Park's background towers too basic): the default atlas budget is 24; at 12 the t3Fountain take
+// fit its 216,476 charts only at x0.594 of --bxdens (4.8 px/m at 180-320 m, 2.4 at 320-520 m); 24 lifts it to about x0.84.
 
 function bxwinLib(cfg) {
   const E = window.__ENGINE;
@@ -442,7 +444,7 @@ export default {
     const num = (k, d) => Number(ctx.opt(k, String(d)));
     try {
       return await bxwinHarvest(ctx.page, { outDir: ctx.outDir, fs, path, sink: null, shot: pathMode ? shot : null, cx: ctx.region.cx, cz: ctx.region.cz, R: ctx.region.R, F: ctx.region.F, pts,
-        size: num('bxsize', 4096), atlases: num('bxatlases', 12), dens: String(ctx.opt('bxdens', '16,12,8,4,2.5')).split(',').map(Number), kitGlass: this._kitGlass || 0 });
+        size: num('bxsize', 4096), atlases: num('bxatlases', 24),   /* FD14 (round 14): 24 atlases (was 12): t3Fountain's bake ran at x0.59 of the --bxdens densities */ dens: String(ctx.opt('bxdens', '16,12,8,4,2.5')).split(',').map(Number), kitGlass: this._kitGlass || 0 });
     } catch (e) { console.log(`     [bx-win] facade bake failed (${shot}): ${e?.stack || e}`); return null; }
   },
 };

@@ -1,12 +1,9 @@
 // AR33 custom builders and sign marks, segment bid2: Frederick Douglass to Adam Clayton Powell Jr. Boulevard. Specs name them as 'bid2:<fn>' (docs/notes/ar33-spec.md).
-// Owner: the BID2 worker (docs/notes/ar33-bid2.md).
-// every sign and mark drawn from scratch.
 import * as THREE from 'three';
 import { buildApollo33 } from '../../w125cKit.js';
 import { applyLightTrim, ENV } from '../../../world/materials.js';
 import { pbrMaterial } from '../../mat/pbrLib.js';
 // BF36 (BIDFIX 2026-10-02, teaser 8's t8VictoriaCrane f000): the hotel entrance under the marquee drew the kit's bank interior,
-// three white counters behind the doors.
 // revolving door in the recess; `?bf36=0` keeps the bank interior
 const BF36 = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('bf36') === '0');
 // a local matrix helper: translate, scale, Euler (rx, ry, rz, 'YXZ')
@@ -57,8 +54,7 @@ export function suit(c, w, h) {
 // arches), the gables to 52.5 over the 125th Street face and at both ends of the boulevard face, a parapet at 49.5 between.
 const TH = {
   // (AR34 wave 2 b3: the windows 2.05 m, sills 0.3 m lower, heads where they were: elevation theresa_n_e1548 at u ~14,
-  // the dark upper sashes 0.92-1.16 m long under heads at 13.0, 16.3... 29.6 m; theresa_crown_1535 read the windows
-  // ~1.3 x the twin's 1.75 m).
+  // the dark upper sashes 0.92-1.16 m long under heads at 13.0, 16.3 ... 29.6 m; theresa_crown_1535 read the windows
   // three storeys within -0.07..+0.35 m of the twin's and the heads 0.43 / 0.54 / 0.92 m higher (rows read at 1:1 and
   // turned into heights on the front plane), the oriel's window head 0.82 m higher; cmp_theresa_ne (01548) reads the
   // windows 1.2-1.4 x the twin's in pixels: the heads up 0.45 m, the sills kept (wh 2.05 -> 2.5)
@@ -93,7 +89,6 @@ function acpFace(L) {
 let _lat = null;
 function latticeMat() {
   if (_lat) return _lat;
-  // AR34 wave 2: the bars and the ground were two flat paints (cream on grey-beige),
   // read as a print. Now a height field first (raised diamond bars with soft shoulders, a knob at every crossing, a boss
   // in every diamond), then the colour from it: the bars the wall's cream, the ground a warm shadow grey, darkened by a
   // cavity term (the ground near the bars), and the normal map from the same heights, steeper
@@ -145,7 +140,6 @@ function latticeMat() {
   nctx.putImageData(out, 0, 0);
   const map = new THREE.CanvasTexture(cv), nrm = new THREE.CanvasTexture(nc);
   map.colorSpace = THREE.SRGBColorSpace;
-  // wave 2: the real diamonds are ~0.4 m across, so one tile
   // covers 1.6 x 0.8 m (the panels' UVs run in metres across and half-metres up)
   for (const t of [map, nrm]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.repeat.set(1 / 1.6, 1 / 1.6); }
   // AR34: rougher (a glossy panel mirrored the blue sky: cmp_theresa_ne_r7), and a day-only fill through the map (this
@@ -226,7 +220,6 @@ function ghostSign(lines, col) {
   return _ghost;
 }
 // the canted bays of the street faces: the window columns in threes (narrow, wide, narrow) are one three-sided bay
-// 0.6 m deep, its cants at 45 degrees
 function bayRuns(cols) {
   const bays = [], rest = [];
   for (let i = 0; i < cols.length; i++) {
@@ -242,7 +235,6 @@ function bayRuns(cols) {
 export function theresa(group, ctx, spec, frame) {
   const kit0 = frame.kit;
   // AR34 wave 2 b3 (MATS 01:11 / 01:18): the unit-varied cream glazed brick (each unit its own tone, sooted and replaced
-  // units, grey joints), in the tint MATS computed wall (median 159/161/160, a neutral grey in shade) and
   // soiled (the lead: textured and soiled)
   const WB = kit0.mat('brick_glazed_cream', { tint: '#cbc9c0', dirt: 0.5 });
   const BUFF = kit0.mat('brick_tan', { tint: '#c9b48c', dirt: 0.45 });
@@ -251,6 +243,7 @@ export function theresa(group, ctx, spec, frame) {
   // set's cream base is in the render, so a near-neutral tint, as the Apollo's)
   const TCm = kit0.mat('terracotta_cream', { tint: '#dcdad3', dirt: 0.45 });
   const IRON = kit0.mat('steel_black', { tint: '#232426' });
+  // (b3: the bays' panes through pbrLib with `street: 0`: with the street in the reflection they read as a white speckle
   // (b3R: still a white crackle with `street: 0`: the bays take the kit's own window pane, as the flat windows (a vertex
   // colour per pane: reflectance, dirt, clarity; (1, 1, 1) the default))
   const GL = kit0.mat('int_winglass', {}), SASH = kit0.mat('alu_black', { tint: '#1f1f20' });
@@ -264,7 +257,6 @@ export function theresa(group, ctx, spec, frame) {
   }
   // the boulevard face by its orientation (outward normal pointing east), not the kit's 'corner' pick: the party wall
   // on the west is as long, and the kit takes the first of two equal edges unless the compile marked it blind; the
-  // west wall (over 208's roof) is buff common brick with HOTEL THERESA painted at its north end
   for (const f of faces) if (f.role !== 'front' && f.kit.F && f.kit.F.N[0] > 0.7) f.role = 'acp';
   for (const f of faces) if (!f.role && f.kit.F && f.kit.F.N[0] < -0.7) f.role = 'west';
   // the sashes: black-painted 1/1 double hung (theresa_n_e1548 shows dark frames on every window)
@@ -293,7 +285,6 @@ export function theresa(group, ctx, spec, frame) {
         // HOTEL THERESA painted on the brick (a ghost sign in red-brown serif capitals), drawn from scratch on a canvas
         const gs = ghostSign(['HOTEL', 'THERESA'], '#bd4e2d');
         if (gs) { const g = new THREE.PlaneGeometry(8.4, 4.0); g.applyMatrix4(K.matrix(m, 46.6, 0.02)); const mesh = new THREE.Mesh(g, gs); mesh.name = 'bid2:theresa:ghostSign'; mesh.renderOrder = 2; group.add(mesh); }
-        // two fire escapes down the middle of the wall: platforms with rails at every floor, the
         // ladders between them, a drop ladder over the neighbour's roof
         for (const fu of [L * 0.34, L * 0.44]) {
           for (let k = 0; k < TH.nf; k++) {
@@ -309,7 +300,6 @@ export function theresa(group, ctx, spec, frame) {
       continue;
     }
     const { bays, rest } = bayRuns(P.cols);
-    // AR34: on 125th Street the centre column turns into a smaller canted oriel over the top
     // four storeys, on a stepped corbel
     if (P.mid) bays.push({ ...P.mid, k0: P.mid.k0 });
     const inBay = (u0, u1) => bays.some((B) => B.k0 === undefined && u1 > B.a - 0.05 && u0 < B.b + 0.05);
@@ -333,7 +323,6 @@ export function theresa(group, ctx, spec, frame) {
     // the gable walls are separate polygons; the wall runs to the parapet
     K.wall({ u0: 0, u1: L, y0: -0.4, y1: TH.parapet, holes, mat: WB });
     for (const [a, b, ys] of wins) K.window(T, a, b, ys, ys + TH.wh, { wallMat: WB });
-    // AR34: an ornamental terracotta panel under every flat window, between its sill and the
     // head of the window below
     for (const [a, b, ys] of wins) if (ys > TH.floor0 + 1) { latQuad(lat, a - 0.04, b + 0.04, ys - 0.72, ys - 0.15, 0.012); latBars(K, TCm, a - 0.04, b + 0.04, ys - 0.72, ys - 0.15, 0.012); }
     // ---- the canted bays: three faces a storey, glazed brick piers, lattice spandrels, 1/1 sashes in black frames, a
@@ -367,7 +356,6 @@ export function theresa(group, ctx, spec, frame) {
           sBox(rl, g, s0, s1, ys, yh, g.room - 0.02, g.room, 'f');   // the room behind (in front of the main wall)
           for (const [a0, a1, b0, b1] of [[s0, s0 + 0.06, ys, yh], [s1 - 0.06, s1, ys, yh], [s0, s1, ys, ys + 0.07], [s0, s1, yh - 0.06, yh], [s0, s1, ys + TH.wh * 0.5 - 0.03, ys + TH.wh * 0.5 + 0.03]]) sBox(sl, g, a0, a1, b0, b1, -0.19, -0.13, 'flrtb');
           if (g.pair) { const m = (s0 + s1) / 2; sBox(sl, g, m - 0.05, m + 0.05, ys, yh, -0.19, -0.12, 'flr'); }
-          // the muntins: three lights across, two high
           const panes = g.pair ? [[s0, (s0 + s1) / 2 - 0.05], [(s0 + s1) / 2 + 0.05, s1]] : [[s0, s1]];
           for (const [p0, p1] of panes) {
             // (AR34 wave 2 b3: 6/1, the lights in the upper sash only: theresa_crown_1535 at full size)
@@ -382,6 +370,7 @@ export function theresa(group, ctx, spec, frame) {
         for (let j = 0; j < 3; j++) { const sh = j * 0.12; K.box(TCm, B.a + sh, B.b - sh, yA - 0.3 * (j + 1), yA - 0.3 * j, 0, B.d + 0.1 - j * 0.3, { near: j > 0 }); }   // b3: deeper, three steps back to the wall
         // b3 (elevation theresa_n_e1548 at full size: the oriel's soffit 32.6-33.6 m, under it the storey's window behind a
         // balcony, its slab 30.0-30.3 m and a solid front up to that window's sill, as wide as the oriel)
+        // shows the window's head over a lower front)
         const yS0 = TH.floor0 + TH.fh * (k0 - 1) - 0.4, yS1 = yS0 + 0.3, yP = yS1 + 0.75, dB = 0.55;
         K.box(TCm, B.a - 0.12, B.b + 0.12, yS0, yS1, 0, dB + 0.08);
         K.box(TCm, B.a - 0.06, B.b + 0.06, yS1, yP, dB - 0.12, dB);
@@ -390,7 +379,7 @@ export function theresa(group, ctx, spec, frame) {
         for (const e of [B.a + 0.15, B.b - 0.45]) K.box(TCm, e, e + 0.3, yS0 - 0.55, yS0, 0, dB - 0.1, { near: true });   // its brackets
         latQuad(lat, B.a + 0.12, B.b - 0.12, yS1 + 0.1, yP - 0.1, dB + 0.004);
       }
-      // b3: a band of sooted brick on the wall each side of a bay's root
+      // shade): a band of sooted brick on the wall each side of a bay's root
       if (B.k0 === undefined) for (const [e0, e1] of [[B.a - 0.26, B.a + 0.01], [B.b - 0.01, B.b + 0.26]]) K.box(SOOT, e0, e1, yA, yB, -0.01, 0.004);
       // b3 (theresa_crown_1535 levelled at full size): a strip of the lattice ornament up the wall just outside each bay's
       if (B.k0 === undefined) for (const [e0, e1] of [[B.a - 0.62, B.a - 0.3], [B.b + 0.3, B.b + 0.62]]) {
@@ -455,7 +444,6 @@ export function theresa(group, ctx, spec, frame) {
       for (const [la, lb] of [[a, b]].flatMap(([x0, x1]) => { let segs = [[x0, x1]]; for (const B of bays) segs = segs.flatMap(([p, q]) => (q <= B.a || p >= B.b ? [[p, q]] : [[p, B.a - 0.05], [B.b + 0.05, q]].filter(([m0, m1]) => m1 - m0 > 0.3))); return segs; })) {
         for (let k = 0; k < TH.nf; k++) {
           const y0 = rows[k] + TH.wh + 0.18, y1 = (k + 1 < TH.nf ? rows[k + 1] : TH.top[0]) - 0.12;
-          // wave 2: the panel framed on all four sides
           if (y1 - y0 > 0.3) { latQuad(lat, la, lb, y0, y1, 0.012); latBars(K, TCm, la, lb, y0, y1, 0.012); K.box(TCm, la - 0.04, lb + 0.04, y0 - 0.06, y0, 0, 0.05, { near: true }); K.box(TCm, la - 0.04, lb + 0.04, y1, y1 + 0.06, 0, 0.05, { near: true });
             K.box(TCm, la - 0.04, la + 0.02, y0, y1, 0, 0.05, { near: true }); K.box(TCm, lb - 0.02, lb + 0.04, y0, y1, 0, 0.05, { near: true }); }
         }
@@ -473,7 +461,6 @@ export function theresa(group, ctx, spec, frame) {
         K.poly(TCm, [[a, ya + 0.02, 0.18], [b, ybb + 0.02, 0.18], [b, ybb + 0.02 - 0.32, 0.18], [a, ya + 0.02 - 0.32, 0.18]], [0, 0, 1]);
         K.poly(TCm, [[a, ya + 0.02, -0.34], [b, ybb + 0.02, -0.34], [b, ybb + 0.02, 0.18], [a, ya + 0.02, 0.18]], [nU, nY, 0]);
       }
-      // AR34 wave 2, the lunettes: over the top storey's openings, a wide arch over the
       // middle three and a small one over each outer opening, each a moulded terracotta band on the sill line of the
       // pediment with a relief tympanum and a keystone (was one big arch over the whole gable)
       const ops = P.arcade.filter(([a, b]) => a >= g0 - 0.1 && b <= g1 + 0.1).sort((x, y) => x[0] - y[0]);
@@ -516,7 +503,7 @@ export function theresa(group, ctx, spec, frame) {
       group.add(mesh);
     }
   }
-  // the roof: a slab at the parapet line, the water tank and the bulkheads
+  // HVAC by the north gable)
   {
     const pts = frame.ring, y = frame.y0 + TH.parapet - 0.3;
     const sh = new THREE.Shape(pts.map((p) => new THREE.Vector2(p[0], -p[1])));
@@ -541,7 +528,6 @@ export function theresa(group, ctx, spec, frame) {
 }
 
 // ------------------------------------------------------------------ The Victoria, 233 W 125th St
-// The 1917 Victoria Theater's terracotta front kept in front of the 2021 tower: u from the compiled west end, y over the sidewalk. The front: end pilasters,
 // two giant Ionic columns (u 4.0, 10.8), three bays of bronze windows (6.0-8.4, 9.2-11.4), the entablature 11.7-13.2, a
 // balustrade 13.2-14.0 with sculpture groups over the columns; the gold bulb marquee (3.1-5.1) and the VICTORIA blade
 // (u 7.0-9.3, 4.8-16.8). Behind: the podium (15 m) on the front lot, the glass tower on the rear rectangle.
@@ -550,19 +536,14 @@ const VIC = {
   bays: [[1.35, 3.45], [4.55, 10.25], [11.35, 13.45]], w1: [6.0, 8.4], w2: [9.2, 11.4], cap: [11.2, 11.75],
   ent: [11.75, 12.6], corn: [12.6, 13.2], bal: [13.2, 14.0], podium: 15.0,
   mq: { u0: 0.5, u1: 14.3, y0: 3.4, y1: 5.75, d: 3.6 },
-  // AR34 b3 s2: the blade's cabinet top 16.8 -> 14.5;
   // balustrade but the letters' top ~85 px too high: the real crest is the taller part (~150 px against 100): the cabinet's
   // top 13.5, the crest 2.4 m and its finial 0.8 m (top 16.7 as c3)
   blade: { u0: 7.0, u1: 9.3, y0: 5.8, y1: 13.5, t: 0.45, off: 0.5, crest: 2.4 },
-  // view (2026-10-01, imagery 10/11/2024, camera 470 m straight over (1835,-2980)), the glass
-  // heights (over the base) from the elevation angles
   // in 01415 / 01440 / 01465 / 01296 and the two obliques: the glass front 82-89 (median ~88), the tower behind it
-  // 101.5-102, the middle 93, the rear slab
   // 88-89, the plant penthouse ~106 with its two cooling towers. Faces: s (at n0, to the street), e (u1), n (n1), w (u0).
   // f: what clads each face (glass curtain wall, white panels with grey insets, dark glass, buff brick, grey plant).
   tower: { n0: -11.4, fh: 3.2 },
   mass: [
-    // the south face's west ~3.8 m is a darker, greyer glass the full height: its own blocks
     { u0: -0.8, u1: 3.0, n0: -11.4, n1: -16.5, h: 88.5, f: { s: 'dark', w: 'glass' } },
     { u0: 3.0, u1: 15.0, n0: -11.4, n1: -16.5, h: 88.5, f: { s: 'glass', e: 'white' } },
     { u0: -0.8, u1: 3.0, n0: -16.5, n1: -31.6, h: 101.5, f: { s: 'dark', w: 'glass', n: 'glass' }, b: { s: 88.5 } },
@@ -582,7 +563,6 @@ const VIC = {
 let _wing = null;
 function wingMat() {
   if (_wing) return _wing;
-  // AR34 wave 2: the slab is a light cream brick, its windows in pairs (each
   // ~1.1 m wide, a slim pier between, a broad pier between pairs), dark glass in light frames. One tile = one pair of one
   // storey, 3.2 x 3.2 m, 40 px/m
   const W = 128, H = 128, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d');
@@ -752,7 +732,6 @@ export function victoria(group, ctx, spec, frame) {
     round.push([new THREE.TorusGeometry(0.42, 0.14, 8, 14, Math.PI * 1.2), mtx(c + 0.3, V.bal[1] + 0.85, 0.35, -1, 1, 1, 0, 0, -0.3)]);
     K.box(TCd, c - 0.25, c + 0.25, V.bal[1] + 0.45, V.bal[1] + 1.2, 0.3, 0.45);
   }
-  // ---- the gold bulb marquee: bowed in plan, a navy board between bulb borders over a gold valance
   // whose bottom edge bows down 0.65 m at the middle (4.05 m at the ends, 3.4 m at the centre), gold finial posts at both
   // ends, a soffit of bulb rows on gold ribs back to the wall
   const Q = V.mq, sg = { pos: [], uv: [] }, gq = { pos: [], nor: [], uv: [] };
@@ -773,7 +752,7 @@ export function victoria(group, ctx, spec, frame) {
       K.box(GOLD, ua, ub, yEnd, Q.y1, 0, Math.min(wa, wb) - 0.03, { skip: 0 });                 // the body
       // the board, the gold strip over it, the top, the valance with its bulbs, the soffit
       quadS([[ua, yb0, wa + 0.012], [ub, yb0, wb + 0.012], [ub, Q.y1 - 0.08, wb + 0.012], [ua, Q.y1 - 0.08, wa + 0.012]], cellT('front', i, N));
-      quadS([[ua, ya, wa + 0.012], [ub, yb, wb + 0.012], [ub, yb0, wb + 0.012], [ua, yb0, wa + 0.012]], cellT('soffit', i, N));   // rows of lamps
+      quadS([[ua, ya, wa + 0.012], [ub, yb, wb + 0.012], [ub, yb0, wb + 0.012], [ua, yb0, wa + 0.012]], cellT('soffit', i, N));
       quadS([[ua, yEnd - 0.012, 0.1], [ub, yEnd - 0.012, 0.1], [ub, yEnd - 0.012, wb - 0.15], [ua, yEnd - 0.012, wa - 0.15]], cellT('soffit', i, N));
       pushQuad(gq, [[ua, Q.y1 - 0.08, wa + 0.008], [ub, Q.y1 - 0.08, wb + 0.008], [ub, Q.y1, wb + 0.008], [ua, Q.y1, wa + 0.008]], [0, 0, 1], [[ua, 0], [ub, 0], [ub, 0.08], [ua, 0.08]]);
       pushQuad(gq, [[ua, Q.y1, 0], [ub, Q.y1, 0], [ub, Q.y1, wb + 0.008], [ua, Q.y1, wa + 0.008]], [0, 1, 0], [[ua, 0], [ub, 0], [ub, wb], [ua, wa]]);
@@ -842,24 +821,26 @@ export function victoria(group, ctx, spec, frame) {
     }
     // the blocks: per face one cladding; the curtain wall gets mullions every 1.5 m, a dark spandrel and a light sill line
     // per storey; the white panel faces grey insets two storeys tall; one merged mesh per material
-    const PIT = 1.5;   // the mullion pitch
+    const PIT = 1.5;
     const MAT = {
-      // the glass reads light grey-blue (median rgb 186/200/214 in N233w_up), white sheers behind it on most
       // floors. AR34 wave 2 b3 (MATS 01:24, the lead's review): vision glass, the rooms and their shades drawn behind it
       // (MATS's glass_vision: the storeys on the floor lines below, a shade cell per mullion bay); the darker west strip
       // and the middle in the greyer vision glass (they took the main glass since w2f: a dark-bodied tower glass rendered
       // white then; MATS made the pane's parameters uniforms at 01:11); the spandrels a reflective glass over a dark box
       // (b3e: with the street in the reflection the panes mirrored the invented masonry opposite as orange patches from the
       // lead's crane t5BladeCrane_2; an 88 m tower over its neighbours mirrors the sky: `street: 0`, as before)
+      // blinds 0.15, one material for every face; the darker strip: glass_vision_grey, blinds 0.35)
       // AR34 batch 3 session 2 (MATS 03:19 / 03:33): the vision panes take one material per face (one program, uniforms
-      // each) with `bayAt` on the face's first fin, so the shade cells start at the fins; white sheers in most bays;
+      // each) with `bayAt` on the face's first fin, so the shade cells start at the fins; white sheers in most bays (the
+      // lum 190, c0 147/169/187 lum 166): a lighter, more neutral coating, more of the room's light through
+      // 190 / 179 / 190, rgb 160/178/192 against 179/191/207, the sheer bays read as frosted cells at 1:1: warmer, more of
+      // the reflection over fewer sheers)
       glassF: (at) => pbrMaterial('glass_vision', { tint: '#fbf8f2', storey: [T.fh, 4.0], bay: PIT, bayAt: at, blinds: 0.1, sheers: 0.45, f0: 0.36, trans: 0.85, seed: 233, street: 0 }),
       darkF: (at) => pbrMaterial('glass_vision_grey', { tint: '#c4cacb', storey: [T.fh, 4.0], bay: PIT, bayAt: at, blinds: 0.3, sheers: 0.3, seed: 91, street: 0 }),
       spg: pbrMaterial('glass_tower_grey', { tint: '#b9c2c7', body: '#56616a', street: 0 }),   // b3b: body #3b444b read a dark band
       white: K.mat('alu_white', { tint: '#e3e3dd', dirt: 0.3 }), grey: K.mat('panel_grey', { tint: '#8b8d8d', dirt: 0.4 }),
       band: K.mat('alu_white', { tint: '#e6e6e1', dirt: 0.25 }),
       buff: wingMat(), inset: K.mat('panel_grey', { tint: '#9a9fa2', dirt: 0.2 }),
-      // the coping band dark anodised; the fins and the floor lines' caps a light silver grey
       mull: K.mat('alu_clear', { tint: '#5d656b' }), fin: K.mat('alu_clear', { tint: '#a9b0b4' }), cap: K.mat('alu_clear', { tint: '#c4c9cb' }),
       roof: K.mat('roof_membrane', { tint: '#a39f97', dirt: 0.6 }),   // light grey-beige, rust-stained (bid2_vic_top)
     };
@@ -872,12 +853,11 @@ export function victoria(group, ctx, spec, frame) {
       for (const i of cr > 0 ? [0, 1, 2, 0, 2, 3] : [0, 2, 1, 0, 3, 2]) { o.pos.push(...P[i]); o.nor.push(...n3); o.uv.push(...uv[i]); }
     };
     const hs = (i, j, q) => { const x = Math.sin(i * 127.1 + j * 311.7 + q * 74.7) * 43758.5453; return x - Math.floor(x); };
-    // AR34 wave 2 b3: the curtain wall in its parts. Floor lines every T.fh from 4.0 m over the sidewalk on one
+    // lines and reflections"): the curtain wall in its parts. Floor lines every T.fh from 4.0 m over the sidewalk on one
     // grid for every block; at each a spandrel band (0.6 m of reflective glass over a dark box) between two light transom
     // caps standing 0.05 m proud (front, top and bottom faces: the floor lines catch the sky and shade under them); a
-    // vision pane per storey and mullion bay, its normal tilted up to ~1.1 deg either way; mullion fins
+    // vision pane per storey and mullion bay, its normal tilted up to ~1.1 deg either way (the float glass's pillowing:
     // 0.07 m wide standing 0.16 m proud with their sides drawn. The fins stand where the face's own u (the vision glass's
-    // shade cells) is a multiple of PIT, so a fin never cuts a shade. Fin and cap sizes, not measured.
     const FMAT = new Map();
     let faceN = 0;
     const curtain = (kind, a, b, yb, yt, nrm, L) => {
@@ -1046,7 +1026,6 @@ export function blumstein(group, ctx, spec, frame) {
 }
 
 // ------------------------------------------------------------------ Jimmy Jazz, 239 W 125th St
-// After the kit's face (custom with: 'kit'): the copper-coloured folded perforated panels: a grid of low
 // pyramids 1.22 x 0.61 m over the front above the store, the glass band (u 1.5-13.6, y 6.25-8.95) left open.
 export function jimmyjazz(group, ctx, spec, frame) {
   const K = frame.kit, L = frame.L;

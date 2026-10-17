@@ -125,7 +125,7 @@ export function paintGraffiti(g, W, H, seed, o = {}) {
     g.globalAlpha = 0.22 + 0.14 * R(i, 5); g.fillStyle = ['#4f5256', '#6a6d70', '#3f4246'][i % 3]; g.fillRect(x, y, w, h);
   }
   g.globalAlpha = 1;
-  // the big pieces
+  // tall, in two overlapping rows over the lower 70 % of the gate, a black paint-out behind some of them)
   const nBig = Math.max(2, Math.round((W / pxm) * (0.4 + 0.35 * dens)));
   const cell = W / nBig, band = H - top;
   const order = [...Array(nBig).keys()].sort((a, b) => R(900 + a, 1) - R(900 + b, 1));
@@ -149,7 +149,6 @@ export function paintGraffiti(g, W, H, seed, o = {}) {
     g.fillStyle = 'rgba(20,20,20,0.7)'; g.fillRect(x + w * 0.1, y + h * 0.25, w * 0.8, Math.max(1.5, h * 0.18)); g.fillRect(x + w * 0.1, y + h * 0.6, w * 0.5, Math.max(1.5, h * 0.18));
   }
   g.globalAlpha = 1;
-  // (KIT, AR34 w2) a last round of tags over the pieces: the gates are tagged over their throw-ups
   for (let i = 0; i < Math.round((W / pxm) * 0.9 * dens); i++) tag(g, R(700 + i, 1) * (W - pxm * 0.8), top * 0.8 + R(700 + i, 2) * (H - top * 0.8) * 0.85, (0.45 + 0.4 * R(700 + i, 3)) * pxm, (0.22 + 0.14 * R(700 + i, 4)) * pxm, seed + 9, 80 + i);
   // overspray round the pieces
   for (let i = 0; i < Math.round(6 * dens); i++) {

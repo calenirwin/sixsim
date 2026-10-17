@@ -1,5 +1,4 @@
 // AR34 LIFE vendor carts (part lk, docs/notes/ar34-life.md), built in code to the size NYC's mobile food vending rules allow
-// (a pushcart at most 10 x 5 ft) and: the halal / hot-food pushcart (a brushed stainless body
 // on two wheels with a jack stand and a tow bar, door seams, hinges and handles, louvres, a fold-down shelf, the grill top
 // with steam pans, bottles and foil trays behind a sneeze glass, a menu board on posts, picture menus on the body, propane
 // bottles on the tongue), the snack cart of the St Nicholas corner (a steel box cart in a printed wrap, crisp bags, sweets
@@ -104,7 +103,6 @@ export function snackCart(q, p = {}) {
   M.add('galvDull', rbox(0.04, y0, 0.04, 0, -W / 2 + 0.08, y0 / 2, -D / 2 + 0.08), rbox(0.04, y0, 0.04, 0, -W / 2 + 0.08, y0 / 2, D / 2 - 0.08));
   M.add('galvDull', rod([-W / 2, top - 0.05, -D / 2 + 0.06], [-W / 2 - 0.2, top + 0.05, -D / 2 + 0.06], 0.014, q ? 6 : 4), rod([-W / 2, top - 0.05, D / 2 - 0.06], [-W / 2 - 0.2, top + 0.05, D / 2 - 0.06], 0.014, q ? 6 : 4), rod([-W / 2 - 0.2, top + 0.05, -D / 2 + 0.06], [-W / 2 - 0.2, top + 0.05, D / 2 - 0.06], 0.016, q ? 6 : 4));
   if (!q) { M.add('fab', fcell(rbox(W - 0.1, 0.22, D - 0.1, 0, 0, top + 0.17, 0), FAB.red)); return M; }
-  // the heap: crisp bags packed upright in rows and heaped over the back, boxes of sweets,
   // a tray of cans at the front, bags clipped on a line under the umbrella; muted, mixed colours
   const R = rng(p.seed || 29), bagCols = [FAB.red, FAB.maroon, FAB.yellow, FAB.orange, FAB.navy, FAB.brown, FAB.green, FAB.black, FAB.white, FAB.sky];
   const pick = () => bagCols[Math.floor(R() * bagCols.length)];

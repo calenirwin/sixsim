@@ -8,6 +8,7 @@ import { LANDMARKS, DISTRICTS, BUILDING_OVERRIDES } from '../../src/shared/landm
 import { signedArea, centroid, pointInPoly, simplify, simplifyRing, alongPolyline, polylineLength, orientedBBox, hash2, mulberry, idwGrid } from './geom.mjs';
 import { classify, colorJitter } from './classify.mjs';
 import { loadRoofDatasets } from './rooftops.mjs';
+import { matchBridgeDef, bridgeWalkDef, bridgeInputs, buildBridgeRecords, isBridgeStructure } from './bridges.mjs';
 
 // rooftop engine datasets: DOB water tanks (BIN), TNC green roofs (BIN),
 // NYSERDA distributed solar (georeferenced installs). Loaded before anything
@@ -33,8 +34,16 @@ const OUT = path.resolve(process.env.TILES_OUT || 'public/tiles');
 // it. The Columbia superblock keeps its McKim terraces (padAt), shifted onto the
 // flat base so College Walk meets the surrounding sidewalks.
 const FLAT = process.env.TERRAIN !== 'real';
+const RC44 = process.env.RC44 !== '0';   // RG44: roads below grade in open cuts (RC44=0: clamped to grade, as before)
 const LOT_Y = 3.5;               // sidewalk / lot grade above the water plane (bulkheads ≈ 3 m)
 const BASE_Y = LOT_Y - 0.26;     // the flat terrain plane
+// RG44: a cut's depth per CSCL level below grade. The flat city's datum is 3.39 m over main.js's water plane (y = 0, under
+// everything), so a road cut's floor stops 0.45 m over it, as RL36's rail cuts do: 2.9 m down, a trench from above (the
+// 5 m clearance of a real underpass waits for the terrain of revision 5)
+const CUT_PER_LEVEL = Math.min(6.5, BASE_Y + 0.145 - 0.45);
+// SA37 (shoreline, round 2): pier tiles' centred sliver window, the walls' per-end overlap and the shore aprons;
+// NO_SA37=1 compiles the shore as before
+const SA37 = FLAT && process.env.NO_SA37 !== '1';
 const CAMPUS_SHIFT = FLAT ? (LOT_Y - 0.14) - 40.2 : 0;   // College Walk pad + 0.16 brick paving = sidewalk top (BASE+0.28)
 const LAWN_LIFT = FLAT ? 0.272 : 0.06;                   // lawns 8 mm under the walk top (0.28): the old 2 cm step drew an SSAO line along every lawn edge (seams.md item 6); still off-plane
 fs.mkdirSync(OUT, { recursive: true });
@@ -113,6 +122,43 @@ function onLand(x, z) {
   }
   return false;
 }
+// ---------------------------------------------------------------- New Jersey landings (OSM, ODbL)
+// The CSCL records of the four bridges to New Jersey (George Washington, Bayonne, Goethals, Outerbridge Crossing) stop
+// at the state line in mid-channel, and New Jersey is water in our world, so their decks ended in mid-air.
+// data/raw/osm_landings.json (tools/pipeline/fetch_osm_extras.mjs) holds each bridge's full OSM alignment, its approach
+// past the New Jersey abutment and the shore round the landing as land polygons: those join LAND here (borough 0), so
+// the decks come down onto ground. The George Washington Bridge lands on the Palisades: its patch is a plateau at the
+// cliff top (LANDING_PAD), the bridge's New Jersey anchorage and toll plaza standing ~60 m over the river.
+const LANDINGS = fs.existsSync(path.join(RAW, 'osm_landings.json')) ? loadJSON('osm_landings.json') : {};
+const LANDING_PAD = { gwb: 62 };
+// NJ39 (lead, 2026-10-11, step 3 of the New Jersey landing plan): the backdrop draws the real New Jersey shore and the
+// Palisades from USGS terrain, and the patches stand in front of it as a plateau with saw-tooth walls. With NJ_PATCHES=0
+// they are no longer land (no ground, walls, lawns or trees); the alignments stay for the decks, and the tile range still
+// covers the bridges' New Jersey ends (LANDING_PTS below). The default keeps the patches until the bridges' New Jersey
+// ends stand on the backdrop's heights and the backdrop's shore is on main (the three land together; the lead flips it).
+const NJ_PATCHES = process.env.NJ_PATCHES !== '0';
+const LANDING_PTS = [];   // every projected point of the landings (bridge strands, approaches, land rings)
+for (const [key, L] of Object.entries(LANDINGS)) {
+  for (const line of [L.bridge || [], L.approach || [], ...(L.land || [])]) for (const [lon, lat] of line) LANDING_PTS.push(project(lon, lat));
+  if (NJ_PATCHES) for (const ring of L.land || []) {
+    const r = ring.map(([lon, lat]) => project(lon, lat));
+    if (r.length > 1 && r[0][0] === r[r.length - 1][0] && r[0][1] === r[r.length - 1][1]) r.pop();
+    if (r.length < 3) continue;
+    LAND.push({ outer: r, holes: [], bbox: ringBBox(r), boro: 0, landing: key, padY: LANDING_PAD[key] ?? null });
+  }
+}
+const PADS = LAND.filter((L) => L.padY != null);
+// the landing plateau's height at a land point, null off the pads
+function landingPadAt(x, z) {
+  for (const L of PADS) {
+    const b = L.bbox;
+    if (x < b[0] || x > b[2] || z < b[1] || z > b[3]) continue;
+    if (pointInPoly(x, z, L.outer)) return L.padY;
+  }
+  return null;
+}
+if (Object.keys(LANDINGS).length) log('New Jersey landings:', Object.keys(LANDINGS).join(', '), '|', LAND.filter((L) => L.landing).length, 'land patches', NJ_PATCHES ? '(NJ_PATCHES=0 leaves them to the backdrop)' : '(NJ39: the backdrop draws New Jersey; alignments kept for the decks)');
+
 // Shoreline proximity index: LAND ring SEGMENTS (outer + holes) in a 32m
 // hash. Point-to-SEGMENT distance gives a SMOOTH field — the earlier 10m
 // point sampling produced a scalloped distance field, and terrain graded by
@@ -298,13 +344,28 @@ log('loading buildings');
 const bblBoro = (k) => { const d = k.charCodeAt(0) - 48; return (k.length === 10 && d >= 1 && d <= 5) ? d : 0; };
 const buildings = [];
 const seenBin = new Set();
+const badHeights = [];   // TW39: [bin, height, mean width] of the footprints whose height_roof no building has
+let placeholders = 0;   // TW39: feature code 1003 records skipped
+// TW39: the footprint exports come from data/raw/footprints/latest/ (fetch.mjs --footprints: a dated export checked against
+// the live dataset's count) when it exists, else from the files beside the other raw data. Those were exported on
+// 2026-07-06 and lacked 2,299 of today's 163,914 records in Manhattan's box: 30 Rockefeller Plaza, 53 West 53rd and 89
+// more towers over 60 m (the towers lane's audit, 2026-10-11). FOOTPRINTS_DIR overrides (a path under data/raw, '' = the old files).
+const FOOT_DIR = process.env.FOOTPRINTS_DIR ?? (fs.existsSync(path.join(RAW, 'footprints', 'latest')) ? path.join('footprints', 'latest') : '');
+{
+  let when = '';
+  try { when = JSON.parse(fs.readFileSync(path.join(RAW, FOOT_DIR, 'fetch.json'), 'utf8')).fetched; } catch { /* the old files */ }
+  log(' footprints:', FOOT_DIR ? `${FOOT_DIR} (fetched ${when || '?'})` : 'data/raw (the 2026-07-06 exports)');
+}
 for (const b of BOROS) {
-  const f = `buildings_${b}.geojson`;
+  const f = path.join(FOOT_DIR, `buildings_${b}.geojson`);
   if (!fs.existsSync(path.join(RAW, f))) continue;
   const fc = loadJSON(f);
   for (const feat of fc.features) {
     const p = feat.properties, g = feat.geometry;
     if (!g) continue;
+    // TW39: feature code 1003 is a placeholder (a triangle where a permitted building's outline is still to come), not an
+    // outline: 34 in the fresh exports, among them a 109 m2 triangle under 262 Fifth Avenue's tower
+    if (String(p.feature_code) === '1003') { placeholders++; continue; }
     const bin = p.bin || p.doitt_id;
     if (seenBin.has(bin)) continue;
     seenBin.add(bin);
@@ -324,20 +385,25 @@ for (const b of BOROS) {
     // CY12: court rings must be tested against the SIMPLIFIED outer ring, so they are
     // built after it
     const holes = courtRings((bestPoly || []).slice(1).map((r) => r.map(([lon, lat]) => project(lon, lat))), ring);
-    const h = (parseFloat(p.height_roof) || 0) * FT;
+    let h = (parseFloat(p.height_roof) || 0) * FT;
     // degenerate slivers: a footprint digitised as a line (area / perimeter -> mean width under
     // 1.6 m) extruded to a real roof height stood as a 250 m grey needle over Midtown in the ad
     // film's hero camera (critic round 5, crops/sm_tower.png). Real slivers are ≤ 2 storeys.
     { let per = 0; for (let i = 0; i < ring.length; i++) { const a = ring[i], b = ring[(i + 1) % ring.length]; per += Math.hypot(b[0] - a[0], b[1] - a[1]); }
       const meanW = per > 0 ? (2 * bestA) / per : 0;
       if (meanW < 1.6 && h > 12) continue;
-      if (bestA < 12 && h > 25) continue; }
+      if (bestA < 12 && h > 25) continue;
+      // TW39: heights no building has. The fresh export carries a Bronx footprint at 2,130,353 ft (its own BIN in the height
+      // field: 649 km) and, beside 432 Park Avenue, a 6 m wide annex at the tower's 425.5 m. A roof over 500 m (the city's
+      // tallest is 472 m) or 50 times the footprint's mean width (the slenderest towers and chimneys stay under 45) is not
+      // the building's: it is read as unknown (the PLUTO floors, else a low default), and counted
+      if (h > 500 || (h > 60 && meanW > 0 && h / meanW > 50)) { badHeights.push([String(bin), +h.toFixed(1), +meanW.toFixed(1)]); h = -1; } }
     const base = (parseFloat(p.ground_elevation) || 10) * FT;
     const bblKey = String(Math.round(parseFloat(p.mappluto_bbl || p.base_bbl) || 0));
     const [cx, cz] = centroid(ring);
     buildings.push({
       bin, ring, holes, area: bestA, cx, cz, base,   // CY12: holes = enclosed light courts, CW
-      h: h > 2 ? h : 4 + hash2(cx, cz) * 4,
+      h: h > 2 ? h : 4 + hash2(cx, cz) * 4,   // TW39: a height no building has (h = -1) takes this low default too
       year: parseInt(p.construction_year) || 0,
       pl: pluto.get(bblKey) || null,
       name: p.name || '',
@@ -354,16 +420,24 @@ for (const b of BOROS) {
       // is the borough for every footprint that matched a lot, the land polygon
       // answers for the rest, and the file index is only the last resort.
       boro: bblBoro(bblKey) || boroAt(cx, cz) || b,
+      // TW39: a record the city has not finished (newly initialised, marked or investigated for construction, or a building
+      // under construction): its height may be provisional
+      provisional: /Initialization|Marked for Construction|Investigate Construction/.test(p.last_status_type || '') || String(p.feature_code) === '5100',
     });
   }
 }
 log('buildings:', buildings.length);
+if (badHeights.length) log(' footprint heights no building has, read as unknown (TW39):', JSON.stringify(badHeights));
+log(' footprint placeholders (feature code 1003) skipped (TW39):', placeholders);
 // ---------------------------------------------------------------- OSM gap-fill
 // The DOITT footprint file misses recent buildings (100 W 125th St, the 2017 block-long retail
 // building on the SW corner of 125th & Lenox, rendered as an empty lot — ref_lenox.png review
 // 2026-09-10). data/raw/osm_buildings_<boro>.json (Overpass `out geom tags`) supplies footprints
 // that overlap NO existing building; height from `height` / `building:levels`, class from the
 // `building` value so classify() can style them.
+let bridgeStructuresSkipped = 0;
+let osmLevelsWin = 0;   // TW39
+const osmTaller = [];   // TW39: [bin, OSM name, the record's height, the OSM height it takes]
 {
   let added = 0, skipped = 0;
   const cellB = 32, bIdx = new Map();
@@ -393,6 +467,8 @@ log('buildings:', buildings.length);
     try { els = loadJSON(f).elements || []; } catch (e) { log(' osm buildings: unreadable', f, e.message); continue; }
     for (const el of els) {
       const t = el.tags || {};
+      // the bridges' towers, piers and anchorages (OSM `bridge:support`, building=bridge): the bridge kit draws them
+      if (isBridgeStructure(t)) { bridgeStructuresSkipped++; continue; }
       let rings = [];
       let innerG = [];   // CY12: multipolygon `inner` members are this block's light courts
       if (el.type === 'way' && el.geometry && el.geometry.length >= 4) rings = [el.geometry];
@@ -440,11 +516,27 @@ log('buildings:', buildings.length);
         }
         if (total && inside / total > 0.25) dup = true;
       }
+      // TW39: a provisional city record (status Initialization, Marked or Investigate Construction, or under construction)
+      // under a finished OSM building at least 1.4 times as tall takes the OSM height: the record lags the tower (270 Park
+      // Avenue, 423 m, whose new record says 213.4 m). The record keeps its ring and its identity (a landmark keeps its
+      // builder); an OSM building still under construction never counts (The Torch, a 325 m proposal, stood in run 6).
+      if (dup && !/construction/i.test(t.building || '')) {
+        const oh = parseFloat(t.height) || 0, olv = parseFloat(t['building:levels']) || 0;
+        const H = oh > 2 && !(olv >= 3 && oh < olv * 1.6) ? oh : olv * 3.4 + 1;
+        if (H >= 60) for (const ob of near) {
+          if (ob.osm || !ob.provisional || !(H >= ob.h * 1.4) || ob.area < 0.4 * bestA) continue;   // an outline comparable to the tower's
+          if (!(pointInPoly(ob.cx, ob.cz, ring) || pointInPoly(cx, cz, ob.ring))) continue;
+          osmTaller.push([String(ob.bin), t.name || '', +ob.h.toFixed(1), +H.toFixed(1)]); ob.h = H;
+        }
+      }
       if (dup) { skipped++; continue; }
       const levels = parseFloat(t['building:levels']) || 0;
       const cls = clsFor(t);
       let h = parseFloat(t.height) || 0;
       if (!(h > 2) && levels) h = levels * 3.4 + 1.0;
+      // TW39: a `height` far under what its own `building:levels` give is not the building's height (30 Rockefeller Plaza's
+      // way carries height=10 with building:levels=70, and became a 10 m slab where the DOITT record was missing): the levels win
+      if (h > 2 && levels >= 3 && h < levels * 1.6) { h = levels * 3.4 + 1.0; osmLevelsWin++; }
       if (!(h > 2)) h = cls === 'O' ? 20 : cls === 'D' ? 18 : cls === 'K' ? 15 : cls === 'A' ? 11 : 12;   // untagged: typical by use
       const year = parseInt((t.start_date || '').slice(0, 4)) || 0;
       const nb = {
@@ -457,7 +549,8 @@ log('buildings:', buildings.length);
       added++;
     }
   }
-  if (added || skipped) log(' osm gap-fill buildings added:', added, 'already covered:', skipped);
+  if (added || skipped) log(' osm gap-fill buildings added:', added, 'already covered:', skipped, '| bridge towers, piers and anchorages left to the bridge kit:', bridgeStructuresSkipped, '| heights from building:levels over a contradicting height tag (TW39):', osmLevelsWin);
+  if (osmTaller.length) log(' provisional city records raised to the finished OSM tower on them (TW39):', JSON.stringify(osmTaller));
 }
 // CY12 census, loader half: how many footprint inner rings survived the filters
 log(` CY12 courts loaded: kept ${cyStat.kept} on ${cyStat.feats} footprints | dropped`
@@ -467,6 +560,24 @@ log(` CY12 courts loaded: kept ${cyStat.kept} on ${cyStat.feats} footprints | dr
 // (FLAT building bases are set just before classification — after the terrain/pad machinery exists)
 
 // ---------------------------------------------------------------- roads
+// FOOTPRINT GROUND: a building whose footprint reaches past the land polygon stands on its pier, not over the water —
+// the terrain counts every node inside a footprint as land (the 4 m pier-tile grid otherwise opened water under the
+// Empire Outlets' river fronts at St. George and left their bases floating). Footprints by 32 m cell.
+const FOOT_CELL = 32, footGrid = new Map();
+for (const b of buildings) {
+  if (!b.ring || b.ring.length < 3) continue;
+  const bb = ringBBox(b.ring);
+  b._fbb = bb;
+  for (let gx = Math.floor(bb[0] / FOOT_CELL); gx <= Math.floor(bb[2] / FOOT_CELL); gx++) for (let gz = Math.floor(bb[1] / FOOT_CELL); gz <= Math.floor(bb[3] / FOOT_CELL); gz++) {
+    const k = gx + '_' + gz; let a = footGrid.get(k); if (!a) footGrid.set(k, (a = [])); a.push(b);
+  }
+}
+function inFootprint(x, z) {
+  const a = footGrid.get(Math.floor(x / FOOT_CELL) + '_' + Math.floor(z / FOOT_CELL));
+  if (a) for (const b of a) if (!b.drop && x >= b._fbb[0] && x <= b._fbb[2] && z >= b._fbb[1] && z <= b._fbb[3] && pointInPoly(x, z, b.ring)) return true;
+  return false;
+}
+
 log('loading roads');
 const roads = []; // {pts [[x,z]..], width m, rclass, oneway, lanes, park, name, level, speed, segId, bridgeKey}
 // DBG_NODE="x,z,r": dump every road end within r m of (x,z) after each graph stage
@@ -485,30 +596,10 @@ const dbgDump = (stage) => {
   console.log(`[dbg ${stage}] ${out.length} ends:\n  ${out.sort().join('\n  ')}`);
 };
 const seenSeg = new Set();
-const BRIDGE_DEFS = [
-  { key: 'brooklyn', re: /^BROOKLYN BR(G|DG)$/, type: 'suspension', tower: 'gothic', clearance: 38, towerH: 84, color: 0xc9b7975, promenade: true },
-  { key: 'manhattanBr', re: /^MANHATTAN BRG$/, type: 'suspension', tower: 'steel', clearance: 40, towerH: 102 },
-  { key: 'williamsburg', re: /^WILLIAMSBURG BRG$/, type: 'suspension', tower: 'steelTruss', clearance: 41, towerH: 94 },
-  { key: 'queensboro', re: /^ED KOCH QUEENSBORO BRG$/, type: 'cantilever', clearance: 40, towerH: 105 },
-  { key: 'gwb', re: /^GEORGE WASHINGTON BRG$/, type: 'suspension', tower: 'lattice', clearance: 65, towerH: 184 },
-  { key: 'rfk', re: /^RFK BRIDGE( SUSPENDED SPAN)?$|^RFK BRG/, type: 'suspension', tower: 'steel', clearance: 44, towerH: 96 },
-  { key: 'hellgate', re: /^HELL GATE BRIDGE$/, type: 'archRail', clearance: 41 },
-  { key: 'henryHudson', re: /^HENRY HUDSON BRG$/, type: 'arch', clearance: 44 },
-  { key: 'washingtonBr', re: /^WASHINGTON BRG$/, type: 'arch', clearance: 41 },
-  { key: 'hamiltonBr', re: /^ALEXANDER HAMILTON BRG$/, type: 'arch', clearance: 31 },
-  { key: 'highBr', re: /^HIGH BRIDGE$/, type: 'arch', clearance: 31 },
-  { key: 'macombs', re: /^MACOMBS DAM BR(G|DG)$/, type: 'swing', clearance: 9 },
-  { key: 'br145', re: /^145 ST +BRIDGE$/, type: 'swing', clearance: 8 },
-  { key: 'madisonAv', re: /^MADISON AVE +BRIDGE$/, type: 'swing', clearance: 8 },
-  { key: 'thirdAv', re: /^3 AVE? +BRIDGE$/, type: 'swing', clearance: 8 },
-  { key: 'willis', re: /^WILLIS AVE +BRIDGE$/, type: 'swing', clearance: 8 },
-  { key: 'universityHts', re: /^UNIVERSITY HEIGHTS BRG$/, type: 'swing', clearance: 8 },
-  { key: 'broadwayBr', re: /^BROADWAY BRG$/, type: 'lift', clearance: 8 },
-  { key: 'rooseveltBr', re: /^ROOSEVELT ISLAND BR(IDGE|G)/, type: 'lift', clearance: 12 },
-  { key: 'pulaski', re: /^PULASKI BR(IDGE|G)/, type: 'bascule', clearance: 12 },
-  { key: 'wardsFoot', re: /^WARDS ISLAND FOOTBRIDGE|103 STREET FOOTBRIDGE/, type: 'lift', clearance: 16, foot: true },
-];
+// BRIDGE_DEFS and the bridge records: tools/pipeline/bridges.mjs
 const bridgeSegs = new Map(); // key -> [{pts,width,name}]
+let multiPartRamps = 0;   // CSCL ramps drawn in several parts (one climb shared between them)
+let bridgeWalks = 0;      // (BR38) kit bridges' walkways and bike paths left to the kit
 for (const b of BOROS.concat([])) {
   const f = `streets_${b}.geojson`;
   if (!fs.existsSync(path.join(RAW, f))) continue;
@@ -531,7 +622,11 @@ for (const b of BOROS.concat([])) {
     const park = parseInt(p.number_park_lanes) || 0;
     const oneway = p.trafdir === 'FT' ? 1 : p.trafdir === 'TF' ? -1 : 0;
     const lvA = parseInt(p.from_level_code) || 13, lvB = parseInt(p.to_level_code) || 13;
-    const level = Math.max(0, Math.round(((lvA + lvB) / 2 - 13) / 4));
+    // RG44: an end below grade (CSCL level < 13: Dyer Avenue's cut, the Cross Bronx's trench, the Grand Concourse's
+    // underpasses) keeps its level and the road is drawn in an open cut (roadCuts below); clamped to grade, every one of
+    // them was laid across the streets it passes under (tools/pipeline/roadgate.mjs: 1,655 such nodes in run 13)
+    const cutRoad = RC44 && Math.min(lvA, lvB) < 13;
+    const level = cutRoad ? -1 : Math.max(0, Math.round(((lvA + lvB) / 2 - 13) / 4));
     const speed = parseInt(p.posted_speed) || (rw === 2 ? 50 : 25);
     // non-vehicular pieces: CSCL rw_type 5 boardwalk / 6 path / 7 step street, and the bridge
     // (rw 3) pedestrian + bike paths and pedestrian overpasses that only carry it in the name.
@@ -558,12 +653,24 @@ for (const b of BOROS.concat([])) {
     const widthPS = pedStreet && width < 15 ? 18.3 : width;   // plaza width when CSCL has none
     const pedPath = !pedStreet && (rw === 5 || rw === 6 || rw === 7 || p.trafdir === 'NV'
       || /PEDESTRIAN|OPAS|FOOTBRIDGE|FOOT BRIDGE|PED (&|AND) BIKE|BIKE PATH|BIKE (&|AND) PED|WALKWAY|ESPLANADE|GREENWAY|PROMENADE|BOARDWALK|STEP STREET|STAIRS?\b/.test(rawName.toUpperCase()));
-    for (const line of lines) {
+    // a multi-part segment is ONE climb from its from-level to its to-level: each part takes the levels at its own ends
+    // along the parts' running length. Every part used to climb the whole lift, a sawtooth of ramps (332 CSCL segments
+    // citywide, e.g. the St. George ferry terminal's ramp, physicalid 194030: three parts each 10.3 m -> 3.5 m)
+    const lA = cutRoad ? (lvA - 13) / 4 : Math.max(0, (lvA - 13) / 4), lB = cutRoad ? (lvB - 13) / 4 : Math.max(0, (lvB - 13) / 4);
+    const partLen = lines.map((ln) => { let s = 0; for (let i = 1; i < ln.length; i++) { const [ax, az] = project(ln[i - 1][0], ln[i - 1][1]), [bx, bz] = project(ln[i][0], ln[i][1]); s += Math.hypot(bx - ax, bz - az); } return s; });
+    const lenTot = partLen.reduce((a, b) => a + b, 0) || 1;
+    if (lines.length > 1 && lA !== lB) multiPartRamps++;
+    let lenRun = 0;
+    for (const [li, line] of lines.entries()) {
+      const pA = lA + (lB - lA) * (lenRun / lenTot), pB = lA + (lB - lA) * ((lenRun + partLen[li]) / lenTot);
+      lenRun += partLen[li];
       let pts = line.map(([lon, lat]) => project(lon, lat));
       pts = simplify(pts, 0.4);
       if (pts.length < 2 || polylineLength(pts) < 3) continue;
-      const bd = rw === 3 ? BRIDGE_DEFS.find((d) => d.re.test(rawName.replace(/ +/g, ' '))) : null;
-      if (bd && !/EXIT|ENTRANCE|EN RP|RAMP|PATH|BIKE|PED/.test(rawName)) {
+      // (BR38: a kit bridge's own walkway or bike path: the kit draws the walks)
+      if (bridgeWalkDef(rawName, rw, pts)) { bridgeWalks++; continue; }
+      const bd = matchBridgeDef(rawName, rw, lvA, lvB, pts);
+      if (bd) {
         let arr = bridgeSegs.get(bd.key);
         if (!arr) bridgeSegs.set(bd.key, (arr = []));
         arr.push({ pts, width, name });
@@ -572,7 +679,8 @@ for (const b of BOROS.concat([])) {
       roads.push({
         pts, width: pedPath ? Math.min(width, 3.5) : widthPS, name, oneway, lanes, park: pedStreet ? 0 : park, level, speed, segId: parseInt(id) || 0,
         noTraffic: pedStreet,
-        lA: Math.max(0, (lvA - 13) / 4), lB: Math.max(0, (lvB - 13) / 4), // per-end levels → ramps slope
+        lA: pA, lB: pB, // per-end levels → ramps slope (this part's share of the segment's climb)
+        cut: cutRoad,   // RG44: in an open cut (an end below grade)
         bike: parseInt(p.bike_lane) || 0,
         rclass: pedPath ? 5 : pedStreet ? (widthPS >= 13.5 ? 2 : 1) : rw === 2 ? 3 : rw === 9 ? 4 : rw === 10 ? 6 : width >= 13.5 ? 2 : 1, // 2 = wide roadway (>= 44 ft: avenues, 125th-class cross streets); CSCL streetwidth is curb-to-curb, so the old 22 m bar left Manhattan avenues (60-70 ft) unsignalized
         isBridgePiece: rw === 3, // unmatched bridge bits (ramps etc.) stay as elevated roads
@@ -590,7 +698,7 @@ for (const r of roads) {
   // near-identical height depth-fights it into jagged shreds
   if (mx > 570 && mx < 1085 && mz > -2760 && mz < -2650) { r.rclass = 5; r.width = Math.min(r.width, 17); r.noGeom = true; }
 }
-log('road segments:', roads.length, 'bridge groups:', bridgeSegs.size);
+log('road segments:', roads.length, 'bridge groups:', bridgeSegs.size, '| multi-part ramps (one climb across the parts):', multiPartRamps, '| kit bridges\' walks left to the kit:', bridgeWalks);
 
 // ---------------------------------------------------------------- duplicate parallels
 // CSCL carries near-coincident duplicates (generic centerline + roadbed pieces
@@ -699,7 +807,7 @@ dbgDump('after-dup-parallels');
     for (let j = 1; j < i; j++) d += Math.hypot(r.pts[j][0] - r.pts[j - 1][0], r.pts[j][1] - r.pts[j - 1][1]);
     return d + t * Math.hypot(r.pts[i][0] - r.pts[i - 1][0], r.pts[i][1] - r.pts[i - 1][1]);
   };
-  let tees = 0, shared = 0, clamped = 0;
+  let tees = 0, shared = 0, clamped = 0, rampSplits = 0;
   // an end that already coincides with another road's end IS a node (CSCL split the
   // through road there). Divided-avenue twin nodes (Lenox/ACP/FDB at every cross
   // street) were being "grafted" 7 m sideways onto the interior vertex of the 14 m
@@ -715,7 +823,7 @@ dbgDump('after-dup-parallels');
   roads.forEach((r, ri) => {
     if (r.rclass >= 5 || polylineLength(r.pts) < 3) return;
     for (const end of [0, 1]) {
-      if ((end === 0 ? (r.lA || 0) : (r.lB || 0)) > 0.1) continue; // elevated end — don't graft onto grade
+      if (Math.abs(end === 0 ? (r.lA || 0) : (r.lB || 0)) > 0.1) continue; // elevated (or cut, RG44) end — don't graft onto grade
       const p = end === 0 ? r.pts[0] : r.pts[r.pts.length - 1];
       if ((endCount.get(ekeyT(p[0], p[1])) || 0) >= 2) { shared++; continue; }   // already a shared node
       let best = null;
@@ -726,7 +834,7 @@ dbgDump('after-dup-parallels');
         for (const [rj, j] of a) {
           if (rj === ri) continue;
           const B = roads[rj];
-          if ((B.lA || 0) > 0.1 || (B.lB || 0) > 0.1 || B.noGeom) continue;
+          if (Math.abs(B.lA || 0) > 0.1 || Math.abs(B.lB || 0) > 0.1 || B.noGeom) continue;
           const [x1, z1] = B.pts[j - 1], [x2, z2] = B.pts[j];
           const dx = x2 - x1, dz = z2 - z1, L2 = dx * dx + dz * dz;
           if (L2 < 1e-6) continue;
@@ -788,10 +896,20 @@ dbgDump('after-dup-parallels');
     }
     if (polylineLength(cur) > 2) pieces.push(cur);
     if (pieces.length < 2) continue;
+    // a ramp (end levels differ) keeps ONE climb: each piece takes the levels at its own ends along the parent. Copying
+    // the parent's lA / lB to every piece made a sawtooth, each piece climbing the whole lift again (the St. George ferry
+    // terminal's ramp, CSCL 194030, level 17 to 13 over 150 m, split twice: 10.3 m -> 3.5 m three times over)
+    const lA0 = r.lA ?? r.level ?? 0, lB0 = r.lB ?? r.level ?? 0, Ltot = polylineLength(r.pts);
+    const isRamp = Math.abs(lA0 - lB0) > 1e-6 && Ltot > 0;
+    let s0 = 0;
+    const lvAt = (d) => lA0 + (lB0 - lA0) * Math.min(1, d / Ltot);
+    const lv = pieces.map((pc) => { const L = polylineLength(pc), o = isRamp ? { lA: lvAt(s0), lB: lvAt(s0 + L) } : {}; s0 += L; return o; });
+    if (isRamp) rampSplits++;
     r.pts = pieces[0];
-    for (let k = 1; k < pieces.length; k++) roads.push({ ...r, pts: pieces[k] });
+    Object.assign(r, lv[0]);
+    for (let k = 1; k < pieces.length; k++) roads.push({ ...r, pts: pieces[k], ...lv[k] });
   }
-  log(' T-junctions split:', tees, 'roads now:', roads.length);
+  log(' T-junctions split:', tees, 'roads now:', roads.length, '| ramps split with their climb shared:', rampSplits);
 }
 
 // ---------------------------------------------------------------- terrain samples & grid per tile
@@ -813,8 +931,12 @@ for (const b of FLAT ? [] : BOROS) {
 // road endpoint samples where they carry no elevation: skip — buildings dense enough.
 // figure world tile range from data
 let WX0 = 1e12, WZ0 = 1e12, WX1 = -1e12, WZ1 = -1e12;
+for (const [x, z] of LANDING_PTS) { WX0 = Math.min(WX0, x); WX1 = Math.max(WX1, x); WZ0 = Math.min(WZ0, z); WZ1 = Math.max(WZ1, z); }   // NJ39: the bridges' New Jersey ends
 for (const b of buildings) { WX0 = Math.min(WX0, b.cx); WX1 = Math.max(WX1, b.cx); WZ0 = Math.min(WZ0, b.cz); WZ1 = Math.max(WZ1, b.cz); }
 for (const r of roads) for (const p of r.pts) { WX0 = Math.min(WX0, p[0]); WX1 = Math.max(WX1, p[0]); WZ0 = Math.min(WZ0, p[1]); WZ1 = Math.max(WZ1, p[1]); }
+// the New Jersey landing patches: the Outerbridge Crossing's lands at x -25,588, past the city's own buildings and roads
+// (x -24,576), and got no tile and no ground
+for (const L of LAND) if (L.landing) { WX0 = Math.min(WX0, L.bbox[0]); WX1 = Math.max(WX1, L.bbox[2]); WZ0 = Math.min(WZ0, L.bbox[1]); WZ1 = Math.max(WZ1, L.bbox[3]); }
 const TX0 = Math.floor(WX0 / TILE) - 1, TX1 = Math.floor(WX1 / TILE) + 1;
 const TZ0 = Math.floor(WZ0 / TILE) - 1, TZ1 = Math.floor(WZ1 / TILE) + 1;
 log('tile range', TX0, TZ0, '..', TX1, TZ1);
@@ -839,7 +961,57 @@ const steepTiles = new Set();
   for (const [k, r] of relief) if (r[1] - r[0] > 12) steepTiles.add(k);
   log('steep park tiles (64-res terrain):', steepTiles.size);
 }
-const resOf = (tx, tz) => (tx >= 0 && tx <= 2 && tz >= -7 && tz <= -4) ? 128 : (!FLAT && steepTiles.has(tx + '_' + tz)) ? 64 : RES;
+// PIER TILES: land narrower than the 16 m grid (piers, ferry slips) was water in the drawn terrain, its bulkhead walls
+// floating as planks either side of nothing (St. George's slips). A tile whose 4 m land raster holds 400 m2 or more of
+// land in 16 m cells whose four grid nodes are all water draws its terrain on a 4 m grid instead (as the Columbia tiles
+// do), so a pier of 8 m and more is ground. The raster: per 4 m row, the parity at the tile's west edge (onLand) toggled
+// at each crossing of the shore segments indexed round the tile.
+const pierTiles = new Set();
+const pierLand = new Map();   // pier tile -> its 4 m land raster (128 x 128, row-major from the tile's north-west corner)
+{
+  const cand = new Set();
+  for (const k of SHORE.keys()) {
+    const [i, j] = k.split('_').map(Number);
+    const tx = Math.floor((i * SHORE_CELL) / TILE), tz = Math.floor((j * SHORE_CELL) / TILE);
+    if (tx >= TX0 && tx <= TX1 && tz >= TZ0 && tz <= TZ1) cand.add(tx + '_' + tz);
+  }
+  const N = 128, C = TILE / N;
+  for (const key of cand) {
+    const [tx, tz] = key.split('_').map(Number), x0 = tx * TILE, z0 = tz * TILE;
+    const segs = new Map();
+    const c0 = Math.floor(x0 / SHORE_CELL) - 1, c1 = Math.floor((x0 + TILE) / SHORE_CELL) + 1;
+    const r0 = Math.floor(z0 / SHORE_CELL) - 1, r1 = Math.floor((z0 + TILE) / SHORE_CELL) + 1;
+    for (let j = r0; j <= r1; j++) for (let i = c0; i <= c1; i++) {
+      const a = SHORE.get(`${i}_${j}`); if (!a) continue;
+      for (let k = 0; k < a.length; k += 4) segs.set(`${a[k]},${a[k + 1]},${a[k + 2]},${a[k + 3]}`, [a[k], a[k + 1], a[k + 2], a[k + 3]]);
+    }
+    const E = [...segs.values()];
+    const land = new Uint8Array(N * N);
+    for (let r = 0; r < N; r++) {
+      const z = z0 + (r + 0.5) * C;
+      let inside = onLand(x0 + 1e-3, z);
+      const xs = [];
+      for (const [ax, az, bx, bz] of E) if ((az > z) !== (bz > z)) { const x = ax + ((z - az) * (bx - ax)) / (bz - az); if (x > x0 && x < x0 + TILE) xs.push(x); }
+      xs.sort((a, b) => a - b);
+      let xi = 0;
+      for (let c = 0; c < N; c++) {
+        const x = x0 + (c + 0.5) * C;
+        while (xi < xs.length && xs[xi] < x) { inside = !inside; xi++; }
+        land[r * N + c] = inside ? 1 : 0;
+      }
+    }
+    // 16 m cells (4 x 4 raster cells) whose corner nodes are all water but hold land
+    const node = (i, j) => land[Math.min(N - 1, j * 4) * N + Math.min(N - 1, i * 4)];
+    let missed = 0;
+    for (let j = 0; j < 32; j++) for (let i = 0; i < 32; i++) {
+      if (node(i, j) || node(i + 1, j) || node(i, j + 1) || node(i + 1, j + 1)) continue;
+      for (let v = 0; v < 4; v++) for (let u = 0; u < 4; u++) missed += land[(j * 4 + v) * N + i * 4 + u];
+    }
+    if (missed >= 25) { pierTiles.add(key); pierLand.set(key, land); }
+  }
+  log('pier tiles (4 m terrain for land the 16 m grid misses):', pierTiles.size, 'of', cand.size, 'shore tiles');
+}
+const resOf = (tx, tz) => (tx >= 0 && tx <= 2 && tz >= -7 && tz <= -4) ? 128 : pierTiles.has(tx + '_' + tz) ? 128 : (!FLAT && steepTiles.has(tx + '_' + tz)) ? 64 : RES;
 const rawGrids = new Map();     // IDW+water only — used to assign road elevations
 const terrainGrids = new Map(); // carved (roads flattened in) — written to tiles, used everywhere else
 function buildTerrainRaw(tx, tz) {
@@ -864,8 +1036,22 @@ function buildTerrainRaw(tx, tz) {
       // surfaced meters out and read as pale "ice floe" sheets on the water.
       // Corridor-claimed nodes still get set to the roadbed by carveAt, so
       // waterfront road support is unaffected; open water stays -3.5.
-      if (!onLand(px, pz)) g[j * (R + 1) + i] = shoreDist(px, pz, 28) < 27 ? -9 : -3.5;
-      else if (FLAT) { /* flat base plane: nothing to grade */ }
+      // on a pier tile, land thinner than ~5 m round a node (a fender rack, a breakwater line: the land raster holds at
+      // most three of the nine 4 m cells about it) is water: such nodes stood as lone pyramids of ground in the slip
+      const pl = FLAT && R === 128 ? pierLand.get(key) : null;
+      let sliver = false;
+      if (pl && !SA37) { let c = 0; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const ii = Math.min(127, Math.max(0, i + di)), jj = Math.min(127, Math.max(0, j + dj)); c += pl[jj * 128 + ii]; } sliver = c <= 3; }
+      else if (pl) {
+        // SA37: the window is the 4 x 4 cells round the node (the 3 x 3 above sits east and south of it, and drew nodes
+        // within ~2 m of an east- or south-facing shore as water); the node is ground where a 2 x 2 block of land cells
+        // (8 m square) lies in that window
+        const at = (ii, jj) => pl[Math.min(127, Math.max(0, jj)) * 128 + Math.min(127, Math.max(0, ii))];
+        sliver = true;
+        for (let bj = j - 2; bj <= j && sliver; bj++) for (let bi = i - 2; bi <= i; bi++)
+          if (at(bi, bj) && at(bi + 1, bj) && at(bi, bj + 1) && at(bi + 1, bj + 1)) { sliver = false; break; }
+      }
+      if ((!onLand(px, pz) || sliver) && !(FLAT && inFootprint(px, pz))) g[j * (R + 1) + i] = shoreDist(px, pz, 28) < 27 ? -9 : -3.5;
+      else if (FLAT) { const pY = PADS.length ? landingPadAt(px, pz) : null; if (pY !== null) g[j * (R + 1) + i] = pY; /* else the flat base plane */ }
       else {
         let h = Math.max(1.2, g[j * (R + 1) + i]);
         // esplanade grading: coastal land may not out-climb a 16% grade from
@@ -1163,7 +1349,7 @@ log('road corridors');
     // grade (lift gate below) — excluding them wholesale left FDR-style
     // at-grade "bridge bits" following raw cliffside terrain (roadY -0.04
     // beside a +3m heightmap: guaranteed clip)
-    const lifted = (r.lA ?? r.level ?? 0) > 0 || (r.lB ?? r.level ?? 0) > 0 || r.isBridgePiece;
+    const lifted = (r.lA ?? r.level ?? 0) > 0 || (r.lB ?? r.level ?? 0) > 0 || r.isBridgePiece || r.cut;
     const sw = r.rclass === 2 ? 4.6 : r.rclass === 5 ? 0.8 : 3.6;
     const halfW = r.width / 2 + sw + 0.6;
     const L = polylineLength(r.pts);
@@ -1323,7 +1509,9 @@ function nearestRoad(x, z, maxD = 30) {
 if (FLAT) for (const b of buildings) b.base = Math.max(BASE_Y + 0.28, sampleTerrain(b.cx, b.cz) + 0.12);
 log('classifying buildings');
 let lmHits = 0;
+let vacantKept = 0, vacantDropped = 0;   // TW39
 for (const b of buildings) {
+  if (b.drop) continue;   // TW39: a city record an OSM tower superseded
   const rnd = mulberry((hash2(b.cx * 10, b.cz * 10) * 1e9) | 0);
   // district
   let district = null;
@@ -1338,12 +1526,15 @@ for (const b of buildings) {
   if (fi) { ovr.material = fi.primary; ovr.tokens = fi.tokens; ovr.wallType = fi.wallType; ovr.anyBrick = fi.anyBrick; }
   const oc = osmCol.length ? osmColourNear(b.cx, b.cz) : null;
   if (oc) ovr.colour = oc;
-  const c = classify({
+  let c = classify({
     height: b.h, floors: pl.floors || 0, year: pl.year || b.year, cls: pl.cls || '',
     landuse: pl.landuse || '', area: b.area, onAvenue, histDist: pl.histDist, district,
     boro: b.boro || 0,   // WB13: the frame-belt / new-condo rules are borough-gated
   }, rnd, ovr);
-  if (!c) { b.drop = true; continue; }
+  // TW39: classify() drops a building on a lot PLUTO calls vacant (class V). PLUTO trails construction: a footprint the city
+  // has measured at 10 m and more on such a lot is a new building, kept and styled as one of unknown class
+  if (!c && b.h >= 10 && !b.osm) { c = classify({ height: b.h, floors: 0, year: b.year, cls: '', landuse: '', area: b.area, onAvenue, histDist: pl.histDist, district, boro: b.boro || 0 }, rnd, ovr); if (c) vacantKept++; }
+  if (!c) { b.drop = true; vacantDropped++; continue; }
   b.c = c;
   b.cls = pl.cls || ''; // PLUTO BldgClass drives the rooftop program
   b.color = colorJitter(c.color, rnd, 9);
@@ -1365,6 +1556,7 @@ for (const b of buildings) {
   }
 }
 log('landmarks matched:', lmHits, '/', LM.length);
+log(' buildings on lots PLUTO calls vacant (TW39): kept', vacantKept, '(measured 10 m and more), dropped', vacantDropped);
 // nearest-fallback for unmatched landmarks
 {
   const matched = new Set(buildings.filter((b) => b.landmarkId).map((b) => Math.abs(b.landmarkId)));
@@ -1444,7 +1636,9 @@ for (const r of roads) {
     let n = nodes.get(k);
     if (!n) nodes.set(k, (n = { x: p[0], z: p[1], stubs: [] }));
     const dx = q[0] - p[0], dz = q[1] - p[1], L = Math.hypot(dx, dz) || 1;
-    n.stubs.push({ r, end, dirx: dx / L, dirz: dz / L, width: r.width, rclass: r.rclass, name: r.name, level: r.level });
+    // RG44: a cut road's end at grade is a leg of the street junction there; an end below grade is not (it passes under)
+    const lvE = r.cut ? (Math.abs(end === 0 ? r.lA : r.lB) < 0.1 ? 0 : -1) : r.level;
+    n.stubs.push({ r, end, dirx: dx / L, dirz: dz / L, width: r.width, rclass: r.rclass, name: r.name, level: lvE });
     // direct ref: after node recentring the endpoint may quantize to a
     // different nkey cell, so key lookups can miss their own node
     if (end === 0) r.nodeA = n; else r.nodeB = n;
@@ -1726,6 +1920,10 @@ function tileFor(x, z) {
       paintW: new F32(2048), paintY: new F32(1024), paintG: new F32(512), grass: new F32(1024), grassU: new F32(256), pathTris: new F32(1024), brick: new F32(512),
       gutter: new F32(1024), busred: new F32(512), // matId 11 gutter strip against every curb, 12 red bus lane
       warn: new F32(256), warnIron: new F32(256), // matId 13/14 detectable-warning plates (red composite / cast iron) at crosswalk ends
+      // RL36 rail (matIds 18 rail steel, 19 ballast, 20 + bearing the sleeper bed, 21 cut walls); rtopA = the bed's
+      // per-vertex matId (20 + 0.45 * bearing / pi: the sleepers' direction for the ground shader); railCuts = the open
+      // cuts' oriented rectangles [x, z, yaw, halfLen, halfW] (tile-local) the runtime cuts out of the drawn terrain
+      rsteel: new F32(64), rbal: new F32(64), rtop: new F32(64), rtopA: new F32(32), rwall: new F32(64), railCuts: [],
       furn: [], nodesJson: [],
     }));
   }
@@ -2066,7 +2264,6 @@ const FURN_LIFT = FLAT ? 0.28 : CURB; // furniture base = sidewalk top (flat: BA
 // faces; ANALYTIC_WALKS=1 restores the old emitters for comparison
 const CONTOUR_WALKS = !process.env.ANALYTIC_WALKS;
 // XW11 crosswalk depth (the marked width of the crossing, measured ALONG the road it crosses).
-// MEASURED on client/ref_lenox.png, the near-nadir reference plate of 125th & Lenox —
 // the only reference steep enough to measure both axes (scale anchored on parked vehicles,
 // 8.2 px/m N-S, and on the 22.7 m carriageway+median span, 9.3 px/m E-W):
 //   crossing of W 125 ST  bar length 76.5 px -> 8.2 m (27 ft), ladder span 18.3 m = the CSCL width
@@ -2080,6 +2277,7 @@ const XW_DEPTH = (rclass, width) => (rclass === 2 && width >= 16.5 ? 7.62 : 4.57
 function roadY(r, x, z, d = 0, L = 1) {
   if (FLAT) {
     const liftF = ((r.lA ?? r.level) + ((r.lB ?? r.level) - (r.lA ?? r.level)) * Math.min(1, d / Math.max(1, L))) * 7;
+    if (liftF < -0.05) return Math.max(0.45, BASE_Y + 0.145 + liftF * CUT_PER_LEVEL / 7);   // RG44: the cut's floor (two levels down rest on one's)
     return liftF > 0.05 ? Math.max(BASE_Y, 1.5) + liftF + 0.02 : BASE_Y + (r.rclass === 5 ? 0.27 : 0.145);
   }
   // base comes from the road's OWN smoothed profile (corridor pass), not from
@@ -2092,6 +2290,7 @@ function roadY(r, x, z, d = 0, L = 1) {
     base = r.prof.ys[i] + (r.prof.ys[i + 1] - r.prof.ys[i]) * (f - i) - 0.12; // = carve target
   } else base = sampleTerrain(x, z); // carved: sits 0.12 below the corridor elevation
   const lift = ((r.lA ?? r.level) + ((r.lB ?? r.level) - (r.lA ?? r.level)) * Math.min(1, d / Math.max(1, L))) * 7;
+  if (lift < -0.05) return Math.max(0.45, base + 0.14 + lift * CUT_PER_LEVEL / 7);   // RG44
   return lift > 0.05 ? Math.max(base, 1.5) + lift + 0.02 : base + 0.14;
 }
 // RULE: pavement never overlaps a carriageway. CSCL carries near-duplicate
@@ -2242,7 +2441,7 @@ const walkWidth = (x1, z1, x2, z2, w2, sgn, rclass) => {
 {
   let nw = 0, sum = 0;
   for (const r of roads) {
-    if (r.rclass > 2 || r.noGeom) continue;
+    if (r.rclass > 2 || r.noGeom || r.cut) continue;   // (RG44: a cut has no sidewalks)
     r.segBw = []; r.bwMax = 0;
     for (let i = 1; i < r.pts.length; i++) {
       const [x1, z1] = r.pts[i - 1], [x2, z2] = r.pts[i];
@@ -2284,7 +2483,7 @@ const PCELL = 24;
       const nodeAtA = i === 1 ? r.nodeA : null, nodeAtB = i === r.pts.length - 1 ? r.nodeB : null;
       const seg = {
         x1, z1, x2, z2, y1, y2, w2: r.width / 2, r,
-        atGrade: y1 - sampleTerrain(x1, z1) < 1.2 && y2 - sampleTerrain(x2, z2) < 1.2,
+        atGrade: Math.abs(y1 - sampleTerrain(x1, z1)) < 1.2 && Math.abs(y2 - sampleTerrain(x2, z2)) < 1.2,   // (RG44: nor a cut's deep run)
         bw, bwN, bwM,
         // extend exactly to the far edge of the OTHER legs' sidewalks (their half width + band);
         // junction radius + band overshot by ~7 m along avenues and laid pavement into the block
@@ -2614,6 +2813,9 @@ for (const r of roads) {
             const ya = roadY(r, xa, za, d, L) + yl, yb = roadY(r, xb, zb, d2, L) + yl;
             const t = tileFor((xa + xb) / 2, (za + zb) / 2);
             const buf = kind === 'Y' ? t.paintY : kind === 'G' ? t.paintG : t.paintW;
+            // RG44: paint never on another road's carriageway (ramps laid over each other: a centre line ran across the
+            // Lincoln Tunnel approach's lanes)
+            if (RC44 && inCarriageway((xa + xb) / 2 - ((dza + dzb) / 2) * off, (za + zb) / 2 + ((dxa + dxb) / 2) * off, (ya + yb) / 2, [r], -0.3)) continue;
             pushQuad(buf,
               [xa - dza * (off - halfT), ya, za + dxa * (off - halfT)],
               [xa - dza * (off + halfT), ya, za + dxa * (off + halfT)],
@@ -2792,6 +2994,8 @@ for (const r of roads) {
           const ax2 = xa - dza * side * w2, az2 = za + dxa * side * w2;
           const bx2 = xb - dzb * side * w2, bz2 = zb + dxb * side * w2;
           if (inCarriageway((ax2 + bx2) / 2, (az2 + bz2) / 2, (ya + yb) / 2, [r])) continue;
+          // RG44: nor either end (a 4 m kerb whose middle missed a crossing ramp ran across its lanes)
+          if (RC44 && (inCarriageway(ax2, az2, ya, [r], -0.3) || inCarriageway(bx2, bz2, yb, [r], -0.3))) continue;
           const t = tileFor((ax2 + bx2) / 2, (az2 + bz2) / 2);
           pushQuad(t.curb, [ax2, ya, az2], [bx2, yb, bz2], [bx2, yb + CURB, bz2], [ax2, ya + CURB, az2]);
           pushQuad(t.curb, [bx2, yb, bz2], [ax2, ya, az2], [ax2, ya + CURB, az2], [bx2, yb + CURB, bz2]);
@@ -3859,8 +4063,35 @@ if (CONTOUR_WALKS) {
 // Seaward side is probed with onLand so ring winding never matters. Raw
 // terrain wedges at the shore were the ugliest thing visible from the air.
 log('shoreline');
+// SA37: every ring segment that gets its bulkhead, in 16 m cells (the shore aprons below only reach a ring edge that has
+// its wall)
+const WALL_CELL = 16;
+const wallIdx = new Map();
+const wallPieces = [];   // WW39: [tile, curb float index, probe x, z, probe x, z] per wall piece
+const SA37_DBG = process.env.SA37_DEBUG ? process.env.SA37_DEBUG.split(',').map(Number) : null;
+const sa37Dbg = { walls: [], skipped: [], runs: [] };
+const inDbg = (x, z) => SA37_DBG && x >= SA37_DBG[0] && x <= SA37_DBG[2] && z >= SA37_DBG[1] && z <= SA37_DBG[3];
+function wallAdd(ax, az, bx, bz) {
+  for (let j = Math.floor((Math.min(az, bz) - 1) / WALL_CELL); j <= Math.floor((Math.max(az, bz) + 1) / WALL_CELL); j++)
+    for (let i = Math.floor((Math.min(ax, bx) - 1) / WALL_CELL); i <= Math.floor((Math.max(ax, bx) + 1) / WALL_CELL); i++) {
+      const k = i + '_' + j;
+      let a = wallIdx.get(k);
+      if (!a) wallIdx.set(k, (a = []));
+      a.push(ax, az, bx, bz);
+    }
+}
+function wallNear(x, z, r) {
+  const a = wallIdx.get(Math.floor(x / WALL_CELL) + '_' + Math.floor(z / WALL_CELL));
+  if (!a) return false;
+  for (let k = 0; k < a.length; k += 4) {
+    const ax = a[k], az = a[k + 1], dx = a[k + 2] - ax, dz = a[k + 3] - az;
+    const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1e-9)));
+    if (Math.hypot(x - ax - dx * t, z - az - dz * t) <= r) return true;
+  }
+  return false;
+}
 {
-  let wallSegs = 0;
+  let wallSegs = 0, tipsSkipped = 0, wallsShortened = 0;
   const STEP = 7;
   for (const L of LAND) {
     const ring = L.outer;
@@ -3893,32 +4124,70 @@ log('shoreline');
         if (!onLand(mx + nx * pd, mz + nz * pd)) { found = true; break; }
         if (!onLand(mx - nx * pd, mz - nz * pd)) { nx = -nx; nz = -nz; found = true; break; }
       }
-      if (!found) continue; // genuine sliver: water on neither side
+      if (!found) { if (inDbg(mx, mz)) sa37Dbg.skipped.push([+x1.toFixed(2), +z1.toFixed(2), +x2.toFixed(2), +z2.toFixed(2), 'nofound']); continue; } // genuine sliver: water on neither side
+      // a sliver of land thinner than 4 m (a ferry slip's fender rack, a breakwater line) is not a wharf: its walls stood
+      // as a floating plank with corner shards; it is left to the water
+      if (FLAT && !onLand(mx - nx * 4, mz - nz * 4) && !onLand(mx - nx * 2.5, mz - nz * 2.5)) { if (inDbg(mx, mz)) sa37Dbg.skipped.push([+x1.toFixed(2), +z1.toFixed(2), +x2.toFixed(2), +z2.toFixed(2), 'sliver']); continue; }
+      // WW39: an edge under 8 m long needs land 2.5 m behind it along its whole length (its middle and the points a quarter
+      // and three quarters along it), or both 2.5 and 4 m behind its middle: the spikes and tips of a ring (a fender, a
+      // dolphin, the pointed ends of Pier 16's outline) carried a wall and an apron and stood as small planks in the slip.
+      // A marina's finger pier, 3 to 5 m wide and drawn in short edges, keeps its walls and so its apron: the 4 m test alone
+      // took 1,242 such edges city-wide (Chelsea Piers, Great Kills, Mill Basin, the World's Fair Marina, Sheepshead Bay)
+      // and left the fingers' few long edges standing in the water as fragments
+      if (SA37 && FLAT && segL < 8) {
+        const l25 = onLand(mx - nx * 2.5, mz - nz * 2.5);
+        const strip = l25 && (onLand(mx - nx * 4, mz - nz * 4)
+          || (onLand(x1 + (x2 - x1) * 0.25 - nx * 2.5, z1 + (z2 - z1) * 0.25 - nz * 2.5) && onLand(x1 + (x2 - x1) * 0.75 - nx * 2.5, z1 + (z2 - z1) * 0.75 - nz * 2.5)));
+        if (!strip) { tipsSkipped++; if (inDbg(mx, mz)) sa37Dbg.skipped.push([+x1.toFixed(2), +z1.toFixed(2), +x2.toFixed(2), +z2.toFixed(2), 'tip']); continue; }
+      }
       // extend both ends so adjacent faces OVERLAP at ring corners — offset
       // walls otherwise diverge at convex bends and open a V gap. The tiny
       // per-segment face-offset jitter keeps collinear overlaps off-plane.
       const EXT = 2.6;
-      x1 -= dx * EXT; z1 -= dz * EXT;
-      x2 += dx * EXT; z2 += dz * EXT;
       // the offset face must STAND IN WATER at both ends: across a narrow
       // notch/slip the face lands on the far bank (or on this one) and reads
       // as a pale shard leaning over the inlet — shrink the offset until it
       // fits, or skip the segment (pinned+deepened terrain hides the notch)
-      let base = 0;
+      // SA37: an end keeps the full overlap where its offset point stands in water and is drawn shorter (1 m, then none)
+      // where that point would reach land: a pier's side meeting the head of its slip (a concave corner, where the faces
+      // meet anyway) had lost its whole wall to the overlap alone (59 of 200 ring segments round the Whitehall slips).
+      // SG40: where even the edge's own end point offset into the water is on land (the side of a pier at its root, where
+      // the shore's line runs on), the end is drawn up to 4 m short of it, the face keeping at least half the edge: such an
+      // end had taken the whole wall with it, 30 to 370 m of a pier side (Brooklyn Bridge Park, Pier 97, the Bush Terminal
+      // piers, Sheepshead Bay's piers), and with the wall the apron, so the side stood as the terrain grid's 16 m stairs
+      const X1 = x1, Z1 = z1, X2 = x2, Z2 = z2, ENDS = SA37 ? [EXT, 1, 0, -0.5, -1, -1.5, -2, -3, -4] : [EXT];
+      let base = 0, e1 = EXT, e2 = EXT;
       for (const eo of [3.4, 1.8, 0.9]) {
-        if (!onLand(x1 + nx * eo, z1 + nz * eo) && !onLand(x2 + nx * eo, z2 + nz * eo)
-          && !onLand(mx + nx * eo, mz + nz * eo)) { base = eo; break; }
+        if (onLand(mx + nx * eo, mz + nz * eo)) continue;
+        const f1 = ENDS.find((e) => !onLand(X1 - dx * e + nx * eo, Z1 - dz * e + nz * eo));
+        const f2 = ENDS.find((e) => !onLand(X2 + dx * e + nx * eo, Z2 + dz * e + nz * eo));
+        if (f1 === undefined || f2 === undefined || segL + f1 + f2 < segL * 0.5) continue;
+        if (f1 < 0 || f2 < 0) wallsShortened++;
+        base = eo; e1 = f1; e2 = f2; break;
       }
-      if (!base) continue;
+      x1 = X1 - dx * e1; z1 = Z1 - dz * e1;
+      x2 = X2 + dx * e2; z2 = Z2 + dz * e2;
+      if (!base) { if (inDbg(mx, mz)) sa37Dbg.skipped.push([+x1.toFixed(2), +z1.toFixed(2), +x2.toFixed(2), +z2.toFixed(2), 'nobase']); continue; }
+      wallAdd(x1, z1, x2, z2);
+      if (inDbg(mx, mz)) sa37Dbg.walls.push([+x1.toFixed(2), +z1.toFixed(2), +x2.toFixed(2), +z2.toFixed(2), base]);
       const offJ = base + (((i * 2654435761) >>> 16) % 100) * 0.0002; // 0-2cm
-      const n = Math.max(1, Math.ceil((segL + EXT * 2) / STEP));
+      // WW39: the quads below are wound for a seaward normal on the LEFT of travel (n = (-dz, dx)). Where the sea lies on the
+      // right (n = (dz, -dx): most of the city's rings) the face looked inland, the cap down and the skirt out to sea; the
+      // ground material draws front faces only, so the face vanished from the water and the cap from the air, and what was
+      // left, the 1.6 m skirt, read as a plank floating off the shore with water behind it (Piers 15-17, Whitehall, Chelsea).
+      const wind = SA37 && dx * nz - dz * nx < 0 ? (buf, a, b, c, d) => pushQuad(buf, a, d, c, b) : pushQuad;
+      const n = Math.max(1, Math.ceil((segL + e1 + e2) / STEP));
       let prev = null;
       for (let k = 0; k <= n; k++) {
         const t = k / n;
         const px = x1 + (x2 - x1) * t, pz = z1 + (z2 - z1) * t;
         // esplanade grade just inland (8m: past the pinned strip, onto the
         // 2.5m promenade band, so the cap reads as a parapet above it)
-        const hL = Math.max(1.1, sampleTerrain(px - nx * 8, pz - nz * 8));
+        // A pier narrower than the terrain grid sees water 8 m inland, which capped its walls at 1.6 m and left them as
+        // planks floating beside an unresolved deck (the St. George ferry slips): the land's own grade counts wherever a
+        // probe 8, 4 or 2 m inland is on land (flat mode: the base plane or a landing plateau)
+        let hL = Math.max(1.1, sampleTerrain(px - nx * 8, pz - nz * 8));
+        if (FLAT) for (const d of [8, 4, 2]) { const qx = px - nx * d, qz = pz - nz * d; if (onLand(qx, qz)) { hL = Math.max(hL, landingPadAt(qx, qz) ?? BASE_Y); break; } }
         // wall rises to the bank: capping it below high esplanades let the
         // terrain ramp crest over the top and the dirt wedge showed anyway.
         // offJ height jitter keeps overlapping corner caps off-plane too.
@@ -3930,31 +4199,118 @@ log('shoreline');
           // water crossing triangle can break the surface a few meters past
           // the ring (cell-size smear of the boundary) and the wall must be
           // in FRONT of that strip, not behind it
-          pushQuad(tile.curb,
+          wind(tile.curb,
             [prev[0] + nx * offJ, -2.6, prev[1] + nz * offJ],
             [px + nx * offJ, -2.6, pz + nz * offJ],
             [px + nx * offJ, cur[2], pz + nz * offJ],
             [prev[0] + nx * offJ, prev[2], prev[1] + nz * offJ]);
           // cap band: a wharf-edge deck from the seaward lip back over the
           // ring to the land line (covers the crossing strip from above)
-          pushQuad(tile.curb,
+          wind(tile.curb,
             [prev[0] + nx * offJ, prev[2], prev[1] + nz * offJ],
             [px + nx * offJ, cur[2], pz + nz * offJ],
             [px - nx * 0.45, cur[2] - 0.04, pz - nz * 0.45],
             [prev[0] - nx * 0.45, prev[2] - 0.04, prev[1] - nz * 0.45]);
           // landward skirt: hides the terrain seam behind the wall
-          pushQuad(tile.curb,
+          wind(tile.curb,
             [px - nx * 0.45, cur[2] - 0.04, pz - nz * 0.45],
             [px - nx * 0.45, cur[2] - 1.6, pz - nz * 0.45],
             [prev[0] - nx * 0.45, prev[2] - 1.6, prev[1] - nz * 0.45],
             [prev[0] - nx * 0.45, prev[2] - 0.04, prev[1] - nz * 0.45]);
+          // WW39: the piece's floats in the tile's curb soup and two points behind it, checked once the ground is final
+          if (SA37) { const mx2 = (prev[0] + px) / 2, mz2 = (prev[1] + pz) / 2; wallPieces.push(tile, tile.curb.n - 54, mx2 - nx * 1.0, mz2 - nz * 1.0, mx2 - nx * 2.0, mz2 - nz * 2.0); }
           wallSegs++;
         }
         prev = cur;
       }
     }
   }
-  log(' shoreline wall segments:', wallSegs);
+  log(' shoreline wall segments:', wallSegs, '| short edges left to the water as spikes and tips (WW39):', tipsSkipped, '| ring edges drawn short of a concave corner (SG40):', wallsShortened);
+}
+// SA37 SHORE APRONS. The drawn terrain is a 16 m grid, and where a shore runs across it the ground stopped in 16 m stairs
+// up to ~20 m short of the land polygon: the bulkheads on the polygon's edge stood in the water as planks with water
+// behind them (FiDi's Piers 15 to 17 and the East River esplanade, in the live set too). Per 1 m row of a 16 m-grid
+// shore tile, each run of land between the polygon's own crossings (found as the pier raster finds them) is laid flat at
+// the drawn land grade wherever the drawn grid under it is lower, out to the polygon's edge: the apron's edge stays
+// within half a row of the ring, under the wall's cap band. A run reaches a ring edge only where that edge has its wall,
+// so no slab stands over the water without a face (islets, lake shores and slivers keep their terrain). The 4 m pier
+// tiles take them too (their stairs are 4 m); Columbia's 4 m tiles hold no shore. The runtime draws the section as
+// terrain (assemble.js, matId 7).
+// NO_SA37=1 leaves it out.
+let apronTiles = 0, apronTris = 0, apronDropped = 0;
+const apronRows = new Map();   // WW39: 1 m row (its z) -> the aprons' x spans [s, e, ...]
+const apronSpans = [];   // SG40: [its tile's apron buffer, float offset, row z, s, e] per strip
+const apronAt = (x, z) => { const a = apronRows.get(Math.floor(z)); if (a) for (let i = 0; i < a.length; i += 2) if (x >= a[i] - 0.05 && x <= a[i + 1] + 0.05) return true; return false; };
+function shoreApron(t, grid) {
+  const out = new F32(64);
+  const R = resOf(t.tx, t.tz);
+  if (!SA37 || (R !== RES && !pierTiles.has(t.tx + '_' + t.tz))) return out;
+  const x0 = t.x0, z0 = t.z0, n = R + 1, C = TILE / R;
+  const segs = new Map();
+  const c0 = Math.floor(x0 / SHORE_CELL) - 1, c1 = Math.floor((x0 + TILE) / SHORE_CELL) + 1;
+  const r0 = Math.floor(z0 / SHORE_CELL) - 1, r1 = Math.floor((z0 + TILE) / SHORE_CELL) + 1;
+  for (let j = r0; j <= r1; j++) for (let i = c0; i <= c1; i++) {
+    const a = SHORE.get(`${i}_${j}`); if (!a) continue;
+    for (let k = 0; k < a.length; k += 4) segs.set(`${a[k]},${a[k + 1]},${a[k + 2]},${a[k + 3]}`, [a[k], a[k + 1], a[k + 2], a[k + 3]]);
+  }
+  if (!segs.size) return out;
+  const E = [...segs.values()];
+  const FY = BASE_Y - 0.12, LOW = FY - 0.25;   // assemble.js draws the grid 0.12 m under its samples
+  const flatCell = (i, j) => grid[j * n + i] >= BASE_Y - 0.01 && grid[j * n + i + 1] >= BASE_Y - 0.01
+    && grid[(j + 1) * n + i] >= BASE_Y - 0.01 && grid[(j + 1) * n + i + 1] >= BASE_Y - 0.01;
+  const cuts = t.railCuts.map(([cx, cz, yaw, hl, hw]) => [cx + x0, cz + z0, Math.cos(yaw), Math.sin(yaw), hl + 1, hw + 1]);
+  const inCut = (x, z) => cuts.some(([cx, cz, ux, uz, hl, hw]) => Math.abs((x - cx) * ux + (z - cz) * uz) <= hl && Math.abs(-(x - cx) * uz + (z - cz) * ux) <= hw);
+  for (let r = 0; r < TILE; r++) {
+    const za = z0 + r, zb = za + 1, z = za + 0.5;
+    const xs = [];   // [x where the ring crosses the row's centre line, that segment's dx/dz]
+    for (const [ax, az, bx, bz] of E) if ((az > z) !== (bz > z)) { const sl = (bx - ax) / (bz - az), x = ax + (z - az) * sl; if (x > x0 && x < x0 + TILE) xs.push([x, sl]); }
+    if (!xs.length) continue;   // a row no shore crosses is all land (a flat grid) or all water
+    xs.sort((a, b) => a[0] - b[0]);
+    const ends = [x0, ...xs.map((c) => c[0]), x0 + TILE], slopes = [0, ...xs.map((c) => c[1]), 0];
+    const jc = Math.min(R - 1, Math.floor((z - z0) / C));
+    let land = onLand(x0 + 1e-3, z);
+    for (let q = 0; q + 1 < ends.length; q++, land = !land) {
+      const a = ends[q], b = ends[q + 1];
+      if (!land || b - a < 0.05) continue;
+      const m = Math.max(1, Math.ceil(b - a)), step = (b - a) / m;
+      let k0 = -1;
+      for (let k = 0; k <= m; k++) {
+        let low = false;
+        if (k < m) {
+          const x = a + (k + 0.5) * step, ic = Math.min(R - 1, Math.floor((x - x0) / C));
+          low = !flatCell(ic, jc) && sampleGrid(grid, t.tx, t.tz, x, z) - 0.12 < LOW;
+        }
+        if (low && k0 < 0) k0 = k;
+        if (low || k0 < 0) continue;
+        // a run of low samples k0 .. k - 1: out to the ring where it reaches an end, one sample into the flat grid
+        // otherwise; an end on a ring edge needs that edge's wall
+        const k1 = k - 1;
+        const atA = k0 === 0 && q > 0, atB = k1 === m - 1 && q + 2 < ends.length;
+        let s = k0 === 0 ? a : a + (k0 - 1) * step, e = k1 === m - 1 ? b : a + (k1 + 2) * step;
+        k0 = -1;
+        const wA = !atA || wallNear(a, z, 1.0), wB = !atB || wallNear(b, z, 1.0);
+        if (inDbg((s + e) / 2, z)) sa37Dbg.runs.push([+s.toFixed(2), +e.toFixed(2), z, atA ? 1 : 0, atB ? 1 : 0, wA ? 1 : 0, wB ? 1 : 0]);
+        if (!wA || !wB) { apronDropped++; continue; }
+        const xm = (s + e) / 2;
+        if (landingPadAt(xm, z) !== null) continue;
+        if (cuts.length && (inCut(s, z) || inCut(xm, z) || inCut(e, z))) continue;
+        // an end on the ring follows its segment across the row (a trapezoid), so the edge is the ring's own line and not
+        // a 1 m sawtooth (it stays within 1.5 m of the row's crossing where a segment runs nearly along the row)
+        const hA = atA ? Math.max(-1.5, Math.min(1.5, slopes[q] * 0.5)) : 0, hB = atB ? Math.max(-1.5, Math.min(1.5, slopes[q + 1] * 0.5)) : 0;
+        let sT = s - hA, sB = s + hA, eT = e - hB, eB = e + hB;
+        if (sT > eT) sT = eT = (sT + eT) / 2;
+        if (sB > eB) sB = eB = (sB + eB) / 2;
+        sT = Math.max(x0, sT); sB = Math.max(x0, sB); eT = Math.min(x0 + TILE, eT); eB = Math.min(x0 + TILE, eB);
+        apronSpans.push(out, out.n, za, Math.min(sT, sB), Math.max(eT, eB));   // SG40
+        pushTri(out, sT, FY, za, eB, FY, zb, eT, FY, za);
+        pushTri(out, sT, FY, za, sB, FY, zb, eB, FY, zb);
+        apronTris += 2;
+        { let a = apronRows.get(za); if (!a) apronRows.set(za, (a = [])); a.push(Math.min(sT, sB), Math.max(eT, eB)); }   // WW39
+      }
+    }
+  }
+  if (out.n) apronTiles++;
+  return out;
 }
 
 log('medians');
@@ -4096,7 +4452,7 @@ if (!process.env.NO_MEDIANS)
 // ---------------------------------------------------------------- street lamps along roads
 log('lamps');
 for (const r of roads) {
-  if (r.rclass > 3 || r.level > 0) continue;
+  if (r.rclass > 3 || r.level > 0 || r.cut) continue;   // (RG44: not over a cut's hole)
   const L = polylineLength(r.pts);
   const spacing = r.rclass === 2 ? 30 : 36;
   const histCrook = false; // bishop's crook in historic districts — refine later
@@ -4467,17 +4823,16 @@ for (const lonlat of EXTRA_LAWNS) {
     subdivTri(pts3[0], pts3[1], pts3[2], LAWN_LIFT - 0.01, emitGrass);
   }
 }
-for (const b of BOROS) {
-  const f = `parks_${b}.geojson`;
-  if (!fs.existsSync(path.join(RAW, f))) continue;
-  const fc = loadJSON(f);
-  for (const feat of fc.features) {
-    const g = feat.geometry; if (!g) continue;
-    const polys = g.type === 'MultiPolygon' ? g.coordinates : [g.coordinates];
-    for (const poly of polys) {
-      const rings = poly.map((ring) => ring.map(([lon, lat]) => project(lon, lat)));
+// one park polygon (projected rings: outer first, then holes): lawn draped on the ground, park trees scattered over it
+// (`treeArea` m2 of lawn per tree; 0 = none). NYC Parks properties, the New Jersey landing patches and Gateway's land
+// cover all come through here.
+const parkOuters = [];   // NYC Parks outlines, so Gateway's cover does not lay a second lawn over one
+function parkPolygon(rings, treeArea = 260, lawn = true) {
+  {
+    {
       const outer = simplifyRing(rings[0], 1.2);
-      if (outer.length < 3) continue;
+      if (outer.length < 3) return;
+      if (lawn) {
       const flat = [], holeIdx = [];
       for (const p of outer) flat.push(p[0], p[1]);
       for (let hi = 1; hi < rings.length; hi++) {
@@ -4494,10 +4849,11 @@ for (const b of BOROS) {
         });
         subdivTri(pts3[0], pts3[1], pts3[2], LAWN_LIFT, emitGrass, 0, 10); // 10 m leaves: lawns hug the (now real) park relief
       }
+      }
       // scatter park trees
       const bb = ringBBox(outer);
       const area = Math.abs(signedArea(outer));
-      const nTrees = Math.min(1400, Math.floor(area / 260));
+      const nTrees = treeArea > 0 ? Math.min(1400, Math.floor(area / treeArea)) : 0;
       const rnd = mulberry((hash2(bb[0] | 0, bb[1] | 0) * 1e9) | 0);
       for (let i = 0; i < nTrees; i++) {
         const x = bb[0] + rnd() * (bb[2] - bb[0]), z = bb[1] + rnd() * (bb[3] - bb[1]);
@@ -4508,6 +4864,70 @@ for (const b of BOROS) {
       }
     }
   }
+}
+for (const b of BOROS) {
+  const f = `parks_${b}.geojson`;
+  if (!fs.existsSync(path.join(RAW, f))) continue;
+  const fc = loadJSON(f);
+  for (const feat of fc.features) {
+    const g = feat.geometry; if (!g) continue;
+    const polys = g.type === 'MultiPolygon' ? g.coordinates : [g.coordinates];
+    for (const poly of polys) {
+      const rings = poly.map((ring) => ring.map(([lon, lat]) => project(lon, lat)));
+      if (rings[0].length >= 3) parkOuters.push({ ring: rings[0], bb: ringBBox(rings[0]) });
+      parkPolygon(rings);
+    }
+  }
+}
+// the New Jersey landing patches read as the wooded shore they are (the Palisades, the Kill Van Kull and Arthur Kill
+// waterfront parks round the abutments), not as bare ground
+// (only inside the loaded data's tile range: a partial --boro run must not write lawn-only tiles over a borough it lacks)
+const inTileRange = (x, z) => { const tx = Math.floor(x / TILE), tz = Math.floor(z / TILE); return tx >= TX0 && tx <= TX1 && tz >= TZ0 && tz <= TZ1; };
+for (const L of LAND) if (L.landing && inTileRange((L.bbox[0] + L.bbox[2]) / 2, (L.bbox[1] + L.bbox[3]) / 2)) parkPolygon([L.outer], L.padY != null ? 140 : 320);
+// GATEWAY NATIONAL RECREATION AREA (federal land the NYC Parks file does not hold: Fort Wadsworth, Miller Field, Jacob
+// Riis Park, Fort Tilden, Breezy Point Tip, Floyd Bennett Field, the Jamaica Bay Wildlife Refuge, Canarsie Pier, Plumb
+// Beach). data/raw/osm_gateway.json (OSM, ODbL; tools/pipeline/fetch_osm_extras.mjs) holds each unit's outline and the
+// land cover in its box: grass, meadow, park and wetland become lawn, wood and scrub lawn with dense trees; beaches and
+// sand stay bare. Largest first; one inside another adds only its trees (no second lawn on the first); a unit with
+// under three cover areas inside it is laid as one lawn (its sand cut out as holes).
+if (fs.existsSync(path.join(RAW, 'osm_gateway.json'))) {
+  const GW = loadJSON('osm_gateway.json');
+  const inPark = (x, z) => parkOuters.some((p) => x >= p.bb[0] && x <= p.bb[2] && z >= p.bb[1] && z <= p.bb[3] && pointInPoly(x, z, p.ring));
+  let nArea = 0, nUnitFill = 0;
+  for (const [key, G] of Object.entries(GW)) {
+    const units = G.units.flatMap((u) => u.rings.map((r) => r.map(([lon, lat]) => project(lon, lat))));
+    if (!units.length) continue;
+    const inUnit = (x, z) => units.some((r) => pointInPoly(x, z, r));
+    const cand = [];
+    for (const c of G.cover) for (const ring of c.rings) {
+      const r = ring.map(([lon, lat]) => project(lon, lat));
+      if (r.length < 4) continue;
+      const [cx, cz] = centroid(r);
+      if (!inTileRange(cx, cz) || !BOROS.includes(boroAt(cx, cz))) continue;
+      if (!inUnit(cx, cz) || !onLand(cx, cz) || boroAt(cx, cz) === 0 || inPark(cx, cz)) continue;
+      cand.push({ kind: c.kind, r, cx, cz, area: Math.abs(signedArea(r)) });
+    }
+    cand.sort((a, b) => b.area - a.area);
+    const laid = [];
+    let nHere = 0;
+    for (const c of cand) {
+      if (c.kind === 'sand') continue;
+      const under = laid.some((l) => pointInPoly(c.cx, c.cz, l));
+      if (under && c.kind !== 'wood') continue;
+      parkPolygon([c.r], c.kind === 'wood' ? 90 : c.kind === 'wetland' ? 0 : 700, !under);
+      if (!under) laid.push(c.r);
+      nHere++;
+    }
+    if (nHere < 3) for (const r of units) {
+      const [cx, cz] = centroid(r);
+      if (!onLand(cx, cz) || !BOROS.includes(boroAt(cx, cz)) || !inTileRange(cx, cz)) continue;
+      const holes = cand.filter((c) => c.kind === 'sand' && c.r.every(([x, z]) => pointInPoly(x, z, r))).map((c) => c.r);
+      parkPolygon([r, ...holes], 500);
+      nUnitFill++;
+    }
+    nArea += nHere;
+  }
+  log(' Gateway National Recreation Area:', nArea, 'land-cover areas laid,', nUnitFill, 'unit outlines laid whole');
 }
 
 // ---------------------------------------------------------------- Columbia campus (OSM micro-map -> lawns/paths/brick/trees/benches; rest to runtime kit)
@@ -4869,106 +5289,403 @@ if (HAVE_CAMPUS && BOROS.includes(1)) { // campus is Manhattan data: a partial n
   log(' wrote public/data/columbia_campus.json');
 }
 
-// ---------------------------------------------------------------- bridges.json
-log('bridges');
-const bridgesOut = [];
-for (const [key, segs] of bridgeSegs) {
-  const def = BRIDGE_DEFS.find((d) => d.key === key);
-  // merge into strands: pick longest chain through endpoint graph
-  const eps = 8;
-  const kk = (p) => `${Math.round(p[0] / eps)}_${Math.round(p[1] / eps)}`;
-  const adj = new Map();
-  for (const s of segs) {
-    const a = kk(s.pts[0]), b = kk(s.pts[s.pts.length - 1]);
-    if (!adj.has(a)) adj.set(a, []);
-    if (!adj.has(b)) adj.set(b, []);
-    adj.get(a).push({ s, rev: false, to: b });
-    adj.get(b).push({ s, rev: true, to: a });
+// ---------------------------------------------------------------- RL36 rail at grade and in open cut
+// NYC Planimetric Database: Railroad Line (anc7-97cy, data/raw/rail_lines.geojson): one centreline per track. Codes
+// 2400 (railroad: at grade, and tunnels copied with no elevation), 2420 (embankment) and 2440 (open cut) are drawn here;
+// 2410 elevated and 2430 viaduct are left to the structures that already draw them (city/elevatedKit.js, the Park
+// Avenue and 125th Street viaduct kits), 2450 fences and 2465 abandoned lines are not drawn. Every 2 m a centreline is
+// classed: water, under a building footprint, inside a street (a carriageway and 3 m either side) or open. A grade
+// line is drawn only in the open: under a street it passes beneath (the street crosses over it; NYC has next to no
+// level crossings), under a building or the water it is in a tunnel. A cut line under a street for up to 60 m passes
+// under a street bridge (a soffit and two fascias below the road); longer, or under a building, it is in a tunnel, and
+// the cut ends at a portal wall. Embankments are drawn at grade (open item: their height and street underbridges).
+// The track: a bed of crushed stone (2.6 m sleeper zone at the top, shoulders sloping to 5.2 m), the sleepers drawn by
+// the ground shader across the bed (matId 20 + bearing), two rails 1,435 mm apart (head 72 mm, 0.18 m over the bed).
+// A cut: its floor 0.40 m over the water plane (the base plane is 3.24 m, so cuts are ~3 m deep in the flat city),
+// concrete walls 3.25 m off the outer tracks up to 0.35 m over grade, and its corridor cut out of the drawn terrain.
+log('rail');
+const RL = { tracks: 0, km: 0, cutKm: 0, crossings: 0, underRoads: 0, portals: 0, hiddenKm: 0 };
+if (fs.existsSync(path.join(RAW, 'rail_lines.geojson'))) {
+  const fc = loadJSON('rail_lines.geojson');
+  const GR = BASE_Y, CUT_FLOOR = 0.40, BED = 0.30, RAIL_H = 0.18, GAUGE2 = 0.7175, HEAD2 = 0.036;
+  const TOP2 = 1.3, SHOULDER2 = 2.6, WALL2 = 3.25, HOLE2 = 3.4;
+  // building footprints by 64 m cell
+  const BC = 64, bGrid = new Map();
+  for (const b of buildings) {
+    if (b.drop || !b.ring) continue;
+    const bb = ringBBox(b.ring);
+    b._bb = bb;
+    for (let gx = Math.floor(bb[0] / BC); gx <= Math.floor(bb[2] / BC); gx++) for (let gz = Math.floor(bb[1] / BC); gz <= Math.floor(bb[3] / BC); gz++) {
+      const k = gx + '_' + gz; let a = bGrid.get(k); if (!a) bGrid.set(k, (a = [])); a.push(b);
+    }
   }
-  // BFS diameter
-  const bfs = (start) => {
-    const dist = new Map([[start, 0]]);
-    const prev = new Map();
-    const q = [start];
-    while (q.length) {
-      const cur = q.shift();
-      for (const e of adj.get(cur) || []) {
-        if (!dist.has(e.to)) {
-          dist.set(e.to, dist.get(cur) + polylineLength(e.s.pts));
-          prev.set(e.to, { from: cur, e });
-          q.push(e.to);
+  const inBuilding = (x, z) => {
+    const a = bGrid.get(Math.floor(x / BC) + '_' + Math.floor(z / BC));
+    if (a) for (const b of a) if (x >= b._bb[0] && x <= b._bb[2] && z >= b._bb[1] && z <= b._bb[3] && pointInPoly(x, z, b.ring)) return true;
+    return false;
+  };
+  // land by 32 m shore cell: a cell no shore segment crosses is all one side, so one test answers for it
+  const landCell = new Map();
+  const isLand = (x, z) => {
+    const i = Math.floor(x / SHORE_CELL), j = Math.floor(z / SHORE_CELL), k = i + '_' + j;
+    if (SHORE.has(k)) return onLand(x, z);
+    let v = landCell.get(k);
+    if (v === undefined) landCell.set(k, (v = onLand((i + 0.5) * SHORE_CELL, (j + 0.5) * SHORE_CELL)));
+    return v;
+  };
+  const inTiles = (x, z) => { const tx = Math.floor(x / TILE), tz = Math.floor(z / TILE); return tx >= TX0 && tx <= TX1 && tz >= TZ0 && tz <= TZ1; };
+  // 1. the tracks, resampled and classed
+  const tracks = [];
+  for (const f of fc.features) {
+    const p = f.properties || {}, g = f.geometry;
+    const code = String(p.feat_code || '');
+    if (!g || !['2400', '2420', '2440'].includes(code)) continue;
+    const lines = g.type === 'MultiLineString' ? g.coordinates : [g.coordinates];
+    for (const line of lines) {
+      let pts = simplify(line.map(([lon, lat]) => project(lon, lat)), 0.3);
+      if (pts.length < 2) continue;
+      const L = polylineLength(pts);
+      if (L < 4) continue;
+      const [mx, mz] = alongPolyline(pts, L / 2);
+      if (!inTiles(mx, mz) && !inTiles(pts[0][0], pts[0][1]) && !inTiles(pts[pts.length - 1][0], pts[pts.length - 1][1])) continue;
+      tracks.push({ pts, L, cut: code === '2440', name: p.name || '' });
+    }
+  }
+  // cut tracks indexed by 16 m cell (a wall stands only where no other cut track runs within 6.2 m on that side)
+  const CC = 16, cutGrid = new Map();
+  tracks.forEach((t, ti) => {
+    if (!t.cut) return;
+    for (let i = 1; i < t.pts.length; i++) {
+      const [x1, z1] = t.pts[i - 1], [x2, z2] = t.pts[i];
+      for (let gx = Math.floor((Math.min(x1, x2) - 8) / CC); gx <= Math.floor((Math.max(x1, x2) + 8) / CC); gx++)
+        for (let gz = Math.floor((Math.min(z1, z2) - 8) / CC); gz <= Math.floor((Math.max(z1, z2) + 8) / CC); gz++) {
+          const k = gx + '_' + gz; let a = cutGrid.get(k); if (!a) cutGrid.set(k, (a = [])); a.push([ti, x1, z1, x2, z2]);
+        }
+    }
+  });
+  const nearOtherCut = (x, z, ti, r) => {
+    const a = cutGrid.get(Math.floor(x / CC) + '_' + Math.floor(z / CC));
+    if (a) for (const [tj, x1, z1, x2, z2] of a) {
+      if (tj === ti) continue;
+      const dx = x2 - x1, dz = z2 - z1, L2 = dx * dx + dz * dz || 1e-9;
+      const t = Math.max(0, Math.min(1, ((x - x1) * dx + (z - z1) * dz) / L2));
+      if (Math.hypot(x - (x1 + dx * t), z - (z1 + dz * t)) < r) return true;
+    }
+    return false;
+  };
+  // a sub-polyline from arc length s0 to s1
+  const subLine = (pts, s0, s1) => {
+    const out = [];
+    let acc = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const [x1, z1] = pts[i - 1], [x2, z2] = pts[i], l = Math.hypot(x2 - x1, z2 - z1);
+      if (acc + l >= s0 && acc <= s1) {
+        const a = Math.max(0, (s0 - acc) / (l || 1)), b = Math.min(1, (s1 - acc) / (l || 1));
+        if (!out.length) out.push([x1 + (x2 - x1) * a, z1 + (z2 - z1) * a]);
+        out.push([x1 + (x2 - x1) * b, z1 + (z2 - z1) * b]);
+      }
+      acc += l;
+    }
+    // long straights: a vertex every 32 m at most, so a piece goes to the tile it lies in
+    const dense = [out[0]];
+    for (let i = 1; i < out.length; i++) {
+      const [x1, z1] = out[i - 1], [x2, z2] = out[i], n = Math.max(1, Math.ceil(Math.hypot(x2 - x1, z2 - z1) / 32));
+      for (let k = 1; k <= n; k++) dense.push([x1 + ((x2 - x1) * k) / n, z1 + ((z2 - z1) * k) / n]);
+    }
+    return dense;
+  };
+  // +y facing triangle, both windings for vertical faces
+  const triUp = (buf, A, B, C) => {
+    if ((B[2] - A[2]) * (C[0] - A[0]) - (B[0] - A[0]) * (C[2] - A[2]) >= 0) pushTri(buf, A[0], A[1], A[2], B[0], B[1], B[2], C[0], C[1], C[2]);
+    else pushTri(buf, A[0], A[1], A[2], C[0], C[1], C[2], B[0], B[1], B[2]);
+  };
+  const quadUp = (buf, A, B, C, D) => { triUp(buf, A, B, C); triUp(buf, A, C, D); };
+  const quadBoth = (buf, A, B, C, D) => { pushQuad(buf, A, B, C, D); pushQuad(buf, A, D, C, B); };
+  // a vertical quad wound to face (fx, fz)
+  const quadFace = (buf, A, B, C, D, fx, fz) => {
+    const ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], vx = C[0] - A[0], vy = C[1] - A[1], vz = C[2] - A[2];
+    if ((uy * vz - uz * vy) * fx + (ux * vy - uy * vx) * fz >= 0) pushQuad(buf, A, B, C, D); else pushQuad(buf, A, D, C, B);
+  };
+  // per-vertex left normals (mitred, capped) of a polyline
+  const normals = (P) => P.map((p, i) => {
+    const a = P[Math.max(0, i - 1)], b = P[Math.min(P.length - 1, i + 1)];
+    const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1;
+    return [-dz / l, dx / l];
+  });
+  const off = (p, n, o, y) => [p[0] + n[0] * o, y, p[1] + n[1] * o];
+  // the track's bed, sleepers and rails over a polyline at bed base y0
+  const emitTrack = (P, y0, cut, ti, withBed = true) => {
+    const N = normals(P), yB = y0 + BED, yR = yB + RAIL_H;
+    for (let i = 1; i < P.length; i++) {
+      const a = P[i - 1], b = P[i], na = N[i - 1], nb = N[i];
+      if (!inTiles((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)) continue;
+      const t = tileFor((a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+      if (withBed) {
+        // the sleeper bed: its bearing (mod pi) rides in the matId for the ground shader
+        const bear = ((Math.atan2(b[1] - a[1], b[0] - a[0]) % Math.PI) + Math.PI) % Math.PI;
+        const mid = 20 + 0.45 * (bear / Math.PI);
+        const n0 = t.rtop.n;
+        quadUp(t.rtop, off(a, na, TOP2, yB), off(b, nb, TOP2, yB), off(b, nb, -TOP2, yB), off(a, na, -TOP2, yB));
+        for (let k = (t.rtop.n - n0) / 3; k > 0; k--) t.rtopA.push(mid);
+        // shoulders down to the base, both sides
+        for (const sd of [1, -1]) quadUp(t.rbal, off(a, na, sd * TOP2, yB), off(b, nb, sd * TOP2, yB), off(b, nb, sd * SHOULDER2, y0 + 0.01), off(a, na, sd * SHOULDER2, y0 + 0.01));
+      }
+      // the rails: head top + both flanks
+      for (const sd of [1, -1]) {
+        const o = sd * GAUGE2, yr = withBed ? yR : y0;
+        quadUp(t.rsteel, off(a, na, o - HEAD2, yr), off(b, nb, o - HEAD2, yr), off(b, nb, o + HEAD2, yr), off(a, na, o + HEAD2, yr));
+        if (withBed) for (const e of [-HEAD2, HEAD2]) {
+          const fx = (na[0] + nb[0]) * Math.sign(e), fz = (na[1] + nb[1]) * Math.sign(e);   // each flank faces away from its rail
+          quadFace(t.rsteel, off(a, na, o + e, yB + 0.03), off(b, nb, o + e, yB + 0.03), off(b, nb, o + e, yr), off(a, na, o + e, yr), fx, fz);
         }
       }
     }
-    let far = start, fd = 0;
-    for (const [k2, d] of dist) if (d > fd) { fd = d; far = k2; }
-    return { far, fd, prev };
   };
-  const first = adj.keys().next().value;
-  const r1 = bfs(first);
-  const r2 = bfs(r1.far);
-  // reconstruct path r1.far -> r2.far
-  const chain = [];
-  let cur = r2.far;
-  while (cur !== r1.far && r2.prev.has(cur)) {
-    const { from, e } = r2.prev.get(cur);
-    chain.unshift(e);
-    cur = from;
-  }
-  let pts = [];
-  for (const e of chain) {
-    const p = e.rev ? [...e.s.pts].reverse() : e.s.pts;
-    if (pts.length) pts.pop();
-    pts = pts.concat(p);
-  }
-  if (pts.length < 2) { pts = segs[0].pts; }
-  pts = simplify(pts, 1.0);
-  const L = polylineLength(pts);
-  // find in-water run
-  let wStart = -1, wEnd = -1;
-  const NSAMP = 60;
-  for (let i = 0; i <= NSAMP; i++) {
-    const [x, z] = alongPolyline(pts, (i / NSAMP) * L);
-    const water = !onLand(x, z);
-    if (water && wStart < 0) wStart = (i / NSAMP) * L;
-    if (water) wEnd = (i / NSAMP) * L;
-  }
-  if (wStart < 0) { wStart = L * 0.3; wEnd = L * 0.7; }
-  const clearance = def?.clearance ?? 10;
-  const endAY = Math.max(sampleTerrain(pts[0][0], pts[0][1]), 2.5);
-  const endBY = Math.max(sampleTerrain(pts[pts.length - 1][0], pts[pts.length - 1][1]), 2.5);
-  const apex = Math.max(clearance + 2, endAY + 3, endBY + 3);
-  const width = Math.max(...segs.map((s) => s.width), 12);
-  // deck profile: smooth ends->apex over water
-  const prof = (d) => {
-    const mid = (wStart + wEnd) / 2;
-    if (d < wStart) { const t2 = d / Math.max(1, wStart); return endAY + (apex - endAY) * smooth(t2); }
-    if (d > wEnd) { const t2 = (L - d) / Math.max(1, L - wEnd); return endBY + (apex - endBY) * smooth(t2); }
-    return apex;
+  // a cut's walls, floor strips and terrain holes over a polyline
+  const emitCut = (P, ti, under = false) => {
+    // under a street the walls stop at the bridge's soffit (no parapet through the roadway)
+    const N = normals(P), yTop = under ? GR - 0.9 : GR + 0.35;
+    for (let i = 1; i < P.length; i++) {
+      const a = P[i - 1], b = P[i], na = N[i - 1], nb = N[i];
+      const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2;
+      if (!inTiles(mx, mz)) continue;
+      const t = tileFor(mx, mz);
+      const segL = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      for (const sd of [1, -1]) {
+        const nm = [(na[0] + nb[0]) / 2, (na[1] + nb[1]) / 2];
+        if (nearOtherCut(mx + nm[0] * sd * WALL2, mz + nm[1] * sd * WALL2, ti, 3.2)) continue;
+        // floor strip from the shoulder to the wall, the wall, its coping
+        quadUp(t.rbal, off(a, na, sd * SHOULDER2, CUT_FLOOR), off(b, nb, sd * SHOULDER2, CUT_FLOOR), off(b, nb, sd * (WALL2 + 0.05), CUT_FLOOR), off(a, na, sd * (WALL2 + 0.05), CUT_FLOOR));
+        quadBoth(t.rwall, off(a, na, sd * WALL2, CUT_FLOOR - 0.05), off(b, nb, sd * WALL2, CUT_FLOOR - 0.05), off(b, nb, sd * WALL2, yTop), off(a, na, sd * WALL2, yTop));
+        if (!under) {
+          quadUp(t.rwall, off(a, na, sd * WALL2, yTop), off(b, nb, sd * WALL2, yTop), off(b, nb, sd * (WALL2 + 0.4), yTop), off(a, na, sd * (WALL2 + 0.4), yTop));
+          quadBoth(t.rwall, off(a, na, sd * (WALL2 + 0.4), yTop), off(b, nb, sd * (WALL2 + 0.4), yTop), off(b, nb, sd * (WALL2 + 0.4), GR - 0.2), off(a, na, sd * (WALL2 + 0.4), GR - 0.2));
+        }
+      }
+      // the corridor out of the drawn terrain, in every tile the rectangle reaches
+      const yaw = Math.atan2(b[1] - a[1], b[0] - a[0]), hl = segL / 2 + 0.6, hw = HOLE2;
+      const rx = Math.abs(Math.cos(yaw)) * hl + Math.abs(Math.sin(yaw)) * hw, rz = Math.abs(Math.sin(yaw)) * hl + Math.abs(Math.cos(yaw)) * hw;
+      for (let tx = Math.floor((mx - rx) / TILE); tx <= Math.floor((mx + rx) / TILE); tx++) for (let tz = Math.floor((mz - rz) / TILE); tz <= Math.floor((mz + rz) / TILE); tz++) {
+        if (tx < TX0 || tx > TX1 || tz < TZ0 || tz > TZ1) continue;
+        const tt = tileFor(tx * TILE + 1, tz * TILE + 1);
+        tt.railCuts.push([+(mx - tt.x0).toFixed(2), +(mz - tt.z0).toFixed(2), +yaw.toFixed(4), +hl.toFixed(2), hw]);
+      }
+    }
   };
-  const smooth = (t2) => t2 * t2 * (3 - 2 * Math.min(1, Math.max(0, t2)));
-  const deck = [];
-  for (let d = 0; d <= L + 0.01; d += Math.max(8, L / 200)) {
-    const dd = Math.min(d, L);
-    const [x, z] = alongPolyline(pts, dd);
-    deck.push([+x.toFixed(1), +prof(dd).toFixed(1), +z.toFixed(1)]);
-  }
-  // towers
-  const towers = [];
-  if (def && (def.type === 'suspension' || def.type === 'cantilever')) {
-    const tf = def.type === 'suspension' ? [0.22, 0.78] : [0.28, 0.72];
-    for (const f of tf) {
-      const d = wStart + (wEnd - wStart) * f;
-      const [x, z, dx, dz] = alongPolyline(pts, d);
-      towers.push({ x: +x.toFixed(1), z: +z.toFixed(1), dirx: +dx.toFixed(3), dirz: +dz.toFixed(3), deckY: +prof(d).toFixed(1) });
+  // a street bridge over a cut: soffit under the road and a fascia either side, across the corridor
+  const emitUnderRoad = (P) => {
+    if (P.length < 2) return;
+    const N = normals(P), ySoffit = GR - 0.9, yDeck = GR + 0.2, A = P[0], B = P[P.length - 1], nA = N[0], nB = N[N.length - 1];
+    const t = tileFor((A[0] + B[0]) / 2, (A[1] + B[1]) / 2);
+    const w = WALL2;
+    const s0 = off(A, nA, w, ySoffit), s1 = off(B, nB, w, ySoffit), s2 = off(B, nB, -w, ySoffit), s3 = off(A, nA, -w, ySoffit);
+    pushQuad(t.rwall, s0, s1, s2, s3); pushQuad(t.rwall, s0, s3, s2, s1);
+    for (const [Q, nQ] of [[A, nA], [B, nB]]) quadBoth(t.rwall, off(Q, nQ, w, ySoffit), off(Q, nQ, -w, ySoffit), off(Q, nQ, -w, yDeck), off(Q, nQ, w, yDeck));
+  };
+  const emitPortal = (Q, nQ) => {
+    const t = tileFor(Q[0], Q[1]);
+    quadBoth(t.rwall, off(Q, nQ, WALL2, CUT_FLOOR - 0.05), off(Q, nQ, -WALL2, CUT_FLOOR - 0.05), off(Q, nQ, -WALL2, GR + 0.35), off(Q, nQ, WALL2, GR + 0.35));
+  };
+  // 2. class every 2 m, merge into runs, apply the run rules, emit
+  tracks.forEach((T, ti) => {
+    const STEP = 2, n = Math.max(2, Math.ceil(T.L / STEP) + 1), cls = new Array(n);
+    for (let i = 0; i < n; i++) {
+      const d = Math.min(T.L, i * STEP), [x, z] = alongPolyline(T.pts, d);
+      cls[i] = !isLand(x, z) ? 'w' : inBuilding(x, z) ? 'b' : inCarriageway(x, z, GR + 0.145, null, 3.0) ? 'r' : 'o';
+    }
+    const runs = [];
+    for (let i = 0; i < n; i++) {
+      const s = Math.min(T.L, i * STEP);
+      if (runs.length && runs[runs.length - 1].c === cls[i]) runs[runs.length - 1].s1 = s;
+      else { if (runs.length) runs[runs.length - 1].s1 = s; runs.push({ c: cls[i], s0: s, s1: s }); }
+    }
+    runs[runs.length - 1].s1 = T.L;
+    // a grade line under a street is left out where the street is (NYC's lines pass under their street crossings; drawn
+    // as level crossings, the rails ran across the asphalt of every street bridge over a yard or a cut); a cut line runs
+    // on under a street bridge of up to 60 m
+    for (const r of runs) {
+      const len = r.s1 - r.s0;
+      if (r.c === 'o') r.k = 'open';
+      else if (r.c === 'r' && T.cut && len <= 60) r.k = 'under';
+      else { r.k = 'hidden'; if (r.c === 'r' && len <= 40) RL.crossings++; }
+    }
+    // a short open run between two hidden ones is a gap in the tunnel's data, not daylight
+    for (let i = 1; i + 1 < runs.length; i++) if (runs[i].k === 'open' && runs[i].s1 - runs[i].s0 < 12 && runs[i - 1].k === 'hidden' && runs[i + 1].k === 'hidden') runs[i].k = 'hidden';
+    RL.tracks++;
+    runs.forEach((r, ri) => {
+      const len = r.s1 - r.s0;
+      if (len < 0.5) return;
+      if (r.k === 'hidden') { RL.hiddenKm += len / 1000; return; }
+      const P = subLine(T.pts, r.s0, r.s1);
+      if (P.length < 2) return;
+      const y0 = T.cut ? CUT_FLOOR : GR + 0.01;
+      emitTrack(P, y0, T.cut, ti, true);
+      RL.km += len / 1000;
+      if (T.cut) {
+        emitCut(P, ti, r.k === 'under'); RL.cutKm += len / 1000;
+        if (r.k === 'under') { emitUnderRoad(P); RL.underRoads++; }
+        // a portal where the cut meets a tunnel
+        const N = normals(P);
+        if (ri > 0 && runs[ri - 1].k === 'hidden') { emitPortal(P[0], N[0]); RL.portals++; }
+        if (ri + 1 < runs.length && runs[ri + 1].k === 'hidden') { emitPortal(P[P.length - 1], N[N.length - 1]); RL.portals++; }
+      }
+    });
+  });
+  log(` rail: ${RL.tracks} track lines, ${RL.km.toFixed(1)} km drawn (${RL.cutKm.toFixed(1)} km in open cut), ${RL.crossings} streets crossing a grade line (the line left out under them), ${RL.underRoads} street bridges over cuts, ${RL.portals} tunnel portals, ${RL.hiddenKm.toFixed(1)} km in tunnels / under buildings / under streets / over water left out`);
+} else log(' rail: data/raw/rail_lines.geojson missing (fetch.mjs --rail)');
+
+// ---------------------------------------------------------------- RG44 roads in open cuts
+// A road CSCL puts below grade (an end under level 13: the Lincoln Tunnel's approaches in Dyer Avenue's cut, the Cross
+// Bronx Expressway's trench, the Grand Concourse's underpasses) is drawn down in a cut (roadY, CUT_PER_LEVEL): concrete
+// retaining walls 0.25 m off its edges from the floor to a 0.9 m parapet over grade with a coping, a kerb strip between
+// the asphalt and the wall, and its corridor cut out of the drawn terrain (the tiles' railCuts, which assemble.js cuts
+// from the grid). Where a street at grade crosses over it the walls stop under a soffit 0.6 m below the deck and the
+// street's run over the cut gets its fascias (a street bridge); under a building the road is in a tunnel (no walls, no
+// hole), and a road ending below grade with no cut road going on from it ends at a portal wall. Two cut roads side by side
+// (the ramps' bundles) share one trench: no wall stands in the other's carriageway.
+log('road cuts');
+const RG = { roads: 0, km: 0, bridges: 0, portals: 0, mouths: 0, tunnelM: 0 };
+if (RC44) {
+  const GRD = BASE_Y + 0.145, PARA = 0.9, SOFF = 0.6, WOFF = 0.25, COPE = 0.3, STEP = 3;
+  const BC = 64, bGrid = new Map();
+  for (const b of buildings) {
+    if (b.drop || !b.ring) continue;
+    const bb = b._bb || ringBBox(b.ring);
+    b._bb = bb;
+    for (let gx = Math.floor(bb[0] / BC); gx <= Math.floor(bb[2] / BC); gx++) for (let gz = Math.floor(bb[1] / BC); gz <= Math.floor(bb[3] / BC); gz++) {
+      const k = gx + '_' + gz; let a = bGrid.get(k); if (!a) bGrid.set(k, (a = [])); a.push(b);
     }
   }
-  bridgesOut.push({
-    key, name: segs[0].name || key, type: def?.type ?? 'girder', tower: def?.tower, foot: !!def?.foot,
-    towerH: def?.towerH ?? 0, clearance, width: +width.toFixed(1), promenade: !!def?.promenade,
-    deck, towers, waterRun: [+wStart.toFixed(1), +wEnd.toFixed(1)], length: +L.toFixed(1),
-  });
+  const inBuilding = (x, z) => {
+    const a = bGrid.get(Math.floor(x / BC) + '_' + Math.floor(z / BC));
+    if (a) for (const b of a) if (x >= b._bb[0] && x <= b._bb[2] && z >= b._bb[1] && z <= b._bb[3] && pointInPoly(x, z, b.ring)) return true;
+    return false;
+  };
+  const inT = (x, z) => { const tx = Math.floor(x / TILE), tz = Math.floor(z / TILE); return tx >= TX0 && tx <= TX1 && tz >= TZ0 && tz <= TZ1; };
+  const quadBoth = (buf, A, B, C, D) => { pushQuad(buf, A, B, C, D); pushQuad(buf, A, D, C, B); };
+  const quadUp = (buf, A, B, C, D) => {   // +y facing
+    const ux = B[0] - A[0], uz = B[2] - A[2], vx = C[0] - A[0], vz = C[2] - A[2];
+    if (uz * vx - ux * vz >= 0) pushQuad(buf, A, B, C, D); else pushQuad(buf, A, D, C, B);
+  };
+  const cutStubs = (n) => (n ? n.stubs.filter((s) => s.r.cut && s.level < 0).length : 0);
+  for (const r of roads) {
+    if (!r.cut || r.noGeom) continue;
+    const L = polylineLength(r.pts), w2 = r.width / 2;
+    if (L < 1) continue;
+    RG.roads++; RG.km += L / 1000;
+    const n = Math.max(1, Math.ceil(L / STEP));
+    const S = [];
+    for (let i = 0; i <= n; i++) {
+      const d = (i / n) * L, [x, z, dx, dz] = alongPolyline(r.pts, d), y = roadY(r, x, z, d, L);
+      S.push({ d, x, z, dx, dz, y, depth: GRD - y });
+    }
+    let run = null;   // a street bridge: consecutive steps under a carriageway at grade
+    let open = true;  // the step before was drawn open (not covered)
+    const ownDist = (x, z) => {   // plan distance to the road's own centreline
+      let m = 1e9;
+      for (let k = 1; k < r.pts.length; k++) {
+        const [x1, z1] = r.pts[k - 1], [x2, z2] = r.pts[k], dx = x2 - x1, dz = z2 - z1, l2 = dx * dx + dz * dz || 1e-9;
+        const u = Math.max(0, Math.min(1, ((x - x1) * dx + (z - z1) * dz) / l2));
+        m = Math.min(m, Math.hypot(x - x1 - dx * u, z - z1 - dz * u));
+      }
+      return m;
+    };
+    // a tunnel mouth at Q: a concrete headwall from the soffit to the parapet, and the dark of the bore a metre in
+    const mouth = (Q, Rr) => {
+      const t = tileFor(Q.x, Q.z), hw = w2 + WOFF, ex = Rr.x - Q.x, ez = Rr.z - Q.z, el = Math.hypot(ex, ez) || 1;
+      const ix = (ex / el) * 1.0, iz = (ez / el) * 1.0;
+      quadBoth(t.rwall, [Q.x - Q.dz * hw, GRD - SOFF, Q.z + Q.dx * hw], [Q.x + Q.dz * hw, GRD - SOFF, Q.z - Q.dx * hw],
+        [Q.x + Q.dz * hw, GRD + PARA, Q.z - Q.dx * hw], [Q.x - Q.dz * hw, GRD + PARA, Q.z + Q.dx * hw]);
+      quadBoth(t.gutter, [Q.x + ix - Q.dz * hw, Q.y - 0.05, Q.z + iz + Q.dx * hw], [Q.x + ix + Q.dz * hw, Q.y - 0.05, Q.z + iz - Q.dx * hw],
+        [Q.x + ix + Q.dz * hw, GRD - SOFF, Q.z + iz - Q.dx * hw], [Q.x + ix - Q.dz * hw, GRD - SOFF, Q.z + iz + Q.dx * hw]);
+      RG.mouths++;
+    };
+    const endRun = () => {
+      if (!run) return;
+      for (const Q of [run.a, run.b]) {
+        const t = tileFor(Q.x, Q.z), hw = w2 + WOFF;
+        quadBoth(t.rwall, [Q.x - Q.dz * hw, GRD - SOFF, Q.z + Q.dx * hw], [Q.x + Q.dz * hw, GRD - SOFF, Q.z - Q.dx * hw],
+          [Q.x + Q.dz * hw, GRD + 0.05, Q.z - Q.dx * hw], [Q.x - Q.dz * hw, GRD + 0.05, Q.z + Q.dx * hw]);
+      }
+      RG.bridges++;
+      run = null;
+    };
+    for (let i = 1; i < S.length; i++) {
+      const a = S[i - 1], b = S[i];
+      const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;
+      if (!inT(mx, mz)) { endRun(); continue; }
+      if (a.depth < 0.25 && b.depth < 0.25) { endRun(); continue; }   // at grade: the ribbon alone
+      // under a building, or within 25 m of the shore (the FDR under Carl Schurz Park's and the UN's esplanades, the BQE
+      // under the Brooklyn Heights Promenade: a waterfront deck, and an open trench there took the land from the shore):
+      // covered, a tunnel; where an open run goes in, a tunnel mouth
+      if (inBuilding(mx, mz) || shoreDist(mx, mz, 25) < 25) {
+        endRun(); RG.tunnelM += b.d - a.d;
+        if (open && a.depth > SOFF + 1.2) mouth(a, b);
+        open = false;
+        continue;
+      }
+      if (!open && i > 1 && a.depth > SOFF + 1.2) mouth(a, a.d > 0 ? S[i - 2] : b);
+      open = true;
+      const t = tileFor(mx, mz);
+      const under = inCarriageway(mx, mz, GRD, [r], 4.6) && a.depth > SOFF + 0.4 && b.depth > SOFF + 0.4;   // (its sidewalks too)
+      // the kerb strips and the walls, each side unless another cut road's carriageway is there (a shared trench)
+      for (const sd of [1, -1]) {
+        const o = sd * (w2 + WOFF), o0 = sd * w2;
+        const pa = [a.x - a.dz * o, a.z + a.dx * o], pb = [b.x - b.dz * o, b.z + b.dx * o];
+        const shared = inCarriageway((pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2, (a.y + b.y) / 2, [r], 0.3);
+        if (shared) continue;   // (and no kerb strip on the other road's lanes)
+        // nor on its own: on the inside of a tight bend one segment's strip falls on the next segment's lanes
+        const kx = (a.x + b.x) / 2 - ((a.dz + b.dz) / 2) * (o0 + sd * WOFF / 2), kz = (a.z + b.z) / 2 + ((a.dx + b.dx) / 2) * (o0 + sd * WOFF / 2);
+        if (ownDist(kx, kz) < w2 - 0.05) continue;
+        quadUp(t.curb, [a.x - a.dz * o0, a.y + 0.01, a.z + a.dx * o0], [b.x - b.dz * o0, b.y + 0.01, b.z + b.dx * o0],
+          [pb[0], b.y + 0.01, pb[1]], [pa[0], a.y + 0.01, pa[1]]);
+        const topA = under ? GRD - SOFF : GRD + PARA, topB = topA;
+        quadBoth(t.rwall, [pa[0], a.y - 0.05, pa[1]], [pb[0], b.y - 0.05, pb[1]], [pb[0], topB, pb[1]], [pa[0], topA, pa[1]]);
+        if (!under) {
+          const oc = sd * (w2 + WOFF + COPE);
+          const ca = [a.x - a.dz * oc, a.z + a.dx * oc], cb = [b.x - b.dz * oc, b.z + b.dx * oc];
+          quadUp(t.rwall, [pa[0], topA, pa[1]], [pb[0], topB, pb[1]], [cb[0], topB, cb[1]], [ca[0], topA, ca[1]]);
+          quadBoth(t.rwall, [ca[0], topA, ca[1]], [cb[0], topB, cb[1]], [cb[0], BASE_Y - 0.2, cb[1]], [ca[0], BASE_Y - 0.2, ca[1]]);
+        }
+      }
+      if (under) {
+        // the soffit under the street, across the trench
+        const hw = w2 + WOFF;
+        pushQuad(t.rwall, [a.x + a.dz * hw, GRD - SOFF, a.z - a.dx * hw], [b.x + b.dz * hw, GRD - SOFF, b.z - b.dx * hw],
+          [b.x - b.dz * hw, GRD - SOFF, b.z + b.dx * hw], [a.x - a.dz * hw, GRD - SOFF, a.z + a.dx * hw]);
+        pushQuad(t.rwall, [a.x - a.dz * hw, GRD - SOFF, a.z + a.dx * hw], [b.x - b.dz * hw, GRD - SOFF, b.z + b.dx * hw],
+          [b.x + b.dz * hw, GRD - SOFF, b.z - b.dx * hw], [a.x + a.dz * hw, GRD - SOFF, a.z - a.dx * hw]);
+        if (!run) run = { a, b }; else run.b = b;
+      } else endRun();
+      // the corridor out of the drawn terrain, in every tile the rectangle reaches
+      const segL = Math.hypot(b.x - a.x, b.z - a.z), yaw = Math.atan2(b.z - a.z, b.x - a.x), hl = segL / 2 + 0.3, hw = w2 + WOFF + 0.05;
+      const rx = Math.abs(Math.cos(yaw)) * hl + Math.abs(Math.sin(yaw)) * hw, rz = Math.abs(Math.sin(yaw)) * hl + Math.abs(Math.cos(yaw)) * hw;
+      for (let tx = Math.floor((mx - rx) / TILE); tx <= Math.floor((mx + rx) / TILE); tx++) for (let tz = Math.floor((mz - rz) / TILE); tz <= Math.floor((mz + rz) / TILE); tz++) {
+        if (tx < TX0 || tx > TX1 || tz < TZ0 || tz > TZ1) continue;
+        const tt = tileFor(tx * TILE + 1, tz * TILE + 1);
+        tt.railCuts.push([+(mx - tt.x0).toFixed(2), +(mz - tt.z0).toFixed(2), +yaw.toFixed(4), +hl.toFixed(2), +hw.toFixed(2)]);
+      }
+    }
+    endRun();
+    // portals: an end below grade that no other cut road goes on from (a tunnel mouth)
+    for (const [Q, nd] of [[S[0], r.nodeA], [S[S.length - 1], r.nodeB]]) {
+      if (Q.depth < 1 || cutStubs(nd) >= 2 || !inT(Q.x, Q.z)) continue;
+      const t = tileFor(Q.x, Q.z), hw = w2 + WOFF;
+      quadBoth(t.rwall, [Q.x - Q.dz * hw, Q.y - 0.05, Q.z + Q.dx * hw], [Q.x + Q.dz * hw, Q.y - 0.05, Q.z - Q.dx * hw],
+        [Q.x + Q.dz * hw, GRD + PARA, Q.z - Q.dx * hw], [Q.x - Q.dz * hw, GRD + PARA, Q.z + Q.dx * hw]);
+      RG.portals++;
+    }
+  }
+  log(' roads in cuts:', RG.roads, '|', RG.km.toFixed(1), 'km | street bridges over them:', RG.bridges, '| portals:', RG.portals, '| covered (under buildings, at the shore):', RG.tunnelM.toFixed(0), 'm, tunnel mouths:', RG.mouths);
 }
+
+// ---------------------------------------------------------------- bridges.json
+// (tools/pipeline/bridges.mjs: the inputs it reads from this compile go beside bridges.json, so the records can be
+// rebuilt from them alone with `node tools/pipeline/bridges.mjs <tiles dir>`)
+log('bridges');
+const bridgeIn = bridgeInputs({ segs: bridgeSegs, roads, LAND, sampleTerrain, LANDINGS, raw: RAW });
+fs.writeFileSync(path.join(OUT, 'bridge_inputs.json'), JSON.stringify(bridgeIn));
+const bridgesOut = buildBridgeRecords(bridgeIn, log);
 fs.writeFileSync(path.join(OUT, 'bridges.json'), JSON.stringify(bridgesOut));
 log('bridges written:', bridgesOut.map((b) => b.key).join(', '));
 
@@ -4989,6 +5706,84 @@ const manifest = { tile: TILE, macro: MACRO, tiles: {}, macros: {}, bounds: [WX0
     } catch { /* corrupt manifest — rebuild fresh */ }
   }
 }
+// WW39: every tile's shore aprons first (the wall check below reads them across tile edges), then the wall pieces with no
+// drawn ground behind them (neither the terrain at the land grade nor an apron, 1 and 2 m inland of the ring) come out: a
+// bulkhead in front of nothing is a plank in the water (the tips of Pier 16, a spit's single wall)
+const APRONS = new Map();
+for (const [key, t] of tiles) APRONS.set(key, shoreApron(t, buildTerrain(t.tx, t.tz)));
+// SG40: apron strips that reach no land come out before the walls are checked. A strip is laid per 1 m row between two
+// walled ring crossings, so where a pier's walls hold on some rows and not on others (a marina dock's T-head whose far side
+// is too narrow to wall, a stub between dropped rows) the rows that kept theirs stood out in the water as fragments, walls
+// and all. Strips within 1.5 m of each other in a row (one split at a tile edge, a dock's root beside the shore's strips)
+// or overlapping across adjacent rows (within 1 m) are one piece; a piece reaches land where land-grade terrain lies just
+// past one of its strips' ends or in the row beside it.
+let apronFragments = 0, apronFragmentStrips = 0;
+if (SA37 && apronSpans.length) {
+  const N = apronSpans.length / 5;
+  const par = new Int32Array(N); for (let i = 0; i < N; i++) par[i] = i;
+  const find = (i) => { while (par[i] !== i) { par[i] = par[par[i]]; i = par[i]; } return i; };
+  const uni = (a, b) => { a = find(a); b = find(b); if (a !== b) par[a] = b; };
+  const Z_ = (i) => apronSpans[i * 5 + 2], S_ = (i) => apronSpans[i * 5 + 3], E_ = (i) => apronSpans[i * 5 + 4];
+  const byRow = new Map();
+  for (let i = 0; i < N; i++) { let a = byRow.get(Z_(i)); if (!a) byRow.set(Z_(i), (a = [])); a.push(i); }
+  for (const a of byRow.values()) a.sort((p, q) => S_(p) - S_(q));
+  for (const [z, a] of byRow) {
+    for (let k = 1; k < a.length; k++) if (S_(a[k]) <= E_(a[k - 1]) + 1.5) uni(a[k], a[k - 1]);
+    const b = byRow.get(z + 1); if (!b) continue;
+    let j0 = 0;
+    for (const i of a) {
+      const s0 = S_(i), e0 = E_(i);
+      while (j0 < b.length && E_(b[j0]) <= s0 - 1) j0++;
+      for (let j = j0; j < b.length && S_(b[j]) < e0 + 1; j++) uni(i, b[j]);
+    }
+  }
+  const grade = (x, z) => sampleTerrain(x, z) - 0.12 >= BASE_Y - 0.4;
+  const reaches = new Set();
+  for (let i = 0; i < N; i++) {
+    const r = find(i); if (reaches.has(r)) continue;
+    const z = Z_(i), s0 = S_(i), e0 = E_(i);
+    let ok = grade(s0 - 0.75, z + 0.5) || grade(e0 + 0.75, z + 0.5);
+    for (let x = s0 - 0.5; !ok && x <= e0 + 0.5; x += 1) ok = grade(x, z - 0.5) || grade(x, z + 1.5);
+    if (ok) reaches.add(r);
+  }
+  // a piece that reaches no land is a fragment where undrawn land of the same structure lies beside it (in the rows just
+  // past its strips, at least 3 m2 and a twentieth of the piece's own area: the rest of the dock or pier whose walls did not
+  // hold); one bounded by water, walls and slivers is a dock drawn whole (a floating dock whose gangway is too narrow to
+  // wall), and one with a small gap at its root (a few undrawn rows where it meets the shore) is a pier nearly whole: both stay
+  const besideLand = new Map(), pieceArea = new Map(), drop = new Set();
+  for (let i = 0; i < N; i++) {
+    const r = find(i); if (reaches.has(r)) continue;
+    const z = Z_(i), s0 = S_(i), e0 = E_(i);
+    let n = besideLand.get(r) || 0;
+    for (let x = s0 + 0.5; x < e0; x += 1) for (const zz of [z - 0.5, z + 1.5]) if (onLand(x, zz) && !grade(x, zz) && !apronAt(x, zz)) n++;
+    besideLand.set(r, n); pieceArea.set(r, (pieceArea.get(r) || 0) + e0 - s0);
+  }
+  for (const [r, n] of besideLand) if (n >= 3 && n >= 0.05 * pieceArea.get(r)) drop.add(r);
+  if (drop.size) {
+    for (let i = 0; i < N; i++) {
+      if (!drop.has(find(i))) continue;
+      const a = apronSpans[i * 5].a, o = apronSpans[i * 5 + 1];
+      for (let k = o + 3; k < o + 18; k += 3) { a[k] = a[o]; a[k + 1] = a[o + 1]; a[k + 2] = a[o + 2]; }   // collapsed to a point
+      apronFragmentStrips++;
+    }
+    apronFragments = drop.size;
+    apronRows.clear();   // the rows' spans again, without the fragments: the wall check below reads them
+    for (let i = 0; i < N; i++) { if (drop.has(find(i))) continue; let a = apronRows.get(Z_(i)); if (!a) apronRows.set(Z_(i), (a = [])); a.push(S_(i), E_(i)); }
+  }
+  log(' shore apron pieces reaching no land, taken out as fragments (SG40):', apronFragments, 'pieces,', apronFragmentStrips, 'of', N, 'strips');
+}
+let wallsOut = 0;
+if (SA37) {
+  const drawn = (x, z) => sampleTerrain(x, z) - 0.12 >= BASE_Y - 0.4 || apronAt(x, z);
+  for (let i = 0; i < wallPieces.length; i += 6) {
+    const t = wallPieces[i], o = wallPieces[i + 1];
+    if (drawn(wallPieces[i + 2], wallPieces[i + 3]) || drawn(wallPieces[i + 4], wallPieces[i + 5])) continue;
+    const a = t.curb.a;
+    for (let k = o + 3; k < o + 54; k += 3) { a[k] = a[o]; a[k + 1] = a[o + 1]; a[k + 2] = a[o + 2]; }   // collapsed to a point
+    wallsOut++;
+  }
+  log(' shoreline wall pieces with no drawn ground behind them, taken out (WW39):', wallsOut, 'of', wallPieces.length / 6);
+}
 for (const [key, t] of tiles) {
   // FINAL RULE FILTER (asphalt is authoritative): drop any pavement tri whose
   // centroid sits inside a live carriageway — backstop over the emitter clamps
@@ -5006,6 +5801,7 @@ for (const [key, t] of tiles) {
     t.sidewalk.n = w;
   }
   const grid = buildTerrain(t.tx, t.tz);
+  const apron = APRONS.get(key) || shoreApron(t, grid);   // SA37 (computed before the loop: WW39)
   // buildings struct -> arrays
   const nB = t.bldg.length;
   const bldgMeta = new ArrayBuffer(nB * 44);
@@ -5052,7 +5848,7 @@ for (const [key, t] of tiles) {
     dvr.setUint8(o + 6, r.rclass | (r.noTraffic ? 0x80 : 0)); dvr.setInt8(o + 7, r.oneway);   // bit 7 = pedestrianised street, no traffic (tiledata.js strips it)
     dvr.setFloat32(o + 8, r.width, true);
     dvr.setUint8(o + 12, Math.min(255, r.lanes)); dvr.setUint8(o + 13, r.park);
-    dvr.setUint8(o + 14, r.level); dvr.setUint8(o + 15, Math.min(255, r.speed));
+    dvr.setUint8(o + 14, r.level < 0 ? 255 : r.level); dvr.setUint8(o + 15, Math.min(255, r.speed));   // (RG44: 255 = in a cut, below grade)
     dvr.setUint16(o + 16, r.nameIdx, true);
     // spare bytes 18/19: junction mouth distance per end, 0.25m units (0 = none)
     dvr.setUint8(o + 18, Math.min(255, Math.round((r.mouthA || 0) * 4)));
@@ -5079,6 +5875,7 @@ for (const [key, t] of tiles) {
   const file = `t_${key}.bin`;
   writeTile(path.join(OUT, file), {
     v: 1, tx: t.tx, tz: t.tz, origin: [t.x0, t.z0], names: t.names, nodes: t.nodesJson, res: resOf(t.tx, t.tz),
+    ...(t.railCuts.length ? { railCuts: t.railCuts } : {}),
   }, [
     { name: 'bldgXZ', array: t.bldgXZ.array },
     { name: 'bldg', array: new Uint8Array(bldgMeta) },
@@ -5101,12 +5898,19 @@ for (const [key, t] of tiles) {
     { name: 'busred', array: localize(t.busred) },
     { name: 'warn', array: localize(t.warn) },
     { name: 'warnIron', array: localize(t.warnIron) },
+    ...(apron.n ? [{ name: 'apron', array: localize(apron) }] : []),   // SA37 shore aprons (drawn as terrain)
+    ...(t.rtop.n || t.rsteel.n || t.rwall.n ? [
+      { name: 'rsteel', array: localize(t.rsteel) }, { name: 'rbal', array: localize(t.rbal) },
+      { name: 'rtop', array: localize(t.rtop) }, { name: 'rtopA', array: t.rtopA.array }, { name: 'rwall', array: localize(t.rwall) },
+    ] : []),
   ]);
   manifest.tiles[key] = { f: file, b: nB, r: nR, fu: nF, ...(nH ? { h: nH } : {}) };   // CY12: h = courtyard records
   written++;
 }
 tiles.clear(); // release every tile's geometry buffers before far LoD: the 4-boro run hit the 4.3 GB heap limit here (2026-09-03)
 log('tiles written:', written);
+if (SA37_DBG) fs.writeFileSync(path.join(OUT, '..', 'sa37_debug.json'), JSON.stringify(sa37Dbg));
+if (SA37) log(' shore aprons (SA37):', apronTiles, 'tiles,', apronTris, 'tris,', apronDropped, 'runs left to the water (no wall at their ring edge)');
 
 // ---------------------------------------------------------------- far LoD macros
 log('far LoD');
@@ -5182,8 +5986,10 @@ fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest));
 // texture that scales INDIRECT light only.
 {
   log('baking city AO');
-  const RES = 2048;
   const ax0 = WX0 - 60, az0 = WZ0 - 60, ax1 = WX1 + 60, az1 = WZ1 + 60;
+  // the texture grows with the city so its cell stays near 14 m: 2048 texels across the four boroughs' 40.6 km was a
+  // 14 x 20 m cell; the five boroughs' 47 km at 2048 would coarsen it to 23 m everywhere (AO_RES overrides)
+  const RES = Number(process.env.AO_RES) || Math.min(8192, Math.max(2048, Math.ceil(Math.max(ax1 - ax0, az1 - az0) / 14 / 64) * 64));
   const csx = (ax1 - ax0) / RES, csz = (az1 - az0) / RES;
   const top = new Float32Array(RES * RES); // blocker height above own ground
   for (const b of buildings) {
@@ -5260,5 +6066,60 @@ fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest));
   fs.writeFileSync(path.join(OUT, '..', 'textures', 'cityao.bin'), out);
   fs.writeFileSync(path.join(OUT, '..', 'textures', 'cityao.json'), JSON.stringify({ x0: ax0, z0: az0, x1: ax1, z1: az1, res: RES }));
   log('city AO baked:', RES + 'x' + RES, `cell ${csx.toFixed(1)}x${csz.toFixed(1)}m`);
+}
+// FB38 crown gate (crowngate.mjs): the runtime's tower pass (src/world/towers.js) run over every record of the written
+// set that takes it (after the manifest); every part must rest on the ground or on its own building within 0.5 m.
+// Logged and written beside the tiles (crown_gate.json); NO_CROWN_GATE=1 skips it.
+if (!process.env.NO_CROWN_GATE) {
+  const { crownGateTiles } = await import('./crowngate.mjs');
+  const cg = await crownGateTiles(OUT);
+  fs.writeFileSync(path.join(OUT, '..', 'crown_gate.json'), JSON.stringify(cg, null, 1));
+  log(' crown gate (FB38):', cg.buildings, 'buildings through the tower pass,', cg.walls, 'walls,', cg.failing.length, 'buildings with a part not resting on the ground or on its own building', cg.failing.length ? '(see crown_gate.json)' : '');
+  if (cg.failing.length) { log(' CROWN GATE FAILED'); process.exitCode = 3; }
+}
+// OV39 OVERLAYS (shared/overlay.js). LF39 (the buildings our footprint export lacks, the parking-lot cars, the NYCHA lawns)
+// and GF38 (125th Street's bare ground paved from the planimetric data) are baked against compiled tiles; keyed on file size
+// they went silent after the run 6 swap, when every tile changed. They are now baked here, against the tiles just written,
+// into <tiles>/overlays/ (which the page reads before the copy in public/data), each entry keyed on its tile's content,
+// and gated: a missing or stale overlay ends the compile with exit code 3. NO_OVERLAYS=1 skips the step.
+if (!process.env.NO_OVERLAYS) {
+  const { spawnSync } = await import('node:child_process');
+  const ovDir = path.join(OUT, 'overlays'), dumpDir = path.join(OUT, '..', 'gf38_dump');
+  const step = (cmd, args, env = {}) => {
+    const r = spawnSync(cmd, args, { env: { ...process.env, TILES_DIR: OUT, ...env }, encoding: 'utf8', maxBuffer: 1 << 28 });
+    return r.status === 0 ? null : `${cmd} ${args[0]}: ` + String(r.stderr || r.stdout || r.error || r.status).slice(-800);
+  };
+  let err = step('node', ['tools/ar34/ground/gf38_dump.mjs', dumpDir]);
+  if (!err) err = step('python3', ['tools/ar34/ground/gf38_bake.py', '--chain', dumpDir, '--tiles-dir', OUT, '--out', path.join(ovDir, 'gf38'), '--fresh']);
+  if (!err) err = step('node', ['tools/ar34/lotfix/lf39_bake.mjs'], { GF38_DIR: path.join(ovDir, 'gf38'), LF39_OUT: ovDir });
+  if (err) { log(' OVERLAYS FAILED:', err); process.exitCode = 3; }
+  else {
+    const { overlayGate, overlayLine } = await import('./overlaygate.mjs');
+    const og = overlayGate(OUT);
+    fs.writeFileSync(path.join(OUT, '..', 'overlay_gate.json'), JSON.stringify(og, null, 1));
+    log(' overlays (OV39):', overlayLine(og));
+    if (og.failed) { log(' OVERLAY GATE FAILED'); process.exitCode = 3; }
+  }
+}
+// TW39 TOWER GATE (towergate.mjs): every footprint over 60 m in the exports this compile read must be drawn at its height
+// (by a compiled record, or by an LF39 building of the set's overlays); written beside the tiles (tower_gate.json),
+// a failure ends the compile with exit code 3. NO_TOWER_GATE=1 skips it.
+if (!process.env.NO_TOWER_GATE) {
+  const { towerGate, towerLine } = await import('./towergate.mjs');
+  const tg = await towerGate(OUT, { minH: 60, footprints: FOOT_DIR });
+  fs.writeFileSync(path.join(OUT, '..', 'tower_gate.json'), JSON.stringify(tg, null, 1));
+  log(' tower gate (TW39):', towerLine(tg));
+  if (tg.failures) { log(' TOWER GATE FAILED:', tg.failures, 'footprints over 60 m not drawn at their height (see tower_gate.json)'); process.exitCode = 3; }
+}
+// SG40 SHORE GATE (shoregate.mjs): from the written tiles, per tile, the metres of shore with land behind it drawn as neither
+// a bulkhead nor ground (spikes and tips excluded), bulkheads with no ground behind them, and bulkheads facing inland; any
+// tile over its limits ends the compile with exit code 3 (the marina finger piers of runs 7 to 11 would have). Written
+// beside the tiles (shore_gate.json); NO_SHORE_GATE=1 skips it.
+if (SA37 && !process.env.NO_SHORE_GATE) {
+  const { shoreGate, shoreLine } = await import('./shoregate.mjs');
+  const sg = shoreGate(OUT, { baseY: BASE_Y, njPatches: NJ_PATCHES });
+  fs.writeFileSync(path.join(OUT, '..', 'shore_gate.json'), JSON.stringify(sg, null, 1));
+  log(' shore gate (SG40):', shoreLine(sg));
+  if (sg.failed) { log(' SHORE GATE FAILED:', sg.failing.length, 'tiles over the limits (see shore_gate.json):', sg.failing.slice(0, 8).map((f) => `${f.tile} ${f.leftM} m ${f.planks}p ${f.inland}i`).join(', ')); process.exitCode = 3; }
 }
 log('DONE. tiles:', written, 'macros:', macros.size, 'buildings:', buildings.filter((b) => !b.drop).length);

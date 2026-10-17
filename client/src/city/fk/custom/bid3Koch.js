@@ -2,7 +2,6 @@
 // fk/specs/bid3.js w125-132 does the shops, the brick piers, every window and the parapet; this adds what the kit has no
 // field for: the bands on the piers and their Corinthian capitals, the carved frieze panels and roundels, the belt and
 // main cornices with dentils and modillions, the stone string course and balustrade, the arcade's posts, the carved arch
-// spandrels, the attic's pier caps). Measured on orthographic elevations rectified out of: u from the east end of the front (the left end as
 // seen from the street), y over the sidewalk, w out of the wall. Six piers 5.69 m apart carry five bays; the building
 // stands 28.1 m to the top of the coping.
 import * as THREE from 'three';

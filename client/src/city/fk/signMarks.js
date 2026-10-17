@@ -1,4 +1,4 @@
-// AR33 SIGN: marks of the chains and shops on 125th Street, drawn from scratch on canvas. Each export is a logo
+// AR33 SIGN: marks of the chains and shops on 125th Street, drawn from scratch on canvas (shapes, colours and
 // drawer fn(ctx2d, w, h) for a SIGN's `logo` (docs/notes/ar33-signs.md): it paints on a transparent w x h canvas;
 // `fn.fonts` lists the fonts it sets text in (loaded before it runs). A segment uses one through its custom module
 // (`export { capitalOneBank } from '../signMarks.js'` in fk/custom/<seg>.js, then logo: '<seg>:capitalOneBank').
@@ -15,10 +15,8 @@ function fitFont(c, text, weightStyle, key, px, maxW) {
 
 // Capital One Bank (2329 8th Ave): the whole face (a lightbox with logoAt 'fill').
 export function capitalOneBank(c, w, h) {
-  // the face as on the 2329 8th Avenue corner: a deep navy field with
   // a faint pattern of thin light lines, "Capital" heavy, "One" a light italic with a tall O set lower, "Bank" bold and
   // lower again, the red swoosh rising thin over "pital", thickest right of the O and hooking down-left to a point under
-  // the "lO" join. Proportions are in units of the face height; the group is centred on a wider face.
   const g = c.createLinearGradient(0, 0, 0, h);
   g.addColorStop(0, '#1d2d7a'); g.addColorStop(0.5, '#253894'); g.addColorStop(1, '#1b2a72');
   c.fillStyle = g; c.fillRect(0, 0, w, h);
@@ -29,7 +27,6 @@ export function capitalOneBank(c, w, h) {
   for (let i = 0; i < 7; i++) { c.beginPath(); c.ellipse(w * (0.1 + i * 0.15), h * (1.3 + (i % 3) * 0.2), w * 0.42, h * (1.1 + i * 0.07), 0.15 * (i % 2 ? 1 : -1), Math.PI * 1.02, Math.PI * 1.75); c.stroke(); }
   for (let i = 0; i < 6; i++) { c.beginPath(); c.moveTo(w * (i * 0.19 - 0.05), 0); c.lineTo(w * (i * 0.19 + 0.12), h); c.stroke(); }
   c.restore();
-  // the group in face-height units: Capital u 0..1.15 (cap 0.36, baseline 0.69), One
   // 1.18..1.66 (cap 0.47, baseline 0.79), Bank 1.70..2.25 (cap 0.17, baseline 0.86); each word set to its measured width
   // (the real face is narrower than Lato); centred, shrunk to 92 % of the width if it would not fit
   const GW = 2.25, U = Math.min(h, (w * 0.92) / GW), ox = (w - GW * U) / 2, oy = (h - U) / 2;
@@ -45,7 +42,6 @@ export function capitalOneBank(c, w, h) {
   word('One', 'italic 700', 0.47, 1.18, 1.66, 0.79);           // Lato bold italic: the face BID1's drawer list loads
   word('Bank', '900', 0.17, 1.70, 2.25, 0.86);
   c.restore();
-  // the swoosh: outer edge S -> P1 -> tail T, inner edge back T -> P2 -> S
   const P = (u, v) => [X(u), Y(v)];
   const S = P(0.43, 0.245), C1 = P(1.035, 0.07), P1 = P(1.58, 0.335), C2 = P(1.6, 0.68), T = P(0.906, 0.898);
   const C3 = P(1.45, 0.62), P2 = P(1.45, 0.38), C4 = P(1.06, 0.1475);
@@ -138,7 +134,6 @@ export function spaBadge(c, w, h) {
 }
 spaBadge.fonts = ['Poppins-800'];
 
-// Orange Beauty Supply's roundel: an orange disc in a
 // silver ring that opens at the upper right, where the word runs out of the circle on a silver tongue; 'orange' in
 // rounded lower case, red-edged; a dark red stem curling off the ring at the upper left. For a channel sign's
 // logoAt 'left' (the kit raises it as a plate cut to this outline).

@@ -1,14 +1,15 @@
 // AR34 STATIONS: the street access of the IRT's 125th Street station (the 1 train, Manhattan Valley Viaduct) as the
 // 1931 mezzanine left it (docs/notes/ar34-stations.md):
-// * the mezzanine (fare control) under the tracks at the station's south end, hung in the tower bay between the bents
-// * the enclosed passageways east and west over Broadway's roadways on green plate girders;
-// * WEST: the passageway ends over the west sidewalk, where two enclosed escalators go down in opposite directions
-// along the sidewalk, one north to 125th Street, one south toward Tiemann Place (MTA entrance points 40.8157388
-// -73.9585275 and 40.8151608 -73.9584439); each lands in a brick foot house with the station sign and a globe;
-// * EAST: the head house over the east kerb (measured by VIADUCTS, mvvStation.js ST.house), the escalator facing south
-// to the sidewalk (MTA 40.8153339 -73.9588257) under a red standing-seam roof, and the L-shaped stair: its upper
-// flight an open steel stair over the roadway from the viaduct to a landing at the kerb, its lower flight beneath
-// the escalator down to the sidewalk (MTA 40.8152606 -73.9583715; the 2026-04 photograph from Broadway's median).
+//   * the mezzanine (fare control) under the tracks at the station's south end, hung in the tower bay between the bents
+//     at u -36.72 / -27.58 (Wikipedia "125th Street station (IRT Broadway-Seventh Avenue Line)", Exits: "a mezzanine
+//     LmXCwMu2 looking south shows the cream panelled box in the floor system);
+//   * WEST: the passageway ends over the west sidewalk, where two enclosed escalators go down in opposite directions
+//     along the sidewalk, one north to 125th Street, one south toward Tiemann Place (MTA entrance points 40.8157388
+//     -73.9585275 and 40.8151608 -73.9584439); each lands in a brick foot house with the station sign and a globe;
+//   * EAST: the head house over the east kerb (measured by VIADUCTS, mvvStation.js ST.house), the escalator facing south
+//     to the sidewalk (MTA 40.8153339 -73.9588257) under a red standing-seam roof, and the L-shaped stair: its upper
+//     flight an open steel stair over the roadway from the viaduct to a landing at the kerb, its lower flight beneath
+//     the escalator down to the sidewalk (MTA 40.8152606 -73.9583715; the 2026-04 photograph from Broadway's median).
 // Frame: vk/mvv.js (u along the line from the 125th St crossing, NNE +; l across, ESE +). The street is the flat datum
 // (gy); the floor of the mezzanine and the passageways 13.15 (VIADUCTS' measure of the east passageway).
 import * as THREE from 'three';
@@ -23,6 +24,8 @@ export const ST34 = !(Q && Q.get('st34') === '0');
 
 const TAN30 = Math.tan(Math.PI / 6);
 export const ACC = {
+  // the passageways' undersides read 12 deg: its floor above theirs, reached by a short stair down to the passageways,
+  // as the 2011 photograph from inside shows at the exit doors)
   mez: { u0: -36.0, u1: -28.3, l0: -3.9, l1: 3.9, y0: 14.6, y1: 17.6 },
   corr: { u0: -35.5, u1: -30.5, yF: 13.15, yG: 12.1, yC: 15.95 },
   // the west passageway's end over the sidewalk (the compiled west kerb at l ~-16.9, the building line ~-22.5)

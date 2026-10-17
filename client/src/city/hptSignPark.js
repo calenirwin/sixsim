@@ -31,7 +31,7 @@ export function pierGeo(yTop) {
     const nx = uz * inw, nz = -ux * inw;       // unit vector pointing into the deck
     const sec = EDGE.map(([a, b]) => [a * inw, b]);
     conc.member(sec, [x0, yTop - 0.006, z0], [x1, yTop - 0.006, z1], [0, 1, 0]);
-    // piles every 4.5 m under the edge: round timber piles with a diagonal brace each way between neighbours
+    // between pairs) with a diagonal brace each way between neighbours
     let prev = null;
     for (let d = 1.0; d < L - 0.5; d += 4.5) {
       const px = x0 + ux * d + nx * 0.5, pz = z0 + uz * d + nz * 0.5;
@@ -114,7 +114,6 @@ export function benchGeo(wood, iron) {
 let _M = null;
 function pMats() {
   if (_M) return _M;
-  // AR34 b4: the piers' fascia and piles in timber
   const iron = hmat('iron'), wood = hmat('wood'), conc = hmat('timber'), rail = hmat('railSteel'), piles = hmat('timber');
   const lantern = new THREE.MeshStandardMaterial({ color: 0xd8d4c4, roughness: 0.15, metalness: 0.0, emissive: 0xffc77a, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
   nightPatch(lantern, 'pkN1', `totalEmissiveRadiance *= 1.3 * ${NEON_ON};`);
@@ -172,7 +171,6 @@ export function buildBenchesAr33(group, list) {
 }
 
 // ---------------------------------------------------------------- the piers' timber deck (AR34)
-// The piers and the gantry platform are decked in weathered hardwood boards; the deck the tile carries under it (hptSign.js apply)
 // stays for the walkers' ground. Boards 0.14 m with 8 mm gaps, across the north pier's axis, butt joints and screw lines on the
 // joists every 0.6 m; one canvas of 2.96 x 2.96 m repeated.
 const DECK_AX = [0.967, 0.255], DECK_T = 2.96;
@@ -220,13 +218,11 @@ function deckTexture() {
 let _deckMat = null;
 export function deckMaterial() {
   if (_deckMat) return _deckMat;
-  // weathered to grey-brown
   const m = new THREE.MeshStandardMaterial({ map: deckTexture(), color: new THREE.Color(0.62, 0.7, 0.9), roughness: 0.86, metalness: 0 });
   LT(m);
   return (_deckMat = m);
 }
 // AR34 b4: the boards on the two piers only (hptSignData.js PIER_PARTS_AT); the gantries' platform between them is paved
-// the tile's paving under it
 const PIER_PARTS = PIER_PARTS_AT.map(([a, b]) => PIER.slice(a, b + 1));
 export function pierDeckGeo(y) {
   const pos = [], uv = [], nor = [];

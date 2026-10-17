@@ -36,6 +36,7 @@ import { cpbInside } from './cpBethesda.js';
 import { cpLmKeepOut } from './cpLandmarks.js';
 import { bridgeShrubSpots } from './cpBridges.js';   // CP34: the thickets at Gapstow's and Bow Bridge's ends
 import { lampKit, benchKit, basketKit, fenceKit } from './cpFurnKit.js';
+import { COLLIDERS } from './colliders.js';   // SPACE r2: the hoop fence as a walker's barrier
 import { cpBarkMat, elmForms, willowForms, shrubForms, fernForms, groundForms, lodSet, grassField, filmPath, ELM_H, ELM_W, WILLOW_H, WILLOW_W, SHRUB_H, SHRUB_W } from './cpFloraKit.js';
 import { mallSurface } from './cpMall.js';   // CP33: the Mall's promenade surface (cpMall.js)
 import { cpFarEnsure } from './cpFar.js';   // CP33: the park past the near tiles (cpFar.js)
@@ -221,6 +222,7 @@ if (typeof window !== 'undefined') window.__CP32F_GROUND = { groundAt, terrainY 
 const ROCK_STEP = [[2.5, 0], [-2.5, 0], [0, 2.5], [0, -2.5], [1.8, 1.8], [-1.8, 1.8], [1.8, -1.8], [-1.8, -1.8], [4, 0], [-4, 0], [0, 4], [0, -4]];
 // live claim sets and meshes, for the in-page A/B (window.__CP32F_SET / __CP32F_AB)
 const _sets = new Set(), _meshes = new Set();
+const _lampSeen = new Set();   // SPACE r2: the park lamps already in world/life.js lampSpots
 if (typeof window !== 'undefined') window.__CP32F_SETS = _sets;   // the tree audit (docs/notes/central-park-fix.md) reads the claims
 let _on = true;
 const claimSet = (inst, S) => { S.ids = S.spec.map(([p, x, y, z, rot, sW, sH, col]) => inst.claim(p, x, y, z, rot, sW, sH, sW, col)); };
@@ -771,6 +773,8 @@ function furnish(group, ctx, gy) {
     }
     n.fences = L.length;
     if (L.length) { const K = fenceKit(); group.add(lodSet('cp33:fence', L, [{ near: K.near, mid: K.far, mat: FM.iron, cast: false }], 26, 160, _meshes)); }
+    // SPACE r2 (city/colliders.js addBarrier): the walkers keep off the lawns behind the hoop fence (a panel is 2 m at sx 1)
+    for (const p of L) COLLIDERS.addBarrier(ctx.key, { x: p.x, z: p.z, hw: p.sx, hd: 0.05, rotY: p.yaw });
   }
   if (typeof window !== 'undefined') { const P = (window.__CP33F = window.__CP33F || { tiles: {} }); P.tiles[ctx.key] = { ...n, ms: +(performance.now() - t0).toFixed(1) }; }
 }
@@ -802,6 +806,12 @@ function lawnTest(ctx) {
 }
 export function build(group, ctx) {
   if (!CP32F) return;
+  // SPACE r2 (docs/notes/space-r2.md): the A/B set `_meshes` kept every park mesh it was given, and through mesh.parent every
+  // unloaded park tile with its sections and samplers; the tile's dispose() (world/assemble.js) now takes this tile's out
+  const release = new THREE.Object3D();
+  release.name = 'cp33:release';
+  release.userData.onDispose = () => group.traverse((o) => { _meshes.delete(o); });
+  group.add(release);
   try { cpFarEnsure(); } catch (e) { console.warn('[cp33] far park', e); }   // (once, under the streamer's macro group; cpFar.js)
   const elms = DIRECT ? claimTrees(group, ctx) : [];
   if (CP33L && DIRECT) { try { plant(group, ctx, elms || []); } catch (e) { console.warn('[cp33] plant', e); } }
@@ -847,7 +857,8 @@ export function build(group, ctx) {
         () => { const n = ENV.night.value, t = Math.min(1, Math.max(0, (n - 0.06) / 0.24)); M.glass.emissiveIntensity = 2.6 * t * t * (3 - 2 * t); }));
     }
     // the night light: a symmetric post top, warm 3000 K LED (world/night11.js FIXTURES[0]), the head 3.4 m up
-    for (const [x, y, z] of L) lampSpots.push([x, y, z, 0, 3.4, null]);
+    // (SPACE r2: once a lamp; each visit to the tile pushed them again)
+    for (const [x, y, z] of L) { const k = `${x.toFixed(1)},${z.toFixed(1)}`; if (_lampSeen.has(k)) continue; _lampSeen.add(k); lampSpots.push([x, y, z, 0, 3.4, null]); }
   }
   if (b.benches.length) {
     const L = b.benches.filter(([x, z]) => !onRock(x, z) && !(VG37 && vg37Blocked(x, z, 0, true))).map(([x, z, yaw]) => [x, gy(x, z), z, yaw]);   // (and no seat there)

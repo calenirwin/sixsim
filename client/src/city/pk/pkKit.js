@@ -73,6 +73,7 @@ export function lamp(q = 1, o = {}) {
   if (q) for (const [x, z] of [[-0.14, -0.14], [0.14, -0.14], [-0.14, 0.14], [0.14, 0.14]]) M.add('galv', lathe([[0.001, 0.03], [0.026, 0.03], [0.026, 0.07], [0.018, 0.085], [0.001, 0.09]], 6).translate(x, 0, z));
   // the base shoe and the tapered shaft, the hand hole
   // the cast base (a 0.43 m skirt, 0.65 m high, with the hand hole), then the tapered shaft
+  // under the cameras), else galvanised
   const pm = o.paint === 'white' ? 'whitePaint' : 'galv';
   M.add(pm, lathe([[0.001, 0.03], [0.215, 0.03], [0.215, 0.08], [0.2, 0.12], [0.19, 0.52], [0.15, 0.64], [0.118, 0.7]], s));
   M.add(pm, lathe([[0.116, 0.68], [0.105, 1.5], [0.094, 3.5], [0.083, 5.5], [0.072, 7.6], [0.066, H], [0.04, H + 0.03], [0.001, H + 0.05]], s));
@@ -83,14 +84,12 @@ export function lamp(q = 1, o = {}) {
     M.add('face:poleTags' + ((vk + 2) % 4), sleeve(0.1155, 0.1045, 0.9, 2.1, 16));
     M.add('face:poleGrime', sleeve(0.219, 0.219, 0.03, 0.08, 16), sleeve(0.204, 0.194, 0.12, 0.52, 16));
   }
-  // regulation plates on the pole, facing the road
   for (const pl of o.plates || []) {
     const sq = pl.f >= 5, w = 0.305, h = sq ? 0.305 : 0.457, y = pl.y ?? 3.6, r = 0.105 - (y - 1.5) * 0.0055 + 0.012;
     M.add('aluBack', rbox(w, h, 0.004, 0.003, 0, y, r + 0.002));
     M.add('face:park' + pl.f, plane(w - 0.004, h - 0.004).translate(0, y, r + 0.0045));
     if (q) for (const dy of [h * 0.3, -h * 0.3]) M.add('galvDark', cyl(r - 0.008, r - 0.008, 0.025, 12, y + dy - 0.0125, true));
   }
-  // the police cameras: two domes hung from a cross bracket and their box, at about 6 m
   if (o.cams) {
     const yc = o.camY || 6.0, rr = 0.079;
     // the shaft's radius at a height (the taper above), and the black band just proud of it
@@ -131,7 +130,6 @@ function sigHead(M, q, lensKeys) {
   // a three-section head, 0.36 x 1.07 x 0.26 m, origin at its centre; lenses face +z
   const w = 0.36, h = 1.07, d = 0.26;
   M.add('yellowSig', rbox(w, h, d, 0.03, 0, 0, 0, seg(q, 2, 1)));
-  // no backplate: NYC's heads hang bare
   for (let i = 0; i < 3; i++) {
     const y = (1 - i) * 0.345;
     M.add(lensKeys[i], disc(0.145, seg(q, 20, 8)).translate(0, y, d / 2 + 0.004));
@@ -192,7 +190,6 @@ export function poleSign(q = 1, p = {}) {
 export function pedHead(q = 1, grp = 'ew') {
   // 0.46 x 0.48 x 0.2 m, black; the face: the hand / person (left) and the countdown (right); faces +z
   const M = new Model();
-  // NYC's pedestrian heads are school-bus yellow, the face dark
   M.add('yellowSig', rbox(0.46, 0.48, 0.2, 0.02, 0, 0, 0));
   M.add('pedDark', plane(0.4, 0.4).translate(0, 0, 0.101));
   // the symbols in the near model only (a few pixels at most beyond the 110 m LOD radius; six keys in every far cell)
@@ -236,7 +233,6 @@ export function signalMast(q = 1, o = {}) {
       M.add('face:poleGrime', sleeve(0.0885, 0.0785, 0.06, 0.36, 14));
     }
   } else if (o.poleR) {
-    // a slim mast pole on a square
     // cast base (o.base 'square': 0.37 m, 0.5 m tall), a ball finial over the cross bar
     const r = o.poleR, bH = o.base === 'square' ? 0.5 : 0.12;
     if (o.base === 'square') {
@@ -265,7 +261,6 @@ export function signalMast(q = 1, o = {}) {
   }
   // the arm: a bolted clamp plate, a tapered tube rising `rise` per metre, from o.armY (default SIG.armY)
   const y0 = o.armY ?? SIG.armY;
-  // the arm sweeps up steeply off the pole and flattens toward the tip: height over its base at t
   // metres out, a quadratic through (0, 0), (0.45, 0.7) and (1, 1) of the full rise, level at the tip
   // (o.bow: how much of the rise comes early; 1.01 the default sweep, about 0.45 for the straighter Lenox NE arm, b4r4)
   const bow = o.bow ?? 1.01;
@@ -278,8 +273,6 @@ export function signalMast(q = 1, o = {}) {
     M.add('galv', tube([V(0, y0, 0.12 * ka), ...[0.22, 0.42, 0.62, 0.82, 1].map((f) => V(0, armAt(reach * f), reach * f))], (t) => (0.1 - 0.045 * t) * ka, seg(q, 14, 6), seg(q, 14, 6)));
     M.add('galv', lathe([[0.001, -0.005], [0.058, 0], [0.058, 0.02], [0.001, 0.03]], 10).rotateX(Math.PI / 2).translate(...tip));
     if (o.ext || o.ties) {
-      // the tie rods from the pole's top to the arm
-      // the cross bar on the pole's top, along the arm, and a rod from each of its ends
       const top = H + (o.ext || 0) - 0.12;
       M.add('galv', rod([0, top + 0.04, -0.45], [0, top + 0.04, 0.45], 0.03, 6));
       if (q) for (const sz of [-0.45, 0.45]) M.add('galv', cyl(0.036, 0.036, 0.05, 8, top + 0.015).translate(0, 0, sz));
@@ -334,7 +327,6 @@ export function signalMast(q = 1, o = {}) {
     P.add('face:mut' + sg.f, plane(w - 0.006, h - 0.006).translate(0, 0, 0.0012));
     let Mh;
     if (sg.at !== undefined) {
-      // hung from a short horizontal channel under the arm
       const t = Math.min(reach - 0.3, sg.at), yA = armAt(t), yc = yA - 0.1 - (sg.drop || 0) - h / 2;
       Mh = new THREE.Matrix4().makeRotationY(yaw).premultiply(new THREE.Matrix4().makeTranslation(0, yc, t));
       for (const dx of [-w * 0.3, w * 0.3]) {
@@ -352,7 +344,6 @@ export function signalMast(q = 1, o = {}) {
     }
     for (const [k, L] of P.parts) for (const g of L) M.add(k, g.clone().applyMatrix4(Mh));
   }
-  // a traffic camera: the gooseneck at the arm's tip and the dome
   if (o.cctv && reach > 1) {
     // the gooseneck rises about 0.95 m over the tip and the dome hangs just under its end (the levelled lenoxMast zoom)
     const ty = armAt(reach), gh = o.cctvH ?? 0.95, dy = gh - 0.13;

@@ -36,16 +36,13 @@ const DEF = {
   // AR34: the faces are smooth enamel on sheet aluminium (the photographs: no chips, no hammered grain), the orange-red of the
   // sunlit faces in the May 2026 photograph (rgb 122-143, 42-52, 27-33 there)
   sgFace: ['metal_painted', { tint: '#bf3a1e', dirt: 0.1, seed: 107, chips: 0, nrm: 0.2 }, { color: 0xbf3a1e, rough: 0.42, metal: 0.05 }],
-  // AR34: the gantries' paint is a smooth blue-black; the PBR paint
   // set's chips and grain read as a mottled camouflage on the house walls, so these two are plain paint (the fourth entry)
   gtSteel: ['steel_black', { tint: '#2a2d3a', dirt: 0.2, seed: 113 }, { color: 0x2a2d3a, rough: 0.5, metal: 0.3 }, { plain: true }],
   gtRoof: ['steel_black', { tint: '#30323c', dirt: 0.28, seed: 127 }, { color: 0x30323c, rough: 0.62, metal: 0.25 }, { plain: true }],
   towerSlab: ['concrete_precast', { tint: '#b7b3aa', dirt: 0.3, seed: 131 }, { color: 0xb7b3aa, rough: 0.9, metal: 0.0 }],
-  // AR34 b5: the greenway's split-face granite wall and its coping
   wallGranite: ['granite_grey', { tint: '#9c8a83', dirt: 0.3, seed: 137, nrm: 1.2 }, { color: 0x9c8a83, rough: 0.85, metal: 0.0 }],   // b5_c: the pink set read salmon at 1:1
   copeGranite: ['granite_grey_flamed', { tint: '#a0958e', dirt: 0.25, seed: 139 }, { color: 0xa0958e, rough: 0.7, metal: 0.0 }],
   mortar: ['concrete_precast', { tint: '#5e5853', dirt: 0.4, seed: 141 }, { color: 0x5e5853, rough: 0.95, metal: 0.0 }],
-  // AR34 b5: the rip-rap below the park south of the slip
   riprap: ['granite_grey_flamed', { tint: '#9a9893', dirt: 0.35, seed: 143, nrm: 1.0 }, { color: 0x9a9893, rough: 0.85, metal: 0.0 }],
   riprapWeed: ['granite_grey_flamed', { tint: '#56702f', dirt: 0.45, seed: 149, nrm: 1.0 }, { color: 0x56702f, rough: 0.7, metal: 0.0 }],
   sgCream: ['metal_painted', { tint: '#e6dcc6', dirt: 0.3, seed: 109 }, { color: 0xe6dcc6, rough: 0.5, metal: 0.05 }, { plain: true }],   // AR34: a clean cream lip (the set's chips read as grit)

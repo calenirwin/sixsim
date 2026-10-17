@@ -274,6 +274,7 @@ function kitMatO(name, o) {
     const [base, lv] = String(name).split('@'), lit = lv !== undefined ? +lv : 1;
     m = base === 'int_shop'
       ? levelHandle('shop', () => levelBase(IN({ color: 0xffffff, vertexColors: true, roughness: 0.8 }, 0.3, 0.7), 0.13, 1.3, false), [lit, 0, 0], `sh:${lit}`)
+      // are the brightest things behind the glass (CAPSULE's window p90 158 of 255, the twin's 63))
       : levelHandle('goods', () => levelBase(IN({ color: 0xffffff, vertexColors: true, roughness: 0.75 }, 0.3, 0.7), 0.22, 1.1, false), [lit, 0, 0], `gd:${lit}`);
     CACHE.set(key, m);
     return m;
@@ -306,7 +307,6 @@ function nightEmit(m, k = 1) {
 const S = (o) => { const m = applyCityAO(applyLightTrim(new THREE.MeshStandardMaterial(o))); m.shadowSide = THREE.DoubleSide; return m; };
 // AR34: an interior seen from the street by day takes only a share of the outdoor light (the room is lit through its
 // window, the sky light is not occluded by anything in the engine), so rooms, shops and their goods read dark behind the
-// a lit shop adds its own light (selfLit). kInd scales the indirect (sky, probe) light, kDir the
 // direct (sun through the opening, mostly shadowed by the wall already).
 function inside(m, kInd = 0.3, kDir = 0.7) {
   const prev = m.onBeforeCompile, prevKey = m.customProgramCacheKey;
@@ -533,6 +533,8 @@ function unbakeSkyMetal(m) {
 // (mid grey), not the sky, so the glass of the lower floors is darker than the glass of the top.
 function winGlass(o) {
   // (AR34 w2: f0 0.12, a sash with its storm window: four faces of glass; the sun's glint keeps a single pane's 0.05)
+  // (AR34 w2 b1: 0.2: at 0.12 the panes of s351 and of the Apollo (N253w_sq) read 71-106 / ~45 of 255 where the 2026-08 and
+  // two clean faces do)
   const f0 = o.f0 ?? 0.2, op = o.opacity ?? 0.36, dirt = o.dirt ?? 0.3, rough = o.rough ?? 0.03, cf = o.canyon ?? 0.26;
   const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color('#e4ecea'), roughness: rough, metalness: 0, transparent: true, opacity: op, depthWrite: false, vertexColors: true });
   mat.blending = THREE.CustomBlending;
@@ -586,6 +588,7 @@ function winGlass(o) {
         // below a 15-30 degree reflection off the pane, as a real reflection there is a blur of fronts and sky)
         kgAA *= smoothstep(0.25, 0.5, dot(Rw, Nw)) * (1.0 - smoothstep(45.0, 80.0, kgT));
         float kgB = floor(kgU / 11.0);
+        // (AR34 w2 b1: the masonry opposite in a neutral light (the horizon's luminance, a third of its colour): with the
         vec3 kgHn = mix(vec3(dot(uHorC, vec3(0.2126, 0.7152, 0.0722))), uHorC, 0.35);
         vec3 kgWall = kgHn * mix(vec3(1.05, 0.9, 0.78), vec3(0.86, 0.87, 0.9), kgH(vec2(kgB, 7.0))) * (0.7 + 0.6 * kgH(vec2(kgB, 3.0))) * uRefl;
         float kgWin = (1.0 - smoothstep(0.17, 0.22, abs(fract(kgU / 2.7) - 0.5))) * (1.0 - smoothstep(0.2, 0.26, abs(fract((kgHy - 4.0) / 3.3) - 0.5))) * step(4.6, kgHy);
@@ -771,7 +774,6 @@ const KIT_OWN = {
   // blinds and curtains (vertex colours), glowing when the room is lit
   int_blind: () => IN({ color: 0xffffff, vertexColors: true, roughness: 0.85, side: THREE.DoubleSide }, 0.6, 0.85),
   int_blindLit: () => nightEmit(IN({ color: 0xffffff, vertexColors: true, roughness: 0.85, side: THREE.DoubleSide, emissive: 0xffe2b8, emissiveIntensity: 0.4 }, 0.6, 0.85)),
-  // a shop: lit from inside, by day as well. AR34: next (BID1's a1 plates) a lit shop reads
   // mid to dark grey behind its glass by day, never white: a share of the outdoor light (inside) and a low day emission
   int_shop: (o) => selfLit(IN({ color: 0xffffff, vertexColors: true, roughness: 0.8 }, 0.3, 0.7), 0.13 * (o.lit ?? 1), 1.3 * (o.lit ?? 1)),
   int_shopLight: () => nightEmit(S({ color: 0xf6f4ee, roughness: 0.5, emissive: 0xfff4e2, emissiveIntensity: 1.3 })),
@@ -785,6 +787,7 @@ const KIT_OWN = {
   // the fire escape's iron (painted black, rust at the joints comes with MATS's steel_rust)
   // (painted black iron, not bare metal: as a metal it mirrored the sky and the platforms read as blue slabs from below)
   // (AR34 w2: the sky at 0.3 in its specular: at full strength the platforms read as blue slabs from below, s351)
+  // (AR34 w2 b1: weathered black paint, #323432 (was #1e201f), the sky at 0.5 now that the city takes the lower lobe: the
   int_iron: () => cityRefl(FKENV ? envScale(S({ color: 0x323432, roughness: 0.62, metalness: 0.08 }), 0.5) : S({ color: 0x323432, roughness: 0.62, metalness: 0.08 })),
 };
 export function kitReady() { return matsReady; }

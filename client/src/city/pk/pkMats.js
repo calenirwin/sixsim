@@ -189,7 +189,6 @@ export function pkFace(key, tex, o = {}) {
 export function pkGlass(kind = '') {
   let m = _cache.get('glass' + kind);
   if (m) return m;
-  // the shelters' roof glass is a laminated light green-grey, more opaque than the walls
   m = kind === 'roof'
     ? new THREE.MeshStandardMaterial({ color: 0xa8c4ba, roughness: 0.12, metalness: 0.0, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false })
     : new THREE.MeshStandardMaterial({ color: 0xc9dcdc, roughness: 0.05, metalness: 0.0, transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false });

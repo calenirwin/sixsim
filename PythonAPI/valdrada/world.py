@@ -294,6 +294,21 @@ class World:
         except ValdradaError:
             return None
 
+    # ---- takes (a recorded run that tools/ad/record.mjs and the offline export replay)
+    def start_take(self, actor: Actor, name: str = "api_take") -> dict:
+        """Record the run of a vehicle or walker and the view, every tick, as a take."""
+        return self._call("world.start_take", id=actor.id, name=name)
+
+    def stop_take(self, path: Optional[str] = None) -> dict:
+        """Stop recording; returns the take (30 fps: 'cam' [x, y, z, qx, qy, qz, qw, fov_y] and 'body' [x, y, z,
+        heading, speed, flags] per frame, in the client's internal frame) and writes it as JSON to `path` if given."""
+        take = self._call("world.stop_take")
+        if path:
+            import json
+            with open(path, "w") as f:
+                json.dump(take, f)
+        return take
+
     # ---- environment
     def get_weather(self) -> WeatherParameters:
         d = self._call("world.get_weather")

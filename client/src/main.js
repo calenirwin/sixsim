@@ -1,3 +1,7 @@
+// ==== R1B tiers (client/src/lod/tiers.js, client/public/data/tiers.json): ?tier=low|medium|high|cinematic expands to its
+// flags before any module reads the URL; this import stays first
+import './lod/tiers.js';
+// ==== /R1B
 import * as THREE from 'three';
 // PF25 boot timeline (loading-time work, 2026-09-25): window.__BOOT = [[s since navigation start, stage], ...]
 const BOOT = []; const bootMark = (stage) => { BOOT.push([+(performance.now() / 1000).toFixed(2), stage]); };
@@ -10,6 +14,7 @@ import { Sky } from './world/sky.js';
 import { Streamer } from './world/streamer.js';
 import { makeFacadeMaterial, makeTileFacadeMaterial, makeGroundMaterial, makeFarMaterial, makeWaterMaterial, ENV, initGTEX, initCityAO, CP32R_MASK } from './world/materials.js';
 import { NycDresser } from './world/nycDress.js';
+import { TowerKit, TW_ON } from './world/towerKit.js';   // TW: the tower kit (towers lane)
 import { Instancer } from './city/instancer.js';
 import { COLLIDERS } from './city/colliders.js';
 import { initAudio } from './world/audio.js';
@@ -17,6 +22,7 @@ import { project } from './shared/geo.js';
 // CL24: must load before the first shader compiles (it patches three's light chunks and ShaderLib uniforms)
 import { CityLamps } from './world/cityLamps.js';
 import { areasReady } from './city/areas.js';
+import { compileSafe } from './core/compileSafe.js';
 const cityLamps = new CityLamps();
 if (typeof window !== 'undefined') window.__LAMPS = cityLamps;
 
@@ -67,9 +73,12 @@ const signalReg = [];
 // @nyc) — punched brick walls, recessed windows with glass and rooms, sills,
 // lintels, cornices, storefronts, doors, roofs. ?nodress=1 disables it.
 const dresser = Q.has('nodress') ? null : new NycDresser(engine.scene, { night: () => ENV.night.value });
+const towerKit = TW_ON ? new TowerKit(engine.scene) : null;   // TW: towers over 45 m rebuilt near the camera (world/towerKit.js)
+window.__TW = () => (towerKit ? towerKit.report() : null);   // TW
+window.__TW_KIT = towerKit;   // TW: the cell baker's handle (cells/bakeLib.js dressRegion)
 const streamer = new Streamer(engine.scene, {
   facadeMat, groundMat, farMat, instancer, signalReg,
-  makeFacadeMat: dresser ? makeTileFacadeMaterial : null,
+  makeFacadeMat: dresser || towerKit ? makeTileFacadeMaterial : null,   // TW: the tower kit hides walls through the same mask
   landmarks: (key, ctx) => {
     const r = landmarkFn(key, ctx);
     if (Q.has('lmdebug')) console.warn('LM', key, r ? 'built' : 'NULL');
@@ -84,10 +93,10 @@ const RS35 = !(typeof location !== 'undefined' && new URLSearchParams(location.s
 const heroes = new HeroFacades(engine.scene);
 // ?hero=0 disables the hero trim ring entirely (attribution renders, lead r8)
 if (new URLSearchParams(location.search).get('hero') === '0') heroes.skip = () => true;
-else if (dresser) heroes.skip = (recKey) => dresser.owns(recKey);
+else if (dresser || towerKit) heroes.skip = (recKey) => !!(dresser && dresser.owns(recKey)) || !!(towerKit && towerKit.owns(recKey));   // TW: and the kit's towers
 streamer.onTile(
-  (key, data) => { heroes.setTile(key, data.bldgs || []); dresser?.setTile(key, data); engine.invalidateFarShadow(); },
-  (key) => { heroes.removeTile(key); dresser?.removeTile(key); engine.invalidateFarShadow(); },
+  (key, data) => { heroes.setTile(key, data.bldgs || []); dresser?.setTile(key, data); towerKit?.setTile(key, data); engine.invalidateFarShadow(); },   // TW: towerKit
+  (key) => { heroes.removeTile(key); dresser?.removeTile(key); towerKit?.removeTile(key); engine.invalidateFarShadow(); },
 );
 
 // water
@@ -96,6 +105,10 @@ streamer.onTile(
   g.rotateX(-Math.PI / 2);
   const water = new THREE.Mesh(g, makeWaterMaterial());
   water.position.y = 0.0;
+  // 138 km across: the five boroughs run from x -24.4 to +22.9 km and z -14.7 to +32.6 km (Staten Island's south shore
+  // at z 32 km lay outside the 46 km plane's +-23 km); the shader works in world space, so the scale changes no pattern.
+  // The 46000 width stays the plane's tag (lod/manager.js widens it again for ?lod16=1).
+  water.scale.set(3, 1, 3);
   // opaque, depth-tested: draw AFTER the city so hidden water pixels are
   // rejected instead of shaded first and overwritten (was renderOrder -3)
   water.renderOrder = 1;
@@ -315,7 +328,30 @@ class PathCam {
       engine.shadowHoldY = nb37Hold(y0, y1);
       if (FP37 && engine.recordMode) window.__FP37 = { v: ((window.__FP37 && window.__FP37.v) || 0) + 1, pts, y0, y1 };
     }
-    return { keys: path.keys.length, duration: path.duration, len: +this.curve.getLength().toFixed(1) };
+    // CONTROL: a player take (tools/ad/record.mjs / harvest.mjs pass its frames inline as takeData; takeHold: frame 0 only)
+    this.take = null;
+    const R = window.__PLAYREPLAY;
+    if (path.takeData && R) { this.take = path.takeData; this.takeHold = !!path.takeHold; R.start(this.take); }
+    else if (path.takeData) console.warn('[take] no replay: a take shot needs play=1 in its flags');
+    else if (R && R.take) R.stop();
+    return { keys: path.keys.length, duration: path.duration, len: +this.curve.getLength().toFixed(1), take: this.take ? this.take.frames : 0 };
+  }
+  // CONTROL: the take's frame at t (fractional, interpolated): the camera as recorded, the body put back in the sims
+  takeStep(dt) {
+    const T = this.take, cam = engine.camera;
+    if (!this.takeHold) this.t += dt;
+    const f = Math.min(T.frames - 1, Math.max(0, this.t * T.fps));
+    const i = Math.floor(f), j = Math.min(T.frames - 1, i + 1), u = f - i, A = T.cam[i], B = T.cam[j];
+    this.pos.set(A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u, A[2] + (B[2] - A[2]) * u);
+    const qa = this._qa || (this._qa = new THREE.Quaternion()), qb = this._qb || (this._qb = new THREE.Quaternion());
+    qa.set(A[3], A[4], A[5], A[6]); qb.set(B[3], B[4], B[5], B[6]); qa.slerp(qb, u);
+    cam.position.copy(this.pos); cam.quaternion.copy(qa);
+    const fov = A[7] + (B[7] - A[7]) * u;
+    if (Math.abs(cam.fov - fov) > 1e-3) { cam.fov = fov; cam.updateProjectionMatrix(); }
+    const e = (this._te || (this._te = new THREE.Euler())).setFromQuaternion(qa, 'YXZ');
+    this.yaw = e.y; this.pitch = e.x;
+    window.__PLAYREPLAY?.place(f, dt, this.takeHold);
+    return { x: this.pos.x, y: this.pos.y, z: this.pos.z };
   }
   // constant speed through the middle, quadratic ramps over the first/last
   // `f` of the run so the clip does not start or stop with a jolt
@@ -336,6 +372,7 @@ class PathCam {
     return prev + (g - prev) * (PG32 ? 1 - Math.pow(0.75, Math.max(0, dt) * 30) : 0.25);
   }
   update(dt) {
+    if (this.take) return this.takeStep(dt);
     if (this.path) {
       this.t += this.hold ? 0 : dt * (this.speed ?? 1);   // LITE15: the showcase holds a path while it loads, plays it slower
       const dur = this.path.duration || 12;
@@ -437,7 +474,7 @@ async function boot() {
             continue;
           }
           const n0 = R.info.programs.length;
-          await R.compileAsync(engine.scene, engine.camera);
+          await compileSafe(R, engine.scene, engine.camera, 120000);   // SPACE r2: three's own poll throws on a material disposed mid-pass
           passes++;
           const made = R.info.programs.length - n0;
           if (bootLoopUp && !loopAt) loopAt = performance.now();
@@ -475,6 +512,12 @@ async function boot() {
     const { buildBridges } = await import('./city/bridgeKit.js');
     buildBridges(streamer.bridges, engine.scene, streamer);
   } catch (e) { console.warn('bridges unavailable', e); }
+  // LB39: the Statue of Liberty, her pedestal and Fort Wood (city/liberty.js), resident with their level chain like the
+  // bridges, so she is drawn from anywhere in the harbour; ?liberty=0 leaves her out
+  if (Q.get('liberty') !== '0') try {
+    const { buildLiberty } = await import('./city/liberty.js');
+    buildLiberty(engine.scene, { instancer });
+  } catch (e) { console.warn('the Statue of Liberty unavailable', e); }
   // EL14: elevated rail (J/M/Z over Broadway, Myrtle Av el, the IRT 125th St viaduct) — data/elevated.json from
   // tools/pipeline/elevated.mjs; ?el14=0 leaves it out
   try {
@@ -501,6 +544,11 @@ async function boot() {
 
   bootMark('landmarks module');
   // sims
+  // ==== R1D (CORE, docs/notes/arch-r1-d.md): ?replay=<take folder | tracks.atrk URL>: a take of the headless core places every
+  // actor through the page's own drawing (src/replay/coreReplay.js); without ?replay nothing here runs
+  const R1D_REPLAY = Q.has('replay') ? await import('./replay/coreReplay.js').then((m) => m.loadCoreReplay(Q.get('replay'))).catch((e) => { console.error('[replay] the take did not load', e); return null; }) : null;
+  if (R1D_REPLAY) window.__REPLAY = R1D_REPLAY;
+  // ==== R1D end
   let traffic = null, peds = null, signals = null;
   if (!Q.has('nosim')) {
     try {
@@ -526,6 +574,9 @@ async function boot() {
       window.__TRAFFIC = traffic; // harness access (fleet bounds / audits via bshot --eval)
       window.__STREAMER = streamer; // harness access (surfaceInfoAt audits: is every car on asphalt?)
       traffic.camera = engine.camera;
+      // ==== R1D (CORE): ?replay: the take's vehicles in place of the traffic model's step (before the fleet's renderer wraps it)
+      if (R1D_REPLAY) R1D_REPLAY.attachTraffic(traffic);
+      // ==== R1D end
       // culled draw sets for every vehicle pool (view frustum + near shadow box)
       // CL24: the fleet24 lamp lenses are emissive (HDR 7 head, 1.6/6 tail), so carlights draws no near sprites for them
       if (fleet24) { try { fleet24.install(traffic, engine); if (traffic.lights) traffic.lights.emissiveLamps = true; } catch (e) { console.warn('fleet24 renderer failed', e); } }
@@ -569,6 +620,9 @@ async function boot() {
         const { Peds } = await import('./sim/peds.js');
         peds = new Peds(engine.scene, streamer, traffic, rig);
         peds.lensAt = engine.camera.position;   // LW26: walkers keep clear of a lens at walking height
+        // ==== R1D (CORE): ?replay: the take's walkers in place of the walker model's step
+        if (R1D_REPLAY) R1D_REPLAY.attachPeds(peds);
+        // ==== R1D end
       }
       const { SignalController } = await import('./sim/signals.js');
       signals = new SignalController(instancer, signalReg, traffic);
@@ -576,23 +630,51 @@ async function boot() {
   }
 
   bootMark('sims');
+  // PLAY takes in record mode (CONTROL): a shot whose flags hold play=1 can carry a player take (PathCam.setPath takeData);
+  // the replay puts the player's walker or car back in the sims frame by frame (src/game/control.js createReplay)
+  if (isRecord && !isApi && Q.has('play')) {
+    try { const { createReplay } = await import('./game/control.js'); window.__PLAYREPLAY = createReplay({ engine, streamer, traffic, peds }); }
+    catch (e) { console.warn('take replay unavailable', e); }
+  }
   if (isApi) {
     controller = new ApiCam();           // src/api/bridge.js sets its pose and streaming centre
+  } else if (isRecord && Q.has('playrun')) {
+    // CONTROL: the play controller on the recorder's fixed step (?record=1&playrun=walk|drive): scripted runs and the
+    // demo captures (tools/play/play_run.mjs) step it with window.__advance like any take
+    const { PlayController } = await import('./game/control.js');
+    controller = new PlayController({ engine, streamer, traffic, peds, sky, flash, noDownload: true }, {
+      x: px, y: py, z: pz, yaw: Number(Q.get('yaw') ?? 0), mode: Q.get('playrun') === 'drive' ? 'drive' : 'walk',
+      kind: Q.get('car'), pv: Q.has('pv') ? Number(Q.get('pv')) : undefined,
+    });
+    window.__PLAY = controller;
   } else if (isRecord || Q.has('showcase')) {
-    controller = new PathCam();          // window.__SET_PATH installs the spline
+    controller = new PathCam();          // window.__SET_PATH installs the spline; LITE15: the showcase's scenes
   } else if (isFly) {
     controller = new FlyCam();
-  } else if (Q.has('play')) {
+  } else if (Q.get('play') === 'tether') {
     // legacy grapple character (the original TETHER game mode)
     try {
       const { Player } = await import('./game/player.js');   // plain import: see the landmarks note above
       controller = new Player(engine, streamer, sky, hud, new THREE.Vector3(px, py, pz));
     } catch (e) { console.warn('player unavailable, using fly cam', e); controller = new FlyCam(); }
+  } else if (Q.has('play')) {
+    // PLAY (CONTROL, docs/notes/ar34-control.md): walk and drive (?play=1 | walk | drive, ?car=<kind>, ?pv=<body>)
+    try {
+      const { PlayController } = await import('./game/control.js');
+      controller = new PlayController({ engine, streamer, traffic, peds, sky, flash }, {
+        x: px, y: py, z: pz, yaw: Number(Q.get('yaw') ?? 0), mode: Q.get('play') === 'drive' ? 'drive' : 'walk',
+        kind: Q.get('car'), pv: Q.has('pv') ? Number(Q.get('pv')) : undefined,
+      });
+      window.__PLAY = controller;
+    } catch (e) { console.warn('play mode unavailable, using the drone', e); controller = new Explorer(); }
   } else {
     controller = new Explorer(); // Valdrada default: drone (Tab = first person)
   }
 
-  addEventListener('keydown', (e) => {
+  // SPACE r2: the light showcase has its own keys (game/showcase.js); the page's debug keys (time, teleports, help, rain,
+  // photo mode, deep link, auto tour, the graphics editor) stay off there
+  const SHOWCASE = Q.has('showcase');
+  if (!SHOWCASE) addEventListener('keydown', (e) => {
     if (e.code === 'KeyT') { const m = sky.cycle(); flash(m.toUpperCase()); }
     const spawns = Object.values(SPAWNS);
     const idx = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6'].indexOf(e.code);
@@ -676,10 +758,10 @@ async function boot() {
       const bb = new THREE.Box3().setFromObject(m); console.log('[cartest] loaded, bbox', JSON.stringify(bb.min), JSON.stringify(bb.max));
     }, undefined, (e) => console.warn('[cartest] failed', e));
   }
-  addEventListener('keydown', (e) => {
+  if (!SHOWCASE) addEventListener('keydown', (e) => {
     if (e.code === 'KeyR') weather.set(weather.wet > 0.25 ? 0 : 0.8);
   });
-  import('./ui/editor.js').then((m) => m.initEditor({ engine, sky })).catch((e) => console.warn('editor unavailable', e));
+  if (!SHOWCASE) import('./ui/editor.js').then((m) => m.initEditor({ engine, sky })).catch((e) => console.warn('editor unavailable', e));
   import('./city/props.js').then((m) => m.upgradeProps(instancer)).catch((e) => console.warn('props unavailable', e));
   import('./city/trees.js').then((m) => m.upgradeTrees(instancer)).catch((e) => console.warn('trees unavailable', e));
 
@@ -706,7 +788,7 @@ async function boot() {
       console.log('[scenario] applied', Q.get('scenario'));
     } catch (e) { console.warn('scenario failed', e); }
   }
-  // LITE15: the light showcase (?showcase=1): the trailer's camera moves played live in a curated tour (game/showcase.js)
+  // LITE15: the light showcase (?showcase=1): the trailer's camera moves played live in random order (game/showcase.js)
   let showcase = null;
   if (Q.has('showcase') && controller instanceof PathCam) {
     import('./game/showcase.js').then((m) => { showcase = m.startShowcase({ engine, streamer, sky, controller, traffic, peds, Q }); })
@@ -714,7 +796,7 @@ async function boot() {
   }
   // ---- camera products: P photo mode, L copy deep link, O auto tour
   let tour = null;
-  addEventListener('keydown', (e) => {
+  if (!SHOWCASE) addEventListener('keydown', (e) => {
     if (e.code === 'KeyP') {
       const hud2 = document.getElementById('hud');
       hud2.style.display = hud2.style.display === 'none' ? '' : 'none';
@@ -804,7 +886,7 @@ async function boot() {
     tourStep(dt);
     showcase?.step(dt);   // LITE15
     if (apiHooks) tick('api', () => apiHooks.preStep(dt));
-    const p = tick('controller', () => controller ? controller.update(dt) : { x: px, z: pz });
+    const p = tick('controller', () => { const c = showcase?.controller || controller; return c ? c.update(dt) : { x: px, z: pz }; });   // SPACE r2: the showcase's modes drive the view
     spawnGuard.update(engine.camera);   // film takes: traffic / walkers never spawn in view (window.__SPAWNGUARD)
     viewGuard.update(engine.camera);    // OV32: what the camera can see (sim/spawnGuard.js)
     tick('sun', () => engine.updateSun(sky.sunDir, p.x, p.y ?? 50, p.z));
@@ -817,6 +899,7 @@ async function boot() {
     if (signals) tick('signals', () => signals.update(dt));
     tick('dresser', () => dresser?.update(p.x, p.z));
     tick('heroes', () => heroes.update(p.x, p.z));
+    if (towerKit) tick('towers', () => towerKit.update(engine.camera));   // TW
     tick('audio', () => audio.update(dt, { cars: traffic ? traffic.cars.length : 0, alt: p.y - (streamer.terrainAt(p.x, p.z) ?? p.y), night: ENV.night.value, wet: ENV.wet.value, wind: ENV.windAmp.value }));
     tick('flush', () => { instancer.flush(); instancer.cull(engine.camera); });
     if (PROF) PROF.n++;
@@ -1010,7 +1093,7 @@ async function boot() {
       gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
       gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
     };
-    const settledNow = () => streamer.idle() && !engine.holdDraw && (!dresser || dresser.queue.length === 0);
+    const settledNow = () => streamer.idle() && !engine.holdDraw && (!dresser || dresser.queue.length === 0) && (!towerKit || towerKit.idle());   // TW
     // o.enc 'worker': toBlob's readback of the 2560x1440 drawing buffer cost 90-140 ms of the main thread a frame. Here the
     // canvas is snapshotted into an ImageBitmap in the same task as the last draw (a GPU copy; createImageBitmap takes the
     // canvas's bitmap when it is called), and a worker draws it into an OffscreenCanvas, encodes the JPEG and POSTs it.

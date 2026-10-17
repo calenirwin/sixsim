@@ -291,6 +291,19 @@
       "fn": "flag",
       "key": "pbSubK"
      }
+    ],
+    [
+     "Disp",
+     "tl",
+     "hq.disp"
+    ],
+    [
+     "DispK",
+     "s",
+     {
+      "fn": "disp_k",
+      "key": "hq.disp"
+     }
     ]
    ]
   },
@@ -731,6 +744,48 @@
       0.5,
       0.5
      ]
+    ],
+    [
+     "GlK",
+     "s",
+     {
+      "fn": "r9",
+      "k": 1.0,
+      "night": true
+     }
+    ],
+    [
+     "GlZ",
+     "v",
+     [
+      -1336.0,
+      2594.0,
+      -1114.0,
+      3076.0
+     ]
+    ],
+    [
+     "HAD",
+     "tl",
+     "hq.A.disp"
+    ],
+    [
+     "HWD",
+     "tl",
+     "hq.W.disp"
+    ],
+    [
+     "HKD",
+     "tl",
+     "hq.K.disp"
+    ],
+    [
+     "DispK",
+     "s",
+     {
+      "fn": "disp_k",
+      "key": "hq.W.disp"
+     }
     ]
    ],
    "no_shadow": true
@@ -837,6 +892,311 @@
    "scale_colors": {
     "fn": "untrim_k"
    }
+  },
+  "board": {
+   "_doc": "TSQADS (2026-10-08): the web's TA31 boards (usd_mat `board`; billboards.js ensureTA): one ad per screen from the atlas by the per-vertex playlist (ue_prep UV1-3) and the web's sim time (MPC_bx.SimT, ue_mat.board_take), the cell table Tab set by board_take; GainK the boards' gain to the take's exposure (BXUE_BOARDK overrides)",
+   "master": "board",
+   "params": [
+    [
+     "Tex",
+     "ts",
+     "tex.map"
+    ],
+    [
+     "Night",
+     "s",
+     {
+      "fn": "night"
+     }
+    ],
+    [
+     "Atl",
+     "v",
+     "atlas"
+    ],
+    [
+     "NC",
+     "s",
+     "nc"
+    ],
+    [
+     "GainK",
+     "s",
+     {
+      "fn": "board_k",
+      "k": 1.0
+     }
+    ]
+   ]
+  },
+  "basic": {
+   "_doc": "R9-TSQ (UE track, 2026-10-08): the web's unlit textured materials, tagged by ue_prep (Times Square's LED and printed boards, its neon, the sign faces): the texture x its colour as emission at the boards' gains (billboards.js: LED x1.45 by day, x1.9 at night; here x2.5 at night, the boards at full brightness into the bloom), no diffuse response; VcOn: the vertex colour (R9-BPL: the park lamps' globes)",
+   "master": "plain",
+   "params": [
+    [
+     "Color",
+     "v",
+     "color",
+     [
+      1.0,
+      1.0,
+      1.0
+     ]
+    ],
+    [
+     "Gain",
+     "v",
+     [
+      1.0,
+      1.0,
+      1.0
+     ]
+    ],
+    [
+     "Rough",
+     "s",
+     0.6
+    ],
+    [
+     "Metal",
+     "s",
+     0.0
+    ],
+    [
+     "HasTex",
+     "s",
+     {
+      "fn": "flag",
+      "key": "preview.tex.diffuseColor.file"
+     }
+    ],
+    [
+     "Tex",
+     "ts",
+     "preview.tex.diffuseColor.file"
+    ],
+    [
+     "Xf",
+     "v",
+     {
+      "fn": "xf",
+      "keys": [
+       "preview.tex.diffuseColor"
+      ]
+     }
+    ],
+    [
+     "XfR",
+     "v",
+     {
+      "fn": "xf_rot",
+      "keys": [
+       "preview.tex.diffuseColor"
+      ]
+     }
+    ],
+    [
+     "SelfK",
+     "s",
+     {
+      "fn": "mixnight",
+      "a0": 1.45,
+      "a1": 2.5
+     }
+    ],
+    [
+     "BaseK",
+     "s",
+     0.0
+    ],
+    [
+     "EmiK",
+     "s",
+     0.0
+    ],
+    [
+     "VcOn",
+     "s",
+     {
+      "fn": "flag",
+      "key": "vc"
+     }
+    ]
+   ]
+  },
+  "veil": {
+   "_doc": "UELOOK10 (2026-10-08): the fountains' falling water (fountainFX.js veilMat, tagged by ue_prep from the three name fw26:veil): M_bx_veil, a lit premultiplied sheet driven by the water's travel time since the lip (the lip, speed, fall time and pattern from ue_prep's veil record), the sun's forward lobe",
+   "master": "veil",
+   "no_shadow": true,
+   "params": [
+    [
+     "V0",
+     "v",
+     "veil.v0",
+     [
+      0.0,
+      0.3,
+      0.6,
+      0.22
+     ]
+    ],
+    [
+     "Aer",
+     "v",
+     "veil.aer",
+     [
+      0.3,
+      0.95,
+      0.45,
+      0.2
+     ]
+    ],
+    [
+     "Fq",
+     "s",
+     "veil.freq",
+     7.0
+    ],
+    [
+     "Cen",
+     "v",
+     "veil.cen",
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    [
+     "SunD",
+     "v",
+     "veil.sund",
+     [
+      0.0,
+      1.0,
+      0.0,
+      0.0
+     ]
+    ],
+    [
+     "SunC",
+     "v",
+     "veil.sunc",
+     [
+      1.0,
+      1.0,
+      1.0,
+      0.0
+     ]
+    ],
+    [
+     "SunK",
+     "s",
+     1.0
+    ],
+    [
+     "Night",
+     "s",
+     {
+      "fn": "night"
+     }
+    ]
+   ]
+  },
+  "person": {
+   "_doc": "UELOOK10 (2026-10-08): the Lake's rowers and passengers (cpLakeside.js CP33L persons, tagged by ue_prep): M_bx_person, a figure dressed by height from palettes by the person's seed (ue_mat.persons) in place of the importer's white",
+   "master": "person",
+   "params": [
+    [
+     "Hair",
+     "s",
+     "hair",
+     0.0
+    ]
+   ]
+  },
+  "bronze": {
+   "_doc": "UELOOK10 (2026-10-08): Bethesda Fountain's bronze (cpBethesdaKit.js patinaBronze, tagged by ue_prep: the angel, the cherubs, the fountain's bronze): M_bx_bronze, the web's base and verdigris colours, the angel's cavity map",
+   "master": "bronze",
+   "params": [
+    [
+     "Base",
+     "v",
+     "bronze.base",
+     [
+      0.051,
+      0.033,
+      0.023
+     ]
+    ],
+    [
+     "Verd",
+     "v",
+     "bronze.verd",
+     [
+      0.122,
+      0.223,
+      0.159
+     ]
+    ],
+    [
+     "Amt",
+     "s",
+     "bronze.amt",
+     0.55
+    ],
+    [
+     "HasCav",
+     "s",
+     {
+      "fn": "flag",
+      "key": "bronze.cav"
+     }
+    ],
+    [
+     "Cav",
+     "tl",
+     "bronze.cav"
+    ]
+   ]
+  },
+  "leafcard": {
+   "_doc": "UELOOK10 (2026-10-08): a tree crown's leaf cards (usd_write's <material>_leaf, the web's trees.js crowns; tagged by ue_prep): the leaf master, the card's texture x its colour scale, cut by the texture's alpha, two-sided with transmission (the importer's masked preview surface drew the whole cards)",
+   "master": "leaf",
+   "params": [
+    [
+     "Tex",
+     "ts",
+     "preview.tex.diffuseColor.file"
+    ],
+    [
+     "Tint",
+     "v",
+     "preview.tex.diffuseColor.scale",
+     [
+      1.0,
+      1.0,
+      1.0
+     ]
+    ],
+    [
+     "Trans",
+     "s",
+     0.6
+    ],
+    [
+     "Rough",
+     "s",
+     "preview.roughness",
+     0.6
+    ],
+    [
+     "Metal",
+     "s",
+     0.0
+    ]
+   ]
   }
  },
  "assets": [
@@ -1000,6 +1360,59 @@
       0.5,
       0.5
      ]
+    ],
+    [
+     "RecD",
+     "s",
+     {
+      "fn": "r9",
+      "k": 0.25
+     }
+    ],
+    [
+     "RecK",
+     "s",
+     {
+      "fn": "env",
+      "env": "BXUE_FACNANITE",
+      "default": "1",
+      "k": 1.0
+     }
+    ],
+    [
+     "WallK",
+     "s",
+     {
+      "fn": "env",
+      "env": "BXUE_FACNANITE",
+      "default": "1",
+      "test": "BXUE_WALLK",
+      "k": 0.04
+     }
+    ],
+    [
+     "HBD",
+     "tl",
+     "hq.B.disp"
+    ],
+    [
+     "HSD",
+     "tl",
+     "hq.S.disp"
+    ],
+    [
+     "HCD",
+     "tl",
+     "hq.C.disp"
+    ],
+    [
+     "BxFlipN",
+     "s",
+     {
+      "fn": "env",
+      "env": "BXUE_FLIPN",
+      "k": 1.0
+     }
     ]
    ],
    "no_nanite": true,
@@ -1318,7 +1731,541 @@
    "tr:"
   ]
  },
+ "facade_rooms": {
+  "_doc": "",
+  "atlas": "/data0/projectnyc_aux/assets/bxwin/rooms_atlas.png",
+  "gain": [
+   1.704,
+   1.573,
+   1.714,
+   2.326,
+   1.734,
+   1.65,
+   1.441,
+   1.85
+  ],
+  "emit_k": 1.0
+ },
+ "web_alpha": {
+  "_doc": "UELOOK10 (2026-10-08): ue_mat.web_alpha's rows for the importer's own instances (untagged previews, the untrim family) whose web original is alpha-tested or transparent: the plain master's colour, texture, transform, roughness, metalness and emission from the preview, the alpha rows added by web_alpha (M_bx_plain_mask at the alphaTest, M_bx_plain_blend otherwise); BXUE_NOALPHA=1 leaves the pass out (a test aid)",
+  "preview_params": [
+   [
+    "Color",
+    "v",
+    {
+     "fn": "first",
+     "keys": [
+      "preview.tex.diffuseColor.scale",
+      "preview.diffuseColor"
+     ],
+     "default": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   ],
+   [
+    "Gain",
+    "v",
+    {
+     "fn": "untrim_k3"
+    }
+   ],
+   [
+    "HasTex",
+    "s",
+    {
+     "fn": "flag",
+     "key": "preview.tex.diffuseColor.file"
+    }
+   ],
+   [
+    "Tex",
+    "ts",
+    "preview.tex.diffuseColor.file"
+   ],
+   [
+    "Xf",
+    "v",
+    {
+     "fn": "xf",
+     "keys": [
+      "preview.tex.diffuseColor",
+      "preview.tex.emissiveColor"
+     ]
+    }
+   ],
+   [
+    "XfR",
+    "v",
+    {
+     "fn": "xf_rot",
+     "keys": [
+      "preview.tex.diffuseColor",
+      "preview.tex.emissiveColor"
+     ]
+    }
+   ],
+   [
+    "Rough",
+    "s",
+    "preview.roughness",
+    0.6
+   ],
+   [
+    "Metal",
+    "s",
+    "preview.metallic",
+    0.0
+   ],
+   [
+    "EmiC",
+    "v",
+    {
+     "fn": "first",
+     "keys": [
+      "preview.tex.emissiveColor.scale",
+      "preview.emissiveColor"
+     ],
+     "default": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   ],
+   [
+    "EmiK",
+    "s",
+    1.0
+   ],
+   [
+    "HasEmiTex",
+    "s",
+    {
+     "fn": "flag",
+     "key": "preview.tex.emissiveColor.file"
+    }
+   ],
+   [
+    "EmiTex",
+    "ts",
+    "preview.tex.emissiveColor.file"
+   ]
+  ]
+ },
+ "lake_people": {
+  "_doc": "UELOOK10 (2026-10-08): the Lake people's outfit tints for M_bx_walker (cpLakeside.js TOPS and BOTS, mixed at 0.9 and 0.8 as the web adds them per person; ue_mat.persons picks an entry by the person's seed)",
+  "tops": [
+   [
+    0.92,
+    0.9,
+    0.86
+   ],
+   [
+    0.18,
+    0.3,
+    0.55
+   ],
+   [
+    0.62,
+    0.12,
+    0.1
+   ],
+   [
+    0.9,
+    0.72,
+    0.2
+   ],
+   [
+    0.2,
+    0.45,
+    0.3
+   ],
+   [
+    0.12,
+    0.12,
+    0.13
+   ],
+   [
+    0.55,
+    0.62,
+    0.78
+   ],
+   [
+    0.85,
+    0.45,
+    0.35
+   ],
+   [
+    0.72,
+    0.68,
+    0.6
+   ],
+   [
+    0.35,
+    0.5,
+    0.62
+   ]
+  ],
+  "bots": [
+   [
+    0.12,
+    0.17,
+    0.3
+   ],
+   [
+    0.2,
+    0.2,
+    0.22
+   ],
+   [
+    0.5,
+    0.44,
+    0.34
+   ],
+   [
+    0.08,
+    0.1,
+    0.16
+   ],
+   [
+    0.28,
+    0.34,
+    0.42
+   ],
+   [
+    0.55,
+    0.52,
+    0.46
+   ]
+  ],
+  "top_a": 0.9,
+  "bottom_a": 0.8
+ },
  "tag_rules": [
+  {
+   "_doc": "UELOOK10 (2026-10-08): the Reservoir (cpLand.js LOOK.reservoir, CPW_OPEN): M_bx_water, open wind-rippled water",
+   "kind": "untrim",
+   "name_contains": [
+    "cp32l:water:reservoir"
+   ],
+   "master": "water",
+   "params": [
+    [
+     "Col",
+     "v",
+     [
+      0.019,
+      0.037,
+      0.042
+     ]
+    ],
+    [
+     "Amp",
+     "s",
+     0.042
+    ],
+    [
+     "Lam",
+     "s",
+     2.4
+    ],
+    [
+     "Rgh",
+     "s",
+     "rough",
+     0.07
+    ],
+    [
+     "RMin",
+     "s",
+     0.04
+    ],
+    [
+     "Pat",
+     "v",
+     [
+      0.018,
+      0.07,
+      0.0,
+      0.0
+     ]
+    ]
+   ]
+  },
+  {
+   "_doc": "UELOOK10 (2026-10-08): the park's water bodies (cpWaterMat.js, cpLand.js LOOK.lake): M_bx_water, the body's colour x 0.9 as the albedo, capillary-gravity ripples in wind patches whose unresolved slopes become the roughness, water's f0 0.02; the glint and the mirror the engine's on the rippled normal",
+   "kind": "untrim",
+   "name_contains": [
+    "cp32l:water:"
+   ],
+   "master": "water",
+   "params": [
+    [
+     "Col",
+     "v",
+     [
+      0.031,
+      0.038,
+      0.019
+     ]
+    ],
+    [
+     "Amp",
+     "s",
+     0.012
+    ],
+    [
+     "Lam",
+     "s",
+     1.4
+    ],
+    [
+     "Rgh",
+     "s",
+     "rough",
+     0.05
+    ],
+    [
+     "RMin",
+     "s",
+     0.04
+    ],
+    [
+     "Pat",
+     "v",
+     [
+      0.018,
+      0.07,
+      0.0,
+      0.0
+     ]
+    ]
+   ]
+  },
+  {
+   "_doc": "UELOOK10 (2026-10-08): Bethesda Fountain's pool (cpBethesdaKit.js cpPoolWaterMat: amp 0.045, lam 0.3, the basin's colour): M_bx_water at the pool's scale, choppier in patches a few metres across",
+   "kind": "untrim",
+   "name_contains": [
+    "cp32b:pool"
+   ],
+   "master": "water",
+   "params": [
+    [
+     "Col",
+     "v",
+     [
+      0.027,
+      0.043,
+      0.041
+     ]
+    ],
+    [
+     "Amp",
+     "s",
+     0.045
+    ],
+    [
+     "Lam",
+     "s",
+     0.3
+    ],
+    [
+     "Rgh",
+     "s",
+     "rough",
+     0.05
+    ],
+    [
+     "RMin",
+     "s",
+     0.04
+    ],
+    [
+     "Pat",
+     "v",
+     [
+      0.31,
+      0.93,
+      0.0,
+      0.0
+     ]
+    ]
+   ]
+  },
+  {
+   "_doc": "UELOOK10 (2026-10-08): the fountains' basins (cp32b lower, upper and Cherry Hill basins: amp 0.012-0.03, lam 0.16-0.3): M_bx_water",
+   "kind": "untrim",
+   "name_contains": [
+    "cp32b:",
+    "Basin"
+   ],
+   "master": "water",
+   "params": [
+    [
+     "Col",
+     "v",
+     [
+      0.027,
+      0.043,
+      0.041
+     ]
+    ],
+    [
+     "Amp",
+     "s",
+     0.025
+    ],
+    [
+     "Lam",
+     "s",
+     0.22
+    ],
+    [
+     "Rgh",
+     "s",
+     "rough",
+     0.05
+    ],
+    [
+     "RMin",
+     "s",
+     0.04
+    ],
+    [
+     "Pat",
+     "v",
+     [
+      0.31,
+      0.93,
+      0.0,
+      0.0
+     ]
+    ]
+   ]
+  },
+  {
+   "_doc": "UELOOK10 (2026-10-08): Belvedere Castle's shrubs and small crowns (cpCastle.js cp33c:shrub: alpha cards, the texture x 1.75, cut at 0.5 in the web; UE's plain master drew the whole cards: scLakeGolden's flat yellow shards): the leaf master as vg37:leaf below",
+   "kind": "plain",
+   "name_contains": [
+    "cp33c:shrub"
+   ],
+   "master": "leaf",
+   "params": [
+    [
+     "Tex",
+     "ts",
+     "preview.tex.diffuseColor.file"
+    ],
+    [
+     "Tint",
+     "v",
+     "preview.tex.diffuseColor.scale",
+     [
+      1.0,
+      1.0,
+      1.0
+     ]
+    ],
+    [
+     "Trans",
+     "s",
+     0.6
+    ],
+    [
+     "Rough",
+     "s",
+     "rough",
+     0.85
+    ],
+    [
+     "Metal",
+     "s",
+     0.0
+    ]
+   ]
+  },
+  {
+   "_doc": "UELOOK10 (2026-10-08): the park's understorey leaves (world/vg37.js vg37:leaf cards on the CP33 cover shrubs and small crowns, alpha-tested at 0.5 in the web; UE's plain master drew the whole cards: the flat angular shards): the leaf master, its texture x the material's colour scale, cut by the texture's alpha, two-sided with transmission",
+   "kind": "plain",
+   "name_contains": [
+    "vg37:leaf"
+   ],
+   "master": "leaf",
+   "params": [
+    [
+     "Tex",
+     "ts",
+     "preview.tex.diffuseColor.file"
+    ],
+    [
+     "Tint",
+     "v",
+     "preview.tex.diffuseColor.scale",
+     [
+      1.0,
+      1.0,
+      1.0
+     ]
+    ],
+    [
+     "Trans",
+     "s",
+     0.6
+    ],
+    [
+     "Rough",
+     "s",
+     "rough",
+     0.68
+    ],
+    [
+     "Metal",
+     "s",
+     0.0
+    ]
+   ]
+  },
+  {
+   "_doc": "UELOOK10 (2026-10-08): the park's schist (cpRocksKit.js rockMat: triplanar scans and a procedural albedo the export does not carry, so UE drew it white): the plain master at the scans' grey-brown mean with moss-dark cavities left out",
+   "kind": "plain",
+   "name_contains": [
+    "cpr33:schist:"
+   ],
+   "master": "plain",
+   "params": [
+    [
+     "Color",
+     "v",
+     [
+      0.21,
+      0.205,
+      0.19
+     ]
+    ],
+    [
+     "Gain",
+     "v",
+     [
+      1.0,
+      1.0,
+      1.0
+     ]
+    ],
+    [
+     "Rough",
+     "s",
+     0.75
+    ],
+    [
+     "Metal",
+     "s",
+     0.0
+    ]
+   ]
+  },
   {
    "_doc": "the MTA buses' paint: fleet24's semi-gloss bus coat (clear coat 0.6 / 0.12)",
    "kind": "untrim",
@@ -1733,5 +2680,272 @@
     ]
    ]
   }
- ]
+ ],
+ "aaa11": {
+  "_doc": "AAA11 (2026-10-08): the layered materials' rows (ue_mat.py AAA11): rows a family takes besides its own (the ground's night for its wet gutters, AaN), rows that replace a family's or an asset rule's own ('set': the HQ sets' cavity, so the joints and recesses read), and the web's stone materials (name fragments of kind plain, matched after every other tag rule) that take M_bx_plain's weathering (AaW)",
+  "rows": {
+   "ground": [
+    [
+     "AaN",
+     "s",
+     {
+      "fn": "night",
+      "k": 1.0
+     }
+    ]
+   ]
+  },
+  "set": {
+   "pbr": [
+    [
+     "CavK",
+     "s",
+     0.85
+    ]
+   ],
+   "ground": [
+    [
+     "CavK",
+     "s",
+     0.8
+    ]
+   ],
+   "asset:bxw_": [
+    [
+     "CavK",
+     "s",
+     0.85
+    ]
+   ]
+  },
+  "stone": {
+   "names": [
+    "stone",
+    "granite",
+    "marble",
+    "cp32l:coping",
+    "cp32l:perimeterWall"
+   ],
+   "params": [
+    [
+     "AaW",
+     "s",
+     1.0
+    ]
+   ]
+  }
+ },
+ "look13": {
+  "_doc": "LOOK13 (2026-10-09): Bethesda's paving bands at a stone's albedo (ue_prep look13: the bands of a brick-and-band paving texture on the cp32b / cp33b meshes scaled by band_k, linear), Bryant Park's stone kit on the pbr master (world-planar HQ granite under its vertex colour), and Bryant Park's lawn and walks from CC0 sets in the ground master (the sets by key, the rows the ground family adds; ue_masters.py LOOK13)",
+  "band_k": [
+   0.5,
+   0.46,
+   0.38
+  ],
+  "ground": {
+   "G": "Grass004",
+   "V": "gravel_floor"
+  },
+  "stone_meshes": [
+   "_bp31_stone"
+  ],
+  "stone_set": "concrete_pavement",
+  "set": {
+   "pbr": [
+    [
+     "CavK",
+     "s",
+     {
+      "fn": "first",
+      "keys": [
+       "hq.cav13"
+      ],
+      "default": 0.85
+     }
+    ]
+   ]
+  },
+  "rows": {
+   "ground": [
+    [
+     "LkOn",
+     "s",
+     {
+      "fn": "flag",
+      "key": "hq.G.alb"
+     }
+    ],
+    [
+     "HG",
+     "ts",
+     "hq.G.alb"
+    ],
+    [
+     "HGN",
+     "tl",
+     "hq.G.nrm"
+    ],
+    [
+     "HGR",
+     "tl",
+     "hq.G.arm"
+    ],
+    [
+     "HGm",
+     "v",
+     "hq.G.mean",
+     [
+      0.1217,
+      0.1558,
+      0.0319
+     ]
+    ],
+    [
+     "HGs",
+     "v",
+     "hq.G.size",
+     [
+      1.4,
+      1.4
+     ]
+    ],
+    [
+     "HV",
+     "ts",
+     "hq.V.alb"
+    ],
+    [
+     "HVN",
+     "tl",
+     "hq.V.nrm"
+    ],
+    [
+     "HVR",
+     "tl",
+     "hq.V.arm"
+    ],
+    [
+     "HVm",
+     "v",
+     "hq.V.mean",
+     [
+      0.3685,
+      0.2435,
+      0.1358
+     ]
+    ],
+    [
+     "HVs",
+     "v",
+     "hq.V.size",
+     [
+      2.25,
+      2.25
+     ]
+    ]
+   ]
+  }
+ },
+ "look13b": {
+  "_doc": "LOOK13b (2026-10-09): the Lake's reeds (ue_prep tags cp32l:reeds 'reed' after rebuilding the web's per-vertex aRd into st and st2.y): M_bx_reed cuts each quad into the web's blades",
+  "family": {
+   "master": "reed",
+   "params": [
+    [
+     "Gain",
+     "v",
+     {
+      "fn": "trim_kit"
+     }
+    ],
+    [
+     "Rough",
+     "s",
+     "rough",
+     0.8
+    ],
+    [
+     "Metal",
+     "s",
+     "metal",
+     0.0
+    ]
+   ]
+  }
+ },
+ "look13d": {
+  "_doc": "LOOK13d (2026-10-09): Bryant Park's fountain pools (ue_prep look13d tags them bp28:pool with the landing ring under 'foam'): M_bx_water at the pool's scale (cpBethesdaKit's pool values) with the veil's landing foam",
+  "tag_rules": [
+   {
+    "kind": "untrim",
+    "name_contains": [
+     "bp28:pool"
+    ],
+    "master": "water",
+    "params": [
+     [
+      "Col",
+      "v",
+      [
+       0.027,
+       0.043,
+       0.041
+      ]
+     ],
+     [
+      "Amp",
+      "s",
+      0.045
+     ],
+     [
+      "Lam",
+      "s",
+      0.3
+     ],
+     [
+      "Rgh",
+      "s",
+      "rough",
+      0.05
+     ],
+     [
+      "RMin",
+      "s",
+      0.04
+     ],
+     [
+      "Pat",
+      "v",
+      [
+       0.31,
+       0.93,
+       0.0,
+       0.0
+      ]
+     ],
+     [
+      "FoamC",
+      "v",
+      "foam",
+      [
+       0,
+       0,
+       0,
+       0
+      ]
+     ],
+     [
+      "FoamW",
+      "v",
+      [
+       0.4,
+       2.6,
+       0.0,
+       0.0
+      ]
+     ]
+    ]
+   }
+  ]
+ }
 }

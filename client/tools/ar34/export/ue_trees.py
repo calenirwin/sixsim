@@ -23,6 +23,30 @@ eal = unreal.EditorAssetLibrary
 HERE = os.path.dirname(os.path.abspath(__file__))
 SET_DIRS = ('/bxtrees2/',)
 FOLIAGE_CVARS = {'r.Lumen.ScreenProbeGather.TwoSidedFoliageBackfaceDiffuse': 1, 'r.Lumen.ScreenProbeGather.ShortRangeAO.FoliageOcclusionStrength': 0.0}
+# UE14 (UE track, 2026-10-09; the owner: Central Park's crowns low quality; Unreal's colours need not match Cycles): depth inside
+# the crown. Lumen's short-range occlusion on foliage back at UE's 0.7 (0.0 kept t7ArchTrack's crowns as light as Cycles'), the
+# sun's virtual shadow map one and a half levels finer (leaf-on-leaf shadows), and the baked crown-depth AO deeper (AoIn 0.55,
+# was the master's 0.8): the lit leaves stand out of a darker interior (scLakeGolden f30: local contrast 12.49 -> 12.85 on a
+# mid crown, 11.20 -> 11.54 on a near one). BXUE_LEAFDEPTH=0 restores the earlier values.
+LEAF_AOIN = 0.55
+if os.environ.get('BXUE_LEAFDEPTH') != '0':
+    FOLIAGE_CVARS = dict(FOLIAGE_CVARS, **{'r.Lumen.ScreenProbeGather.ShortRangeAO.FoliageOcclusionStrength': 0.7,
+                                           'r.Shadow.Virtual.ResolutionLodBiasDirectional': -1.5})
+# UE14 end
+
+
+# UE14 (UE track, 2026-10-09): a leaf atlas's mips keep the leaf's coverage at the material's 0.5 cut (UE scales each
+# mip's alpha so as many texels pass the test as at full size): far leaves keep their size instead of thinning out
+# and shimmering as the mips average their outline away
+def leaf_coverage(t, out):
+    try:
+        if not t.get_editor_property('do_scale_mips_for_alpha_coverage'):
+            t.set_editor_property('do_scale_mips_for_alpha_coverage', True)
+            t.set_editor_property('alpha_coverage_thresholds', unreal.Vector4(0.0, 0.0, 0.0, 0.5))
+            out['leaf_coverage'] = out.get('leaf_coverage', 0) + 1
+    except Exception as e:
+        out['leaf_coverage_error'] = str(e)[:160]
+# UE14 end
 
 
 def _row(match):
@@ -165,14 +189,28 @@ def apply(side, dest, cfg):
             if pn.startswith('bxt_leaf_'):
                 F = pn[len('bxt_leaf_'):]
                 masked = gen < 2 or cut.get(F, 'near') != 'opaque' or 'opacity' in tx
+                # ==== R1C (lane C, 2026-10-10): a second-set leaf whose take carries no alpha (the set's leaves cut to their
+                # alpha silhouettes by tools/ue/leafcut.py; usd_trees.py authors no opacity for a set.json 'opaque' leaf)
+                # draws with the opaque foliage master whatever set.json BXTREES_ASSETS names: no alpha test, so TSR resolves
+                # the leaves at one sample per frame. BXUE_R1C_OPAQUE=0: the set.json rule alone
+                if gen >= 2 and 'opacity' not in tx and os.environ.get('BXUE_R1C_OPAQUE') != '0':
+                    masked = False; out['r1c_opaque'] = out.get('r1c_opaque', 0) + 1
+                # ==== R1C end
                 mel.set_material_instance_parent(mi, M['foliage_mask' if masked else 'foliage'])
                 mel.clear_all_material_instance_parameters(mi)
                 if gen < 2 or cut.get(F, 'near') == 'mask': mel.set_material_instance_scalar_parameter_value(mi, 'NearM', 1e7)   # (cards: always cut)
+                # UE14 (UE track, 2026-10-09): every leaf cut by its alpha at every distance. Past NearM + FadeM (22 m) the
+                # leaves drew as their octagons, so mid-distance crowns read as blobs and every leaf changed shape as it
+                # crossed 12 to 22 m from the lens (the owner: 'low quality leaves, a lot of pop-in'); the temporal samples and
+                # the coverage-keeping mips below hold the far cut steady. BXUE_LEAFNEAR=1: a test aid, the old near cut
+                if os.environ.get('BXUE_LEAFNEAR') != '1': mel.set_material_instance_scalar_parameter_value(mi, 'NearM', 1e7)
+                # UE14 end
                 if gen < 2:   # (the first set's cards carry no st1: no per-leaf variation, no crown depth)
                     for k_, v_ in (('LeafHue', 0.0), ('LeafVar', 0.0), ('Yellow', 0.0), ('AoIn', 1.0), ('Gain', gain_1)):
                         mel.set_material_instance_scalar_parameter_value(mi, k_, v_)
                 t = tex.get((tx.get('diffuseColor') or {}).get('file'), True)
                 if t is not None: mel.set_material_instance_texture_parameter_value(mi, 'Tex', t)
+                if t is not None and os.environ.get('BXUE_LEAFCOV') != '0': leaf_coverage(t, out)   # UE14
                 n = tex.get((tx.get('normal') or {}).get('file'), False)
                 if n is not None: mel.set_material_instance_texture_parameter_value(mi, 'Nrm', n)
                 mel.set_material_instance_vector_parameter_value(mi, 'Tint', unreal.LinearColor(*[float(x) for x in (list(tint) + [0, 0, 0])[:3]], 0.0))
@@ -180,6 +218,7 @@ def apply(side, dest, cfg):
                 mel.set_material_instance_vector_parameter_value(mi, 'SssTint', unreal.LinearColor(sss_k[0], sss_k[1], sss_k[2], 0.0))
                 mel.set_material_instance_scalar_parameter_value(mi, 'WindK', wk)
                 if gen >= 2: mel.set_material_instance_scalar_parameter_value(mi, 'Gain', L6['gain'])   # R6-LEAF
+                if gen >= 2 and os.environ.get('BXUE_LEAFDEPTH') != '0': mel.set_material_instance_scalar_parameter_value(mi, 'AoIn', LEAF_AOIN)   # UE14
                 for kv in (os.environ.get('BXUE_TREES_PARAMS') or '').split(','):   # (a tuning aid: leaf k=v or k=r:g:b,...)
                     if '=' not in kv: continue
                     k_, v_ = kv.split('=', 1)
@@ -203,6 +242,19 @@ def apply(side, dest, cfg):
                 if r is not None:
                     mel.set_material_instance_texture_parameter_value(mi, 'RoughT', r)
                     mel.set_material_instance_scalar_parameter_value(mi, 'HasRough', 1.0)
+                # UE14 (UE track, 2026-10-09): the bark scan's height map beside its colour map -> the master's displacement
+                if os.environ.get('BXUE_BARKDISP') != '0' and dc.get('file'):   # (on unless BXUE_BARKDISP=0)
+                    dp = re.sub(r'_col(\.[a-z]+)$', r'_disp\1', dc['file'])
+                    if not os.path.exists(dp):   # (a take's copy of the set carries no height maps: the set's own)
+                        dp = os.path.join(os.environ.get('BXTREES_ASSETS', '/data0/projectnyc_aux/assets/bxtrees2'), 'tex', os.path.basename(dp))
+                    d_ = tex.get(dp, False) if dp.endswith(('_disp.jpg', '_disp.png')) and os.path.exists(dp) else None
+                    if d_ is not None:
+                        mel.set_material_instance_texture_parameter_value(mi, 'Disp', d_)
+                        mel.set_material_instance_scalar_parameter_value(mi, 'HasDisp', 1.0)
+                        out['bark_disp'] = out.get('bark_disp', 0) + 1
+                for kv in (os.environ.get('BXUE_BARK_PARAMS') or '').split(','):   # (a tuning aid, as BXUE_TREES_PARAMS for the bark)
+                    if '=' in kv: mel.set_material_instance_scalar_parameter_value(mi, kv.split('=', 1)[0].strip(), float(kv.split('=', 1)[1]))
+                # UE14 end
                 sc = dc.get('scale') or [0.8, 0.8, 0.8]
                 mel.set_material_instance_vector_parameter_value(mi, 'Tint', unreal.LinearColor(float(sc[0]), float(sc[1]), float(sc[2]), 0.0))
                 mel.set_material_instance_scalar_parameter_value(mi, 'WindK', wk)
@@ -233,7 +285,8 @@ def apply(side, dest, cfg):
         try:
             ns = sm.get_editor_property('nanite_settings')
             ch = False
-            if not ns.get_editor_property('enabled'): ns.set_editor_property('enabled', True); ch = True
+            nan_ = os.environ.get('BXUE_TREENANITE', '1') != '0'   # (R9-HANG test aid: the tree meshes without Nanite)
+            if bool(ns.get_editor_property('enabled')) != nan_: ns.set_editor_property('enabled', nan_); ch = True
             if pres is not None and ns.get_editor_property('shape_preservation') != pres:
                 ns.set_editor_property('shape_preservation', pres); ch = True
             if ch:
@@ -246,17 +299,31 @@ def apply(side, dest, cfg):
         for c in a.get_components_by_class(unreal.StaticMeshComponent):
             mats = [m for m in c.get_materials() if m is not None]
             if not any(m.get_path_name() in tree_mis for m in mats): continue
-            for k, v in (('evaluate_world_position_offset', True), ('world_position_offset_writes_velocity', True),
-                         ('world_position_offset_disable_distance', 0), ('cast_shadow', True)):
+            for k, v in (('evaluate_world_position_offset', True), ('world_position_offset_writes_velocity', os.environ.get('BXUE_WPOVEL', '1') != '0'),
+                         ('world_position_offset_disable_distance', int(float(os.environ.get('BXUE_WPODIST') or 0) * 100)), ('cast_shadow', True)):
                 try: c.set_editor_property(k, v)
                 except Exception:
                     if k not in out.setdefault('component_misses', []): out['component_misses'].append(k)
+            # (R9-HANG test aids: BXUE_WPOVEL=0, the wind's offset without velocity; BXUE_WPODIST, the wind's disable distance in
+            # metres (0: every distance); BXUE_WPOSHADOW, the
+            # trees' shadow cache invalidation (AUTO, ALWAYS, RIGID, STATIC))
+            if os.environ.get('BXUE_WPOSHADOW'):
+                try: c.set_editor_property('shadow_cache_invalidation_behavior', getattr(unreal.ShadowCacheInvalidationBehavior, os.environ['BXUE_WPOSHADOW']))
+                except Exception:
+                    if 'shadow_cache_invalidation_behavior' not in out.setdefault('component_misses', []): out['component_misses'].append('shadow_cache_invalidation_behavior')
             out['components'] += 1
     # the render's foliage settings (into the take's Movie Render Queue console variables, which ue_take.py writes after
     # this hook; a value the take sets itself wins): Lumen gathers the light from behind a two-sided foliage pixel and
     # weights it by the subsurface colour (on at Epic / Cine, set here so a lower scalability does not drop it), and its
     # short-range screen-space occlusion leaves foliage alone (0.7 by default: a crown of small leaves read as one dark
     # occluder, 15 % of the crown's lightness on t7ArchTrack's key frames)
+    # ==== R1C (lane C, 2026-10-11): with opaque leaves Lumen's short-range occlusion on foliage at full strength (1.0;
+    # UE14's 0.7 was set for the masked leaves): the leaflet polygons let more light into a crown than the masked cards
+    # did, and at 0.7 the gaps between the leaves read lit (scBowGolden's near crown 0.87 of the reference's contrast, 0.93
+    # at 1.0; scLakeGolden 0.92 -> 0.94). A value the take sets itself wins; BXUE_R1C_FOLAO overrides
+    if out.get('r1c_opaque'):
+        cfg.setdefault('cvars', {}).setdefault('r.Lumen.ScreenProbeGather.ShortRangeAO.FoliageOcclusionStrength', float(os.environ.get('BXUE_R1C_FOLAO') or 1.0))
+    # ==== R1C end
     cv = cfg.setdefault('cvars', {})
     for k, v in FOLIAGE_CVARS.items():
         cv.setdefault(k, v)

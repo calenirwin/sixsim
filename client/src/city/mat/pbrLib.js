@@ -263,7 +263,7 @@ const NOISE_GLSL = /* glsl */ `
 // real one sees the street and the buildings across it: dark paint and dark metal read navy blue by day, every sheen
 // was sky blue. The share of the lobe under the street canyon's skyline (seen from this height: about 30 deg at the
 // sidewalk, the horizon from ~32 m up) takes the city instead, a cool grey (shade) at 0.55 of the sky's luminance; the sky
-// above the skyline is kept, a third paler. pbCityK(R, h, w): the sky's share of a lobe of half-width w (in
+// above the skyline is kept, a third paler (the 125th Street captures' skies are hazy; at cornice height steel_black
 // sin elevation) along R.
 const CITY_GLSL = /* glsl */ `
   float pbCityK(vec3 Rw, float h, float w) {
@@ -723,7 +723,7 @@ function makeSurface(n, o) {
           alb *= 1.0 - g;
           pbGr = g;
         }`}
-        // THE SHADER FACADES' VALUE CURVE. applyLightTrim runs after this chunk and multiplies by mix(0.30, 0.88, night);
+        // THE SHADER FACADES' VALUE CURVE (world/materials.js makeFacadeMaterial: albedo = pow(albedo, 1.22) * 0.88, tuned
         // that factor is divided out here, so the net diffuse is the facades' own curve at every time of day and a wall
         // sits at the brightness of the shader facade beside it with the same colour. (pbFac.x: not for street surfaces
         // or a material given its own trim)

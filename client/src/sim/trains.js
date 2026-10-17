@@ -331,7 +331,10 @@ export function initTrains(engine, streamer = null, opts = {}) {
     lastT = t; lastCam = ck;
     const t0 = performance.now();
     trainMatsUpdate();
-    const cars = carsAt(SV, t, shift);
+    // ==== R1D (CORE, docs/notes/arch-r1-d.md): ?replay: the take's train cars (src/replay/coreReplay.js) in place of the timetable's
+    const r1dCars = typeof window !== 'undefined' && window.__REPLAY && window.__REPLAY.trainCarsAt ? window.__REPLAY.trainCarsAt(t) : null;
+    const cars = r1dCars || carsAt(SV, t, shift);
+    // ==== R1D end
     if (cam) { cam.updateMatrixWorld(); pv.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); frustum.setFromProjectionMatrix(pv); }
     const cp = cam ? cam.position : new THREE.Vector3(1e9, 0, 0);
     const cnt = {};

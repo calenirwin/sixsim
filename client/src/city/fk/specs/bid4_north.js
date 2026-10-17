@@ -1,5 +1,4 @@
 // AR33 BID4 specs, north side of 125th Street from 75 W to 1 W (Lenox to Fifth), u eastward. Owner: the BID4 worker
-// (docs/notes/ar33-bid4.md).
 
 // AR34 w2r1 tinted the dark 'wood_painted' trims (tints under ~#4a4a4a) warm (x 1.30, 0.68, 0.49 in linear light) because they rendered navy in shade (44 W's cornice
 // real #261c18, twin #1e2831, w2r1b). Batch 2 (2026-10-02) divided it back out after LOOK's shade fix (CS34): the tints below are the untinted ones again.
@@ -7,7 +6,6 @@
 
 export default [
   // ------------------------------------------------------------------ 75 W 125th: Carver Federal Savings Bank (1994)
-  // MEASURED (2026-08, shots/ar34/bid4/elev/w125-75.jpg): rose granite, a ground floor of three dark openings under the
   // Carver canopy sign (y 4.65-5.6), then a bronze glass block 11.8 m wide (u 2.1-13.9) of three vision bands (7.1-9.4, 11.5-13.7, 16.1-18.3 m) between dark
   // spandrels, narrow windows at the same heights in the granite at each side (u 0-1.0 and 14.9-16.0), a dark head band and a stepped granite crown.
   {
@@ -58,7 +56,6 @@ export default [
       '(not modelled). The footprint edge to 67 W sits about 0.5 m east of the lot line seen in the elevation.',
   },
   // ------------------------------------------------------------------ 67 W 125th: the boarded bank (1910)
-  // MEASURED (2026-08, shots/ar34/bid4/elev/w125-67.jpg): a mauve painted-stone base 8.0 m tall (fluted pilasters, the
   // entrance, a big window over it), a cream entablature to 9.9 m, a grey-olive brick shaft of three storeys of boarded windows at 4.0 m pitch (the top one
   // round-headed), a heavy dark cornice at 21.9 m and a boarded attic to 23.9 m.
   {
@@ -121,7 +118,7 @@ export default [
     id: 'w125-63', addr: '63 W 125th St', name: 'Wingstop', bin: '1053498',
     at: [2255.19, -2729.82], comp: '4_-6:415', h: 24.1, status: 'measured',
     custom: { fn: 'bid4:glasswall', with: 'kit' },
-    wall: { mat: 'brick_painted', tint: '#a9b2b8', dirt: 0.3 },   // w2r1b: real brick (128,135,136) blue-grey, twin (110,117,97) olive (brick_brown under a grey tint): a neutral set; b3r1 '#b0b4b6' neutral (B-R -3..+5) blue-grey (B-R +6..+11)
+    wall: { mat: 'brick_painted', tint: '#a9b2b8', dirt: 0.3 },
     faces: [{
       edge: 'front',
       base: {
@@ -133,7 +130,6 @@ export default [
         ],
       },
       items: [
-        // b3r4: the letters run across the shop glass at about 2.2-3.0 m (the twin's sat at 3.5 m); the leasing board is blue with white type
         { k: 'sign', sign: { kind: 'channel', text: 'WINGSTOP', font: 'Montserrat-800', fg: '#ffffff', bg: null, u0: 0.5, u1: 6.6, y: 2.2, h: 0.75, depth: 0.1, lit: 'face' } },
         { k: 'sign', sign: { kind: 'panel', lines: ['FOR LEASE', '718.437.6100'], font: 'Inter-700', fg: '#ffffff', bg: '#1f4f9a', u0: 0.1, u1: 2.5, y: 6.0, h: 1.3, depth: 0.05 } },
       ],
@@ -146,17 +142,15 @@ export default [
         Sq: { sill: 1.9, h: 1.2, kind: 'fixed', mullions: 0, frame: 'alu_white', glass: 'glass_blue', reveal: 0.14, lintel: null, sillStone: { mat: 'cast_stone', tint: '#a9a9a6', h: 0.08, proj: 0.05 }, ac: 0, blinds: 0.3, lit: 0.3 },
         Sm: { sill: 0.15, h: 1.0, kind: 'fixed', mullions: 0, frame: 'alu_white', glass: 'glass_blue', reveal: 0.1, lintel: null, sillStone: null, ac: 0, blinds: 0.2, lit: 0.3 },
       },
-      // b3r1: the strip of small square panes runs down to the shop front's head as one glazed column (the twin had brick and two windows there)
       glassWall: { zones: [{ u0: 0.0, u1: 3.4, mullion: 0.95, rows: { y0: 10.5, y1: 24.0, vh: 1.45 } }, { u0: 3.6, u1: 4.6, mullion: 1.0, rows: { y0: 5.55, y1: 24.0, vh: 1.0, sh: 0.14 } }],   // b3r4: to the roof (the Sm windows behind it)
         glass: 'glass_tower_blue', body: '#5f87ab', tint: '#c4dcec', frame: 'alu_white', mullionW: 0.07, mullionD: 0.1 },
       cornice: { kind: 'parapet' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.5, coping: 'metal_painted' }, membrane: 'gravel', items: [{ k: 'hvac', at: [0.5, 0.5], n: 1 }] },
     notes: 'Narrow new building (2015), six storeys: blue-grey brick with two square windows over the Wingstop ground floor, a glass box (white frames) on the west part of the ' +
-      'upper three floors beside a strip of small square windows, plain brick to the east. Height measured (the compiled record says 12.9 m, PLUTO six floors).',
+      '',
   },
   // ------------------------------------------------------------------ 55 W 125th (1974): CUNY Center in Harlem, Chase, T-Mobile
-  // MEASURED (2026-08, client/shots/ar34/bid4/elev/w125-55.jpg): tan brick piers 1.2 m wide
   // every 8.9 m (centres u 6.85, 15.9, 24.75, 33.6, 42.4, 51.25), a bronze glass wall between them on a 1.5 m mullion grid (vision glass 2.6 m, spandrel
   // 1.1 m, floors of 3.7 m), a 1.7 m brick band (y 4.25-5.95) over a dark granite base with five shops (Chase 8.2-15.5, the 55 W125 lobby 16.9-24.7,
   // CUNY 26.0-33.9, a vacant unit 35.0-42.6, T-Mobile 44.1-50.6).
@@ -195,7 +189,6 @@ export default [
       floors: [],
       cornice: { kind: 'band', h: 0.7, proj: 0.18, mat: 'brick_tan', tint: '#b68a73' },
     }],
-    // a 24 x 10 m penthouse on the back edge (u 17-41); a round enclosure with a white conical tank at the east end
     // (about 12 m across, u 42); two round fans and a condenser (u 17-24, mid-depth); a thin parapet. Measured off the nadir at 5 px/m (lean of a 60 m roof: about 8 m).
     roof: { kind: 'flat', parapet: { h: 1.2, coping: 'metal_painted' }, membrane: 'black',
       items: [{ k: 'bulkhead', at: [0.55, 0.88], w: 24, d: 10, h: 4.5 }, { k: 'tank', at: [0.82, 0.55], r: 3.6, h: 4.6, legs: 2.2 }, { k: 'hvac', at: [0.37, 0.55], n: 2 }, { k: 'antenna', at: [0.95, 0.9], h: 6 }] },
@@ -204,7 +197,6 @@ export default [
       'T-Mobile (magenta). The building top above 56.7 m is not verified (not in the elevation).',
   },
   // ------------------------------------------------------------------ 35 W 125th: new residential (2025), multi-coloured brick fins
-  // MEASURED (2026-08, shots/ar34/bid4/elev/w125-35.jpg): floors of 2.7 m (not 3.03), window rows at y 6.3 + 2.7 k, eleven window columns
   // (centres u 1.3, 4.2, 6.8, 9.7, 12.7, 15.6, 18.6, 21.6, 24.7, 27.8, 30.7) of paired white casements 1.5 m wide under a dark metal head flange, dark-grey ribbed brick fields with
   // full-height fins in red (u 3.0-3.4, 4.9-6.1), cream and tan (13.4-14.7, 19.7-21.1, 25.6-26.9, 29.3-30.5) (bid4:n35), a dark brick base band to 5.0 m, bare-glass shops.
   // The part above 25.3 m on the east half (u > 16) steps back with a glass terrace rail (not modelled).
@@ -217,9 +209,7 @@ export default [
     custom: { fn: 'bid4:n35', with: 'kit' },
     faces: [{
       edge: 'front',
-      // b3r1 / b3r2: the shop glass runs up to a thin dark band and the fins start
       // right above it; the twin's 1.5 m of dark brick over the shops read ~100 / ~126 px too high in the two frames: base 5.0 -> 3.9 m, fascia 0.95 -> 0.5,
-      // floors 2.7 -> 2.82 m
       base: {
         h: 3.9,
         wall: { mat: 'brick_brown', tint: '#625e5b', dirt: 0.25, bond: 'running' },
@@ -244,7 +234,7 @@ export default [
       cornice: { kind: 'band', h: 0.7, proj: 0.22, mat: 'wood_painted', tint: '#222527' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.8, coping: 'metal_painted' }, membrane: 'gravel', items: [{ k: 'bulkhead', at: [0.5, 0.45], w: 6, d: 4, h: 3.2 }, { k: 'hvac', at: [0.25, 0.6], n: 3 }] },
-    notes: 'Ten storeys, finished 2025, shops bare glass behind barriers. Elevation: dark-grey ribbed brick with full-height fins in red, cream and tan, ' +
+    notes: '' +
       'paired white casements under black metal head flanges at 2.7 m floors. The compiled record is an 8.7 m foundation stage; the spec overrides the height.',
   },
   // ------------------------------------------------------------------ 36 W 126th (spec id w125-33): a rowhouse BEHIND the 125th Street wall, not a shop front
@@ -256,13 +246,12 @@ export default [
     notes: 'Not on the 125th Street wall (strip_N4: nothing of it shows between 35 W and 31 W; the inventory distance is 58.8 m). skip: the compiled building stays.',
   },
   // ------------------------------------------------------------------ 31 W 125th: Mushtari Hardware Home & Garden Center
-  // MEASURED: 17.5 m to the top of a yellow-ochre cornice (15.7-17.5 m; compiled 16.25); four floors of white-framed window bands
   // (glass 5.2-6.4, 7.6-9.5, 10.5-12.4, 13.6-15.5 m, 4.4 m wide, u 1.0-5.4) between rusticated buff stone piers 0.9 m wide, stone bands with yellow trim between the floors; the Mushtari Hardware
   // signband (black, 'Benjamin Moore' red) 3.4-5.2 m over a plant-filled shop, the black hanging banner.
   {
     id: 'w125-31', addr: '31 W 125th St', name: 'Mushtari Hardware Home & Garden Center, Thompson Studios 125', bin: '1053502',
     at: [2336.12, -2677.26], comp: '4_-6:190', h: 17.5, status: 'measured',
-    wall: { mat: 'brick_buff', tint: '#bab29e', dirt: 0.5 },   // w2r1c: spandrel brick real (180,173,163), twin (175,160,129): too yellow; b2r9: real (173,161,139), twin (200,187,170) with '#cec6b6'
+    wall: { mat: 'brick_buff', tint: '#bab29e', dirt: 0.5 },
     faces: [{
       edge: 'front',
       rustication: { to: 5.0, mat: 'stone_lime', tint: '#cdc6b6', joint: 0.5, block: 1.0, chamfer: 0.005 },
@@ -272,7 +261,6 @@ export default [
         bays: [{ kind: 'store', u0: 0.7, u1: 4.8, h: 3.3, glazing: { bulkhead: 0.0, transom: 0.0, mullions: 3, frame: 'alu_black' }, door: { u: 0.6, w: 1.0, kind: 'glass', recess: 0.7 }, interior: 'shop_food', gate: { kind: 'none' } }],
       },
       items: [
-        // batch 2: a black band with the name over a red Benjamin Moore band with the trades line, and the shop's black banner hung off the west pier
         { k: 'sign', sign: { kind: 'panel', text: 'MUSHTARI HARDWARE', font: 'Inter-700', fg: '#ffffff', bg: '#151617', u0: 0.0, u1: 5.7, y: 4.35, h: 0.75, depth: 0.2, sub: { text: 'Home & Garden Center', font: 'Inter-700', fg: '#e8e8e8', size: 0.28 } } },
         { k: 'sign', sign: { kind: 'panel', lines: ['Benjamin Moore', 'PAINT-LUMBER-PLUMBING-ELECTRIC'], font: 'Inter-700', fg: '#ffffff', bg: '#d0212f', u0: 0.15, u1: 5.55, y: 3.4, h: 0.95, depth: 0.12 } },
         { k: 'sign', z: 0.55, sign: { kind: 'panel', text: '', fg: '#ffffff', bg: '#141414', logo: 'bid4:mushtariBanner', logoAt: 'fill', u0: -0.4, u1: 0.6, y: 7.1, h: 3.0, depth: 0.03, lit: 'none', push: false } },   // b2r8: hung 1.3 m too high and 0.5 m too far west
@@ -304,7 +292,6 @@ export default [
   {
     id: 'w125-29', addr: '29 W 125th St', name: 'Golden Smile Pawn, Cash Loans', bin: '1053529',
     at: [2342.05, -2674.68], comp: '4_-6:115', h: 17.5, status: 'measured',
-    // batch 2: the upper floors are painted brick, the base and the 2nd-floor zone stucco ((186,176,162))
     wall: { mat: 'brick_painted', tint: '#d6d0c8', dirt: 0.5 },
     faces: [{
       edge: 'front',
@@ -315,9 +302,7 @@ export default [
           awning: { kind: 'fixed', color: '#e8c33a', proj: 0.5, drop: 0.5 } }],
       },
       items: [{ k: 'sign', sign: { kind: 'panel', text: 'CASH LOAN', font: 'Archivo-900', fg: '#c93a4a', bg: '#e8c33a', u0: 0.1, u1: 6.6, y: 3.6, h: 0.95, depth: 0.1 } },
-        // the pink vinyl letters on the 2nd-floor window
         { k: 'sign', z: 0.01, sign: { kind: 'painted', lines: ['SUNSHINE', 'GOLDEN SMILE'], font: 'Oswald-700', fg: '#d2566e', bg: null, u0: 0.9, u1: 3.5, y: 5.2, h: 1.0 } },
-        // the air-conditioner sleeves under the 3rd-5th floor windows, two a floor
         ...[6.98, 10.28, 13.58].flatMap((y) => [{ k: 'vent', u: 0.67, y, w: 0.56, h: 0.32 }, { k: 'vent', u: 3.95, y, w: 0.55, h: 0.32 }])],
       bays: { n: 1, margin: [0.4, 0.4] },
       floors: [
@@ -329,7 +314,7 @@ export default [
       windows: {
         W2: { sill: 0.25, h: 1.8, kind: 'fixed',
            mullions: 2, frame: 'steel_black', reveal: 0.15, lintel: null, sillStone: null, blinds: 0.2, lit: 0.6, ac: 0 },
-        R: { sill: 0.1, h: 2.0, kind: 'ribbon', mullions: 2, transom: 0.6, frame: 'alu_white',   // batch 2: white frames (was steel_black)
+        R: { sill: 0.1, h: 2.0, kind: 'ribbon', mullions: 2, transom: 0.6, frame: 'alu_white',
            reveal: 0.2, lintel: null, sillStone: { mat: 'cast_stone', tint: '#bbb19c', h: 0.12, proj: 0.06 }, blinds: 0.9, lit: 0.3, ac: 0 },
       },
       bands: [{ at: 5.0, h: 0.5, proj: 0.1, mat: 'cast_stone', tint: '#bbb19c' }, { at: 15.9, h: 0.3, proj: 0.05, mat: 'brick_red', tint: '#9a6e5a' }],
@@ -339,7 +324,6 @@ export default [
     notes: 'Beige stucco front (strip_N4) 17.5 m with window ribbons on three floors and the yellow CASH LOAN awning; the crenellated brick parapet is a plain band here.',
   },
   // ------------------------------------------------------------------ 17-25 W 125th ([9], 34.6 m): red brick banded tenements, canted oriels
-  // MEASURED (2024-08, shots/ar34/bid4/elev/w125-17.jpg): four storeys at a 3.6 m pitch over a 5.25 m ground floor (black pressed-metal
   // cornice over the shops at 4.85-5.25 m), eight groups across: three flat fire-escape bays with two or four windows (u 0-6.4, 14.7-18.4, 26.5-30.2) and five canted
   // oriels (u 6.9-10.4, 11.0-14.6, 18.8-22.0, 22.9-26.2, 30.2-33.6) running from the second floor to the cornice, cream brick bands at every floor line, a brick frieze with
   // lion-head paterae under a dark bracketed cornice. Shops: wellness, Physical Therapy, Insomnia Cookies, the residential door, Essex Organic, Capt Loui, Hot Pizza, an east unit.
@@ -347,7 +331,6 @@ export default [
     id: 'w125-17', addr: '17-25 W 125th St', name: 'Insomnia Cookies, Essex Organic, Capt Loui, Fresh Hot Pizza', bin: '1053503',
     at: [2354.51, -2667.58], comp: '4_-6:433', h: 20.0, status: 'measured',
     // batch 2 (b2r1, brick pixels R>G>B, R-B>25): real upper floors (167,127,110); twin flat wall (175,128,88) with '#f3ccbf' (yellow), oriels (199,104,79) with '#b3705d' (red):
-    // b2r5: oriels (160,117,99) close (167,127,110);
     // one brick over oriels and wall, so the wall takes the oriels' tint
     wall: { mat: 'brick_red', tint: '#a48a80', dirt: 0.45, bond: 'running' },
     faces: [{
@@ -394,11 +377,10 @@ export default [
     }],
     roof: { kind: 'flat', parapet: { h: 0.45, coping: 'metal_painted' }, membrane: 'gravel', items: [{ k: 'bulkhead', at: [0.3, 0.6], w: 3, d: 2.5, h: 2.4 }, { k: 'tank', at: [0.75, 0.6], r: 1.9, h: 3.4, legs: 3.0 }] },
     notes: 'Five-storey red-brick apartment row (1900). Elevation 2024-08: salmon brick with cream brick courses at every floor line, canted oriels in five of eight groups, three fire escapes, ' +
-      'black bracketed cornice under a frieze of lion-head paterae (not drawn). The shops sit about 4-5 m east of where the first pass put them: wellness unit u 0.3-5.45, ' +
+      '' +
       'Physical Therapy 5.75-10.65, Insomnia Cookies 10.85-14.85, residential door 15.2-17.7, Essex Organic 18.15-23.65, Capt Loui 23.85-28.5, Hot Pizza 28.65-31.7, east unit 31.95-34.35.',
   },
   // ------------------------------------------------------------------ 5-15 W 125th: Nike, T.J.Maxx, DMV (2014)
-  // MEASURED (2024-08, shots/ar34/bid4/elev/w125-5.jpg): a ground floor of shops to 3.9 m, a louvre band
   // (3.9-5.0 m) and a silver panel band (to 6.2 m), then a glass wall of eight 1.35 m rows on a 2.9 m grid over u 6.3-29.7 between two full-height frameless
   // glass boxes (u 0.4-5.9 and 30.3-36.4), a silver parapet band 17.0-17.7 m.
   {
@@ -410,7 +392,7 @@ export default [
       edge: 'front',
       base: {
         h: 3.9,
-        fascia: { h: 2.3, mat: 'panel_alu', tint: '#d5d0c9' },   // real band (197,197,197); twin w2r1c (170,184,185): still blue-grey; b3r2 '#d8cdc4' read (197,189,186) warm (193,193,193)
+        fascia: { h: 2.3, mat: 'panel_alu', tint: '#d5d0c9' },
         bays: [
           { kind: 'window', u0: 0.5, u1: 3.9, h: 3.6, glazing: { bulkhead: 0.0, transom: 0.0, mullions: 2, frame: 'alu_clear' }, interior: 'empty', gate: { kind: 'none' } },
           { kind: 'entrance', u0: 4.0, u1: 5.8, door: { kind: 'glass', w: 0.9, recess: 0.4, transom: 0.5, frame: 'alu_clear' } },
@@ -434,14 +416,12 @@ export default [
           { k: 'sign', z: 0.07, sign: { kind: 'panel', lines: ['Department of', 'Motor Vehicles'], font: 'Inter-700', fg: '#ffffff', bg: '#2f5f9c', u0: b0 + 0.25, u1: b1, y: 6.95 + dy, h: 1.35, depth: 0.02 } },
         ]),
         // (the swoosh, u 17.8-20.05 at 5.0-5.86 m, is geometry in custom/bid4.js glassdeck since batch 2: the painted mark read as a faint thin arc)
-        // the sports store's window graphics, inside the glass (z -0.31; the storefront glass is 0.28 m back) over the lower lights (0.35-2.85 m), invented style:
         // west window (u 11.7-17.8): an orange panel, an aerial photograph, a pattern of words, an athlete, big type; east window (20.1-29.7): a sale card, an athlete with vertical type
         ...[[11.85, 12.5, 'postOrange', 0.6, 2.4], [12.55, 13.4, 'postAerial', 0.55, 2.45], [13.45, 14.75, 'postPattern', 0.4, 2.6], [14.8, 16.3, 'postAth1', 0.35, 2.75], [16.35, 17.7, 'postType', 0.35, 2.75],
           [21.0, 21.6, 'postSale', 1.0, 1.75], [23.0, 24.8, 'postAth2', 0.35, 2.75], [25.6, 26.9, 'postType', 0.35, 2.75], [27.2, 28.9, 'postAth1', 0.35, 2.75]].map(([a, b, fn, y0, y1]) =>
           // (b2r3, b2r4: at depth 0.005 the sign kit's face quad (at depth - 0.006) sat behind the panel's back skin and the posters read blank: depth 0.03, back at -0.34)
           ({ k: 'sign', z: -0.34, sign: { kind: 'panel', text: '', fg: '#ffffff', bg: '#1b1b1c', logo: 'bid4:' + fn, logoAt: 'fill', u0: a, u1: b, y: y0, h: y1 - y0, depth: 0.03, lit: 'none', push: false } })),
         { k: 'sign', sign: { kind: 'panel', text: 'T.J.maxx', font: 'Archivo-900', fg: '#ffffff', bg: '#c8102e', u0: 30.5, u1: 33.3, y: 4.85, h: 0.65, depth: 0.1 } },
-        // batch 2: the red T.J.maxx blade at the east corner, lettering down the blade
         { k: 'sign', sign: { kind: 'blade', text: '', fg: '#ffffff', bg: '#c8102e', logo: 'bid4:tjBlade', logoAt: 'fill', u0: 36.45, u1: 37.25, y: 9.8, h: 3.2, depth: 0.12 } },
       ],
       glassWall: { zones: [
@@ -450,7 +430,6 @@ export default [
         { u0: 30.3, u1: 36.4, mullion: 6.1, rows: { y0: 6.3, y1: 17.0, vh: 10.7 }, mullionW: 0.03, w: 0.03 },
       // batch 2 (MATS 01:11, lead 01:32): MATS's vision glass (the room behind drawn in the pane's shader); `body` is not used by it
       // KIT 05:26 / MATS 01:11: the panes' rooms on the wall's own floor lines (6.2 + k x 3.6 m, read on the elevation) and one shade bay per pane
-      // b3r3: the glass median (181,191,194) (190,199,203): tint '#e2e9ea' x (ratio^0.7)
       ], glass: 'glass_vision', tint: '#e9f0f2', storey: [3.6, 6.2], sheers: 0.45, frame: 'alu_clear', frameTint: '#d2d5d6', mullionW: 0.09 },   // real glass (197,204,206); twin w2r1b (130,162,180), w2r1c (178,190,197); b2r1 (209,218,221) flat
       floors: [],
       piers: { mat: 'panel_alu', tint: '#c6c5c1', env: 0.45, w: 0.55, proj: 0.12, at: [0.15, 6.1, 30.0, 36.6], from: 'base', to: 'cornice', capital: false, base: false },
@@ -462,7 +441,6 @@ export default [
       'WeWork / DMV banners (not drawn yet).',
   },
   // ------------------------------------------------------------------ 1 W 125th: Fifth Avenue corner (NW): Shake Shack, PLS, Pantry Plus, Advanced Dermatology
-  // MEASURED (2026-08, shots/ar34/bid4/elev/w125-1.jpg), u from the west end: grey painted stucco, a ground floor of shops to 4.3 m under a continuous sign
   // band (3.4-5.6 m), a second floor of window ribbons (glass 6.3-8.4 m) at u 15.8-19.4, 21.3-24.2, 26.2-29.8, 31.4-33.1 (the part west of u 15 is hidden by a tree: windows copied at the same 2.9 m pitch,
   // not verified), a roof at 9.2 m and a raised block over u 22.4-33.1 to 13.0 m carrying the Missy, HAIR, PLS, Offices Coworking and Regus signs. Shops: Missy Hair Boutique (u 0.2-3.4), Advanced Dermatology
   // (3.6-8.0, white sign 2.5-8.4 m), Harlem Market Pantry Plus (8.4-14.4), PLS Check Cashing (16.2-22.3, black sign 17.5-22.2 m), the '15' lobby, a geometric mural (22.6-27.0), Shake Shack (25.6-33.1 and round the corner).

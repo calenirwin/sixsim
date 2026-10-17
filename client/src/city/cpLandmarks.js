@@ -572,3 +572,7 @@ export function promenades() {
     out.push({ pts, busy: 2 }); }
   return out;
 }
+// ==== R1D (CORE, docs/notes/arch-r1-d.md): the Lake's boat courses and water level, shared with the headless core
+// (tools/core/tracks_to_boats.mjs builds the fleet with lsBuildFleet from these, as boatsBuild does)
+export const R1D_LAKE = { COURSES, waterY };
+// ==== R1D end

@@ -10,7 +10,7 @@ const man = JSON.parse(fs.readFileSync(tdir + '/manifest.json', 'utf8')); const 
 const counts = {}; let total = 0; const ys = {};
 for (let tx = Math.floor((X - R) / TILE); tx <= Math.floor((X + R) / TILE); tx++) for (let tz = Math.floor((Z - R) / TILE); tz <= Math.floor((Z + R) / TILE); tz++) {
   const ent = man.tiles[`${tx}_${tz}`]; if (!ent) continue;
-  const buf = fs.readFileSync(tdir + '/' + ent.f).buffer; const dv = new DataView(buf); const hLen = dv.getUint32(4, true);
+  const buf = ((b) => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength))(fs.readFileSync(tdir + '/' + ent.f)); const dv = new DataView(buf); const hLen = dv.getUint32(4, true);
   const header = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, hLen))); const base = 8 + hLen + ((4 - ((8 + hLen) % 4)) % 4);
   const s = header.sections.find((q) => q.name === 'furn'); if (!s) continue;
   const fb = new Uint8Array(buf, base + s.offset, s.length); const fdv = new DataView(fb.buffer, fb.byteOffset, fb.byteLength);

@@ -12,14 +12,20 @@
 // under them takes its planimetric class at grade (roadway, walk or lot). What the city's polygons leave out and the probe
 // still calls a gap takes the surface it borders most. Baked per tile by client/tools/ar34/ground/gf38_bake.py (from
 // the ground as world/assemble.js has it at this point: gf38_dump.mjs) into public/data/gf38/<tile>.bin; a tile whose
-// compiled file differs from the one baked against (its byte length) is left as it is. `?gf38=0` restores the bare ground.
+// compiled content differs from the one baked against is left as it is, with a warning (OV39, shared/overlay.js: the content
+// key, and the tile set's own overlays/gf38/ read before the copy in public/data). `?gf38=0` restores the bare ground.
+import { fetchOverlay, tilesBase, entryApplies, warnStale } from '../shared/overlay.js';
 const Q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
 export const GF38 = !(Q && Q.get('gf38') === '0');
 
-let _idx = null;
-function index() {
+let _idx = null, _binBase = 'data/gf38';
+export function gf38Index() {
   if (!_idx) _idx = !GF38 || typeof fetch === 'undefined' ? Promise.resolve(null)
-    : fetch('data/gf38/index.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    : fetchOverlay('gf38/index.json', 'data/gf38/index.json').then((o) => {
+      if (!o) return null;
+      _binBase = o.local ? `${tilesBase()}/overlays/gf38` : 'data/gf38';
+      return o.res.json();
+    }).catch(() => null);
   return _idx;
 }
 // the baked triangles of a tile: { kinds: { section: Float32Array (tile-local, 9 per triangle) } } or null
@@ -31,13 +37,15 @@ export function gf38Parse(buf) {
   for (const [k, [o, c]] of Object.entries(h.kinds)) kinds[k] = f.subarray(o, o + c);
   return { key: h.key, kinds };
 }
-export async function gf38Load(key, byteLength) {
+// ckey: the tile's content key (shared/overlay.js tileContentKey), taken before anything changed its sections
+export async function gf38Load(key, byteLength, ckey = null) {
   if (!GF38) return null;
-  const idx = await index();
+  const idx = await gf38Index();
   const e = idx && idx.tiles && idx.tiles[key];
-  if (!e || e.bytes !== byteLength) return null;
+  if (!e) return null;
+  if (!entryApplies(e, ckey, byteLength)) { warnStale('gf38', key, e, ckey); return null; }
   try {
-    const r = await fetch(`data/gf38/${key}.bin`);
+    const r = await fetch(`${_binBase}/${key}.bin`);
     return r.ok ? gf38Parse(await r.arrayBuffer()) : null;
   } catch { return null; }
 }

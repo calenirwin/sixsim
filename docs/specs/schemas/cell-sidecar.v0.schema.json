@@ -1,0 +1,458 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "valdrada.cellsidecar/0",
+  "title": "Cell sidecar (cell.json), v0",
+  "description": "What the simulation and the tools need about one 128 m cell beside its glTF package. docs/specs/cell-package.md section 5. World metres: x east, y up, z south.",
+  "type": "object",
+  "required": [
+    "schema",
+    "cell",
+    "hash",
+    "origin",
+    "size",
+    "bounds",
+    "tile",
+    "buildings",
+    "ground",
+    "nav"
+  ],
+  "$defs": {
+    "xz": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "xyz": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "placed": {
+      "type": "object",
+      "required": [
+        "kind",
+        "x",
+        "y",
+        "z"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        },
+        "rot": {
+          "type": "number",
+          "description": "heading about +y, radians"
+        }
+      }
+    },
+    "grid": {
+      "type": "object",
+      "required": [
+        "step",
+        "n",
+        "origin"
+      ],
+      "properties": {
+        "step": {
+          "type": "number"
+        },
+        "n": {
+          "type": "integer"
+        },
+        "origin": {
+          "$ref": "#/$defs/xz"
+        }
+      }
+    },
+    "light": {
+      "type": "object",
+      "required": [
+        "kind",
+        "x",
+        "y",
+        "z",
+        "headY",
+        "fixture"
+      ],
+      "description": "a lamp head as the page lights it (world/life.js lampSpots, deduplicated at 0.5 m as world/cityLamps.js); full precision",
+      "properties": {
+        "kind": {
+          "enum": [
+            "cobra",
+            "crook",
+            "signalArm",
+            "parkPost",
+            "acorn",
+            "post"
+          ]
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number",
+          "description": "the ground point under the head"
+        },
+        "z": {
+          "type": "number"
+        },
+        "headY": {
+          "type": "number",
+          "description": "world height of the head"
+        },
+        "fixture": {
+          "type": "object",
+          "required": [
+            "key",
+            "index",
+            "mount",
+            "height"
+          ],
+          "properties": {
+            "key": {
+              "type": "string",
+              "description": "world/night11.js FIXTURES key: led3000, led4000, hps2000, acorn3000; legacy"
+            },
+            "index": {
+              "type": "integer"
+            },
+            "mount": {
+              "enum": [
+                "arm",
+                "postTop"
+              ]
+            },
+            "height": {
+              "type": "number",
+              "description": "head over the ground point, metres"
+            },
+            "yaw": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "arm heading, radians about +y; null for a post top"
+            }
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "schema": {
+      "const": "valdrada.cellsidecar/0"
+    },
+    "cell": {
+      "type": "string",
+      "pattern": "^-?\\d+_-?\\d+$",
+      "description": "floor(x / 128)_floor(z / 128)"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{24}$",
+      "description": "the cache entry: SHA-256 of the inputs (meta.json), 24 hex digits"
+    },
+    "origin": {
+      "$ref": "#/$defs/xyz"
+    },
+    "size": {
+      "const": 128
+    },
+    "bounds": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 6,
+      "maxItems": 6,
+      "description": "x0, y0, z0, x1, y1, z1 of the packaged meshes"
+    },
+    "tile": {
+      "type": "string",
+      "description": "the 512 m compiled tile that holds the cell"
+    },
+    "classes": {
+      "type": "string"
+    },
+    "buildings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "tile",
+          "bid",
+          "cx",
+          "cz",
+          "dressed"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "<tile>:<building index>"
+          },
+          "tile": {
+            "type": "string"
+          },
+          "bid": {
+            "type": "integer"
+          },
+          "cx": {
+            "type": "number"
+          },
+          "cz": {
+            "type": "number"
+          },
+          "dressed": {
+            "type": "boolean",
+            "description": "rebuilt by the dresser in the package (else drawn as the tile facade)"
+          },
+          "height": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "baseY": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "style": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "ring": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/$defs/xz"
+            },
+            "description": "footprint, world x z"
+          },
+          "bin": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "declared"
+          },
+          "bbl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "declared"
+          }
+        }
+      }
+    },
+    "ground": {
+      "type": "object",
+      "required": [
+        "heights",
+        "surface"
+      ],
+      "properties": {
+        "heights": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/grid"
+            }
+          ],
+          "properties": {
+            "values": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          },
+          "description": "n x n terrain heights at x0 + step i, z0 + step j (values[j * n + i])"
+        },
+        "surface": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/grid"
+            }
+          ],
+          "properties": {
+            "kinds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "kind": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "index into kinds at the centre of each step cell, -1 none"
+            },
+            "top": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "description": "height of the top surface"
+            }
+          }
+        }
+      }
+    },
+    "nav": {
+      "type": "object",
+      "properties": {
+        "roads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "pts"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "pts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/xyz"
+                }
+              }
+            }
+          }
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "x",
+              "z"
+            ],
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              },
+              "signal": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "lanes": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "declared"
+        },
+        "sidewalks": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "declared"
+        },
+        "crossings": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "declared"
+        }
+      }
+    },
+    "signals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/placed"
+      }
+    },
+    "lights": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/light"
+      }
+    },
+    "furniture": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "description": "instance count by pool"
+    },
+    "materials": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "key"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pbr": {},
+          "textures": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "colliders": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "description": "declared"
+    },
+    "spawns": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "description": "declared"
+    },
+    "lightsFrom": {
+      "type": "string"
+    }
+  }
+}

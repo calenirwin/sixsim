@@ -1,6 +1,5 @@
 // AR33 building specs, segment bid2: Frederick Douglass to Adam Clayton Powell Jr. Boulevard (schema: docs/notes/ar33-spec.md; inventory: docs/notes/ar33-frontage/bid2.json).
 // Owner: the BID2 worker (docs/notes/ar33-bid2.md). Measured off rectified facade elevations sampled from the newest
-// every sign is drawn from scratch.
 // u runs from the face's left end as seen from the street: the WEST end on the north side, the EAST end on the south.
 
 // the typical Harlem sash: 1/1 double hung, a painted frame, a stone sill, a flat lintel
@@ -10,7 +9,7 @@ const DH = (o = {}) => ({ w: 1.0, h: 1.75, sill: 0.85, kind: 'dh', lights: '1/1'
 const STORE = (u0, u1, o = {}) => ({ u0, u1, kind: 'store', h: 3.6, glazing: { bulkhead: 0.3, transom: 0.3, mullions: 2, frame: 'alu_clear' },
   door: { u: 0.5, w: 1.0, kind: 'glass', recess: 0.6 }, gate: { kind: 'rolldown', box: true, color: '#9aa0a3' }, interior: 'shop_clothing', lit: 1.0, ...o });
 
-// AR34 wave 2: every flat roof `dirt: 0.7` and `clutter` in three classes read off bid2_top: 0.6 sparse, 1.2 some, 2.0 crowded items per 100 m2 (the
+// bid2_vic_top) and `clutter` in three classes read off bid2_top: 0.6 sparse, 1.2 some, 2.0 crowded items per 100 m2 (the
 // crowded class checked by counting units on three roofs at 0.255 m/px: 2310's north part ~2.4, Blumstein's ~1.9, 208's
 // ~2.7 per 100 m2; the others by eye)
 export default [
@@ -21,7 +20,6 @@ export default [
     wall: { mat: 'brick_red', tint: '#94513f', dirt: 0.35, bond: 'running' },
     faces: [{
       edge: 'front',
-      // a band of large silver
       // metal panels 3.4-5.0 m over black-framed shop glass, a black corner entrance on the boulevard, boost mobile's
       // orange sign at the east end; tags on the piers
       base: { h: 5.0, wall: { mat: 'panel_alu', tint: '#c3c6c8', dirt: 0.3 }, piers: { at: [0.35, 9.6, 18.9, 28.2, 37.3], w: 0.55, mat: 'granite_grey', tint: '#3a3a3c', proj: 0.05 },
@@ -35,7 +33,6 @@ export default [
       // from 2.25, a single sash at 35.45; the third and fourth floors' windows 9.0-11.0 and 12.75-14.75, the second
       // floor's green steel windows 5.5-7.5; blind strips between the pairs
       bays: { widths: [0.75, 1.5, 1.5, 2.0, 1.5, 1.5, 2.0, 1.5, 1.5, 2.0, 1.5, 1.5, 2.0, 1.5, 1.5, 2.0, 1.5, 1.5, 2.0, 1.5, 1.5, 0.95, 1.5, 1.5] },
-      // the second floor: seven continuous green steel windows ~3.9 m wide under the pairs
       floors: [{ n: 1, h: 3.2, win: 'F', open: [[0.35, 4.15, 'F'], [5.35, 9.15, 'F'], [10.35, 14.15, 'F'], [15.35, 19.15, 'F'], [20.35, 24.15, 'F'], [25.35, 29.15, 'F'], [30.35, 34.15, 'F']] },
         { n: 2, h: 3.75, win: 'P', bays: [1, 2, 4, 5, 7, 8, 10, 11, 13, 14, 16, 17, 19, 20, 22] }],
       windows: {
@@ -45,8 +42,8 @@ export default [
       bands: [{ at: 'base', h: 0.45, proj: 0.12, mat: 'stone_lime', tint: '#cdc6b6' }, { at: 'floor:3', h: 0.2, proj: 0.06, mat: 'stone_lime', tint: '#cdc6b6' }],
       cornice: { kind: 'band', h: 0.5, proj: 0.25, mat: 'stone_lime', tint: '#cfc8b8' },
     }],
-    roof: { kind: 'flat', dirt: 0.7, clutter: 2.0, parapet: { h: 1.8, coping: 'stone_lime' }, membrane: 'black', items: [{ k: 'bulkhead', at: [0.7, 0.4], w: 3.4, d: 2.6, h: 2.8 }, { k: 'hvac', at: [0.25, 0.5], n: 6 }] },   // AR34: off (10/11/2024): a dark roof, HVAC on the west half
-    refs: [],
+    roof: { kind: 'flat', dirt: 0.7, clutter: 2.0, parapet: { h: 1.8, coping: 'stone_lime' }, membrane: 'black', items: [{ k: 'bulkhead', at: [0.7, 0.4], w: 3.4, d: 2.6, h: 2.8 }, { k: 'hvac', at: [0.25, 0.5], n: 6 }] },
+    refs: ['', '', ''],
     notes: 'Red brick, stone bands; the second floor has wide green steel shop windows in groups, two storeys of ' +
       'paired 1/1 sashes over it. Ground floor under a construction fence in 2024-08 (a fish market sign at the east ' +
       'end, boost mobile). The avenue face is BID1\'s side of the corner; its shops are not resolved yet. Bays and ' +
@@ -56,7 +53,7 @@ export default [
     id: 'w125-261', addr: '261 W 125th St', name: 'Banana Republic Factory Store, Blick Art Materials', bin: '1089941',
     at: [1762.91, -3002.85], comp: '3_-6:100', h: 12.9, status: 'measured',
     ring: [[1783.25, -3008.87], [1768.75, -2982.41], [1742.07, -2997.09], [1756.57, -3023.56]],   // the east wall 0.57 m west: the Apollo's real front is 15.15 m
-    wall: { mat: 'ribbed', tint: '#4b4c4e', dir: 'h', pitch: 0.3, dirt: 0.25 },   // AR34: horizontal lap panels
+    wall: { mat: 'ribbed', tint: '#4b4c4e', dir: 'h', pitch: 0.3, dirt: 0.25 },
     faces: [{
       edge: 'front',
       base: { h: 4.4, fascia: { h: 0.9, mat: 'panel_alu', tint: '#c9cccd' },
@@ -82,7 +79,7 @@ export default [
       items: [{ k: 'sign', sign: { kind: 'channel', lines: ['BANANA', 'REPUBLIC', 'FACTORY STORE'], font: 'LibreBaskerville-400', fg: '#f2f2ef', u0: 26.4, u1: 30.2, y: 9.2, h: 2.0, lit: 'halo' } }],
     }],
     roof: { kind: 'flat', dirt: 0.7, clutter: 1.2, parapet: { h: 0.6, coping: 'alu_clear' }, membrane: 'white', items: [{ k: 'hvac', at: [0.5, 0.5], n: 4 }] },
-    refs: [],
+    refs: ['', ''],
     notes: 'The 2013 retail building: dark grey horizontal lap panels, a full-width glass band over the store with a ' +
       'Banana Republic graphic ("#HARLEMLOVE") inside it, a strip of windows under it, BANANA REPUBLIC FACTORY STORE ' +
       'in serif channel letters at the east end, Blick (red BLICK, white "art materials") in the east bay. Its compiled ' +
@@ -95,7 +92,8 @@ export default [
     custom: 'bid2:apollo',           // the whole lot: the lobby building's terracotta front, the marquee, the blade, the rooftop frame, the auditorium behind
     letters: { font: 'Jost-600' },   // the blade's and the crests' letters (city/w125cKit.js chanNeon): named here so the sign kit loads the face
     wall: { mat: 'brick_tan', tint: '#9b8a74', dirt: 0.4 },
-    refs: [],
+    refs: ['', '',
+      '', '', '', ''],
     notes: 'Measured in docs/notes/ar33-bid2.md. The front is 15.15 m (u -0.57 .. 14.58), 13.9 m to the balustrade top; ' +
       'the auditorium behind at the compiled 20.05. The marquee depth is the least certain number (5.2 m used).',
   },
@@ -113,13 +111,12 @@ export default [
             sign: { kind: 'channel', text: 'GameStop', font: 'Montserrat-900', italic: true, fg: '#e3161d', trim: '#f2f2f0', ret: '#b8141a', bg: '#101112',
               u0: 0.3, u1: 4.9, y: 3.45, h: 0.95, depth: 0.1, lit: 'face', fill: 0.62, tracking: -0.01 } }),
           STORE(5.3, 9.85, { name: 'Ballers', h: 3.45, glazing: { bulkhead: 0.25, transom: 0.35, mullions: 2, frame: 'alu_clear' }, door: { u: 0.5, w: 1.1, kind: 'double', recess: 0.5 },
-            // SIGNS 19:08: dimensional cream letters with a shadow under each on the grey framed panel (as flat
             // paint on the panel they nearly vanished): channel letters on a backer
             sign: { kind: 'channel', text: 'BALLERS', font: 'ArchivoBlack', fg: '#efe4c8', ret: '#b9ab86', bg: '#c3c4c0', depth: 0.05, lit: 'none', fill: 0.62, tracking: 0.06, u0: 5.3, u1: 9.85, y: 3.5, h: 0.85 } }),
           { u0: 10.15, u1: 12.2, kind: 'entrance', door: { kind: 'glass', w: 1.0, recess: 0.9, h: 2.3, transom: 0.6 },
             sign: { kind: 'panel', text: 'DREADLOCKS', font: 'Oswald-600', fg: '#1d1d1d', bg: '#e8e2cf', u0: 10.4, u1: 12.0, y: 2.45, h: 0.38, fill: 0.6 } },
           STORE(12.5, 22.6, { name: 'Portabella', h: 3.5, glazing: { bulkhead: 0.2, transom: 0.0, mullions: 4, frame: 'alu_clear' }, door: { u: 0.55, w: 1.8, kind: 'double', recess: 0.35 }, interior: 'shop_clothing',
-            // SIGNS 19:08: the name fills ~60 % of the panel, set 'PORTAbella' in a wide geometric face
+            // fill 0.95 of the box over the sub line, tracking 0.3)
             sign: { kind: 'panel', text: 'PORTAbella', font: 'Poppins-500', fg: '#f4f4f2', bg: '#16181d', frame: '#101114', u0: 12.5, u1: 22.6, y: 3.55, h: 0.8, fill: 0.95, tracking: 0.3, lit: 'face',
               sub: { text: 'W E A R      2 4 3      S H O E S', font: 'Montserrat-500', size: 0.18 } } }),
         ],
@@ -143,8 +140,8 @@ export default [
         { k: 'sign', sign: { kind: 'painted', text: 'DREADLOCK', font: 'Oswald-600', fg: '#8a2a1f', bg: '#d9c68a', u0: 17.2, u1: 22.7, y: 11.0, h: 0.8, fill: 0.4 } },
       ],
     }],
-    roof: { kind: 'flat', dirt: 0.7, clutter: 1.2, parapet: { h: 0.9, coping: 'alu_clear' }, membrane: 'white', items: [{ k: 'bulkhead', at: [0.62, 0.55], w: 3.0, d: 2.4, h: 2.7 }, { k: 'hvac', at: [0.3, 0.4], n: 2 }] },   // AR34: off (10/11/2024): a light grey roof
-    refs: [],
+    roof: { kind: 'flat', dirt: 0.7, clutter: 1.2, parapet: { h: 0.9, coping: 'alu_clear' }, membrane: 'white', items: [{ k: 'bulkhead', at: [0.62, 0.55], w: 3.0, d: 2.4, h: 2.7 }, { k: 'hvac', at: [0.3, 0.4], n: 2 }] },
+    refs: ['', '', ''],
     notes: 'White painted brick, four storeys, nine bays at a 2.465 m pitch (window centres 1.48 + 2.465 k), 0.98 x ' +
       '1.75-1.85 m 1/1 sashes in dark bronze frames; thin painted bands at 8.45 and 11.85; a dark bracketed metal ' +
       'cornice 15.0-16.4. Shops (2024-08) west to east: GameStop, BALLERS, a narrow door to the upstairs (a DREADLOCKS ' +
@@ -161,11 +158,11 @@ export default [
       edge: 'front',
       base: { h: 4.6, bays: [STORE(0.4, 15.5, { name: 'Jimmy Jazz', h: 4.2, glazing: { bulkhead: 0.1, transom: 0.0, mullions: 5, frame: 'alu_black' }, door: { u: 0.35, w: 2.0, kind: 'double', recess: 1.2 }, gate: { kind: 'none' } })] },
       floors: [{ n: 1, h: 5.0, win: 'G' }],
-      windows: { G: { kind: 'ribbon', w: 12.8, h: 2.7, sill: 0.9, frame: 'alu_black', frameW: 0.03, mullions: 2, du: 0.0 } },   // AR34: near-frameless glass
-      items: [{ k: 'sign', sign: { kind: 'channel', text: 'JIMMY JAZZ', font: 'Montserrat-800', fg: '#f7f7f5', u0: 1.6, u1: 14.4, y: 4.45, h: 1.35, fill: 0.92, depth: 0.12, lit: 'face', tracking: 0.04 }, z: 0.3 }],   // AR34: the letters 1.25 m, bold, standing off the folded panels
+      windows: { G: { kind: 'ribbon', w: 12.8, h: 2.7, sill: 0.9, frame: 'alu_black', frameW: 0.03, mullions: 2, du: 0.0 } },
+      items: [{ k: 'sign', sign: { kind: 'channel', text: 'JIMMY JAZZ', font: 'Montserrat-800', fg: '#f7f7f5', u0: 1.6, u1: 14.4, y: 4.45, h: 1.35, fill: 0.92, depth: 0.12, lit: 'face', tracking: 0.04 }, z: 0.3 }],
     }],
     roof: { kind: 'flat', dirt: 0.7, clutter: 0.6, parapet: { h: 0.4, coping: 'alu_clear' }, membrane: 'white' },
-    refs: [],
+    refs: [''],
     notes: 'Two storeys clad in copper-coloured folded perforated metal panels (a pyramid relief pattern, ~1.2 x 0.6 m ' +
       'units), a full-width glass band on the second floor with mannequins behind it and five spotlights on arms, ' +
       'JIMMY JAZZ in white channel letters, glass storefront. Needs a MATS folded-panel set or a custom panel builder.',
@@ -174,7 +171,7 @@ export default [
     id: 'w125-233', addr: '233 W 125th St', name: 'The Victoria (the Victoria Theater front and the tower)', bin: '1058657',
     at: [1845.24, -2986.24], comp: '3_-6:69', h: 101.5, status: 'measured',
     custom: 'bid2:victoria',          // the 1917 theatre front, the gold marquee, the VICTORIA blade, the podium and the glass tower
-    refs: [],
+    refs: ['', '', ''],
     notes: 'Custom builder (fk/custom/bid2.js victoria): the 1917 Victoria Theater front ' +
       '(terracotta, 15.4 m, two giant Ionic columns and end pilasters, bronze windows 6.0-8.4 and 9.2-11.4, frieze 11.6-12.6, ' +
       'cornice 12.6-13.2, balustrade 13.2-14.0 with sculpture groups over the columns), the VICTORIA bulb blade (u 7.0-9.3, ' +
@@ -187,13 +184,12 @@ export default [
     wall: { mat: 'stucco', tint: '#e9e8e3', dirt: 0.25 },
     faces: [{
       edge: 'front',
-      // AR34: the black panel sits right over the shuttered store, its centre ~4.4 m; the store 3.1 m
       base: { h: 5.2, bays: [STORE(1.0, 14.6, { name: 'Factory Outlet', h: 3.1, gate: { kind: 'rolldown', box: true, color: '#b9bcbe', down: 0.2 },
         sign: { kind: 'channel', lines: ['FACTORY', 'OUTLET'], font: 'Montserrat-800', fg: '#ffffff', bg: '#1c1d20', u0: 3.8, u1: 11.8, y: 3.2, h: 2.6, lit: 'face' } })] },
       floors: [],
     }],
     roof: { kind: 'flat', dirt: 0.7, clutter: 0.6, parapet: { h: 0.5, coping: 'alu_clear' }, membrane: 'white' },
-    refs: [],
+    refs: [''],
     notes: 'A plain white rendered box with a dark sign panel (FACTORY OUTLET in white capitals, partly seen) over a ' +
       'shuttered store. Height estimated.',
   },
@@ -207,7 +203,7 @@ export default [
       // 7.3, 10.2, 12.6, 15.3 m: a 2.7 m storey from 4.3), the parapet band 17.8-19.2; each 4.87 m module of the precast
       // grid holds a narrow, a wide and a narrow window (0.75 / 2.05 / 0.75 m) between deep fins
       base: { h: 3.9, fascia: { h: 0.4, mat: 'concrete_precast', tint: '#e8e7e2' },
-        // the shops off north_m3: PNC at the west end (u 1.3-6.3), Bank of America's red band at the east end
+        // the shops off north_m3: PNC at the west end (u 1.3-6.3), Bank of America's red band at the east end (u 29-34;
         bays: [STORE(0.6, 9.0, { name: 'PNC Bank', h: 3.0, interior: 'bank', glazing: { bulkhead: 0.3, transom: 0.0, mullions: 3, frame: 'alu_clear' }, door: { u: 0.8, w: 1.8, kind: 'double', recess: 0.6 }, gate: { kind: 'none' },
             sign: { kind: 'panel', text: 'PNC', font: 'Inter-800', fg: '#1d1d1b', bg: '#ffffff', u0: 1.3, u1: 6.3, y: 3.05, h: 0.75, fill: 0.6, lit: 'face' } }),
           STORE(9.4, 26.8, { interior: 'shop_phone', h: 3.0 }),
@@ -220,8 +216,8 @@ export default [
       piers: { mat: 'concrete_precast', tint: '#ecebe6', w: 0.35, proj: 0.25, at: (() => { const a = []; for (let m = 0; m <= 8; m++) a.push(2.27 + m * 4.87 - 0.31); return a; })(), from: 'base', to: 'cornice' },
       cornice: { kind: 'parapet', mat: 'concrete_precast', tint: '#e4e3de' },   // AR34: the wall's own material (the kit default is chipped metal_painted)
     }],
-    roof: { kind: 'flat', dirt: 0.7, clutter: 1.2, parapet: { h: 1.0, coping: 'alu_clear' }, membrane: 'white', items: [{ k: 'bulkhead', at: [0.55, 0.45], w: 14, d: 11, h: 3.4 }, { k: 'hvac', at: [0.2, 0.3], n: 3 }] },   // AR34: off (10/11/2024): a white roof, a big screened plant enclosure in the middle
-    refs: [],
+    roof: { kind: 'flat', dirt: 0.7, clutter: 1.2, parapet: { h: 1.0, coping: 'alu_clear' }, membrane: 'white', items: [{ k: 'bulkhead', at: [0.55, 0.45], w: 14, d: 11, h: 3.4 }, { k: 'hvac', at: [0.2, 0.3], n: 3 }] },
+    refs: ['', ''],
     notes: 'The 1971 office block: a white precast grid, recessed dark windows, Bank of America at the west end of the ' +
       'ground floor. Bay count and floor heights to be measured on an elevation.',
   },
@@ -245,8 +241,8 @@ export default [
       piers: { mat: 'brick_buff', tint: '#cbbd9f', w: 1.0, proj: 0.06, at: 'bays', from: 'base', to: 'cornice' },
       cornice: { kind: 'modillion', h: 0.9, proj: 0.6, mat: 'metal_painted', tint: '#4f6f5a', chips: 0.1 },
     }],
-    roof: { kind: 'flat', dirt: 0.7, clutter: 2.0, parapet: { h: 0.5, coping: 'alu_clear' }, membrane: 'gravel', items: [{ k: 'hvac', at: [0.8, 0.4], n: 4 }] },   // AR34: off (10/11/2024): a grey-brown gravel roof, units at the east end
-    refs: [],
+    roof: { kind: 'flat', dirt: 0.7, clutter: 2.0, parapet: { h: 0.5, coping: 'alu_clear' }, membrane: 'gravel', items: [{ k: 'hvac', at: [0.8, 0.4], n: 4 }] },
+    refs: ['', ''],
     notes: 'Three storeys of buff brick with rusticated piers between wide Chicago windows, a green-painted metal ' +
       'modillion cornice. Shops (2024-08) west to east: T-Mobile, FedEx Office, a boarded store, KFC, Citibank.',
   },
@@ -255,7 +251,6 @@ export default [
   {
     id: 'fdb-2310', addr: '2310 Frederick Douglass Blvd', name: 'Foot Locker, Kids Foot Locker', bin: '1058638',
     at: [1692.38, -2954.14], comp: '3_-6:301', h: 10.3, status: 'draft',
-    // AR34: grey standing-seam metal, upright ribs
     wall: { mat: 'ribbed', tint: '#9fa2a3', dir: 'v', pitch: 0.3, dirt: 0.3 },
     faces: [{
       edge: 'front',
@@ -269,7 +264,6 @@ export default [
       bays: { n: 4, margin: [1.0, 1.0] },
       // the second-floor windows: u 2.9-6.0 and 9.0-12.3, 5.5-8.7 m (mosaic south_m3, strip 84.8-94.2 from the east end at
       // 01320 (square to u 25) gives the west one u 25.1-28.5 and the east one's right edge 20.75 (its left behind the
-      // tree; taken at the same 3.4 m width), (oblique) 24.4-27.6 and 16.6-20.0: not mirrored (centre spacing
       // 8.4 m against the east pair's 6.2)
       floors: [{ n: 1, h: 4.2, win: 'W', open: [[2.9, 6.0, 'W'], [9.0, 12.3, 'W'], [17.35, 20.75, 'W'], [25.1, 28.5, 'W']] }],
       // THE UNITED HOUSE OF PRAYER FOR ALL PEOPLE in raised silver capitals along the top (2026-08)
@@ -277,23 +271,22 @@ export default [
       windows: { W: { w: 3.1, h: 3.2, sill: 0.1, kind: 'fixed', mullions: 1, transom: 0.9, frame: 'alu_white', reveal: 0.12, lintel: { kind: 'none' }, sillStone: null } },
       cornice: { kind: 'parapet', mat: 'panel_alu', tint: '#a8aaa9' },   // AR34: the wall's own material (the kit default is chipped metal_painted)
     }],
-    roof: { kind: 'flat', dirt: 0.7, clutter: 2.0, parapet: { h: 0.6, coping: 'alu_clear' }, membrane: 'black', items: [{ k: 'hvac', at: [0.5, 0.2], n: 8 }] },   // AR34: off (10/11/2024): a dark roof, a field of units on its north half
-    refs: [],
+    roof: { kind: 'flat', dirt: 0.7, clutter: 2.0, parapet: { h: 0.6, coping: 'alu_clear' }, membrane: 'black', items: [{ k: 'hvac', at: [0.5, 0.2], n: 8 }] },
+    refs: [''],
     notes: 'Two storeys of pale grey metal panels, a few punched windows upstairs, a black signband over Foot Locker and ' +
       'Kids Foot Locker. The compiled 19.7 m (CHURCH) is wrong: two storeys, ~9.6 m.',
   },
   {
     id: 'w125-268', addr: '268 W 125th St', name: null, bin: '1058651',
     at: [1720.77, -2958.23], comp: '3_-6:24', h: 8.2, status: 'measured',
-    // AR34: upright ribbed grey metal over a dark glass front,
     // a silver-and-black throw-up on the east pier
     wall: { mat: 'ribbed', tint: '#8a8d8f', dir: 'v', pitch: 0.15, dirt: 0.5 },
     // the glass front u 1.6-11.5 and a dark service door in the solid west end (mosaic south_m3: strip 69.1-79.0 of 67.5-81.9)
     faces: [{ edge: 'front', base: { h: 5.4, bays: [STORE(1.6, 11.5, { name: 'vacant store', interior: { kind: 'empty', tone: '#2b2b2d', lit: 0 }, gate: { kind: 'none' } }),
         { u0: 12.3, u1: 13.5, kind: 'entrance', door: { kind: 'solid', w: 1.0, recess: 0.15, mat: 'steel_black' } }] }, floors: [],
       graffiti: [{ u0: 0.1, u1: 1.55, y0: 0.2, y1: 3.2, density: 0.85, style: 'throwups', seed: 268 }] }],
-    roof: { kind: 'flat', dirt: 0.7, clutter: 0.6, parapet: { h: 0.5, coping: 'alu_clear' }, membrane: 'white' },   // AR34: off (10/11/2024): light
-    refs: [],
+    roof: { kind: 'flat', dirt: 0.7, clutter: 0.6, parapet: { h: 0.5, coping: 'alu_clear' }, membrane: 'white' },
+    refs: [''],
     notes: 'One storey (top 8.3 m on the mosaic elevation south_m3, 20 px/m): grey ribbed metal, a glass front u 1.6-11.5 ' +
       '(vacant in 2024-08), a throw-up on the east pier (invented in that style), a service door at the west end.',
   },
@@ -306,13 +299,12 @@ export default [
       base: { h: 4.2, bays: [STORE(0.8, 14.7, { name: 'Gap Factory Store', h: 3.9, gate: { kind: 'none' }, glazing: { bulkhead: 0.3, transom: 0, mullions: 4, frame: 'alu_black' } })] },
       floors: [],
       items: [{ k: 'sign', sign: { kind: 'panel', text: 'GAP', font: 'LibreBaskerville-400', fg: '#ffffff', bg: '#16336b', u0: 4.4, u1: 10.7, y: 5.9, h: 7.2, fill: 0.36, sub: { text: 'Factory Store', font: 'Inter-500', size: 0.1 }, lit: 'face' } }],
-      // AR34: navy corner pilasters and a navy band along the top, a white moulding over the shop
       piers: { mat: 'panel_alu', tint: '#1b2c5e', w: 0.6, proj: 0.12, at: [0.3, 15.2], from: 0, to: 'cornice' },
       bands: [{ at: 'base', h: 0.32, proj: 0.12, mat: 'stucco', tint: '#f3f3ef' }],
       cornice: { kind: 'band', h: 0.55, proj: 0.14, mat: 'panel_alu', tint: '#1b2c5e' },
     }],
     roof: { kind: 'flat', dirt: 0.7, clutter: 0.6, parapet: { h: 0.6, coping: 'alu_clear' }, membrane: 'white' },
-    refs: [],
+    refs: [''],
     notes: 'A white rendered box with navy trim and corner pilasters; the big navy GAP Factory Store panel; an arched ' +
       'band over the entrance. Measured on the mosaic elevation south_m3 (21 px/m): the top 15.7-16.0 m, the GAP panel ' +
       'u 4.6-10.7 x 5.8-13.1 m, the store glass u 0.9-14.6 (AR34 check).',
@@ -321,7 +313,7 @@ export default [
     id: 'w125-260', addr: '260 W 125th St', name: 'Harlem Museum (closed)', bin: '1058649',
     at: [1743.07, -2935.16], comp: '3_-6:148', h: 10.4, status: 'measured',
     wall: { mat: 'stucco', tint: '#d7d8d6', dirt: 0.35 },
-    // a tall gridded shopfront u 1.1-4.8 up to 5.2 m; piers u 4.8-5.3
+    // rectify.mjs), u from the east end: the parapet 10.4; a tall gridded shopfront u 1.1-4.8 up to 5.2 m; piers u 4.8-5.3
     // and 10.9-11.5; the closed museum front u 5.3-10.9 with its banner sign u 7.6-9.7 at 2.2-3.4 m; grilles u 11.5-13.3
     // and 13.3-15.6 under a band of posters and stickers (2.8-3.6 m); an orange perforated screen u 0.2-1.5 at 5.3-8.3 m;
     // a faded mural of walking figures u 9.5-12.9 at 4.6-6.4 m (not drawn, below)
@@ -336,17 +328,17 @@ export default [
       // and a 'blocks' mural there read as a dark window in w2c / w2e)
       items: [{ k: 'sign', sign: { kind: 'panel', text: '', bg: '#c8652c', u0: 0.2, u1: 1.5, y: 5.3, h: 3.0, lit: 'none' } }],
       graffiti: [{ u0: 13.3, u1: 15.6, y0: 2.8, y1: 3.8, density: 0.95, style: 'throwups', seed: 260, overGlass: true }] }],
-    roof: { kind: 'flat', dirt: 0.7, clutter: 1.2, parapet: { h: 0.5, coping: 'alu_clear' }, membrane: 'gravel' },   // AR34: off (10/11/2024): brown
-    refs: [],
+    roof: { kind: 'flat', dirt: 0.7, clutter: 1.2, parapet: { h: 0.5, coping: 'alu_clear' }, membrane: 'gravel' },
+    refs: [''],
     notes: 'A pale rendered two-storey front: a tall gridded shopfront, the closed Harlem Museum front behind grilles with ' +
       'its banner, two grilled stores under a band of posters and stickers, an orange perforated screen at the east end, ' +
-      'a faded mural of figures upstairs (not drawn). Measured in AR34 wave 2.',
+      '',
   },
   {
     id: 'w125-256', addr: '256 W 125th St', name: 'Spectrum; The Cliffs climbing gym', bin: '1058648',
     at: [1752.65, -2913.3], comp: '3_-6:63', h: 11.9, status: 'measured',
-    wall: { mat: 'brick_red', tint: '#74402f', dirt: 0.35 },   // AR34: a darker brown-red
-    // ONE tall window band 6.0-9.5 m (the climbing gym's double-height
+    wall: { mat: 'brick_red', tint: '#74402f', dirt: 0.35 },
+    // rectify.mjs), u from the east end: parapet 11.9; ONE tall window band 6.0-9.5 m (the climbing gym's double-height
     // floor; the draft had two storeys), black frames, piers at u 3.8-4.1 and 11.5-12.1 (the middle two windows behind
     // the tree, split evenly); 'spectrum' over the WEST half u 8.4-14.0 at 10.4-11.5 (the draft had it east), a second
     // one u 10.4-13.0 at 4.7-5.4 and THE CLIFFS board u 1.0-4.4 at 4.2-5.5 in the brick band; The Cliffs' glass entrance
@@ -362,8 +354,8 @@ export default [
         { k: 'sign', sign: { kind: 'panel', text: 'THE CLIFFS', font: 'Montserrat-800', fg: '#ffffff', bg: '#1f1f1f', u0: 1.0, u1: 4.4, y: 4.2, h: 1.3, sub: 'COME ROCK CLIMB WITH US' } }],
       cornice: { kind: 'parapet', mat: 'brick_red', tint: '#8c4d3c' },   // AR34: the wall's own material (the kit default is chipped metal_painted)
     }],
-    roof: { kind: 'flat', dirt: 0.7, clutter: 1.2, parapet: { h: 0.6, coping: 'alu_clear' }, membrane: 'black' },   // AR34: off (10/11/2024): dark
-    refs: [],
+    roof: { kind: 'flat', dirt: 0.7, clutter: 1.2, parapet: { h: 0.6, coping: 'alu_clear' }, membrane: 'black' },
+    refs: [''],
     notes: 'Three storeys of red brick with big black-framed windows; Spectrum on the ground floor and the blue ' +
       '"spectrum" letters on top; The Cliffs climbing gym upstairs (sign).',
   },
@@ -386,8 +378,8 @@ export default [
         { k: 'sign', sign: { kind: 'panel', bg: '#f1f1ee', u0: 5.9, u1: 9.4, y: 4.4, h: 4.6, lit: 'none' } },
         { k: 'sign', sign: { kind: 'lightbox', text: 'HARLEM', font: 'Montserrat-700', fg: '#1b1b1b', bg: '#f5f5f3', frame: '#1b1b1b', u0: 6.1, u1: 9.2, y: 5.5, h: 1.6, fill: 0.55 }, z: 0.06 }],
       graffiti: [{ u0: 9.6, u1: 15.6, y0: 4.4, y1: 9.0, density: 0.95, style: 'piece', seed: 252, bandTop: 0.02 }] }],
-    roof: { kind: 'flat', dirt: 0.7, clutter: 1.2, parapet: { h: 0.4, coping: 'alu_clear' }, membrane: 'white' },   // AR34: off (10/11/2024): light beige
-    refs: [],
+    roof: { kind: 'flat', dirt: 0.7, clutter: 1.2, parapet: { h: 0.4, coping: 'alu_clear' }, membrane: 'white' },
+    refs: [''],
     notes: 'One storey: Hip Hop Jewelry (252 W 125 ST.) with a JEWELRY / SNEAKERS / CAPS / TATTOOS panel, the HARLEM ' +
       'store in a white front, a graffiti mural over the third store. Shop extents and sign heights measured on the ' +
       'mosaic elevation south_m2 (AR34); the mural is invented in the style of the real one (never copied).',
@@ -396,14 +388,14 @@ export default [
     id: 'w125-250', addr: '250 W 125th St', name: 'Aldo', bin: '1058646',
     at: [1783.18, -2921.07], comp: '3_-6:294', h: 9.4, status: 'measured',
     wall: { mat: 'brick_painted', tint: '#1e1e20', dirt: 0.3 },
-    // ALDO u 3.06-6.3 at 5.8-6.4 m; a dark band 3.7-4.2; the glass front
+    // rectify.mjs), u from the east end: parapet 9.3; ALDO u 3.06-6.3 at 5.8-6.4 m; a dark band 3.7-4.2; the glass front
     // u 1.1-7.7 (0.5-3.5 m) with its double door u 4.4-6.2; a black pier u -0.5..1.1 with a tag at 1.4-2.8 m; the black
     // paint flaking to red brick over 7.0-9.0 m (not drawn: no kit option for paint over brick yet)
     faces: [{ edge: 'front', base: { h: 4.2, bays: [STORE(1.1, 7.7, { name: 'Aldo', gate: { kind: 'none' }, h: 3.5, glazing: { bulkhead: 0.35, transom: 0.4, mullions: 3, frame: 'alu_clear' }, door: { u: 0.5, w: 1.8, kind: 'double', recess: 0.3 } })] }, floors: [],
       items: [{ k: 'sign', sign: { kind: 'channel', text: 'ALDO', font: 'Montserrat-500', fg: '#e9e9e7', u0: 3.06, u1: 6.3, y: 5.8, h: 0.62, lit: 'halo', tracking: 0.12 } }],
       graffiti: [{ u0: 0.1, u1: 0.9, y0: 1.3, y1: 2.9, density: 0.8, style: 'tags', seed: 250 }] }],
-    roof: { kind: 'flat', dirt: 0.7, clutter: 1.2, parapet: { h: 0.4, coping: 'alu_clear' }, membrane: 'white' },   // AR34: off (10/11/2024): light grey
-    refs: [],
+    roof: { kind: 'flat', dirt: 0.7, clutter: 1.2, parapet: { h: 0.4, coping: 'alu_clear' }, membrane: 'white' },
+    refs: [''],
     notes: 'Black painted brick with ALDO in white letters over the glass shoe store.',
   },
   {
@@ -420,10 +412,9 @@ export default [
       items: [{ k: 'sign', sign: { kind: 'panel', bg: '#141414', frame: '#eeeeec', u0: 5.3, u1: 15.3, y: 4.1, h: 5.2, lit: 'none' } },
         { k: 'sign', sign: { kind: 'channel', lines: ['GOTHAM', 'BUDS'], font: 'Anton', italic: true, fg: '#f5c518', ret: '#3a3000', u0: 8.0, u1: 13.2, y: 5.2, h: 2.2, depth: 0.06, lit: 'face' }, z: 0.06 },
         { k: 'sign', sign: { kind: 'panel', lines: ['CELL CITY', 'of HARLEM'], font: 'Oswald-600', fg: '#d4121c', bg: '#f2f0ea', u0: 0.4, u1: 5.0, y: 7.1, h: 1.2 } }],
-      // a white marker tag on the black pier by ALDO's door
       graffiti: [{ u0: 14.9, u1: 15.4, y0: 1.0, y1: 2.4, density: 0.7, style: 'tags', seed: 246 }] }],
     roof: { kind: 'flat', dirt: 0.7, clutter: 1.2, parapet: { h: 0.4, coping: 'alu_clear' }, membrane: 'black' },
-    refs: [],
+    refs: [''],
     notes: 'Black painted fronts: GOTHAM BUDS in yellow inside a white outline frame; CELL CITY of HARLEM and GOLD of ' +
       'HARLEM (248) signs over a jewelry counter at the east end. Shop extents and sign heights measured on the mosaic ' +
       'elevation south_m2 (AR34). Not modelled: the painted portrait on the pier west of the Gotham Buds door (a real ' +
@@ -458,8 +449,8 @@ export default [
         { k: 'sign', sign: { kind: 'blade', lines: ['PLATINUM', 'JEWELRY', 'OF HARLEM'], font: 'Oswald-600', fg: '#c8102e', bg: '#f4f2ec', u0: 9.2, u1: 11.4, y: 4.2, h: 4.2 } },
         { k: 'sign', sign: { kind: 'panel', lines: ['TOURO', 'UNIVERSITY'], font: 'Inter-700', fg: '#ffffff', bg: '#1a3f8f', u0: 0.4, u1: 3.4, y: 2.6, h: 4.0, lit: 'face' } }],
     }],
-    roof: { kind: 'flat', dirt: 0.7, clutter: 2.0, parapet: { h: 1.2, coping: 'stone_lime' }, membrane: 'white', items: [{ k: 'bulkhead', at: [0.5, 0.6], w: 5, d: 4, h: 4 }, { k: 'hvac', at: [0.5, 0.35], n: 8 }] },   // AR34: off (10/11/2024): a light roof crowded with units, no tank
-    refs: [],
+    roof: { kind: 'flat', dirt: 0.7, clutter: 2.0, parapet: { h: 1.2, coping: 'stone_lime' }, membrane: 'white', items: [{ k: 'bulkhead', at: [0.5, 0.6], w: 5, d: 4, h: 4 }, { k: 'hvac', at: [0.5, 0.35], n: 8 }] },
+    refs: ['', '', ''],
     notes: 'Blumstein\'s (1922, Robert D. Kohn): limestone-faced, three bays divided by broad piers (u 7.8-9.8, 20.2-21.6) ' +
       'that rise past the parapet (29.5) into finials (to ~31); in each bay green-painted cast-iron colonettes and ' +
       'ornate spandrels over three storeys (windows 9.8-12.0, 13.6-16.0, 17.4-19.9), a green metal canopy cornice at ' +
@@ -479,8 +470,8 @@ export default [
       windows: { W: { w: 3.6, h: 3.2, sill: 0.5, kind: 'casement', mullions: 2, transom: 0.6, frame: 'alu_white', reveal: 0.2, lintel: { kind: 'flat', mat: 'stone_lime', tint: '#e0d9c6', h: 0.3 } } },
       cornice: { kind: 'dentil', h: 0.5, proj: 0.35, mat: 'stone_lime', tint: '#e2dccb' },
     }],
-    roof: { kind: 'flat', dirt: 0.7, clutter: 2.0, parapet: { h: 1.4, coping: 'stone_lime' }, membrane: 'white' },   // AR34: off (10/11/2024): light, cluttered
-    refs: [],
+    roof: { kind: 'flat', dirt: 0.7, clutter: 2.0, parapet: { h: 1.4, coping: 'stone_lime' }, membrane: 'white' },
+    refs: ['', 'elev/south_m1.jpg'],
     notes: 'Three storeys, buff brick and limestone, wide windows, a balustrade/dentil top; joyce leslie in yellow ' +
       'letters on a black signband.',
   },
@@ -493,13 +484,11 @@ export default [
       base: { h: 4.2, bays: [STORE(0.4, 11.9, { name: 'JD Sports', gate: { kind: 'none' }, glazing: { bulkhead: 0.15, transom: 0, mullions: 4, frame: 'alu_black' },
         sign: { kind: 'channel', text: 'JD', font: 'Montserrat-900', italic: true, fg: '#ffffff', u0: 5.8, u1: 7.4, y: 3.25, h: 0.75, lit: 'face' } })] },
       floors: [],
-      // AR34: the black panel over the store is blank in 2024-08; the store's black fascia carries
-      // JDSPORTS.COM (east, u 1.6-4.4) and the JD mark (u 5.8-7.4)
       items: [{ k: 'sign', sign: { kind: 'panel', bg: '#1c1c1e', frame: '#141415', u0: 2.2, u1: 11.0, y: 5.4, h: 4.9, lit: 'none' } },
         { k: 'sign', sign: { kind: 'channel', text: 'JDSPORTS.COM', font: 'Montserrat-800', fg: '#f4f4f2', u0: 1.6, u1: 4.6, y: 3.4, h: 0.4, depth: 0.03, lit: 'face', tracking: 0.02 }, z: 0.03 }],
     }],
     roof: { kind: 'flat', dirt: 0.7, clutter: 2.0, parapet: { h: 0.6, coping: 'alu_clear' }, membrane: 'white' },
-    refs: [],
+    refs: [''],
     notes: 'Cream brick with a large black panel over the JD Sports store front (JDSPORTS.COM, the JD mark).',
   },
   {
@@ -517,15 +506,13 @@ export default [
       floors: [{ n: 1, h: 4.5, win: 'P' }],
       bays: { n: 1, margin: [15.3, 0.3] },
       windows: { P: { kind: 'ribbon', w: 17.5, h: 3.2, sill: 0.4, frame: 'alu_black', mullions: 6 } },
-      // AR34: Planet Fitness's yellow band along the top with its purple lowercase name, its purple-and-
       // magenta glazing over Easy Pickins (drawn from scratch: a frosted tint and the name in big letters on the glass)
       items: [{ k: 'sign', sign: { kind: 'panel', text: 'planet fitness', font: 'Poppins-700', fg: '#5b2c86', bg: '#f6d917', u0: 15.0, u1: 33.6, y: 9.2, h: 1.2, fill: 0.62, lit: 'face' } },
         { k: 'sign', sign: { kind: 'painted', text: 'fitness', font: 'Poppins-700', fg: '#d6338a', u0: 15.6, u1: 26.4, y: 6.2, h: 2.6, fill: 0.9, onGlass: true }, z: -0.1 }],
-      // a silver throw-up on the black pier at the west end of Easy Pickins, invented in that style
       graffiti: [{ u0: 26.2, u1: 27.4, y0: 0.3, y1: 2.6, density: 0.9, style: 'throwups', seed: 208 }],
     }],
-    roof: { kind: 'flat', dirt: 0.7, clutter: 2.0, parapet: { h: 0.6, coping: 'alu_clear' }, membrane: 'black', items: [{ k: 'hvac', at: [0.5, 0.5], n: 6 }] },   // AR34: off (10/11/2024): dark grey, rows of vents
-    refs: [],
+    roof: { kind: 'flat', dirt: 0.7, clutter: 2.0, parapet: { h: 0.6, coping: 'alu_clear' }, membrane: 'black', items: [{ k: 'hvac', at: [0.5, 0.5], n: 6 }] },
+    refs: ['', ''],
     notes: 'Two storeys: EASY PICKINS (pink letters on black) with Planet Fitness upstairs behind purple/yellow glazing ' +
       '(its graphic is a real brand: the kit draws plain glass); Chick-fil-A in the cream brick part at the east end. ' +
       'The compiled landmark id -9 (the old Theresa decorate placement) sat here.',
@@ -536,7 +523,8 @@ export default [
     custom: 'bid2:theresa',
     letters: { font: 'DMSerifDisplay-400' },   // the painted HOTEL THERESA on the west wall: named here so the sign kit loads the face
     wall: { mat: 'brick_glazed_cream', tint: '#cbc9c0', dirt: 0.5 },   // AR34 b3: as the custom builder's walls (MATS 01:18)
-    refs: [],
+    refs: ['', '',
+      '', ''],
     notes: 'White glazed brick and terracotta, 12 storeys; see docs/notes/ar33-bid2.md. 2024-08: under a sidewalk shed.',
   },
 ];

@@ -14,6 +14,7 @@ import { CL24 } from './cityLamps.js';
 import { TOWER_H } from './towers.js';
 import earcut from 'earcut';
 import { createMaterials } from '@nyc/materials.js';
+import { LOWMEM, dropAfterUpload } from './cpuFree.js';   // SPACE r2: the light build's memory peak
 import { Batcher } from '@nyc/batcher.js';
 import { makeKit } from '@nyc/kit.js';
 import { punchedWall } from '@nyc/buildings/lib.js';
@@ -69,6 +70,8 @@ const FD14 = !(typeof location !== 'undefined' && new URLSearchParams(location.s
 // its own parapetH and r12Deal: importing assemble.js from here would be a cycle
 // (main.js imports both). 10 x 0.170 m kit stoop x 0.62 = a 1.05 m landing. Keep in step.
 const WB13_STOOP_SY = 0.62;
+// TW (towers lane): the overlay layers' separation from their wall plane, 2 mm (see `oframe` in buildDressed)
+const TW_LIFT = typeof location !== 'undefined' && new URLSearchParams(location.search).get('twlift') === '0' ? 0 : 0.002;
 // LD13 (docs/notes/lod-r13.md) — ?ld13=0 restores the round-12 LOD / z-fight behaviour.
 // In THIS file: `owns()` (the hand-off to the hero ring), nearest-first dress slots with
 // build-before-evict, and one "overlap, never abut" separation at the wall base. All
@@ -84,6 +87,14 @@ let LD13 = !(typeof location !== 'undefined' && new URLSearchParams(location.sea
 // fix has to be geometric. 6 mm is COPING_SINK's proven 5 mm plus a margin, and it is
 // buried inside surfaces that already stand 17-20 mm proud: no silhouette changes.
 const LD13_LAP = 0.006;
+// ==== GB43 KIT (bake only, ?kitrec=1; docs/notes/ue-city-architecture.md): the dresser's pooled parts and its merged
+// boxes recorded as instances of a kit imported once (a part's own geometry; a unit box per material) instead of copied
+// into static meshes, so a cell reaches Unreal as instance tables and a placement change imports nothing. The records
+// are window.__KITREC's: parts {id: geometry, material, shadow, night, layers} and instances {handle: part, matrix, tint,
+// and for a box the merged path's values: grime, base, cornice shadow height, texture offset u v, texture size}
+const KITREC = typeof location !== 'undefined' && new URLSearchParams(location.search).get('kitrec') === '1';
+const KIT = KITREC ? { parts: new Map(), inst: new Map() } : null;
+if (KIT && typeof window !== 'undefined') window.__KITREC = KIT;
 // LD13: how much NEARER a candidate must be than the farthest dressed building before it
 // takes its slot. Pure hysteresis — without it two buildings at nearly equal range would
 // trade the last slot on every rescan (4x/s) and the whole facade would swap 4 times a
@@ -294,16 +305,23 @@ class PartPools {
       this.buckets.set(key, b);
     }
     this.parts.set(id, { geom, bucket: b });
+    if (KIT) KIT.parts.set(id, { geom, matName, mat, castShadow, nightOnly, layers: b.mesh.layers.mask });
   }
   claim(id, matrix, tint) {
     const p = this.parts.get(id);
     if (!p) return null;
+    if (KIT) {   // (GB43 KIT: recorded, not copied into the bucket)
+      const h = { kit: true };
+      KIT.inst.set(h, { id, m: Float32Array.from(matrix.elements), t: tint ? [tint.r, tint.g, tint.b] : null, x: null });
+      return h;
+    }
     const h = p.bucket.alloc(p.geom, matrix, tint || null);
     if (!h) return null;
     h.bucket = p.bucket;
     return h;
   }
   release(id, handle) {
+    if (handle && handle.kit) { KIT.inst.delete(handle); return; }
     if (!handle || !handle.bucket) return;
     handle.bucket.free(handle);
   }
@@ -335,6 +353,7 @@ class DressBatcher extends Batcher {
     if (h) this.handles.push([id, h]);
   }
   addMerged(matName, geometry, matrix, opts = {}) {
+    if (KIT && this._kitBox(matName, geometry, matrix, opts)) return;
     const grime = opts.grime || 0;
     super.addMerged(matName, geometry, matrix, { ...opts, grime: 0 });
     if (grime > 0) {
@@ -352,6 +371,28 @@ class DressBatcher extends Batcher {
         col.setXYZ(i, col.getX(i) * f, col.getY(i) * f, col.getZ(i) * f);
       }
     }
+  }
+  // GB43 KIT: a box still the box it was made as (its size, its vertex count; moved, not turned) as an instance of the unit
+  // box of its material, the merged path's per-vertex effects carried as values (Unreal's master applies them)
+  _kitBox(matName, g, matrix, { tint = null, worldUV = true, grime = 0, aoTop = 0 } = {}) {
+    const P = g.userData && g.userData.box;
+    if (!P || g.attributes.position.count !== P.n) return false;
+    g.computeBoundingBox();
+    const b = g.boundingBox, w = b.max.x - b.min.x, h = b.max.y - b.min.y, d = b.max.z - b.min.z;
+    if (Math.abs(w - P.w) > 1e-4 || Math.abs(h - P.h) > 1e-4 || Math.abs(d - P.d) > 1e-4) return false;
+    const id = `kit:box:${matName}`;
+    if (!this.pools.has(id)) this.pools.define(id, box(1, 1, 1, { segY: 1 }), matName, {});
+    const m = matrix.clone().multiply(new THREE.Matrix4().makeTranslation((b.min.x + b.max.x) / 2, b.min.y, (b.min.z + b.max.z) / 2).scale(new THREE.Vector3(w, h, d)));
+    const hnd = this.pools.claim(id, m, tint);
+    if (!hnd) return false;
+    // (the merged path's texture offset per placement, batcher.js addMerged: whole bricks and courses)
+    const mat = this.M.get(matName), tx = matrix.elements[12], tz = matrix.elements[14];
+    const hsh = ((Math.floor(tx * 7.13 + tz * 3.71 + 1e5) * 2654435761) >>> 0) / 4294967296;
+    KIT.inst.get(hnd).x = [grime, this.baseY, aoTop, Math.floor(hsh * 17) * 0.213, Math.floor(hsh * 37 % 9) * 0.067 * 3,
+      worldUV && mat && mat.map ? (mat.userData.tileMeters || 2) : 0];
+    this.handles.push([id, hnd]);
+    this.kitN = (this.kitN || 0) + 1;
+    return true;
   }
   releaseAll() { for (const [id, h] of this.handles) this.pools.release(id, h); this.handles = []; }
   // one merged geometry per material for THIS building (handed to TileMerges)
@@ -555,6 +596,11 @@ function buildDressed(ctx, rec) {
     // building extends into -z. Outward normal of an exterior edge is (dz, -dx),
     // so ry = atan2(dz, -dx) and wall-local u (from a) maps to x = len/2 - u.
     const frame = tmat((ax + bx) / 2, y0, (az + bz) / 2, Math.atan2(dz, -dx));
+    // TW (towers lane, 2026-10-11): every layer the dresser lays over a wall (trims, bands, sills, lintels, surrounds, the
+    // cornice and its corbels, shopfronts, doors, windows, air conditioners) stands TW_LIFT out along the wall's normal,
+    // so no paint, trim or band lies in a wall's plane (the overlap gate's dresser pairs: a cornice moulding in the plane
+    // of the wall and parapet under it, 0.27 mm apart, 14.7 m2 on one building at 61st and Madison). `?twlift=0` = none.
+    const oframe = TW_LIFT ? frame.clone().multiply(tmat(0, 0, TW_LIFT)) : frame;
     const lx = (u) => len / 2 - u;
     const blind = (i < 32 && ((rec.blind >> i) & 1)) || len < 2.2;
     const bayN = Math.floor((len - 0.44) / ww);
@@ -746,12 +792,12 @@ function buildDressed(ctx, rec) {
             awningIndex: FAC8 && sfR < 0.45 ? Math.floor(hash1(cv * 407, i, op.x * 1.7) * 64) : -1,
             gate: FAC8 ? (sfR > 0.90 ? 2 : sfR > 0.76 ? 1 : 0) : (hash1(cv * 17, i, op.x) < 0.18 ? 1 : 0),
             entrySide: hash1(cv * 5, i) < 0.5 ? 1 : -1,
-          }, frame.clone().multiply(tmat(op.x, 0, 0)));
+          }, oframe.clone().multiply(tmat(op.x, 0, 0)));
           continue;
         }
         if (op.door) {
           K.door({ w: doorW, h: doorH, style: rec.style === STYLE.ROWHOUSE ? 'paneled' : 'paneled', transom: true },
-            frame.clone().multiply(tmat(op.x, doorY, 0)), { tint: new THREE.Color().setHSL(hash1(cv * 3, i) * 0.1 + 0.02, 0.35, FD14 ? 0.24 : 0.16) });
+            oframe.clone().multiply(tmat(op.x, doorY, 0)), { tint: new THREE.Color().setHSL(hash1(cv * 3, i) * 0.1 + 0.02, 0.35, FD14 ? 0.24 : 0.16) });
           // THRESHOLD: kit.door's 0.38 m entrance reveal has jambs and a head
           // but no floor, and the slab starts at doorY (+0.02) — so the recess
           // was open at the bottom: a 2 cm slot into the wall cavity under
@@ -777,20 +823,20 @@ function buildDressed(ctx, rec) {
             const dj = doorW / 2 + 0.09;
             for (const sgn of [-1, 1]) {                                   // pilasters
               B.addMerged(trimM, box(0.18, doorH + 0.16, 0.11, { segY: 1 }),
-                frame.clone().multiply(tmat(op.x + sgn * dj, doorY - 0.04, 0.055)), { tint: surT });
+                oframe.clone().multiply(tmat(op.x + sgn * dj, doorY - 0.04, 0.055)), { tint: surT });
               B.addMerged(trimM, box(0.12, 0.26, 0.19, { segY: 1 }),       // console under the hood
-                frame.clone().multiply(tmat(op.x + sgn * dj, doorY + doorH - 0.10, 0.095)), { tint: surT });
+                oframe.clone().multiply(tmat(op.x + sgn * dj, doorY + doorH - 0.10, 0.095)), { tint: surT });
             }
             B.addMerged(trimM, box(doorW + 0.46, 0.17, 0.17, { segY: 1 }),  // entablature
-              frame.clone().multiply(tmat(op.x, doorY + doorH + 0.12, 0.085)), { tint: surT });
+              oframe.clone().multiply(tmat(op.x, doorY + doorH + 0.12, 0.085)), { tint: surT });
             B.addMerged(trimM, box(doorW + 0.58, 0.09, 0.25, { segY: 1 }),  // hood cap
-              frame.clone().multiply(tmat(op.x, doorY + doorH + 0.29, 0.125)), { tint: surT });
+              oframe.clone().multiply(tmat(op.x, doorY + doorH + 0.29, 0.125)), { tint: surT });
             // glazed upper panel, one per leaf, just proud of the kit's panel boxes
             const dLeaf = doorH - 0.55, nLf = doorW > 1.15 ? 2 : 1, lwF = (doorW - 0.06) / nLf;
             for (let lf = 0; lf < nLf; lf++) {
               const cxF = -doorW / 2 + 0.03 + lwF * (lf + 0.5);
               B.addMerged('glass', box(lwF * 0.60, dLeaf * 0.32, 0.02, { segY: 1 }),
-                frame.clone().multiply(tmat(op.x + cxF, doorY + dLeaf * 0.53, -0.272)), {});
+                oframe.clone().multiply(tmat(op.x + cxF, doorY + dLeaf * 0.53, -0.272)), {});
             }
           }
           continue;
@@ -831,18 +877,25 @@ function buildDressed(ctx, rec) {
             w: winW, h: winH, style: fdWide ? 'steel' : winStyle, recess: fdWide ? 0.16 : 0.14,   // R12: dealt profile
             panesX: fdWide ? clamp(Math.round(winW / 1.0), 2, 3) : 4,
             panesY: fdWide ? clamp(Math.round(winH / 0.95), 2, 3) : 3,
-          }, frame.clone().multiply(tmat(op.x, wy, 0)), { lit, tint: wSash });
+          }, oframe.clone().multiply(tmat(op.x, wy, 0)), { lit, tint: wSash });
         }
         if (R.sills) {
+          // GB43: the sill's top was the reveal floor's own plane (the band under the row, or the infill
+          // under a jittered opening, ends at the sill line): two surfaces within a millimetre over the
+          // sill's 2 cm inside the wall, which Unreal's overlap gate counted on every stone-trimmed
+          // facade. The stone now stands 3 mm proud of the floor it sits on.
+          const sy = wy + 0.003;
           if (FAC8) {
-            K.sill(winW, frame.clone().multiply(tmat(op.x, wy, 0)),
+            K.sill(winW, oframe.clone().multiply(tmat(op.x, sy, 0)),
               { mat: R.trim, over: trimOver, proj: trimProj, tint: trimTint });
             // a stone office's window head is a flush course, not a shelf
-            K.lintel(winW, frame.clone().multiply(tmat(op.x, wy + winH, 0)),
+            // (city v2, 2026-10-14: the lintel 3 mm over the head, as the sill: its underside lay in the plane of the wall
+            // above the opening, and the overlap scan counted it on every stone-trimmed facade)
+            K.lintel(winW, oframe.clone().multiply(tmat(op.x, wy + winH + 0.003, 0)),
               { mat: R.trim, style: 'flat', over: trimOver, proj: stoneStyle ? 0.02 : Math.round(trimProj * 80) / 100, tint: trimTint });
           } else {
-            K.sill(winW, frame.clone().multiply(tmat(op.x, wy, 0)), { mat: R.trim });
-            K.lintel(winW, frame.clone().multiply(tmat(op.x, wy + winH, 0)), { mat: R.trim, style: 'flat' });
+            K.sill(winW, oframe.clone().multiply(tmat(op.x, sy, 0)), { mat: R.trim });
+            K.lintel(winW, oframe.clone().multiply(tmat(op.x, wy + winH + 0.003, 0)), { mat: R.trim, style: 'flat' });
           }
         }
         // ---- WL11: AC units. refs/streetview/morningside has a unit in a quarter of the
@@ -856,7 +909,7 @@ function buildDressed(ctx, rec) {
           : hash1(cv * 71, op.k * 3, op.m * 5 + i);
         if (R.ac > 0 && op.m > 0 && acR11 < R.ac) {
           const acDx = WL11 ? (wlHash(cvI + 1907, (op.k % 64) + (op.m % 64) * 64 + 1) < 0.5 ? -1 : 1) * winW * 0.19 : 0;
-          K.acUnit(frame.clone().multiply(tmat(op.x + acDx, wy + 0.04, 0.02)));
+          K.acUnit(oframe.clone().multiply(tmat(op.x + acDx, wy + 0.04, 0.02)));
         }
       }
     }
@@ -870,20 +923,21 @@ function buildDressed(ctx, rec) {
     if (FAC8 && stoneStyle && !blind && len > 3.2 && H > 12) {
       const baseTop = clamp(Math.round((storeHere ? sfTop + 1.1 : fh * 2) / fh) * fh, 4.6, Math.min(12.5, H * 0.34));
       // rusticated ashlar: shallow raised courses, deep shadow line between
-      for (let yb2 = 0.95; yb2 < baseTop - 0.45; yb2 += 0.92) {
+      // (city v2, 2026-10-14: from 0.99 m, not 0.95: the first course's top lay at the splash course's 1.02 m top)
+      for (let yb2 = 0.99; yb2 < baseTop - 0.45; yb2 += 0.92) {
         B.addMerged('graniteBase', box(len - 0.03, 0.07, 0.09, { segY: 1 }),
-          frame.clone().multiply(tmat(0, yb2, 0.005)), { tint: new THREE.Color().setScalar(0.8), grime: 0.55 });
+          oframe.clone().multiply(tmat(0, yb2, 0.005)), { tint: new THREE.Color().setScalar(0.8), grime: 0.55 });
       }
       // water table: the projecting band that ends the base
       B.addMerged('limestone', box(len + 0.02, 0.28, 0.17, { segY: 1 }),
-        frame.clone().multiply(tmat(0, baseTop, 0.03)), { tint: trimTint, grime: 0.35 });
+        oframe.clone().multiply(tmat(0, baseTop, 0.03)), { tint: trimTint, grime: 0.35 });
       // capital: a string course two storeys under the parapet, and a second
       // thinner one just above it, so the top of the shaft reads as a cap
       const capY = clamp(H - Math.max(2.2 * fh, H * 0.11), baseTop + fh * 2, H - 1.6);
       B.addMerged('limestone', box(len + 0.02, 0.22, 0.13, { segY: 1 }),
-        frame.clone().multiply(tmat(0, capY, 0.02)), { tint: trimTint });
+        oframe.clone().multiply(tmat(0, capY, 0.02)), { tint: trimTint });
       B.addMerged('limestone', box(len + 0.02, 0.11, 0.09, { segY: 1 }),
-        frame.clone().multiply(tmat(0, capY + 0.62, 0.01)), { tint: trimTint });
+        oframe.clone().multiply(tmat(0, capY + 0.62, 0.01)), { tint: trimTint });
     }
     // cornice along the wall top
     if ((R.cornice || (FAC8 && stoneStyle && H > 12)) && ((rec.flags & BF.CORNICE) || (FAC8 && stoneStyle && H > 12)) && len > 3) {
@@ -912,7 +966,7 @@ function buildDressed(ctx, rec) {
       // FD14: the PI yaw is the fix — see the block below. `?fd14=0` restores the
       // un-yawed call (moulding inside the wall, brackets alone, hatch and all).
       if (!(FD14 && frame13)) {
-        K.cornice(len - 0.06, frame.clone().multiply(tmat(0, H - 0.62 * cs, 0, FD14 ? Math.PI : 0)), {
+        K.cornice(len - 0.06, oframe.clone().multiply(tmat(0, H - 0.62 * cs, 0, FD14 ? Math.PI : 0)), {
           profile: 'main', tint: cornTint,
           brackets: FD14 ? false : brOn,
           scale: cs,
@@ -950,7 +1004,7 @@ function buildDressed(ctx, rec) {
         const cy = H - 0.62 * cs - 0.30 * cs;
         const nB = Math.max(2, Math.round((len - 0.06) / (0.8 * cs)));
         for (let bI = 0; bI <= nB; bI++) {
-          B.addInstance(bId, frame.clone().multiply(tmat(-(len - 0.06) / 2 + ((len - 0.06) / nB) * bI, cy, 0.02)), cornTint);
+          B.addInstance(bId, oframe.clone().multiply(tmat(-(len - 0.06) / 2 + ((len - 0.06) / nB) * bI, cy, 0.02)), cornTint);
         }
       }
       // FD14: …and the frame belt does NOT get an Italianate crown. WB13 §2.3 calls the
@@ -960,9 +1014,9 @@ function buildDressed(ctx, rec) {
       // branch); the dresser was still handing a sided house the masonry moulding.
       if (FD14 && frame13) {
         B.addMerged('cornicePaint', box(len - 0.04, 0.40, 0.26, { segY: 1 }),
-          frame.clone().multiply(tmat(0, H - 0.40, 0.11)), { tint: new THREE.Color(0.96, 0.95, 0.92) });
+          oframe.clone().multiply(tmat(0, H - 0.40, 0.11)), { tint: new THREE.Color(0.96, 0.95, 0.92) });
         B.addMerged('cornicePaint', box(len - 0.08, 0.10, 0.22, { segY: 1 }),
-          frame.clone().multiply(tmat(0, H - 0.50, 0.09)), { tint: new THREE.Color(0.40, 0.40, 0.39) });
+          oframe.clone().multiply(tmat(0, H - 0.50, 0.09)), { tint: new THREE.Color(0.40, 0.40, 0.39) });
       }
     }
     // parapet + coping (behind the cornice, so the roofline never reads as a knife edge)
@@ -1096,6 +1150,9 @@ export class NycDresser {
     }
     console.log(`[nycDress] generator materials ready in ${(performance.now() - t0).toFixed(0)}ms (${M.size} materials)`);
     this.M = M; this.extra = extra;
+    // SPACE r2 (world/cpuFree.js, ?lowmem=1): the generator's textures (src/textures.js) are painted once, above, and never
+    // repainted or read again: their canvases go once uploaded (kept: every tile draws with them)
+    if (LOWMEM) { const seen = new Set(); for (const m of M.values()) for (const k in m) { const t = m[k]; if (t && t.isTexture && !seen.has(t)) { seen.add(t); dropAfterUpload(t, true); } } }
     this.scene = scene;
     this.night = night;
     this.pools = new PartPools(scene, M);
@@ -1234,7 +1291,7 @@ export class NycDresser {
     // anyway, which discards the tile facade of a building that now has no geometry at
     // all. That is a blank front with no recovery: nothing ever unhides it until the
     // camera walks 190 m away. Treat it exactly like a thrown build.
-    if (LD13 && merged.size === 0) {
+    if (LD13 && merged.size === 0 && !(KIT && B.kitN)) {   // (GB43 KIT: a building drawn by kit instances alone is built)
       B.releaseAll();
       this.stats.skipped++;
       if (!this._warnedEmpty) { this._warnedEmpty = true; console.warn('[nycDress] LD13: empty dressed build, keeping the tile facade', rec.key); }

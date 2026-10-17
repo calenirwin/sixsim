@@ -15,11 +15,21 @@ import { applyLightTrim, applySkyGlass } from '../world/materials.js';
 import { boardMaterial, boardUVRect, BOARD_SLOTS } from './billboards.js';
 import { buildSteinway } from './lmSteinway.js';   // CP33: 111 West 57th on its lot (terracotta and bronze faces, glass faces, setbacks, the hall)
 import { buildPlazaRoof, buildHampshireRoof } from './lmPlaza.js';
+import { buildMetMuseum } from './lmMetMuseum.js';   // LM16: the Met drawn whole on its ring (walls, roofs; replace)
+const MET16 = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('met16') === '0');
 import { buildMetRoof, metFront } from './lmMet.js';   // CP33: the Met's roofscape (deck over the green slab, skylights, copper hips, plant)   // CP33: the Plaza's mansard, dormers, pavilions and chimneys on the compiled ring
 import { buildEssexSign } from './lmCps.js';   // CP33: the Essex House's red rooftop letters (and the Plaza's mansard)
 import { buildSanRemo } from './lmSanRemo.js';   // CP33: the San Remo on its footprint ring (facade tiles, mouldings, the temples)
+import { buildMajestic, buildCentury, buildEldorado, buildBeresford } from './lmCPW.js';   // CW38: Central Park West's tower houses on their rings
 // CP33 (landmarks round): `?cp33lm=0` puts the old box builders back (the read-time overrides in shared/landmarkSpec.js follow the same flag)
 const CP33LM = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('cp33lm') === '0');
+const CW38 = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('cw38') === '0');
+import { TW_BUILDERS } from './tk/tkLandmarks.js';   // TW: the tower kit's landmarks
+// LM16 (2026-10-16): the AMNH and the Guggenheim modelled on their rings with the kit's material sets; `?lm16=0` keeps the old boxes
+import { buildAmnh, buildAmnhNorth } from './lmAmnh.js';
+import { buildGuggenheim } from './lmGuggenheim.js';
+const LM16 = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('lm16') === '0');
+const TWLM = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('twlm') === '0');   // TW
 
 const {
   mat, box, cyl, sphere, disc, dome, prism, gable, wedge, pyramid, spire, steps,
@@ -153,6 +163,11 @@ function bandCanvas(pier, glass, sill, vert = 0) {
   c.width = W; c.height = H;
   const x = c.getContext('2d');
   const hex = (h) => '#' + h.toString(16).padStart(6, '0');
+  // ==== R1A cells: the grain is seeded by the band's key, so the same band paints the same pixels on every page load
+  // (the cell packages' texture store is by content: an unseeded canvas changed between two bakes of the same inputs)
+  let r1aS = 0x811c9dc5; for (let i = 0; i < key.length; i++) { r1aS ^= key.charCodeAt(i); r1aS = Math.imul(r1aS, 0x01000193) >>> 0; }
+  const rand = () => { r1aS = (r1aS + 0x6d2b79f5) >>> 0; let t = Math.imul(r1aS ^ (r1aS >>> 15), 1 | r1aS); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  // ==== /R1A
   /* ---- VERTICAL-EMPHASIS BAY (Empire State, 30 Rock, RCA-era shafts) -------
      Critic r5 #6 / #21: "its defining feature — continuous nickel-chrome
      vertical mullion strips unbroken from the 6th to the 85th floor with
@@ -170,7 +185,7 @@ function bandCanvas(pier, glass, sill, vert = 0) {
     // limestone pier grain (vertical tooling marks, very faint)
     for (let i = 0; i < 40; i++) {
       x.fillStyle = `rgba(${i % 2 ? 255 : 40},${i % 2 ? 250 : 36},${i % 2 ? 238 : 30},0.05)`;
-      x.fillRect(Math.random() * W, Math.random() * H, 1, 12 + Math.random() * 60);
+      x.fillRect(rand() * W, rand() * H, 1, 12 + rand() * 60);   // ==== R1A seeded
     }
     const cx0 = Math.round(W * 0.255), cw = Math.round(W * 0.49);
     // the channel: nickel spandrel field, top to bottom, no stone crossing it
@@ -204,7 +219,7 @@ function bandCanvas(pier, glass, sill, vert = 0) {
   // stone grain: faint vertical streaks so the piers are not flat colour
   for (let i = 0; i < 90; i++) {
     x.fillStyle = `rgba(${i % 2 ? 255 : 0},${i % 2 ? 250 : 0},${i % 2 ? 240 : 0},0.045)`;
-    x.fillRect(Math.random() * W, Math.random() * H, 1 + Math.random() * 2, 6 + Math.random() * 40);
+    x.fillRect(rand() * W, rand() * H, 1 + rand() * 2, 6 + rand() * 40);   // ==== R1A seeded
   }
   // the opening
   const ox = Math.round(W * 0.19), ow = Math.round(W * 0.62);
@@ -601,6 +616,12 @@ function thermalWindow(trimB, glsB, off, yaw, y0, rad) {
 
 /* --------------------------------- builders ---------------------------------- */
 export const BUILDERS = {
+
+  // ==================== the Statue of Liberty (id 67) ====================
+  // drawn by city/liberty.js (the statue, the pedestal, Fort Wood), resident with its own level chain like the bridges; the
+  // compiled footprint here (Fort Wood's star as a 36 m prism) is replaced by nothing
+  statueOfLiberty() { return new THREE.Group(); },
+  libertyIslandBuilding() { return new THREE.Group(); },
 
   // ==================== Morningside Heights & Harlem ====================
 
@@ -1836,7 +1857,7 @@ export const BUILDERS = {
       stone.add(box(W * 0.998, 0.84, 1.0 + (i % 2 ? 0.0 : 0.14), 0, { y, z: FR - 0.5 }));
     }
     stone.add(box(W, podium, D * 0.94, 0, { z: -D * 0.03 }));       // the plinth itself
-    trim.add(box(W * 1.004, 0.36, 1.3, 0, { y: baseH - 0.36, z: FR - 0.35 })); // base cap band
+    trim.add(box(W * 1.004, 0.36, 1.3, 0, { y: baseH - 0.36, z: FR - 0.34 })); // base cap band (its back 1 cm off the top course's: RG44, the Unreal duplicate gate)
 
     // ---- the terrace, its balustrade and the Fifth Avenue steps -------------
     const terD = 13.0;
@@ -2217,6 +2238,11 @@ export const BUILDERS = {
 
   // DECORATE: monumental staircase, facade slab, 4 paired-column bays, attic.
   metMuseum(ctx) {
+    // LM16: the whole museum on its ring (city/lmMetMuseum.js); the decorate builder below stays for `?met16=0`
+    if (MET16 && ctx.footprint && ctx.footprint.length >= 4) {
+      // (a failure returns null: assemble.js then draws the plain extrusion the replace path left out)
+      try { return buildMetMuseum(ctx); } catch (e) { console.warn('met museum build failed', e); return null; }
+    }
     const [g, r0] = shell(ctx); const { W, D, H } = dims(ctx);
     let r = r0, F = Math.min(W * 0.6, 90), zf = D / 2;
     // CP33: on the compiled ring the front goes on Fifth Avenue's front line (the OBB of a 63-sided ring put it off the corner)
@@ -2235,6 +2261,10 @@ export const BUILDERS = {
 
   // Inverted white ziggurat spiral + skylight + small rotunda + back block.
   guggenheim(ctx) {
+    // LM16: Wright's rotunda, the monitor and the 1992 tower on the compiled ring (city/lmGuggenheim.js)
+    if (LM16 && ctx.footprint && ctx.footprint.length >= 4) {
+      try { const gg = buildGuggenheim(ctx); if (gg) return gg; } catch (e) { console.warn('guggenheim build failed', e); }
+    }
     const [g, r] = shell(ctx); const { W, D, H } = dims(ctx);
     const R = Math.min(W, D) * 0.3, rx = -W / 2 + R * 1.3;
     r.add(box(W * 0.9, H * 0.45, D * 0.8, WHITE, { x: W * 0.12 }));
@@ -2252,8 +2282,18 @@ export const BUILDERS = {
     ]);
   },
 
+  // LM16: the AMNH's north side (the Gilder Center, the 81st Street terrace, the north ranges) on its own footprint
+  amnhNorth(ctx) {
+    if (!LM16) return null;
+    try { return buildAmnhNorth(ctx); } catch (e) { console.warn('amnhNorth build failed', e); return null; }
+  },
+
   // DECORATE: romanesque central entrance tower + arch + corner towers.
   amnh(ctx) {
+    // LM16: the whole museum south of the north side (city/lmAmnh.js), a 'replace' on its ring (shared/landmarkSpec.js LM16)
+    if (LM16 && ctx.footprint && ctx.footprint.length >= 4) {
+      try { const ga = buildAmnh(ctx); if (ga) return ga; } catch (e) { console.warn('amnh build failed', e); }
+    }
     const [g, r] = shell(ctx); const { W, D, H } = dims(ctx);
     const PK = 0xb89890, zf = D / 2, cx = Math.min(W * 0.4, 40);
     r.add(box(16, H * 1.08, 8, PK, { z: zf + 1 }));
@@ -2281,6 +2321,13 @@ export const BUILDERS = {
     }
     return g;
   },
+
+  // CW38: Central Park West's twin- and three-tower houses (city/lmCPW.js); `?cw38=0` keeps them off (the read-time
+  // overrides in shared/landmarkSpec.js follow the same flag), and a builder failure falls back to the plain extrusion
+  majestic(ctx) { return CW38 ? buildMajestic(ctx) : null; },
+  century(ctx) { return CW38 ? buildCentury(ctx) : null; },
+  eldorado(ctx) { return CW38 ? buildEldorado(ctx) : null; },
+  beresford(ctx) { return CW38 ? buildBeresford(ctx) : null; },
 
   // Twin towers on a shared base, each crowned by a round temple + cone.
   sanRemo(ctx) {
@@ -2610,6 +2657,10 @@ function realMassing(key, ctx) {
 export function buildLandmark(key, ctx) {
   const real = realMassing(key, ctx);
   if (real) return real;
+  // TW (towers lane): the tower kit's landmarks first (city/tk/tkLandmarks.js); `?twlm=0` keeps the builders below
+  if (TWLM && TW_BUILDERS[key]) {
+    try { const g = TW_BUILDERS[key](ctx); if (g) return g; } catch (e) { console.warn('[tw] landmark', key, e); }
+  }
   const b = BUILDERS[key];
   if (!b) return null;
   try { return b(ctx); } catch (e) { console.warn('landmark build failed', key, e); return null; }

@@ -1,5 +1,4 @@
 // AR33 building specs, segment west: 12th Avenue (Dinosaur Bar-B-Que) to Morningside Avenue (schema: docs/notes/ar33-spec.md; inventory: docs/notes/ar33-frontage/west.json).
-// Owner: the WEST worker (docs/notes/ar33-west.md). References under client/shots/ar33/west/refs; the
 // ------------------------------------------------------------------ helpers for the plain frontages
 // a walk-up tenement face: stores in the base, n floors of punched 1/1 sash in equal bays, fire escapes, a cornice
 const DH = (o = {}) => ({ w: o.w ?? 1.05, h: o.h ?? 1.7, sill: o.sill ?? 0.8, kind: 'dh', lights: o.lights || '1/1', frame: o.frame || 'alu_white',
@@ -45,12 +44,19 @@ export default [
     status: 'measured',
     custom: 'west:dino',          // the whole building: fk/custom/west.js dino()
     wall: { mat: 'brick_red', tint: '#8a4434', dirt: 0.4, bond: 'running' },
-    refs: [],
+    refs: [
+      'west33/w33_dino_ne_ShDNFT3l24xtsQN3ioWnzg_202203.jpg h235 p14 f100 (dino_ne_22, straight on, leafless)',
+      'west33/w33_dino_ne_PurSBCT2naKdt4lMTJ8-sQ_202309.jpg h240 p6 f90 (dino_ne_a)',
+      '',
+      'west33/w33_dino_se_DP0wlPavtUINBmBNaqfauw_202203.jpg h300 p12 f100 (dino_se_22: the loading dock canopy)',
+      'west33/w33_dino_nw_6mviAemyiAmDnt4xreQTkQ_202608.jpg h122 p8 f100 (dino_nw_a: the graffiti wall, the billboards)',
+      '',
+    ],
     notes: 'Two-storey brick meatpacking building (1926), the restaurant at the 125th Street end, Floridita under the old ' +
       'loading dock canopy on the SE face. Frieze of a soldier course and stack-bond basketweave with white mortar over ' +
       'the second-floor window heads, all round. No neon roof signs: three billboard structures on the roof (invented ' +
-      'brands here). Unknowns: the SE face storefront positions come from one oblique (+-0.5 m); the SW end is not seen; ' +
-      'the billboard heights are estimates (bulletins 14.6 x 4.27 m).',
+      'brands here). Unknowns: the SE face storefront positions come from one oblique (+-0.5 m); the SW end is not seen ' +
+      '',
   },
   {
     id: 'w125-656', addr: '656 W 125th St', name: 'Cotton Club', bin: null,
@@ -72,10 +78,10 @@ export default [
       graffiti: [{ u0: 23.8, u1: 25.3, y0: 1.0, y1: 2.1, density: 0.2, style: 'throwups', bandTop: 0.1, seed: 657 }],
     }],
     roof: { kind: 'flat', parapet: { h: 0.35, coping: 'metal' }, membrane: 'black' },
-    refs: [],
+    refs: ['west33/w33_cotton_BCVJZZk0IeHwc_sEvEHFhw_202308.jpg h235 p8 f100 (cotton_23, 20 m out)'],
     notes: 'A low white-painted block building, one storey (~4 m), behind street trees; a black canopy with the round ' +
       '"CC" mark over the door "656" at the SE end; a tall billboard on steel posts over the NW half, face to the ' +
-      'parkway (cottonTop). The AR32 build\'s "COTTON CLUB" neon board was from memory and is not verified. Open: ' +
+      '' +
       'the CC mark on the canopy (the kit awning has no sign slot), the side walls.',
   },
   {
@@ -111,7 +117,11 @@ export default [
       cornice: { kind: 'modillion', h: 1.1, proj: 0.6, mat: 'terracotta_cream', tint: '#e4dfd3' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.9, coping: 'terracotta' }, membrane: 'gravel', items: [{ k: 'bulkhead', at: [0.55, 0.45], w: 5, d: 4, h: 3 }] },
-    refs: [],
+    refs: [
+      'west33/w33_prentis_LRLDvWyWmpaTFQgMWaGO2A_202608.jpg h235 p14 f100 (prentis_26, 13 m out)',
+      'west33/w33_prentis_LRLDvWyWmpaTFQgMWaGO2A_202608.jpg h185 p10 f100 (prentis_26b)',
+      '',
+    ],
     notes: 'White glazed terra cotta, 1909. Measured on prentis_26: bays at 4.52 m (12), floor-2 glazing 7.1-9.7 m, a dark ' +
       'green louvred spandrel 9.7-11.05 m, the floor-3 glazing to the arch at 13.5 m, the mid cornice 14.0-15.4 m, floor 4 ' +
       'above. Open: the openings are ROUND-ARCHED over floors 2-3 with ornamented archivolts and console keystones (the ' +
@@ -134,7 +144,7 @@ export default [
       floors: [{ n: 37, h: 3.12, win: 'A' }],
       windows: { A: { w: 2.3, h: 2.35, sill: 0.45, kind: 'fixed', mullions: 1, frame: 'alu_clear', glass: 'glass_blue', reveal: 0.12, lintel: null, sillStone: null, blinds: 0.35, lit: 0.45 } },
     }],
-    refs: [],
+    refs: ['west33/w33_bway_LmXCwMu2Tp9beLnH61tYfw_202608.jpg h285 p12 f100 (bway_26_sw)'],
     notes: 'White metal-panel tower over a glazed double-height base with slender white columns; windows in vertical ' +
       'pairs and triples. Open: the setbacks (a podium of ~8 floors under the tower), the exact window grouping, the ' +
       'shops (a blue sign at the corner not yet read), the address.',
@@ -144,7 +154,7 @@ export default [
     at: [1033.5, -3600.2], comp: '2_-8:44',
     h: 24.7, status: 'draft',
     wall: { mat: 'brick_tan', tint: '#a88b6a', dirt: 0.4 },
-    refs: [],
+    refs: ['west33/w33_bway_LmXCwMu2Tp9beLnH61tYfw_202608.jpg h285 p12 f100 (bway_26_sw, left edge)'],
     notes: 'Six-storey tan brick apartment house (1926) on Broadway behind the tower; only a 7.9 m sliver faces 125th.',
   },
   // ------------------------------------------------------------------ north-east side, 12th Avenue to Broadway
@@ -156,14 +166,14 @@ export default [
     // w2b3: the parkway faces carry dense graffiti in n12av_26 (arb_dX 2026-08, levelled: throw-ups and pieces over the old
     // brick from the foot to the top, silver, white and black with a few colour fills); the faces named by their ring
     // segment (frontage #0's W face; #1 has its own spec below: b3r7 showed 'also' resolves a face on #0's ring only). The
-    // whole height is the base (no openings) so the paint reaches the top. The massing is still the compiled block: open
+    // whole height is the base (no openings) so the paint reaches the top. The massing (three brick shafts ~12 m and a
     faces: [
       { edge: [889.86, -3941.62, 898.09, -3953.74], floors: [], base: { h: 9.0, bays: [] },
         graffiti: [{ u0: 0.3, u1: 14.3, y0: 0.2, y1: 8.6, density: 0.9, style: 'throwups', seed: 22861 }, { u0: 0.3, u1: 14.3, y0: 0.2, y1: 3.0, density: 0.7, style: 'piece', seed: 22862 },
           { u0: 0.3, u1: 14.3, y0: 4.2, y1: 8.8, density: 0.8, style: 'throwups', seed: 22865 }] },
     ],
     roof: { kind: 'flat', parapet: { h: 0.8, coping: 'metal' }, membrane: 'black', items: [{ k: 'hvac', at: [0.5, 0.5], n: 2 }] },
-    refs: [],
+    refs: ['', ''],
     notes: 'Two-storey brick industrial building behind the planted plaza at 12th Avenue, a billboard on a tall frame over ' +
       'its roof (a real ad in 2023: to be drawn as an invented brand). Open: its faces are seen only across the plaza.',
   },
@@ -178,7 +188,7 @@ export default [
           { u0: 0.3, u1: 28.1, y0: 4.2, y1: 8.8, density: 0.75, style: 'throwups', seed: 22866 }] },
     ],
     roof: { kind: 'flat', parapet: { h: 0.8, coping: 'metal' }, membrane: 'black' },
-    refs: [],
+    refs: [''],
     notes: 'The second footprint of 2286 12th Ave (frontage #1), split from w125-2286-12av\'s also so its parkway face can be named.',
   },
   {
@@ -186,10 +196,14 @@ export default [
     at: [1080.1, -3678.1], comp: '2_-8:117',
     h: 18.3, status: 'measured',
     custom: 'west:forum',
-    refs: [],
+    refs: [
+      'west33/w33_forum_lS4mMvx-9t2XxJRlqgj7kA_202608.jpg h60 p10 f95 (forum_26, 17.5 m out)',
+      'west33/w33_forum_lS4mMvx-9t2XxJRlqgj7kA_202608.jpg h330 p6 f90 (forum_26_nw)',
+      '',
+    ],
     notes: 'Renzo Piano, 2018. Measured on forum_26: columns at 6.5 m (u 21.2 .. 47.4), band 5.1-7.0 m, floor lines 7.4 ' +
       'and 11.8 m, the concrete box from u 35.4 with slots u 36.8-43.8 (8.4-11.0 m). Open: the top floor and roof terrace ' +
-      'are guessed; the Broadway and rear faces are not measured yet (built as the same ' +
+      '' +
       'system); the glass has a finer mullion rhythm than 1.5 m in places.',
   },
   {
@@ -197,7 +211,7 @@ export default [
     at: [984.2, -3905.6], h: 52.2, floors: 11, status: 'measured',
     custom: 'west:kravis',
     wall: { mat: 'alu_clear', tint: '#cfd3d4' },
-    refs: [],
+    refs: ['west33/w33_kravis_EDDCLfHfeCg2JnAXoTFLJA_202308.jpg h45 p14 f100 (kravis23)', '', ''],
     notes: 'Diller Scofidio + Renfro, 2022 (custom kravis, w2b3): a set-back two-storey glass lobby, then two-storey cycles ' +
       'of a projecting fritted-glass tray (white slab edge and cap, the cap kinked along each face, prows at some corners) ' +
       'over a recessed strip of dark vision glass with curved corners, a fritted screen round the roof plant. Measured on ' +
@@ -234,10 +248,10 @@ export default [
       windows: { A: { w: 1.1, h: 1.7, sill: 0.8, kind: 'dh', lights: '1/1', frame: 'alu_white', lintel: { kind: 'flat', mat: 'stone_lime', h: 0.22 }, ac: 0.35 } },
       cornice: { kind: 'bracketed', h: 0.9, proj: 0.55, mat: 'metal_painted', tint: '#6f5a46', brackets: 4 },
     }],
-    refs: [],
+    refs: ['west33/w33_oldbway_c_KwcLNSy-njhpvwoacTEg_202608.jpg h15 p14 f100 (bway_26_n, far left)'],
     notes: 'Six-storey buff brick tenement (1901) on the NE corner of Broadway; Chase branch across the ground floor (blue ' +
-      'fascia, white letters and the octagon mark, drawn here). Open: the Broadway face and the corner splay not ' +
-      'measured yet; window count estimated.',
+      'fascia, white letters and the octagon mark, drawn here). Open: the Broadway face and the corner splay not in a ' +
+      '',
   },
   {
     id: 'w125-567', addr: '567 W 125th St', name: 'Red Olive Deli', bin: null,
@@ -260,7 +274,7 @@ export default [
       fireEscape: { bays: [1, 2], floors: [1, 5], kind: 'balcony', drop: true },
       cornice: { kind: 'bracketed', h: 1.0, proj: 0.6, mat: 'metal_painted', tint: '#5a2a22', brackets: 7 },
     }],
-    refs: [],
+    refs: ['west33/w33_oldbway_c_KwcLNSy-njhpvwoacTEg_202608.jpg h15 p14 f100 (bway_26_n)'],
     notes: 'Six-storey buff brick tenement; the dark red-brown bracketed cornice; fire escapes over the middle bays; the ' +
       'Red Olive Deli lightbox (red letters on black, a white line of services under it). Open: the left shop\'s name ' +
       '(a red sign, not legible at this angle).',
@@ -286,7 +300,7 @@ export default [
       bands: [{ at: 'floor:2', h: 0.3, proj: 0.05, mat: 'stone_lime' }],
       cornice: { kind: 'bracketed', h: 0.9, proj: 0.6, mat: 'metal_painted', tint: '#b8a888', brackets: 7 },
     }],
-    refs: [],
+    refs: ['west33/w33_oldbway_c_KwcLNSy-njhpvwoacTEg_202608.jpg h15 p14 f100 (bway_26_n, right)'],
     notes: 'Six-storey buff brick tenement on the Old Broadway corner with quoins; the corner store City Prime Health under a ' +
       'blue fascia (white letters, the petal mark, drawn here), First Community Health beside it. Open: the Old Broadway ' +
       'face; the quoins and the rusticated second floor are not in the kit spec yet.',
@@ -309,14 +323,13 @@ export default [
       base: { h: 4.0, bays: [{ u0: 0.15, u1: 2.3, kind: 'store', h: 3.0, name: 'Pedego Electric Bikes',
         sign: { kind: 'panel', text: 'PEDEGO', font: 'Montserrat-700', fg: '#ffffff', bg: '#111111', u0: 0.1, u1: 2.36, y: 3.05, h: 0.8,
           sub: { text: 'ELECTRIC BIKES', font: 'Inter-700', fg: '#ffffff', size: 0.2 } },
-        // AR34 w2 s3: PurSBCT2 shows the gate down, painted green with a bicycle
         glazing: { bulkhead: 0.55, transom: 0.2, mullions: 0, frame: 'alu_black' }, door: null, interior: 'shop_phone', gate: { kind: 'rolldown', down: 1, color: '#2f7d5c' } }] },
       floors: [],
     }],
     roof: { kind: 'flat', parapet: { h: 0.3, coping: 'metal' }, membrane: 'black' },
-    refs: [],
+    refs: ['west33/w33_dino_ne_ShDNFT3l24xtsQN3ioWnzg_202203.jpg h290 p6 f60 (stclair71_22)'],
     notes: 'A one-storey shop tucked under the Henry Hudson Parkway bridge beside the Dinosaur: white pilasters, a black ' +
-      'fascia "PEDEGO / ELECTRIC BIKES" with a green bike icon (2022-03). Open: whether ' +
+      '' +
       'the shop is still there; its main front may be the 18.4 m NNE edge rather than the 2.5 m 125th sliver.',
   },
   // ------------------------------------------------------------------ north-east side, Old Broadway to Amsterdam Avenue
@@ -325,11 +338,11 @@ export default [
       STORE(6.9, 11.8, null, null, { door: null, interior: 'empty', gate: { kind: 'rolldown', down: 1 }, lit: 0 }),
       STORE(12.0, 17.8, null, SGN('', '#ffffff', '#b3262b', 12.1, 17.7, { h: 0.7, y: 3.45 }), { door: null, interior: 'empty', gate: { kind: 'rolldown', down: 1 }, lit: 0 })],
     cornice: null, roof: { kind: 'flat', parapet: { h: 0.5, coping: 'metal' }, membrane: 'black', items: [{ k: 'hvac', at: [0.5, 0.6], n: 2 }] },
-    refs: [],
+    refs: [''],
     notes: 'One-storey 1962 retail strip on the Old Broadway corner: the Miegamat Laundromat under a blue awning (yellow letters, WASH & FOLD / OPEN 24 HOURS), then shuttered stores under a red fascia (2024-08).' }),
   TEN({ id: 'w125-551', addr: '551 W 125th St', at: [1167.3, -3546.7], comp: '2_-7:111', h: 18.1, floors: 4, fh: 3.2, bays: 3, tint: '#b49775',
     stores: [STORE(0.4, 11.0, null, null, { interior: 'shop_clothing' })], fe: [1],
-    notes: 'Five-storey 1901 walk-up (class N2). Bays and shop from the lot facts.' }),
+    notes: '' }),
   TEN({ id: 'w125-543', addr: '543 W 125th St', at: [1175.7, -3533.7], comp: '2_-7:7', h: 20.2, floors: 5, bays: 6, brick: 'brick_red', tint: '#8a4a3a',
     stores: [STORE(0.4, 10.6, null, null, { interior: 'shop_food' }), { u0: 10.8, u1: 12.6, kind: 'entrance', door: { kind: 'solid', w: 1.1 } }, STORE(12.8, 21.4, null, null, { interior: 'shop_clothing' })],
     fe: [1, 4], refs: [R540], notes: 'Six-storey red brick apartment house (1926), fire escapes over two bays (n540, left edge).' }),
@@ -365,13 +378,13 @@ export default [
     notes: 'A garage (class G7); plain.' }),
   TEN({ id: 'w125-521', addr: '521 W 125th St', at: [1227.2, -3466.1], comp: '2_-7:78', h: 14.6, floors: 3, bays: 3, brick: 'brick_red', tint: '#9c4a3c',
     stores: [STORE(0.3, 7.2, null, SGN('STORE OPEN', '#1b1b1b', '#f2f2ee', 0.4, 2.6, { h: 0.5 }), { interior: 'shop_phone' })], fe: [1], dh: { lintel: 'hood' }, cornice: 'bracketed', cornTint: '#4a4540',
-    refs: [],
+    refs: [''],
     notes: 'Four/five-storey red brick walk-up with hooded lintels and a fire escape; a contractor sign (sidewalk shed, scaffold) and a small store.' }),
   TEN({ id: 'w125-515', addr: '515 W 125th St', name: 'Antioch Baptist Church', at: [1236.2, -3453.9], comp: '2_-7:45', h: 5.6, floors: 0, baseH: 4.6, brick: 'brick_painted', tint: '#b8433b',
     stores: [{ u0: 0.6, u1: 5.4, kind: 'entrance', door: { kind: 'double', w: 1.8, recess: 0.4 }, sign: SGN('Antioch Day Care', '#ffffff', '#1f58a8', 0.8, 5.2, { font: 'Montserrat-700', h: 0.5, y: 2.9 }) },
       { u0: 6.2, u1: 22.5, kind: 'window', h: 3.0, glazing: { bulkhead: 1.2, transom: 0, mullions: 6, frame: 'alu_white' }, interior: 'empty', gate: { kind: 'none' },
         sign: SGN('Antioch Baptist Church', '#ffffff', null, 10.0, 22.0, { kind: 'channel', font: 'LibreBaskerville-700', h: 0.55, y: 3.7, lit: 'face' }) }],
-    cornice: 'band', cornTint: '#e9e6de', refs: [],
+    cornice: 'band', cornTint: '#e9e6de', refs: [''],
     notes: 'A one-storey 1970 church of red-painted brick with a white cornice, a gabled centre with a white cross, round-headed stained-glass windows (rectangles here), blue channel letters "Antioch Baptist Church" and "... Youth Center", Antioch Day Care at the west door.' }),
   TEN({ id: 'w125-511', addr: '511 W 125th St', at: [1244.6, -3436.7], comp: '2_-7:0', h: 19.3, floors: 5, bays: 4, brick: 'stone_lime', tint: '#c8b99a',
     stores: [STORE(0.4, 7.4, null, SGN('RESTAURANT', '#ffffff', '#c1272d', 0.4, 7.4, { font: 'Oswald-600' }), { awning: { kind: 'fixed', color: '#b3202a', proj: 1.0, drop: 0.3 }, interior: 'restaurant' }),
@@ -401,7 +414,6 @@ export default [
   TEN({ id: 'w125-1345amst-c', addr: '1345 Amsterdam Ave', at: [1291.6, -3383.1], comp: '2_-7:47', h: 17.8, floors: 4, bays: 2, brick: 'brick_red', tint: '#8a5039', edge: [1286.5, -3383.96, 1290.58, -3391.33], stores: [STORE(0.2, 8.1, null, null)], refs: [RAM], notes: 'Five-storey 1901 tenement, a 4.3 m sliver on 125th.' }),
   // w2r1: MedRite's two street walls as a grey panel grid with big glass lights (amst26n / amst26e, FE2VSSGo 2026-08): the
   // b0 plate drew the Amsterdam wall as a blank panel box with small punched windows (no FACE on it). Bays and floor
-  // lines are by eye.
   {
     id: 'w125-1343amst', addr: '1343 Amsterdam Ave (NE corner)', name: 'MedRite Urgent Care', bin: null, at: [1286.9, -3377.0], comp: '2_-7:126',
     h: 16.4, status: 'draft',
@@ -460,13 +472,13 @@ export default [
     stores: [STORE(0.3, 4.4, 'Soul food', SGN('SOUL FOOD', '#ffffff', '#1d6b35', 0.4, 4.3, { font: 'Oswald-600', h: 0.6 }), { awning: { kind: 'fixed', color: '#1d6b35', proj: 1.0, drop: 0.3 }, interior: 'restaurant' }),
       STORE(4.6, 8.4, 'Liberty Tax', SGN('LIBERTY TAX', '#ffffff', '#c8102e', 4.7, 8.3, { font: 'Montserrat-700', h: 0.6 }), { interior: 'bank' }),
       STORE(8.6, 13.0, 'beauty supply', SGN('BEAUTY SUPPLY', '#1b1b1b', '#e8dcc8', 8.7, 12.9, { font: 'PlayfairDisplay-700', h: 0.6 }), { interior: 'shop_clothing' })],
-    fe: [0, 2], dh: { lintel: 'hood' }, cornice: 'bracketed', cornTint: '#4c4540', refs: [],
+    fe: [0, 2], dh: { lintel: 'hood' }, cornice: 'bracketed', cornTint: '#4c4540', refs: [''],
     notes: 'Six-storey buff stone-and-brick tenement (1901) with fire escapes; soul food (green awning), Liberty Tax (red), a beauty supply (2023-06).' }),
   TEN({ id: 'w125-443', addr: '443 W 125th St', at: [1344.5, -3275.8], comp: '2_-7:160', h: 18.5, floors: 5, bays: 8, brick: 'brick_red', tint: '#9c5a44',
     stores: [STORE(0.4, 14.0, null, SGN('COMMUNITY DEVELOPMENT ORGANIZATION', '#ffffff', '#1f5f3a', 1.0, 13.4, { font: 'Oswald-600', h: 0.5, y: 3.5 }), { awning: { kind: 'fixed', color: '#1f5f3a', proj: 1.1, drop: 0.35 }, interior: 'office' }),
       { u0: 14.2, u1: 15.8, kind: 'entrance', door: { kind: 'glass', w: 1.2 } },
       STORE(16.0, 22.0, "Charles' chicken", SGN("Charles'", '#b3151b', '#f3ecdc', 16.2, 21.8, { font: 'Lobster', h: 0.7 }), { interior: 'restaurant' })],
-    dh: { w: 1.0, h: 1.5, lintel: 'none' }, cornice: 'band', cornTint: '#8a4c3a', refs: [],
+    dh: { w: 1.0, h: 1.5, lintel: 'none' }, cornice: 'band', cornTint: '#8a4c3a', refs: [''],
     notes: 'A 1997 six-storey apartment house of red brick with plain punched windows; a community development organisation under a green awning and a chicken restaurant ("Charles\u2019", 2023-06).' }),
   // w2r1: one continuous red brick front in m864_23 (Hi2mcMTu 2023-03), not the compiled record's mixed colours
   ...[[1354.8, -3266.5, '2_-7:29', 17.1, '#8e4a38'], [1359.1, -3260.1, '2_-7:85', 17.7, '#8a4636'], [1363.4, -3253.7, '2_-7:8', 17.1, '#8a4a36'],
@@ -482,19 +494,17 @@ export default [
     items: [{ k: 'sign', sign: { kind: 'channel', text: 'HARLEM FRESH MARKET', font: 'Anton', fg: '#ffffff', bg: null, u0: 0.7, u1: 8.6, y: 3.95, h: 0.82, depth: 0.1, lit: 'face' }, z: 1.4 }],
     fe: [0, 2], dh: { lintel: 'keystone' }, cornice: 'bracketed', cornTint: '#4b4238', refs: [R920, 'west33 m900_23 eaS9WMyJ 2023-03 h~200 p12 f90'],
     notes: 'Five-storey cream brick tenement (1920) with keystoned lintels, fire escapes; Harlem Fresh Market: white channel letters on a black canopy (m900_23).' }),
-  // where the twin drew this lot red;
   // AR34 w2 s2 (QA Q54): the side wall over the firehouse is grey cement parging, neither the red brick of w2r1b nor the
-  // Joseph's, (188, 182, 169) in haze); the
+  // 360-460) and side421_24 (AUrTQz8D 2024-08 h322 p8 f50: the same wall over St. Joseph's, (188, 182, 169) in haze); the
   // front stays cream brick (m900_23 / m920_23): the building's wall is the parging, the 125th face its own brick
   PARGED(TEN({ id: 'w125-421-b', addr: '421 W 125th St', at: [1388.3, -3218.3], comp: '2_-7:105', h: 17.7, floors: 4, fh: 3.2, bays: 2, brick: 'brick_buff', tint: '#cbb796',
-    stores: [STORE(0.3, 7.6, null, null, { interior: 'shop_phone' })], fe: [1], refs: [],
+    stores: [STORE(0.3, 7.6, null, null, { interior: 'shop_phone' })], fe: [1], refs: [R920, 'west33/w33_m960_YAT1WDxG7blbNcS7C-htvA_202308.jpg h345 p14 f60 (side421_23)'],
     notes: 'Five-storey tenement beside the firehouse; its side wall over the firehouse is parged grey (side421_23).' }), '#7f7f7d'),   // s2r1 q0940Sx: '#8f8e8a' read (216, 208, 199) in the sun
   {
     id: 'w125-415', addr: '415 W 125th St', name: 'FDNY Engine 37 / Ladder 40', bin: null,
     at: [1398.5, -3209.0], comp: '2_-7:103', h: 8.4, status: 'draft',
     wall: { mat: 'brick_tan', tint: '#b8a585', dirt: 0.4 },
     // w2r1: the face is the 13.6 m main front (the inventory's middle primary piece); the b0 plate put it on the 3.9 m
-    // piece and left the three red apparatus doors of m920_23 off the street. Door spans by eye (not measured).
     faces: [{ edge: [1390.38, -3196.86, 1382.8, -3208.18], base: { h: 4.6, bays: [
       ...[[0.6, 3.8], [4.3, 7.5], [8.0, 11.2]].map(([u0, u1]) => ({ u0, u1, kind: 'store', h: 3.9, door: null, glazing: { bulkhead: 0, transom: 0, mullions: 0, frame: 'alu_clear' },
         gate: { kind: 'rolldown', down: 1, color: '#c3161d' }, interior: 'empty', lit: 0.3 })),
@@ -513,7 +523,7 @@ export default [
       notes: 'Four-storey 1910 walk-ups at the Morningside end: one salmon-painted brick front with white lintels and fire escapes in m960_23 (the Coffee Shop and the pizza chain\'s sign: open).' })),
   TEN({ id: 'w125-405', addr: '405 W 125th St', at: [1431.7, -3192.9], comp: '2_-7:75', h: 14.5, floors: 2, fh: 3.8, bays: 3, brick: 'brick_tan', tint: '#b09474',
     stores: [{ u0: 3.8, u1: 6.4, kind: 'entrance', door: { kind: 'double', w: 1.8, recess: 0.5 } }], win: { w: 1.4, h: 2.4, sill: 0.8, kind: 'fixed', mullions: 1, frame: 'alu_bronze', reveal: 0.16, lintel: { kind: 'keystone', mat: 'stone_lime', h: 0.3 }, sillStone: { mat: 'stone_lime', h: 0.1, proj: 0.05 }, lit: 0.3 },
-    cornice: 'band', notes: 'A 1910 church building (class M3) beside St. Joseph\'s.' }),
+    cornice: 'band', notes: '' }),
   {
     id: 'w125-140morn', addr: '140 Morningside Ave (W 125th St corner)', name: 'St. Joseph of the Holy Family Church', bin: null,
     at: [1443.1, -3181.2], comp: '2_-7:55', h: 12.5, status: 'draft',
@@ -528,7 +538,7 @@ export default [
         piers: { mat: 'brick_red', w: 0.6, proj: 0.25, at: 'bays', from: 0, to: 'cornice' }, cornice: { kind: 'dentil', h: 0.6, proj: 0.3, mat: 'brick_red' } },
     ],
     roof: { kind: 'gable', parapet: { h: 0 }, membrane: 'black' },
-    refs: [],
+    refs: [''],
     notes: 'Individual landmark (1860): red brick Romanesque Revival church with round-arched windows between buttress piers, a corner bell tower with a copper cap and cross on Morningside Avenue. Open: the tower and the arched heads need a custom builder (the kit draws rectangles); the gable roof pitch.',
   },
   // ------------------------------------------------------------------ south-west side, Broadway to Morningside Avenue
@@ -536,12 +546,13 @@ export default [
     id: 'w125-568', addr: '568 W 125th St', name: 'one-storey 1957 retail block (Duane Reade and five more stores)', bin: null,
     at: [1112.7, -3534.8], comp: '2_-7:110', h: 5.3, status: 'draft',
     wall: { mat: 'brick_red', tint: '#8c4632', dirt: 0.45 },
-    // measured on elev/s568_cKwc26 (20 px/m, rows 0 / 180 = 9 / 0 m over the sidewalk): Island Grill's black fascia 3.5-5.3 m
-    // (rows 74-110), the coping to 5.6 (row 68), its letters 4.0-4.6, Duane Reade's fascia top 5.5, its letters 4.25-4.9; the
-    // spec drew the stores to 3.9, brick to 6.1 and a 2.0 m fascia over it (to 8.1), the parapet to 7.9
+      // measured on elev/s568_cKwc26 (20 px/m, rows 0 / 180 = 9 / 0 m over the sidewalk): Island Grill's black fascia 3.5-5.3 m
+      // (rows 74-110), the coping to 5.6 (row 68), its letters 4.0-4.6, Duane Reade's fascia top 5.5, its letters 4.25-4.9; the
+      // spec drew the stores to 3.9, brick to 6.1 and a 2.0 m fascia over it (to 8.1), the parapet to 7.9
       faces: [{ edge: 'front', base: { h: 3.55, wall: { mat: 'panel_alu', tint: '#34332f', dirt: 0.35 }, fascia: { h: 1.75, mat: 'panel_alu', tint: '#151515' }, bays: [
       { u0: 1.0, u1: 30.0, kind: 'store', h: 3.45, name: 'supermarket', sign: { kind: 'channel', text: 'SUPERMARKET', font: 'Montserrat-700', fg: '#ffffff', bg: null, u0: 8.0, u1: 22.0, y: 4.1, h: 0.7, lit: 'face' },
         glazing: { bulkhead: 0.5, transom: 0.5, mullions: 8, frame: 'alu_clear' }, door: { u: 0.5, w: 2.4, kind: 'double' }, interior: 'shop_food', gate: { kind: 'none' } },
+      // u from the face's E end): a blue-fronted store 41.2-49.8, 125 Spirits 50.2-56.4, Duane Reade 56.8-80.8 (black
       // fascia 4.0-6.1 m, the blue 'pharmacy' panel near u 67), Island Grill 81.2-88.1, Subway 88.4-92.4, Bank of America
       // 92.7-99.0. Lettering drawn from scratch; the marks are text only.
       { u0: 31.0, u1: 40.8, kind: 'wall' },
@@ -567,6 +578,7 @@ export default [
   {
     id: 'w125-520', addr: '518-520 W 125th St', name: 'George Bruce Library (NYPL)', bin: null,
     at: [1197.8, -3417.5], comp: '2_-7:104', h: 15.1, status: 'measured',
+    // out; u from the face's left end, y over the sidewalk): the three-storey block spans u 3.4-18.0 (a one-storey annex
     // 4.5 m high fills u 0-3.4, drawn here at the block's height: open), attic top 15.05, cornice 13.4-14.4, a limestone
     // frieze 12.5-13.4 with "NEW YORK PUBLIC LIBRARY", top-floor 6/6 windows 9.33-11.75 at u 5.05 / 8.3 / 11.55 / 14.8
     // (1.72 wide), the main floor's tall multi-pane windows 3.3-7.0 at u 8.2 / 11.4 / 14.6 (1.8 wide) under keystone
@@ -600,7 +612,8 @@ export default [
         { k: 'flagpole', u: 9.5, y: 10.6 }, { k: 'lamp', u: 4.25, y: 3.3 }, { k: 'lamp', u: 7.55, y: 3.3 },
       ],
     }],
-    refs: [],
+    refs: ['',
+      'west33/w33_m660_G-IIADSJHHs5NMrcVh0fMw_202608.jpg (elev/lib_GIIA26.jpg)'],
     notes: 'Individual landmark (1915, Carrere & Hastings): a three-storey red brick and limestone branch library, measured on ' +
       'the rectified 2024-08 elevation (positions to ~0.1 m). The main floor windows are tall rectangles under keystone ' +
       'lintels (not arches); only the entrance is round-headed. Open: the one-storey annex at u 0-3.4 (4.5 m) is drawn at ' +
@@ -615,7 +628,7 @@ export default [
       windows: { A: { w: 1.5, h: 1.45, sill: 0.8, kind: 'casement', frame: 'alu_white', reveal: 0.1, lintel: { kind: 'flat', mat: 'concrete_precast', h: 0.15 }, sillStone: { mat: 'concrete_precast', h: 0.08, proj: 0.03 }, ac: 0.4, blinds: 0.6, lit: 0.4 } },
       cornice: { kind: 'band', h: 0.4, proj: 0.04, mat: 'concrete_precast' } }],
     roof: { kind: 'flat', parapet: { h: 1.0, coping: 'metal' }, membrane: 'black', items: [{ k: 'bulkhead', at: [0.5, 0.5], w: 6, d: 5, h: 3.2 }] },
-    refs: [],
+    refs: ['west33/w33_m800_5O7Aege21yl6JWhRNz8FXA_202608.jpg h236 p18 f100 (s800)', 'west33/w33_m540_rB36zTkONwCgnftKjA_6ZA_202608.jpg h236 p12 f100 (s540)'],
     notes: 'NYCHA General Grant Houses: 21-storey red brick cross-plan towers behind lawns and plane trees; steel casements with concrete sills and lintels, rows of AC units. Open: the cross-plan wings (the compiled ring is used as is), the ground-floor entrances.',
   })),
   {
@@ -633,7 +646,7 @@ export default [
       windows: { A: { w: 2.6, h: 1.5, sill: 0.75, kind: 'fixed', mullions: 1, frame: 'alu_bronze', reveal: 0.3, lintel: null, sillStone: null, ac: 0.3, blinds: 0.6, lit: 0.4 } },
       piers: { mat: 'concrete_precast', tint: '#d1c3a6', w: 0.6, proj: 0.3, at: 'bays', from: 'base', to: 'cornice' },
       cornice: { kind: 'band', h: 0.8, proj: 0.1, mat: 'concrete_precast' } }],
-    refs: [],
+    refs: ['', 'west33/w33_cotton_BCVJZZk0IeHwc_sEvEHFhw_202308.jpg (cotton_23, background)'],
     notes: 'The 1968 26-storey beige slab (piers and window bands) with its four-storey precast wing along St. Clair Place (deep-set windows with sloped sills). Open: the compiled footprint joins the tower and the wing at one height (72 m): a corrected ring for the tower and a spec for the wing are needed.',
   },
 ];

@@ -160,16 +160,12 @@ const STEEL_FS_NORMAL = /* glsl */`
 }`;
 
 // the light balance after accumulation: the lit trim (world/materials.js) takes the diffuse albedo to 0.3 by day while the
-// specular keeps its full strength, so a dark paint read as a grey sheen; vkSpecK scales the specular back, vkAmbK the sky and probe light where the deck
-// overhead hides most of the sky,
+// specular keeps its full strength, so a dark paint read as a grey sheen (the arch's lit chord 166,169,163 against the
 // vkDirK the sun on the floor system: the day sun (azimuth 128, 42 deg up) reaches under the station's platforms onto
-// street
 // ST34 (LOOK, in the main tree since 2026-10-02 00:00) trims a lit-trimmed material's specular to ENV.st34.x (0.5) by
-// day on top of vkSpecK, so the steel's sheen fell to half its round-1 balance.
 // By day vkSpecK takes 1.6x (0.8 of round 1 with the trim: the diffuse and the specular then share the trim's scale on
 // the arch, 0.32 x 1.6 x 0.5 = 0.26); at night ST34 is whole and so is vkSpecK. ltNight comes from applyLightTrim.
 // vkDnK (`dn`, default 0): the street's bounce under a deck, a fill on down-facing faces by day (1 + dn x the share of the
-// normal pointing down): the floor system under the 125th St station read 31,37,34
 const VK_ST34K = ST34 ? '1.6' : '1.0';
 const STEEL_FS_LIGHT = /* glsl */`
 float vkSK = vkSpecK * mix(${VK_ST34K}, 1.0, ltNight);
@@ -279,7 +275,7 @@ export function litMat(name, color, dayK, nightK, o = {}) {
   return m;
 }
 
-// the debris netting under the deck: black polyethylene cord knotted in a 4 cm square mesh, seen through; the cords as a tiling alpha map (uv in metres), so the mesh averages to a dark
+// the debris netting under the deck: black polyethylene cord knotted in a 4 cm square mesh, seen through (the floor
 // veil at distance (mipmapped coverage, no alpha-test shimmer) and resolves into cords close up; no shadow
 let _net = null;
 export function netMat() {
@@ -301,7 +297,7 @@ export function netMat() {
 }
 
 // the parapet's welded-wire infill (Riverside Drive): galvanised wire on 50 x 100 mm cells, see-through; from the street
-// a pale grey veil between the posts
+// railing reads light grey)
 let _fence = null;
 export function fenceMat() {
   if (_fence) return _fence;

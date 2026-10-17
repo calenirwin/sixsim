@@ -32,10 +32,8 @@ const SPRAYS = {
   planeB:   { shape: 'palmate', lobes: 3, sinus: 0.62, width: 1.08, len: [90, 124], n: [22, 28], twigs: 4, ang: [35, 75], h: [74, 90], s: [30, 42], l: [26, 36], under: 0.18, petiole: 0.3, seed: 12 },
   maple:    { shape: 'palmate', lobes: 5, sinus: 0.44, width: 1.2, teeth: 1, len: [64, 86], n: [40, 50], twigs: 5, ang: [40, 70], h: [88, 102], s: [30, 44], l: [17, 26], under: 0.1, petiole: 0.45, opposite: 1, seed: 13 },
   mapleB:   { shape: 'palmate', lobes: 5, sinus: 0.5, width: 1.18, teeth: 1, len: [60, 80], n: [44, 54], twigs: 5, ang: [40, 75], h: [86, 100], s: [28, 42], l: [19, 28], under: 0.12, petiole: 0.45, opposite: 1, seed: 14 },
-  // TR34 (2026-10-01): honeylocust and pear rendered too yellow (foliage hue s313 76 vs 85 deg,
   // N2330fdb_sq 76 vs 81, fdb280_S pears 97 vs 132; the painted albedo means were 71 and 104 deg): +12 / +10 deg, and the
   // honeylocust a little less saturated (its foliage saturation 0.556-0.652 against 0.468-0.503). Cells 5/13 are also
-  // Central Park's willows (cpFloraKit WILLOW).
   // two of three views (hue 90 vs 85, 89 vs 81, 86 vs 77) and turned the park's yellow-green willows plain green (t4Lake).
   // VERSION 5: the honeylocust back to its TV25 colours (the park's willows share these cells and kept losing their
   // yellow-green at +6: cp_after4); a honeylocust-only cell is the way to move it. The pears keep +10.
@@ -47,7 +45,8 @@ const SPRAYS = {
   zelkova:  { shape: 'ovate', width: 0.5, teeth: 1, len: [40, 52], n: [110, 130], twigs: 7, ang: [45, 75], h: [86, 98], s: [28, 40], l: [21, 29], under: 0.12, seed: 20 },
   cherry:   { shape: 'ovate', width: 0.46, teeth: 1, len: [58, 76], n: [56, 68], twigs: 5, ang: [35, 70], h: [84, 96], s: [28, 40], l: [21, 29], under: 0.14, droop: 0.35, seed: 21 },
   plum:     { shape: 'ovate', width: 0.56, teeth: 1, len: [40, 50], n: [90, 106], twigs: 7, ang: [35, 70], h: [335, 352], s: [32, 46], l: [20, 30], under: 0.1, seed: 22 },
-  // TR35 street honeylocust. Measured (foliage.py, green-dominant pixels): crops s313 / s317 / N219w_sq mean (59,70,43) (57,69,41)
+  // TR35 street honeylocust (the lead's review of the segments' sheets, 2026-10-01 23:53: "bright lime-green, broad-leaved
+  // through them"). Measured (foliage.py, green-dominant pixels): crops s313 / s317 / N219w_sq mean (59,70,43) (57,69,41)
   // (64,74,41), L50 57-64, saturation 0.48-0.52; the twin (shots/ar34/trees/w2r2a, 00:30, this engine) (86,96,29)
   // (84,93,27) (95,107,41), L50 85-98, saturation 0.67-0.76. The twin/albedo ratio of the old cells (linear 0.65 / 0.61 /
   // HSV saturation 0.33 (the old cells 0.65), luma 84 (116). The leaf: once-pinnate
@@ -62,11 +61,11 @@ const SPRAYS = {
 // cell (`from`) or recoloured in place (no `from`: a cell only the street forms use). `k` < 1 draws the source smaller and
 // tiles it (`k` 0.5: four copies), i.e. smaller leaves at the same coverage.
 // sophora (S): the ash photo spray; crop cotton23 (sophoras in bloom, 2023-08) foliage mean (56,65,40), L50 56, saturation
-// 0.435 against the twin's (62,87,29), L50 75, 0.728 (w2r2a): value x0.74, saturation x0.55, a little bluer; and its
-// leaflets were 5-10 cm on a 0.75-1 m card where a sophora's are 2.5-5: half size, four copies. Value x0.84 since w2r2c:
+//   0.435 against the twin's (62,87,29), L50 75, 0.728 (w2r2a): value x0.74, saturation x0.55, a little bluer; and its
+//   leaflets were 5-10 cm on a 0.75-1 m card where a sophora's are 2.5-5: half size, four copies. Value x0.84 since w2r2c:
 // pin oak / linden / ginkgo: the same direction, less (no street crop of these in this round's sheets: not measured).
 // pear: crop fdb280_S (Callery pears) (58,79,59), L50 66, saturation 0.37 against the twin's (47,63,39), L50 49, 0.47
-// (w2r2a): lighter, less saturated, bluer.
+//   (w2r2a): lighter, less saturated, bluer.
 const RECOLOUR = {
   sophoraS: { from: 'ash', dh: 4, ks: 0.58, kv: 0.84, k: 0.5 },
   oakS: { from: 'oak', dh: 4, ks: 0.6, kv: 0.8 },

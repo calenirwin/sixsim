@@ -4,7 +4,7 @@
 // masonry approaches (New-York Tribune 1899-10-15 via Wikipedia); Scientific American 1900-07-21 pp. 38-39: latticed steel
 // columns about 3 x 5 ft carrying arches 3 ft deep, the 125th St arch "semicircular", 130 ft span, under two plate girders
 // 130 x 10 x 3 ft, floor beams 5 ft deep, a 60 ft roadway and 10 ft sidewalks on brackets (the cross-section in RS below);
-// photographs from 12th Avenue under the deck: a latticed transverse arch at every bent; aluminium-painted steel.
+// photographs from 12th Avenue under the deck: a latticed transverse arch at every bent; aluminium-painted steel (the
 // Frame: u along the OSM line (way 46568321) from its south end A (NNE +), l across (ESE +), y world.
 import { V, UP, Geo, RIV, path, plateGirder, laced, latticeStrut, gusset, angle, ibeam, castBase, frustum, girderSpikes } from './vkKit.js';
 import { steelMat, otherMat, litMat, fenceMat } from './vkMats.js';
@@ -18,17 +18,15 @@ export const RS = {
   // 5 ft deep (six to each 65 ft span) under thirteen rows of 12 in I-beam joists and riveted buckle plates; two
   // longitudinal plate girders per span carrying the floor's dead load, their underside "just touching" the arches' crowns
   // (the 125th St span's 130 ft long, 10 ft deep, 3 ft wide); the 65 ft arches 3 ft deep, latticed, rectangular; the 125th
-  // St arch "a large semicircular arch of 130 feet span... in its relative proportions exactly similar" to the 65 ft ones.
-  // So two rib / girder / tower lines 60 ft apart, the sidewalks cantilevered to the fascia at l +-12 (the fascia rows'
-  // fit, batch 5). Heights measured: road 23.3 m, crowns' extrados ~20 m.
+  // St arch "a large semicircular arch of 130 feet span ... in its relative proportions exactly similar" to the 65 ft ones.
+  // +8.8, the twin had +-11.2 with a third rib between), the sidewalks cantilevered to the fascia at l +-12 (the fascia rows'
   // (lc, the deck's centre east of the OSM line: 1.5 -> 1.0 m, the fixes' mid-point -0.5 and the compiled 12th Avenue roadway
-  // under the viaduct, l -9.5.. +8.5 in the old frame, centred there too)
+  // under the viaduct, l -9.5 .. +8.5 in the old frame, centred there too)
   lc: 1.0, hw: 12.0, ribs: [-9.15, 9.15], gy: 3.38,
   deck: 23.3, crown: 20.05, gird: 23.15,
   // the 125th St arch: intrados radius 65 ft (19.81 m), rib 6 ft deep (the "exactly similar" proportion: an inference);
   // the other arches 3 ft deep, their intrados a semicircle on the column spacing
   riR: 19.81, dBig: 1.83, dTyp: 0.91,
-  // the transverse arches' intrados crown over the street
   tCrown: 16.0,
 };
 const NR = [-RS.dir[1], RS.dir[0]];
@@ -47,13 +45,11 @@ let _M = null;
 export function rsdMats() {
   if (_M) return _M;
   _M = {
-    // aluminium paint over the steel; the deck's
-    // underside in its own shade
+    // sooty water runs down the upright faces, grime)
     steel: steelMat('rsd', { paint: 0xc4c8cb, paint2: 0xa7acb0, rust: 0x7a5238, rustD: 0x4c3a2e, rustAmt: 0.24, rough: 0.52, metal: 0.1, chalk: 0.18, ground: RS.gy, spec: 0.4, amb: 0.8, grime: 0.28 }),
     steelS: steelMat('rsdS', { paint: 0xc4c8cb, paint2: 0xa7acb0, rust: 0x7a5238, rustD: 0x4c3a2e, rustAmt: 0.24, rough: 0.52, metal: 0.1, chalk: 0.18, ground: RS.gy, spec: 0.4, amb: 0.8, grime: 0.28, noShadow: true }),
     // the deck's corrugated pan seen from below (a darker, sootier silver), ridges every 0.12 m across the deck
     deck: steelMat('rsdDeck', { paint: 0x9fa4a8, paint2: 0x92979c, rust: 0x6e4c36, rustD: 0x45342a, rustAmt: 0.3, rough: 0.6, metal: 0.08, rivets: false, corr: 0.12, ground: RS.gy, spec: 0.4, amb: 0.55 }),
-    // the towers' bases: a dark painted block
     base: steelMat('rsdBase', { paint: 0x4b5156, paint2: 0x454b50, rust: 0x5e4636, rustD: 0x3a3029, rustAmt: 0.18, rough: 0.7, metal: 0.05, rivets: false, ground: RS.gy, spec: 0.3, amb: 0.8 }),
     granite: otherMat('granite'), conc: otherMat('concrete'), asphalt: otherMat('asphalt'),
     lamp: litMat('vkRsdLamp', 0xffe2b0, 0.2, 3.0),
@@ -68,7 +64,7 @@ function arcC(um, yo, R, a0) {
 }
 // the rib of the span ua..ub: a semicircular intrados (the 125th St arch's of radius 65 ft, the others' of half the column
 // spacing) whose extrados crown touches the girders' underside (Y(RS.crown)); its centre lies below the towers' faces, so the
-// rib runs into the tower; the centreline stops 0.4 m inside
+// rib runs into the tower (the 125th St arch's intrados meets the tower's face 6.1 m up and its extrados 10.0 m up: batch 5
 // the tower (1.5 m along the line)
 export function rsArc(ua, ub, big) {
   const dR = big ? RS.dBig : RS.dTyp, Ri = big ? RS.riR : (ub - ua) / 2, um = (ua + ub) / 2;
@@ -90,7 +86,6 @@ export function rsdSpan(g, M, ua, ub, big) {
     const outer = true;
     const pts = [], ups = [], uu = [];
     for (let k = 0; k <= N; k++) { const [u, y, a] = arc.at(k / N); pts.push(RP(u, l, y)); ups.push(norm(add(mul(RA, Math.sin(a)), [0, Math.cos(a), 0]))); uu.push(u); }
-    // the rib: a box of two web plates and wide flange plates, the flange angles inside
     const bw = big ? 1.05 : 0.8, wo = bw / 2 - 0.1;
     for (const sx of [-1, 1]) path(g, st, pts, ups, 0.014, dR, { off: [sx * wo, 0], rv: [null, RIV.edges(0.07, 0.11), null, RIV.edges(0.07, 0.11)], seed: 500 + l });
     for (const sy of [-1, 1]) {
@@ -103,7 +98,7 @@ export function rsdSpan(g, M, ua, ub, big) {
       for (const sx of [-1, 1]) g.rect(st, add(c, add(mul(RN, sx * (wo + 0.05)), mul(up, -dR / 2 + 0.03))), add(c, add(mul(RN, sx * (wo + 0.05)), mul(up, dR / 2 - 0.03))), RA, 0.08, 0.012, { rv: [] });
     }
     // spandrel posts from the rib's back to the deck's stringers, every ~1.45 m; on the fascia ribs the arcade: slim cast
-    // columns (a base ring, a capital ring) under round arches, every ~2.2 m
+    // 0.04 m/px over the 125th St arch's south haunch)
     const nP = Math.max(3, Math.round((ub - ua) / (outer ? 2.2 : 1.45)));
     const posts = [];
     const nearA = Math.abs((ua + ub) / 2 - RS.x125) < 140;
@@ -123,10 +118,8 @@ export function rsdSpan(g, M, ua, ub, big) {
       posts.push([u, yb, yt]);
     }
     if (outer) {
-      // the arcade: tall round-headed bays between the posts, each
       // head a double ring (two concentric semicircles) whose crown nearly meets the girder above, its springing ~1.7 m
       // over a moulded rail; where the spandrel is deep a further tier under each rail, its heads just under it (two
-      // tiers over the 125th St arch's haunches); no rosettes
       for (let i = 0; i + 1 < posts.length; i++) {
         // (b6r4 close-up: the rings' feet stood 0.1 m off the posts in the air: the outer ring now springs from the posts and
         // both rings land on an impost bar between them)
@@ -182,13 +175,14 @@ export function rsdSpan(g, M, ua, ub, big) {
     // documented), its underside on the arch's crown, its ends on the towers
     plateGirder(g, st, RP(ua, l, yGc), RP(ub, l, yGc), UP, yGt - yG, big ? 0.91 : 0.6, { stiff: near ? 0.9 : 1.8, seed: 570 });
     if (ua < RS.x125 + 70 && ub > RS.x125 - 70) girderSpikes(g, RP(ua + 0.3, l, yGc), RP(ub - 0.3, l, yGc), UP, yGt - yG, -sgn);
-    // the sidewalk's cantilever brackets from the girder's outer face to the fascia:
+    // the sidewalk's cantilever brackets from the girder's outer face to the fascia (10 ft sidewalks "supported on
     // a web plate with a curved bottom flange and a top flange under the sidewalk
     const lg = sgn * (rb + (big ? 0.47 : 0.32)), le = sgn * (RS.hw - 0.06), W = Math.abs(le - lg);
     const yB = yTop - 1.75, yT = yTop - 0.17, ex = mul(RN, sgn), nB = Math.max(2, Math.round((ub - ua) / (near ? 2.2 : 3.25)));
     for (let k = 0; k <= nB; k++) {
       const u = ua + 0.45 + ((ub - ua - 0.9) * k) / nB, O = RP(u, lg, yB), H = yT - yB;
       const bot = []; for (let j = 0; j <= 7; j++) { const t = j / 7; bot.push([W * t, (H - 0.32) * Math.pow(t, 1.7)]); }
+      // bars: an open bracket, the curved flange, a top bar and three struts)
       path(g, ss, bot.map(([x, y]) => add(O, add(mul(ex, x), [0, y, 0]))), RA, 0.03, 0.14, { caps: false, seed: 575 });
       g.rect(ss, add(O, [0, H - 0.04, 0]), add(O, add(mul(ex, W), [0, H - 0.04, 0])), RA, 0.1, 0.06, { rv: [] });
       g.rect(ss, add(O, [0, 0, 0]), add(O, [0, H, 0]), RA, 0.12, 0.05, { rv: [] });
@@ -201,7 +195,6 @@ export function rsdSpan(g, M, ua, ub, big) {
     g.rect(st, RP(ua, lf, yTop - 0.3), RP(ub, lf, yTop - 0.3), UP, 0.03, 0.62, { caps: false, rv: [] });
     g.rect(st, RP(ua, lf + sgn * 0.12, yTop + 0.06), RP(ub, lf + sgn * 0.12, yTop + 0.06), UP, 0.62, 0.16, { caps: false, rv: [] });
     g.rect(st, RP(ua, lf + sgn * 0.08, yTop - 0.62), RP(ub, lf + sgn * 0.08, yTop - 0.62), UP, 0.2, 0.06, { caps: false, rv: [] });
-    // the parapet: posts every 2.3 m, a curved top rail over each panel, a bottom rail,
     // pickets and the wire infill
     const lr = lf - sgn * 0.12, yR = yTop + 0.14;
     const nPn = Math.max(1, Math.round((ub - ua) / 2.3));
@@ -222,7 +215,6 @@ export function rsdSpan(g, M, ua, ub, big) {
 // American 1900-07-21)
 export function rsdBent(g, M, u, pier) {
   const st = M.steel, ss = M.steelS, yTop = Y(RS.deck), yG = Y(RS.crown);
-  // the tower: 1.5 m along the line (the flank the street sees), 1.15 m across
   const TA = 1.5, TB = 1.15;
   // the arches either side of this bent: where their ribs meet the tower's faces
   const { st: S, s0, s1 } = rsStations(), i = S.findIndex((x) => Math.abs(x - u) < 0.01), sides = [];
@@ -230,13 +222,12 @@ export function rsdBent(g, M, u, pier) {
   if (i >= 0 && i + 1 < S.length) sides.push([1, rsArc(u, S[i + 1], Math.abs(u - s0) < 0.5 && Math.abs(S[i + 1] - s1) < 0.5), Math.abs(u - s0) < 0.5 && Math.abs(S[i + 1] - s1) < 0.5]);
   for (const l of RS.ribs) {
     const sg = Math.sign(l);
-    // the base: a dark painted block round the tower's foot
+    // 1.5 m high, no granite)
     // (the other columns stand on pale concrete pedestals about 1.5 m high: the photographs from 12th Avenue)
     const PA = 1.95, PB = 2.4, bm = pier ? M.base : M.conc, hp = pier ? 0.7 : 1.25;
     g.rect(bm, RP(u, l, RS.gy - 0.3), RP(u, l, Y(hp)), RA, PA, PB);
     frustum(g, bm, RP(u, l, 0), RN, PA, PB, PA - 0.25, PB - 0.25, Y(hp), Y(hp + 0.25));
     // the tower: solid plate flanks (the street sides) with flat-bar strips and splice bands, a diamond lattice on the
-    // faces along the line, up to the girder's underside
     const yF = Y(hp + 0.25);
     laced(g, st, RP(u, l, yF), RP(u, l, yG), RA, TB, TA, { seed: 600, pitch: 0.75, double: true, bar: 0.09 });
     for (const sx of [-1, 1]) {
@@ -252,14 +243,13 @@ export function rsdBent(g, M, u, pier) {
       g.cyl(ss, RP(ux, lf, yF), RP(ux, lf, yG - 0.5), 0.055, 8, { caps: false });
       for (let y = yF + 0.65; y < yG - 0.6; y += 1.7) g.rect(ss, RP(ux, lf - sg * 0.06, y), RP(ux, lf - sg * 0.06, y + 0.06), RA, 0.05, 0.12, { rv: [] });
     }
-    // the tower's cast foot and its cap under the girder: two shallow bands
     castBase(g, st, RP(u, l, 0), RA, TA, TB, yF, { h: 1.1 });
-    // the 125th St arch's towers plated on the faces along the line too
+    // and vertical angles all round, where the other columns show their diamond lattice to 12th Avenue)
     if (pier) for (const sd of [-1, 1]) g.rect(st, RP(u + sd * (TA / 2 + 0.008), l, Y(1.0)), RP(u + sd * (TA / 2 + 0.008), l, yG - 0.6), RA, TB - 0.04, 0.014, { rv: [null, RIV.edges(0.05, 0.1), null, RIV.edges(0.05, 0.1)] });
     g.rect(st, RP(u, l, yG - 0.6), RP(u, l, yG - 0.4), RA, TB + 0.08, TA + 0.06, { rv: [] });
     g.rect(st, RP(u, l, yG - 0.4), RP(u, l, yG), RA, TB + 0.14, TA + 0.12, { rv: [] });
     // the skewback where each arch's rib enters the tower: side plates either side of the heel from below its intrados
-    // to above its extrados, and a riveted shelf under it
+    // below)
     for (const [sd, arc, big] of sides) {
       const uf = u + sd * (TA / 2 - 0.02), half = (big ? 1.05 : 0.8) / 2 + 0.03, out = big ? 1.4 : 0.8;
       const yi = arc.yIn, ye = arc.yEx;
@@ -267,7 +257,7 @@ export function rsdBent(g, M, u, pier) {
       g.rect(st, RP(uf, l, yi - 0.72), RP(uf + sd * 0.55, l, yi - 0.72), UP, 2 * half + 0.1, 0.05, { rv: [] });
     }
   }
-  // the bent's transverse arch across 12th Avenue: a semicircle on the clear width between the
+  // one at the 125th St arch's south bent, its crown ~16 m over the street): a semicircle on the clear width between the
   // columns, 3 ft deep (as the 65 ft arches), two chords and a double diamond lattice, its feet in the columns' inner faces;
   // over it an arcade of posts and round heads up to a lattice cap under the girders
   const rb = RS.ribs[1], clear = rb - TB / 2, dT = 0.91, yo = Y(RS.tCrown) - clear, RT = clear + dT / 2;

@@ -9,8 +9,6 @@ import { pbrMaterial, applyCityRefl } from './mat/pbrLib.js';
 import { STREET, PLAZA } from './w125cbData.js';
 import { VG37, vg37Form, vg37LeafMat } from '../world/vg37.js';
 import { lodSet } from './cpFloraKit.js';
-// BF36 (BIDFIX 2026-10-02, teaser 8's plaza frames): the planters' hedges read as smooth draped green mounds.
-// show a loose planting over mulch, shrubs and grasses ~0.5-0.9 m over the granite walls: GROUND's VG37
 // scanned-leaf plants (world/vg37.js forms: privet, spreading yew, fountain grass, liriope at the ends) on a mulch top in each lobe.
 // `?bf36=0` (or `?vg37=0`) keeps the hedge masses
 const BF36 = VG37 && !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('bf36') === '0');
@@ -130,7 +128,7 @@ function flagTex(kind) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
-// The Higher Ground's textures, drawn from scratch: 'sheet' / 'sheetR' the stainless skin, 'drum' / 'drumR'
+// The Higher Ground's textures, drawn from scratch: 'sheet' / 'sheetR' the stainless skin (2.4 x 1.2 m a repeat: sheets 0.15 m
 // the drum's side (polished black granite, ADAM CLAYTON POWELL JR. and a star in gilt capitals twice round its 21.9 m; 'drumR'
 // carries roughness in G and metalness in B for the gilding), 'plaque' the oval plaque's inscription (white on black granite)
 const _MT = {};
@@ -143,6 +141,7 @@ function monTex(kind) {
     srgb = kind === 'sheet';
     c.width = 1024; c.height = 512;
     const rowH = 64, jw = 256;   // 0.15 m rows, 0.6 m sheets
+    // with fine seams)
     for (let r = 0; r < 8; r++) for (let s = -1; s < 5; s++) {
       const x0 = s * jw + (r % 2 ? jw / 2 : 0), k = hash(r, s, 41);
       if (srgb) { const v = Math.round(222 + (k - 0.5) * 2); g.fillStyle = `rgb(${v},${v + 2},${v + 3})`; }
@@ -255,7 +254,6 @@ function mergeGeos(list) {
 }
 // an elliptical planter lobe: a dark granite wall ring (0.3 m thick, h high), lengths along t (a) and b (c); returns [wall ring, a
 // clipped boxwood hedge: a polar-grid mass 0.42 m over the wall with a rounded shoulder, its top lumpy with noise and its vertex
-// colours leafy]
 function hedgeMass(a, c, y0, hh, k, sq = 2) {
   const NR = 8, NA = 40, pos = [], col = [], idx = [];
   const se = (v) => Math.sign(v) * Math.pow(Math.abs(v), 2 / sq);   // sq > 2: a superellipse (the clipped hedge of a straight-walled box)
@@ -286,7 +284,6 @@ function hedgeMass(a, c, y0, hh, k, sq = 2) {
   const nA = g.getAttribute('normal'); if (nA.getY(0) < 0) { const ix = g.index.array; for (let i = 0; i < ix.length; i += 3) { const t = ix[i + 1]; ix[i + 1] = ix[i + 2]; ix[i + 2] = t; } g.computeVertexNormals(); }
   return g;
 }
-// (AR34 wave 2) the lobes are straight-walled: (2024-08) show flat granite walls meeting at corners and a
 // at 0.35 of the half-width) round a superellipse hedge
 function lobe(a, c, h, k = 0) {
   const oct = (sh, A, C) => { const ch = Math.min(0.45, C * 0.35); const P = [[-A + ch, -C], [A - ch, -C], [A, -C + ch], [A, C - ch], [A - ch, C], [-A + ch, C], [-A, C - ch], [-A, -C + ch]]; sh.moveTo(P[0][0], P[0][1]); for (let i = 1; i < 8; i++) sh.lineTo(P[i][0], P[i][1]); sh.closePath(); };
@@ -327,7 +324,6 @@ function lobePlanting(A, C, tc, bc, y0, h, a, seed, soil, out) {
 }
 
 // ---------------------------------------------------------------- The Higher Ground (AR34 batch 4)
-// Rebuilt (the measures and their sources: w125cbData.js PLAZA.monument, docs/notes/ar33-bid3.md). Everything
 // is built in the drum's frame (x along the long axis toward its east-north-east end, y up from the plaza, z toward the street)
 // and placed by one matrix. Returns [geometry, material] pairs in world coordinates.
 const MON_N = 2.4;   // the stainless form's plan sections are superellipses: its ends rounded, not knife edges
@@ -381,10 +377,11 @@ function shell(P, nu, nv, thF) {
   return g;
 }
 // the bronze: Adam Clayton Powell Jr. in a suit striding up the slope, his body leaning ~35 deg into it with the head up, his
-// left arm swinging forward with a loose fist, his overcoat streaming back in the wind on his left side. Figure frame: x forward, y up, z to his right, the origin at
 // the front sole's contact; the slope rises 0.46 m per metre forward. The legs were solved for thigh 0.62 / shin 0.60 between
 // the planted front ankle and the back foot on its ball.
 function figureGeo() {
+  // bulky: wide trousers, a deep jacket, broad shoulders, the coat a wind-filled mass; the body leans ~18 deg, not 25)
+  // re-solved, the body leaning 35 deg into the climb)
   const hipL = [-0.538, 0.866, -0.11], hipR = [-0.538, 0.866, 0.11], kneeL = [0.064, 0.72, -0.1], ankL = [0.05, 0.12, -0.085];
   const kneeR = [-0.602, 0.249, 0.1], ankR = [-0.95, -0.24, 0.085];
   const pelvis = [-0.538, 0.926, 0], chest = [-0.194, 1.417, 0], neck = [-0.15, 1.54, 0], head = [-0.155, 1.672, 0];
@@ -405,7 +402,6 @@ function figureGeo() {
   // the arms (jacket sleeves) and hands
   g.push(bone(shL, elL, 0.085, 0.075), bone(elL, wrL, 0.074, 0.06), blob([wrL[0] + 0.05, wrL[1] - 0.045, wrL[2]], [0.06, 0.072, 0.05], [0, 0, -0.6]));
   g.push(bone(shR, elR, 0.085, 0.075), bone(elR, wrR, 0.074, 0.06), blob([wrR[0] - 0.01, wrR[1] - 0.06, wrR[2]], [0.055, 0.07, 0.05]));
-  // the overcoat: over the LEFT shoulder, streaming back in
   // the wind, filled out like a sail (thickest in its middle), its lower part billowing down toward the back knee
   const CT = [-0.39, 1.22, -0.2], CB = [-0.36, 0.52, -0.32];
   g.push(shell((u, v) => {

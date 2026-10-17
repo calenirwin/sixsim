@@ -20,8 +20,9 @@ The Python package has no required dependencies and runs on any machine that can
 
 ## Windows
 
-**Release.** Download `Valdrada-0.3.1-win64.zip` from the
-[releases page](https://github.com/mkturkcan/valdrada/releases) and extract it anywhere. The folder contains:
+**Release.** Download `Valdrada-0.4.0-win64.zip` and `Valdrada-0.4.0-win64-tiles.zip` from the
+[releases page](https://github.com/mkturkcan/valdrada/releases) and extract both into the same place: both hold the
+folder `Valdrada_0.4.0_win64`, and the second only its `Content/tiles/`. The folder contains:
 
 | Path | Contents |
 |---|---|
@@ -61,7 +62,7 @@ cd valdrada
 (cd server && npm install)
 ls server/node_modules/electron/dist/electron        # the runtime; if missing: (cd server && node node_modules/electron/install.js)
 pip install -U "huggingface_hub>=1.0"
-hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.3.1 --include "Content/*" --local-dir .
+hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.4.0 --include "Content/*" --local-dir .
 cd server
 env -u ELECTRON_RUN_AS_NODE npx electron . --content ../Content
 ```
@@ -141,7 +142,7 @@ from any address and is only for trusted networks.
 | `TypeError: float() argument must be a string or a real number, not 'NoneType'` right after `set_autopilot(True)` | A defect of the 0.2.0 server, fixed in 0.2.1: a vehicle spawned through the API lost its position when switched to autopilot. Use the 0.2.1 release or the current source; with 0.2.0, drive API vehicles with `apply_control`. |
 | `hf: command not found` | `pip install -U "huggingface_hub>=1.0"`; older versions call the command `huggingface-cli`. |
 | The client shows an empty city, the browser console lists 404s for `/tiles/` | The tiles, models and textures are not in `client/public/`: repeat the download and the `mv` of option B. |
-| `JavaScript heap out of memory` while compiling the tiles | Give Node more memory: `NODE_OPTIONS=--max-old-space-size=6144 npm run compile -- --boro 1,2,3,4`. |
+| `JavaScript heap out of memory` while compiling the tiles | Give Node more memory: `NODE_OPTIONS=--max-old-space-size=24576 npm run compile -- --boro 1,2,3,4,5` (the five-borough compile peaks at 17.7 GB resident). |
 | `Address already in use` | Another server holds the port: pick another with `--port`. |
 
 ## Building the release archive
@@ -164,6 +165,6 @@ node server/build.mjs --platform win32 --link --zip
 | `--zip` | also write `release/Valdrada-<version>-<platform>.zip` |
 | `--out DIR` | the output directory (default `release/`) |
 
-For 0.2.0 the folder held 4,689 files (4.3 GB) and the archive was 2,050,959,101 bytes. GitHub accepts release assets
-up to 2 GiB, so watch the size when the city grows. To check a Windows build on Linux, serve its `Content/` with the
+For 0.4.0 the folder held 5,528 files (5.3 GB) and one archive of it was 2,235,027,747 bytes, over the 2 GiB that
+GitHub accepts for a release asset, so the release is published as two archives, the second holding `Content/tiles/`. To check a Windows build on Linux, serve its `Content/` with the
 Linux runtime, as in the headless section, and run an example against it.

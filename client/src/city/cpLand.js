@@ -126,9 +126,21 @@ const BRIDGE_PROXY = {
 };
 // Water taken past the OSM shoreline up to other parts' masonry on it (convex quads, world x, z): the strip north of the
 // Bethesda lake-front wall (BETHESDA's box), and 3 m west of the Loeb Boathouse's lakeside wall line (LANDMARKS)
+// BETHFIX (owner 2026-10-08, "two square corners on the water" at the terrace's lake edge; `?bethfix=0` drops them): the
+// Bethesda strip ends at |b| = 24.6 in the terrace's frame (city/cpBethesdaKit.js) and the OSM shore beyond it left a
+// flat tongue of bank 0.15 m over the Lake past each end of the wall, square-cornered (west: 1.8 m out, a = 24.4..26.2,
+// b = -26.4..-24.6; east: tapering out to a = 28.2 along b = 24.6). Two more quads beside it (meeting it on |b| = 24.6,
+// not overlapping, so no two water sheets lie in one plane) take the water from the walls' corners (a = 24.3, |b| = 24.75)
+// on a diagonal to the OSM shore (east (30.6, 26.8), west (27.6, -26.7)), so the bank leaves the corner instead of
+// standing out past the wall.
+const BETHFIX = !(Q && Q.get('bethfix') === '0');
 const WATER_EXT = [
   { k: 'lake', q: [[14.81, 945.9], [61.9, 960.16], [63.44, 955.09], [16.35, 940.83]] },
   { k: 'lake', q: [[184.3, 837.7], [196.7, 897.2], [193.76, 897.8], [181.36, 838.3]] },
+  ...(BETHFIX ? [
+    { k: 'lake', q: [[61.9, 960.16], [62.04, 960.2], [65.83, 954.77], [63.73, 954.13]] },
+    { k: 'lake', q: [[14.81, 945.9], [14.67, 945.86], [13.76, 942.13], [15.77, 942.74]] },
+  ] : []),
 ].map((X) => ({ ...X, C: mkConvex(X.q) }));
 // reflection probes placed by hand (world x, z over the water): the Lake's 30 m north of Bow Bridge's crown
 const PROBE_AT = { lake: [-60, 772] };

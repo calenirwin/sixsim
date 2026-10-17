@@ -1,11 +1,10 @@
 // AR33 VIADUCT: the Park Avenue Viaduct (New York Central, 1893-97; Metro-North) over E 125th Street and the
 // Harlem-125th Street station (docs/notes/ar33-viaducts.md). Positions from OpenStreetMap through city/w125eData.js (the
 // four tracks, the two island platforms, the 1897 station house's footprint), heights as city/w125e.js derived them
-// (rail 7.0 m over the street). at 125th St and Park Avenue:
-// * the steel painted a sandstone tan; the span over 125th St a deep plate girder each side painted blue, carrying the
-// silver cut-out artwork (reclining sphinxes at both ends, fans, a sunburst, skylines: drawn here from scratch);
-// * built-up riveted columns in the avenue's median with knee brackets under the fascia girders, a tan parapet over
-// the girders, the platform canopies on columns above, the stone station house at street level under the deck.
+//   * the steel painted a sandstone tan; the span over 125th St a deep plate girder each side painted blue, carrying the
+//     silver cut-out artwork (reclining sphinxes at both ends, fans, a sunburst, skylines: drawn here from scratch);
+//   * built-up riveted columns in the avenue's median with knee brackets under the fascia girders, a tan parapet over
+//     the girders, the platform canopies on columns above, the stone station house at street level under the deck.
 // Grid frame (city/w125eKit.js): u along the streets (ESE), v along the avenue (NNE), world = (C u + S v, y, S u - C v).
 import * as THREE from 'three';
 import { V, UP, RIV, path, plateGirder, laced, gusset, ibeam, angle, castBase, frustum, girderSpikes } from './vkKit.js';
@@ -35,10 +34,8 @@ export const PK = (() => {
     RAIL, DECK_T, DECK_B, GIRD_B, XG_B: GIRD_B - 1.05, EDGE: 2.1, PLAT_Y: RAIL + 1.22, CAN_Y: RAIL + 1.22 + 3.35,
     V_S: 2100, V_N: Math.min(...TUV.map((t) => t[t.length - 1][1])) - 1, SH, P_V0, P_V1, CAN_V0: P_V0 + 38, CAN_V1: P_V1 - 36,
     // the span over E 125th St (centreline v 3449.2, 100 ft between the building lines) from its south bent to the station
-    // house: a2 put the girder's ends at compass 68.1 and 136.1 deg (girder 137 px tall at its
-    // near end: the fascia ~17 m off), the south end at v ~3438.4; 3437.2 puts the girder's end with its 1.2 m overlap on a 6 m interval's end
-    // its north end at
-    // 3461.0 from's compass 66.8 with the face where it is; was 3465.3 against the station house, the regular fascia over the last 6 m now
+    // from the east shows the same way); 3437.2 puts the girder's end with its 1.2 m overlap on a 6 m interval's end
+    // 3438.4 and the girder's end at 3438.1; were 3436.3 and 3436.0, the girder overhanging the bent); its north end at
     v125: [3439.3, 3459.8],
     CORNER: [1169.85, 3439.4],
   };
@@ -51,17 +48,16 @@ let _M = null;
 export function parkMats() {
   if (_M) return _M;
   _M = {
-    // the 1990s repaint: a sandstone tan that reads salmon in the sun, soot-darkened underneath; the span
     // girders a cornflower blue; the median columns the same tan gone brown with rust
     steel: steelMat('park', { paint: 0xbc9877, paint2: 0xb09070, rust: 0x8a4a28, rustD: 0x4f3322, rustAmt: 0.3, rough: 0.7, metal: 0.03, chalk: 0.3 }),
     steelS: steelMat('parkS', { paint: 0xbc9877, paint2: 0xb09070, rust: 0x8a4a28, rustD: 0x4f3322, rustAmt: 0.3, rough: 0.7, metal: 0.03, chalk: 0.3, noShadow: true }),
     col: steelMat('parkCol', { paint: 0xa97c5c, paint2: 0x9c7254, rust: 0x80401f, rustD: 0x472b1d, rustAmt: 0.42, rough: 0.72, metal: 0.03 }),
+    // read saturated (QA Q15); the sculpture a warm grey 150,149,143 where the twin's read bluish 111,133,149)
     blue: steelMat('parkBlue', { paint: 0x8c94a8, paint2: 0x858da2, rust: 0x5d4a3c, rustD: 0x3d3128, rustAmt: 0.1, rough: 0.55, metal: 0.05, chalk: 0.15, spec: 0.4 }),
     art: steelMat('parkArt', { paint: 0xc9c5bc, paint2: 0xbfbbb2, rust: 0x6a5a4c, rustD: 0x4a4038, rustAmt: 0.08, rough: 0.45, metal: 0.15, rivets: false }),
     dark: steelMat('parkDark', { paint: 0x4a3b32, paint2: 0x43362e, rust: 0x5a3a26, rustD: 0x3a281c, rustAmt: 0.25, rough: 0.72, metal: 0.04 }),
     conc: otherMat('concrete'), granite: otherMat('granite'), ballast: otherMat('ballast'), timber: otherMat('timber'),
     rail: otherMat('rail'), railTop: otherMat('railTop'), yellow: otherMat('yellow'),
-    // the platform canopies' roof sheeting: a soot-brown painted metal
     roof: steelMat('parkRoof', { paint: 0x4d443b, paint2: 0x463e36, rust: 0x5a3a26, rustD: 0x3a281c, rustAmt: 0.2, rough: 0.72, metal: 0.04, rivets: false }),
     lime: otherMat('lime'), brick: otherMat('brick'), glass: otherMat('glass'),
     lamp: litMat('vkParkLamp', 0xfff0d6, 0.06, 2.4),
@@ -142,7 +138,7 @@ function leaf(cx, y0, w, h) {
   }
   return [o, ...holes];
 }
-// a fan of slats (a sunburst when wide): sx stretches it along the girder
+// as it is tall: the girder caps its height)
 function fanSlats(cx, cy, R, n, a0 = 0, a1 = Math.PI, sx = 1) {
   const out = [], X = (a, r) => cx + Math.cos(a) * r * sx, Y = (a, r) => cy + Math.sin(a) * r;
   for (let k = 0; k < n; k++) {
@@ -160,7 +156,7 @@ function skyline(x0, w) {
   });
   return out;
 }
-// the station's name lettered on the tan fascia girders just south of the span, drawn from scratch
+// and lower case on the girder over the corner columns, "Harlem-125 St" facing west and east), drawn from scratch
 let _name = null;
 function nameMat() {
   if (_name) return _name;
@@ -212,7 +208,6 @@ export function parkSpan125(g, M) {
     const ez = sgn > 0 ? ex : mul(ex, -1);   // x runs left to right as seen from outside
     const O = add(sgn > 0 ? a : b, add(mul(n, 0.3), [0, yb, 0]));
     const W = L, S = [], mid = W / 2;
-    // the east face from
     // the east, south on the left): a recumbent sphinx at each end facing out, as tall as the girder (heads at its top
     // edge); next to the left one a ribbed dome (west) or a small skyline and a standing figure (east); pairs of
     // perforated leaves; a wide sunburst with a figure in the middle; a fan rising behind the right sphinx's back; all on
@@ -233,7 +228,7 @@ export function parkSpan125(g, M) {
     void st;
   }
 }
-// tags and stickers on the corner columns' lower flanges, invented letterforms on a card per face (alpha-tested), never copied
+// tan columns at the corner), invented letterforms on a card per face (alpha-tested), never copied
 let _tags = null;
 function tagMat() {
   if (_tags) return _tags;
@@ -277,7 +272,7 @@ function columnTags(g, u, v, gy, cd, cw) {
   }
 }
 // the tags on the three columns of a bent at v (the corner bent at 125th St)
-// the bents' three columns: near 125th St on the median plaza's edges and its middle; elsewhere
+// u 1178.1 / 1186.9 / 1195.6 against the tracks' mid 1188.3, the plaza's kerbs at 1177.0 / 1197.6 as compiled); elsewhere
 // the tracks' mid +- 6.5 m (not measured)
 export const parkCols = (v) => { const uM = (tU(1, v) + tU(2, v)) / 2; return Math.abs(v - 3449.2) < 60 ? [uM - 10.2, uM - 1.4, uM + 7.3] : [uM - 6.5, uM, uM + 6.5]; };
 export function parkBentTags(g, v, gy) {
@@ -285,7 +280,6 @@ export function parkBentTags(g, v, gy) {
 }
 // ---------------------------------------------------------------- the bents (every 50 ft, none in a street)
 export function parkBent(g, M, v, gy) {
-  // the median columns and cross girders soot-brown under the deck, the fascia tan, the columns a
   // tan gone brown: built-up riveted H sections on a concrete plinth, a base plate with anchor bolts, straps every 0.9 m
   const st = M.dark, col = M.col, uM = (tU(1, v) + tU(2, v)) / 2, dL = tU(0, v) - PK.EDGE, dR = tU(3, v) + PK.EDGE;
   plateGirder(g, st, PP(dL + 0.3, v, (PK.XG_B + PK.GIRD_B) / 2), PP(dR - 0.3, v, (PK.XG_B + PK.GIRD_B) / 2), UP, PK.GIRD_B - PK.XG_B, 0.45, { stiff: 1.1, seed: 740 });
@@ -294,6 +288,7 @@ export function parkBent(g, M, v, gy) {
   for (const [e, sg] of [[dL, 1], [dR, -1]]) gusset(g, M.steel, PP(e + sg * 0.4, v, PK.XG_B), PP(e + sg * 0.4, v, PK.GIRD_B - 0.2), PP(e + sg * 2.2, v, PK.GIRD_B - 0.2), PP(e + sg * 2.2, v, PK.XG_B + 0.2), 0.016, { seed: 742 });
 }
 // the corner column on the west sidewalk at the 125th St span's south end and its short cross girder to the west fascia
+// EAST's b15_o shows the column and its girder too)
 export function parkCorner(g, M, gy) {
   const [u, v] = PK.CORNER, dL = tU(0, v) - PK.EDGE;
   parkColumn(g, M, u, v, gy);
@@ -325,7 +320,6 @@ function parkColumn(g, M, u, v, gy) {
     }
     // the cap under the cross girder
     g.rect(col, PP(u, v, PK.XG_B - 0.1), PP(u, v, PK.XG_B), DVv, 0.9, 0.9);
-    // the column head's curved brackets under the cross girder, both ways along it
     for (const sx of [-1, 1]) {
       const q = [], qu = [], R = 1.0, cy = PK.XG_B - R;
       for (let j = 0; j <= 8; j++) { const a = (Math.PI / 2) * (j / 8); q.push(PP(u + sx * (0.3 + R - R * Math.cos(a)), v, cy + R * Math.sin(a) - 0.02)); qu.push(V.norm([DU[0] * -sx * Math.cos(a), Math.sin(a), DU[2] * -sx * Math.cos(a)])); }
@@ -349,11 +343,11 @@ export function parkPlatforms(g, M) {
     for (let v = PK.CAN_V0; v <= PK.CAN_V1 + 0.01; v += 7.62) {
       const c = (tU(ia, v) + tU(ib, v)) / 2;
       // a cast-iron column: fluted shaft (12 sides), base and capital rings, the cross girder over it, and the 1897
-      // canopy's curved cast brackets
       g.cyl(M.cast, PP(c, v, PK.PLAT_Y), PP(c, v, PK.CAN_Y - 0.42), 0.1, 12);
       g.cyl(M.cast, PP(c, v, PK.PLAT_Y), PP(c, v, PK.PLAT_Y + 0.42), 0.17, 12);
       g.cyl(M.cast, PP(c, v, PK.PLAT_Y + 0.42), PP(c, v, PK.PLAT_Y + 0.5), 0.13, 12);
       g.cyl(M.cast, PP(c, v, PK.CAN_Y - 0.62), PP(c, v, PK.CAN_Y - 0.42), 0.15, 12);
+      // a row of light brackets over the fascia)
       plateGirder(g, M.cast, PP(c - 2.6, v, PK.CAN_Y - 0.2), PP(c + 2.6, v, PK.CAN_Y - 0.2), UP, 0.4, 0.18, { stiff: 0.8, seed: 750 });
       for (const sx of [-1, 1]) {
         const q = [], qu = [], R = 1.55, cxu = c + sx * R, cy = PK.CAN_Y - 0.4 - R;

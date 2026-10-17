@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "valdrada.cellindex/0",
+  "title": "Cell region index (index.json, index/<region>.json), v0",
+  "description": "Which cells are baked and where their packages are: cellcache/<hash>/cell.glb and cell.json. docs/specs/cell-package.md section 8.",
+  "type": "object",
+  "required": [
+    "schema",
+    "cellSize",
+    "cells"
+  ],
+  "properties": {
+    "schema": {
+      "const": "valdrada.cellindex/0"
+    },
+    "region": {
+      "type": "string",
+      "description": "index/<region>.json only"
+    },
+    "cellSize": {
+      "const": 128
+    },
+    "generated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "srcTree": {
+      "type": "string",
+      "description": "git tree hash of the working client/src the region was baked from"
+    },
+    "nycTree": {
+      "type": "string",
+      "description": "git tree hash of the working src/ (the @nyc subproject) the region was baked from"
+    },
+    "assets": {
+      "type": "string",
+      "description": "digest of client/public less the tiles (path, size, modification time of each file)"
+    },
+    "head": {
+      "type": "string"
+    },
+    "regions": {
+      "type": "object",
+      "description": "index.json only: per region, its cell count and bake",
+      "additionalProperties": {
+        "type": "object"
+      }
+    },
+    "cells": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^-?\\d+_-?\\d+$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "hash",
+          "bytes",
+          "bounds"
+        ],
+        "properties": {
+          "hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{24}$"
+          },
+          "bytes": {
+            "type": "object",
+            "properties": {
+              "glb": {
+                "type": "integer"
+              },
+              "sidecar": {
+                "type": "integer"
+              }
+            }
+          },
+          "bounds": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 6,
+            "maxItems": 6
+          },
+          "tris": {
+            "type": "integer"
+          },
+          "instances": {
+            "type": "integer"
+          },
+          "draws": {
+            "type": "integer"
+          },
+          "tile": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "movers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "object names the baker saw moving; renderers leave them live"
+    }
+  }
+}

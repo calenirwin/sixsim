@@ -148,7 +148,8 @@ function parkBuildTile(group, ctx) {
     try { parkBent(g, M, v, gy); n++; } catch (e) { console.warn('[vk] park bent', e); }
     once('park' + k, () => { for (const u of parkCols(v)) { const p = PP(u, v, 0); addBox(p[0], gy + 2.5, p[2], 0.55, 2.6, 0.55, Math.atan2(0.4848, 0.8746)); } });
   }
-  // the bent at the south end of the span over 125th St, on Park Avenue's median at the street's south side
+  // the bent at the south end of the span over 125th St, on Park Avenue's median at the street's south side (the 2026
+  // is left out above)
   { const v = PK.v125[0] - 0.9, uM = (tU(1, v) + tU(2, v)) / 2;
     if (own(PP(uM, v, 0))) {
       try { parkBent(g, M, v, 3.38); parkBentTags(g, v, 3.38); n++; } catch (e) { console.warn('[vk] park 125th bent', e); }

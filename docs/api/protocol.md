@@ -97,6 +97,9 @@ Answered by the simulation:
 | `vehicle.get_obstacle_ahead` | `id, max_distance?, width?` | `{distance, kind, actor_id, speed}` or `null` |
 | `vehicle.set_autopilot` | `id, enabled, route?` (`["left", "straight", ...]`) | `{autopilot, route}` |
 | `walker.apply_control` | `id, direction, speed, jump` | |
+| `spectator.follow` | `id` (0 stops following), `mode?` (`chase`, `bonnet`, `third`, `first`) | `{following, mode}` |
+| `world.start_take` | `id, name?` | `{recording}` |
+| `world.stop_take` | | the take: `{version, fps, frames, duration, aspect, mode, kind, cam, body}` |
 | `walker_ai.start` / `walker_ai.stop` | `id` | |
 | `walker_ai.set_max_speed` | `id, speed` | |
 | `walker_ai.go_to_location` | `id, location, direct?` | `{state, length, path}` |
@@ -113,6 +116,6 @@ Answered by the simulation:
 | `geo.to_location` | `lat, lon, alt?` | location |
 | `geo.to_geolocation` | `x, y, z` | `{lat, lon, alt}` |
 
-Error codes: `unknown_method`, `unknown_blueprint`, `no_such_actor`, `wrong_actor_type`, `no_such_waypoint`,
+Error codes: `needs_renderer` (a sensor call to a core with no renderer client attached; docs/specs/render-protocol.md), `unknown_method`, `unknown_blueprint`, `no_such_actor`, `wrong_actor_type`, `no_such_waypoint`,
 `not_synchronous`, `off_road` (autopilot requested away from any lane), `no_route`, `pool_full` (that vehicle kind has no
 free instance slot), `autopilot`, `bad_weather`, `no_traffic`, `no_walkers`, and `internal` for anything unexpected.

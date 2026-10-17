@@ -334,6 +334,7 @@ function buildPatch(r, lv, box, skirt) {
   geo.computeBoundingSphere();
   geo.userData.tris = I.length / 3;
   geo.userData.step = st;
+  geo.userData.keepArrays = true;   // SPACE r2 (world/cpuFree.js, ?lowmem=1): kept on the rock's record, drawn again at the tile's next visit
   STATS.tris[lv] += I.length / 3; STATS.built[lv]++;
   return geo;
 }

@@ -36,19 +36,16 @@ const EC34 = typeof location !== 'undefined' && new URLSearchParams(location.sea
 // diffuse, and how much paler the sky over the canyon reads (MATS's pbCity uses 0.35)
 const CS34_SPEC = 1.0, CS34_DIFF = 1.0, CS34_PALE = 0.35;
 const ST34_DAY = 0.5;   // VIADUCTS's own steel trim measured best at 0.32-0.45 (vk/vkMats.js vkSpecK)
-// AE35. LB14 pinned the day meter at its 0.70 floor on purpose, at a 0.65 strength, so every sunlit frame took the
-// them, with white trucks or a pale facade in frame worst. so does the
+// linear value). LB14 pinned the day meter at its 0.70 floor on purpose, at a 0.65 strength, so every sunlit frame took the
 // day rig now: the floor 0.35, full strength, and a faster settle (a quarter of the gap per reading, ~2 s) so a plate taken
 // after a jump is settled. The target stays LB14's (0.20 x expoK 0.58). Not under `clean=1` (the films and teasers keep their
 // exposure) and not at golden, dusk or night. `?ae35=0` off.
 const AE35 = !(typeof location !== 'undefined' && (new URLSearchParams(location.search).get('ae35') === '0' || new URLSearchParams(location.search).get('clean') === '1'));
 const AE35_DAY = { aeMin: 0.35, aeK: 1.0, aeRate: 0.25 };
-// SH35. Day preset `skyHz`: the visible dome's colour pulled toward a pale
+// SH35 (LOOK, AR34 wave 2 round 3; the lead 23:53, QA, VIADUCTS: the twin's day sky one saturated gradient where the
+// captures' skies read a hazy pale summer blue). Day preset `skyHz`: the visible dome's colour pulled toward a pale
 // blue-white of its own luminance, and `skyGain` with it. The env bake keeps its sky (the ambient is unchanged). Cumulus as
-// Not under `clean=1` (the films keep their sky). `?sh35=0` off.
 const SH35 = !(typeof location !== 'undefined' && (new URLSearchParams(location.search).get('sh35') === '0' || new URLSearchParams(location.search).get('clean') === '1'));
-// measured in one page (shots/ar34/look/x6, four QA pairs; top-of-sky medians): toward the sun the hue
-// moves' (G-R +27 -> +18 against +11..+17) at the same value; away from it the deep blue the
 const SH35_DAY = { skyHz: 0.35, skyGain: 0.65 };
 // TW36 (lead 2026-10-02: "the dusk preset's sky is near black, so the teasers' dusk takes read as night"): the dusk preset
 // puts the sun 3 deg under the horizon, and three's Sky (Preetham) ends all scattering at a solar zenith angle of pi / 1.95
@@ -191,18 +188,18 @@ if (!LB13) Object.assign(PRESETS.day, DAY_R12);
 //     carriageway's linear B/R to 7.22 against the reference's 2.77.
 export const DAY_LB14 = {
   // LB14b (lead, 2026-09-22, verify_r14/street): with bnc 0.8 / coolSh -0.028 / hemiC 0x8fb6e4 the shaded Amsterdam
-  // every shaded leaf went grey-teal. The sunlit 125th plate was right (R>B, paint
+  // carriageway read 54,84,115 (B-R +61) against the pano's 58,79,96 (+38) and v19's +32, the shaded walk 75,105,127, and
+  // every shaded leaf went grey-teal (51,66,71 vs the pano's 118,142,116). The sunlit 125th plate was right (R>B, paint
   // bright). So the shade overshot: bounce back up, the cool grade term halved, the hemi colour half-way back.
   // LB14c (lead, 2026-09-22, shots/lb14/sweep4.txt — 12 rows in one page at amst120N, reference shaded road 58,79,96):
-  // LB14b row: road 63,90,118 (B-R +55) walk 71,97,116 (+45) | satFloor 0: +49 | coolSh 0: +50 | hemiC r13: +53
-  // hemi 1.2 + bnc 1.5: +51 | probeK.42 giK.7: +54 | walk neutral: walk +33 | LB14 light + r13 ground: road +48
-  // r13 light + LB14 ground: road +33 walk +26 => the blue was the LIGHT (satFloor/coolSh/hemiC/fill mix together), the
-  // ground row only sets the walk. Row D = all of those back at r13 with the r13 fill colour and road hue, walk neutral:
-  // road 68,86,105 (+37, reference +38), walk 81,96,104 (+23), paint - asphalt +56 (target 55-65), frame L<80 30 %
-  // (r13 band 24-49), sunlit wall 79,73,73 R>B. The key (sun 5.0, expoK 0.58, conFloor 0.34) is what makes the top end;
-  // the hue levers were fighting the tonemapper and are gone.
+  //   LB14b row: road 63,90,118 (B-R +55) walk 71,97,116 (+45)  |  satFloor 0: +49  |  coolSh 0: +50  |  hemiC r13: +53
+  //   hemi 1.2 + bnc 1.5: +51  |  probeK .42 giK .7: +54  |  walk neutral: walk +33  |  LB14 light + r13 ground: road +48
+  //   r13 light + LB14 ground: road +33 walk +26  => the blue was the LIGHT (satFloor/coolSh/hemiC/fill mix together), the
+  //   ground row only sets the walk. Row D = all of those back at r13 with the r13 fill colour and road hue, walk neutral:
+  //   road 68,86,105 (+37, reference +38), walk 81,96,104 (+23), paint - asphalt +56 (target 55-65), frame L<80 30 %
+  //   (r13 band 24-49), sunlit wall 79,73,73 R>B. The key (sun 5.0, expoK 0.58, conFloor 0.34) is what makes the top end;
+  //   the hue levers were fighting the tonemapper and are gone.
   // env 0.22 -> 0.264 with ST34 (LOOK, AR34 wave 2 round 2): with the sheen trimmed (materials.js ST34) and the canyon's sky
-  // the environment
   // x1.2, A/B'd in one page in the main tree (shots/ar34/look/m5day _1 / _2): b44 70.0 -> 76.0 (crop 77.6), c120 48.8 ->
   // 54.0 (66.2), s120 56.4 -> 61.2 (77.2), s351 123.4 -> 123.6; fdb280 157.3 -> 159.1 (135.9) and the arch 88.0 -> 92.5
   // (81.8) the other way. `?st34=0` restores 0.22.

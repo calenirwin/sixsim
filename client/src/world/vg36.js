@@ -462,6 +462,7 @@ export function initVeg36(engine, streamer) {
       if (!mesh) return;
       mesh.updateMatrixWorld(true);
       const c = scanGround(mesh);
+      mesh.geometry.userData.lawnScanned = true;   // SPACE r2 (world/cpuFree.js, ?lowmem=1): the ground's arrays may go now
       for (const [k, v] of c) cells.set(k, v);
       tileCells.set(key, [...c.keys()]);
       field.add(key, mesh);

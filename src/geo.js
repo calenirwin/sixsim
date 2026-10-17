@@ -11,6 +11,8 @@ export function box(w, h, d, { segY = 0, segX = 1, segZ = 1 } = {}) {
   const sy = segY || Math.max(1, Math.min(6, Math.ceil(h / 1.6)));
   const g = new THREE.BoxGeometry(w, h, d, segX, sy, segZ);
   g.translate(0, h / 2, 0);
+  // (its size and vertex count: the bake's kit records find a box still a box, moved but not turned, by them)
+  g.userData.box = { w, h, d, n: g.attributes.position.count };
   return g;
 }
 

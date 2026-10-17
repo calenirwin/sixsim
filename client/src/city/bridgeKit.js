@@ -3,6 +3,17 @@
 import * as THREE from 'three';
 import { COLLIDERS } from './colliders.js';
 import { mergeGeometries as mergeBG } from 'three/addons/utils/BufferGeometryUtils.js';
+import { GeoBag } from './br/geom.js';
+import { buildBrooklyn } from './br/brooklyn.js';
+import { buildManhattan } from './br/manhattan.js';
+import { buildWilliamsburg } from './br/williamsburg.js';
+import { buildVerrazzano, buildThrogs, buildWhitestone, buildGWB, buildRFK } from './br/suspension.js';
+import { buildHellGate } from './br/hellgate.js';
+import { buildMacombs, build145, buildMadison, buildThirdAv, buildWillis, buildUnivHts, buildBroadway, buildRoosevelt, buildWardsFoot, buildPulaski, buildMarinePkwy, buildRfkBronxKill } from './br/movable.js';
+import { buildHenryHudson, buildHamilton, buildWashington, buildHighBridge, buildBayonne } from './br/arches.js';
+import { buildGoethals, buildKosciuszko } from './br/stayed.js';
+import { buildOuterbridge } from './br/cantilever.js';
+import { buildQueensboro } from './br/queensboro.js';
 
 const matCache = new Map();
 function M(hex, opts = {}) {
@@ -244,6 +255,16 @@ function trussSpan(group, deck, t0, t1, height, hex, W) {
 function archSpan(group, deck, t0, t1, rise, hex, W, above = false) {
   const boxes = [];
   const n = 26;
+  // BR36: the rib as members from point to point (centred boxes left gaps where the rib climbs steeply: a dashed arch)
+  const rib = [[], []];
+  for (let i = 0; i <= n; i++) {
+    const t = t0 + (i / n) * (t1 - t0);
+    const s = sampleAt(deck, t);
+    const u = (t - (t0 + t1) / 2) / ((t1 - t0) / 2); // -1..1
+    const archY = s.y + (above ? 1 : -1) * rise * (1 - u * u) - (above ? 0 : 2);
+    [-1, 1].forEach((side, k) => rib[k].push([s.x - s.dirz * side * (W / 2 - 0.5), archY, s.z + s.dirx * side * (W / 2 - 0.5)]));
+  }
+  for (const r of rib) for (let i = 1; i < r.length; i++) strut(boxes, r[i - 1], r[i], 1.8);
   for (let i = 0; i <= n; i++) {
     const t = t0 + (i / n) * (t1 - t0);
     const s = sampleAt(deck, t);
@@ -251,10 +272,6 @@ function archSpan(group, deck, t0, t1, rise, hex, W, above = false) {
     const archY = s.y + (above ? 1 : -1) * rise * (1 - u * u) - (above ? 0 : 2);
     for (const side of [-1, 1]) {
       const x = s.x - s.dirz * side * (W / 2 - 0.5), z = s.z + s.dirx * side * (W / 2 - 0.5);
-      const seg = new THREE.BoxGeometry(1.3, 2.2, deckLength(deck) * (t1 - t0) / n + 1);
-      seg.rotateY(Math.atan2(s.dirx, s.dirz));
-      seg.translate(x, archY, z);
-      boxes.push(seg);
       // spandrel/hanger
       const h = Math.abs(archY - s.y);
       if (h > 2.5) {
@@ -265,6 +282,111 @@ function archSpan(group, deck, t0, t1, rise, hex, W, above = false) {
     }
   }
   group.add(new THREE.Mesh(mergeGeos(boxes), M(hex)));
+}
+
+// a square-section member from a to b ([x, y, z]), r thick, for the merged part lists
+const _zAxis = new THREE.Vector3(0, 0, 1);
+function strut(list, a, b, r) {
+  const d = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]), len = d.length();
+  if (len < 0.05) return;
+  const g = new THREE.BoxGeometry(r, r, len);
+  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(_zAxis, d.divideScalar(len)));
+  g.translate((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2);
+  list.push(g);
+}
+// BR36 (records lane): an approach pier as a bent, square columns under the deck's edges (a third under a deck over
+// 22 m wide) and a cap beam across under the girders, instead of one slab (the slab's long side ran ALONG the deck:
+// the Verrazzano's 31 m deck drew a row of 22 m white walls)
+const PIER_HEX = 0x6f6b64;
+function pierBent(list, s, yTop, W) {
+  const nx = -s.dirz, nz = s.dirx, half = W / 2 - 1.6;
+  const cols = W > 22 ? [-half, 0, half] : [-half, half];
+  for (const o of cols) {
+    const g = new THREE.BoxGeometry(2.2, yTop, 2.2);
+    g.rotateY(Math.atan2(s.dirx, s.dirz));
+    g.translate(s.x + nx * o, yTop / 2 - 0.5, s.z + nz * o);
+    list.push(g);
+  }
+  const cap = new THREE.BoxGeometry(W + 0.6, 1.6, 2.8);
+  cap.rotateY(Math.atan2(s.dirx, s.dirz));
+  cap.translate(s.x, yTop - 0.8, s.z);
+  list.push(cap);
+}
+// BR36: a deck end standing above the ground lands on an abutment, a stone block under the end, not on air
+function abutment(list, deck, end, W) {
+  const P = end ? deck[deck.length - 1] : deck[0], Q = end ? deck[deck.length - 2] : deck[1];
+  const dx = P[0] - Q[0], dz = P[2] - Q[2], l = Math.hypot(dx, dz) || 1, ux = dx / l, uz = dz / l;
+  const h = P[1] + 1.5;
+  const g = new THREE.BoxGeometry(W + 4, h, 12);
+  g.rotateY(Math.atan2(ux, uz));
+  g.translate(P[0] + ux * 4, h / 2 - 1.5 - 0.35, P[2] + uz * 4);
+  list.push(g);
+}
+// BR36: a cable-stayed span (the Goethals Bridge): H pylons of concrete, legs outside the deck, a strut under the deck
+// and one at the head, and a semi-fan of stays from the head to both edges of the deck either side of each pylon
+function cableStayed(group, br, W, hex) {
+  const conc = [], stays = [];
+  const deck = br.deck, L = deckLength(deck);
+  const H = br.towerH || 80, span = br.span || 270;
+  const tParam = (tw) => { let best = 0, bd = 1e18; for (let i = 0; i <= 400; i++) { const s = sampleAt(deck, i / 400); const d = (s.x - tw.x) ** 2 + (s.z - tw.z) ** 2; if (d < bd) { bd = d; best = i / 400; } } return best; };
+  for (const tw of br.towers) {
+    const across = Math.atan2(tw.dirx, tw.dirz) + Math.PI / 2;
+    const nx = -tw.dirz, nz = tw.dirx;
+    for (const sd of [-1, 1]) {
+      const lx = sd * (W / 2 + 2.0);
+      const g = new THREE.BoxGeometry(3.2, H, 4.2);
+      g.rotateY(across);
+      g.translate(tw.x + nx * lx, H / 2 - 1, tw.z + nz * lx);
+      conc.push(g);
+    }
+    for (const y of [tw.deckY - 3.2, H - 6]) {
+      const g = new THREE.BoxGeometry(W + 7.5, 2.4, 3.6);
+      g.rotateY(across);
+      g.translate(tw.x, y, tw.z);
+      conc.push(g);
+    }
+    const tt = tParam(tw), n = 11;
+    for (const dirSign of [-1, 1]) for (let k = 1; k <= n; k++) {
+      const t = tt + dirSign * ((k / n) * (span / 2 - 6)) / L;
+      if (t < 0 || t > 1) continue;
+      const s = sampleAt(deck, t);
+      for (const sd of [-1, 1]) {
+        const ax = tw.x + nx * sd * (W / 2 + 2.0), az = tw.z + nz * sd * (W / 2 + 2.0), ay = H - 9 - (n - k) * 1.6;
+        const bx = s.x - s.dirz * sd * (W / 2 - 0.3), bz = s.z + s.dirx * sd * (W / 2 - 0.3);
+        strut(stays, [ax, ay, az], [bx, s.y + 0.4, bz], 0.22);
+      }
+    }
+  }
+  if (conc.length) group.add(new THREE.Mesh(mergeGeos(conc), M(0xa29d93)));
+  if (stays.length) group.add(new THREE.Mesh(mergeGeos(stays), M(0xd8d8d4)));
+  return br.towers.map(tParam).sort((a, b) => a - b);
+}
+// BR36: the Verrazzano's second deck: the lower roadway 7.6 m under the upper, the two joined by the stiffening truss
+// along both edges (posts every 12 m, diagonals, chords), so the deck reads at its full ~10 m depth from the water
+const DECK2_DROP = 7.6;
+function lowerDeck(group, br, W, hex) {
+  const deck2 = br.deck.map((p) => [p[0], p[1] - DECK2_DROP, p[2]]);
+  buildDeckRibbon(group, deck2, W, hex, {});
+  const parts = [];
+  const L = deckLength(br.deck), n = Math.max(2, Math.floor(L / 12));
+  let prev = null;
+  for (let i = 0; i <= n; i++) {
+    const s = sampleAt(br.deck, i / n);
+    const yU = s.y - 0.2, yL = s.y - DECK2_DROP - 2.2;
+    const cur = [];
+    for (const sd of [-1, 1]) {
+      const x = s.x - s.dirz * sd * (W / 2 + 0.1), z = s.z + s.dirx * sd * (W / 2 + 0.1);
+      strut(parts, [x, yL, z], [x, yU, z], 0.7);
+      cur.push([x, yL, z, yU]);
+    }
+    if (prev) for (let k = 0; k < 2; k++) {
+      const [x0, yl0, z0, yu0] = prev[k], [x1, yl1, z1, yu1] = cur[k];
+      strut(parts, i % 2 ? [x0, yl0, z0] : [x0, yu0, z0], i % 2 ? [x1, yu1, z1] : [x1, yl1, z1], 0.5);
+      strut(parts, [x0, (yl0 + yu0) / 2, z0], [x1, (yl1 + yu1) / 2, z1], 0.45);
+    }
+    prev = cur;
+  }
+  if (parts.length) group.add(new THREE.Mesh(mergeGeos(parts), M(hex)));
 }
 
 // A bridge is built from hundreds of small parts (hanger boxes, piers, cones);
@@ -305,20 +427,93 @@ function mergeBridgeGroup(bg) {
   return out;
 }
 
+// the bridges drawn from their own architecture (city/br/*.js), on records that carry the bridge's layout
+const BUILDERS = { brooklyn: buildBrooklyn, manhattanBr: buildManhattan, williamsburg: buildWilliamsburg, verrazzano: buildVerrazzano, throgs: buildThrogs, whitestone: buildWhitestone, gwb: buildGWB, queensboro: buildQueensboro, rfk: buildRFK, hellgate: buildHellGate,
+  macombs: buildMacombs, br145: build145, madisonAv: buildMadison, thirdAv: buildThirdAv, willis: buildWillis, universityHts: buildUnivHts,
+  broadwayBr: buildBroadway, rooseveltBr: buildRoosevelt, wardsFoot: buildWardsFoot, pulaski: buildPulaski, marinePkwy: buildMarinePkwy, rfkBronxKill: buildRfkBronxKill,
+  henryHudson: buildHenryHudson, hamiltonBr: buildHamilton, washingtonBr: buildWashington, highBr: buildHighBridge,
+  goethals: buildGoethals, kosciuszko: buildKosciuszko, bayonne: buildBayonne, outerbridge: buildOuterbridge };
+// ?brv2=0 draws every bridge with the generic parts below (the A/B)
+const V2 = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('brv2') === '0');
+
+// A bridge from its builder, twice: the full level and the coarse one (no hangers, stays, rails, lane lines, lamps or
+// lacing; the trusses' chords and posts), each cut into pieces of ~250 m along the bridge, every piece a THREE.LOD that
+// draws its full level within LOD_NEAR metres of the camera and its coarse level beyond (never nothing: the bridges are
+// landmarks). ?brlod=0 holds the full level at every distance (stills, films). The cell baker takes a LOD's first level.
+const LOD_NEAR = 1300, PIECE = 250;
+const LOD_ON = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('brlod') === '0');
+function buildLOD(br, builder) {
+  const d0 = br.deck[0], d1 = br.deck[br.deck.length - 1];
+  const ux0 = d1[0] - d0[0], uz0 = d1[2] - d0[2], ul = Math.hypot(ux0, uz0) || 1, ux = ux0 / ul, uz = uz0 / ul;
+  const chunk = (p) => Math.floor(((p[0] - d0[0]) * ux + (p[2] - d0[2]) * uz) / PIECE);
+  const levels = [0, 1].map((lod) => { const bag = new GeoBag({ chunk, lod }); builder(br, bag); return bag.flushChunks('br:' + br.key, {}); });
+  const group = new THREE.Group();
+  group.name = 'bridge:' + br.key;
+  const tris = [0, 0];
+  const keys = new Set([...levels[0].keys(), ...levels[1].keys()]);
+  for (const k of [...keys].sort((a, b) => a - b)) {
+    const near = levels[0].get(k), far = levels[1].get(k);
+    tris[0] += near ? near.tris : 0; tris[1] += far ? far.tris : 0;
+    // the piece's centre: its LOD switches on the camera's distance to it
+    const box = new THREE.Box3();
+    for (const L of [near, far]) if (L) for (const m of L.group.children) { m.geometry.computeBoundingBox(); box.union(m.geometry.boundingBox); }
+    const c = box.getCenter(new THREE.Vector3());
+    const lod = new THREE.LOD();
+    lod.name = `bridge:${br.key}:${k}`;
+    lod.position.copy(c);
+    for (const [L, dist] of [[near, 0], [far, LOD_ON ? LOD_NEAR : 1e9]]) {
+      const g = L ? L.group : new THREE.Group();
+      g.position.set(-c.x, -c.y, -c.z);
+      lod.addLevel(g, dist, 0.08);
+    }
+    group.add(lod);
+  }
+  return { group, tris, chunks: keys.size };
+}
+
+// deck colliders (per 2 segments) — only where the deck is genuinely elevated,
+// otherwise at-grade approaches become invisible walls across streets
+function deckColliders(br, W) {
+  for (let i = 0; i < br.deck.length - 1; i += 2) {
+    const A = br.deck[i], B = br.deck[Math.min(i + 2, br.deck.length - 1)];
+    const cx = (A[0] + B[0]) / 2, cy = (A[1] + B[1]) / 2, cz = (A[2] + B[2]) / 2;
+    const len = Math.hypot(B[0] - A[0], B[2] - A[2]);
+    if (len < 1) continue;
+    const endA = br.deck[0][1], endB = br.deck[br.deck.length - 1][1];
+    const nearEnd = i < br.deck.length / 2 ? endA : endB;
+    if (cy - nearEnd < 2.8) continue; // at-grade approach: no invisible wall across the street
+    COLLIDERS.addBox('bridges', { x: cx, y: cy - 1.2, z: cz, hw: len / 2 + 1, hh: 1.2, hd: W / 2, rotY: -Math.atan2(B[2] - A[2], B[0] - A[0]) });
+  }
+}
+
 export function buildBridges(bridges, scene, streamer) {
   const group = new THREE.Group();
   group.name = 'bridges';
   const trafficDecks = [];
   for (const br of bridges) {
     if (!br.deck || br.deck.length < 2) continue;
-    const hex = STEEL[br.key] ?? 0x707880;
     const W = Math.min(38, br.width);
+    if (V2 && br.layout && BUILDERS[br.key]) {
+      try {
+        const t0 = performance.now();
+        const out = buildLOD(br, BUILDERS[br.key]);
+        group.add(out.group);
+        deckColliders(br, W);
+        for (const tw of br.layout.towers) COLLIDERS.addBox('bridges', { x: tw.x, y: (br.towerH || 60) / 2, z: tw.z, hw: Math.max(14, br.width / 2 + 6), hh: (br.towerH || 60) / 2, hd: 8, rotY: Math.atan2(tw.dirx, tw.dirz) + Math.PI / 2 });
+        if (!br.foot) trafficDecks.push({ pts: br.deck.map((p) => [...p]), width: W, lanes: Math.max(2, Math.round(W / 3.6)), speed: 40, oneway: 0, rclass: 3, name: br.name, level: 1 });
+        console.log(`[bridges] ${br.key}: ${(out.tris[0] / 1000).toFixed(0)}k triangles near, ${(out.tris[1] / 1000).toFixed(0)}k far, ${out.chunks} pieces, ${(performance.now() - t0).toFixed(0)} ms`);
+        continue;
+      } catch (e) { console.warn('[bridges] the', br.key, 'builder failed, drawing the generic bridge', e); }
+    }
+    const hex = STEEL[br.key] ?? 0x707880;
     const bg = new THREE.Group();
     buildDeckRibbon(bg, br.deck, W, hex, { foot: br.foot });
+    if (br.decks === 2) lowerDeck(bg, br, W, hex);
     const L = deckLength(br.deck);
     const [w0, w1] = br.waterRun;
     const t0 = Math.max(0.02, w0 / L), t1 = Math.min(0.98, w1 / L);
     let swing = null;   // AR34 BRIDGES: the Willis Avenue Bridge's swing span's run (t0, t1)
+    let mainSpan = null;   // BR36: the run between the pylons of a cable-stayed span or a bridge with its real main span
     if (br.type === 'suspension') {
       for (const tw of br.towers) {
         const fn = br.tower === 'gothic' ? towerGothic : towerSteel;
@@ -328,8 +523,12 @@ export function buildBridges(bridges, scene, streamer) {
     } else if (br.type === 'cantilever') {
       trussSpan(bg, br.deck, t0, t1, 32, hex, W + 1);
       for (const tw of br.towers) towerSteel(bg, tw.x, tw.z, tw.dirx, tw.dirz, tw.deckY, br.towerH * 0.6, W, hex);
+    } else if (br.type === 'cablestayed') {
+      const tt = cableStayed(bg, { ...br, width: W }, W, hex);
+      if (tt.length === 2) mainSpan = tt;
     } else if (br.type === 'arch' || br.type === 'archRail') {
-      archSpan(bg, br.deck, t0, t1, br.type === 'archRail' ? 34 : 22, hex, W + 2, br.type === 'archRail');
+      // BR36: archRise (the Bayonne Bridge): a through arch over the deck, rising archRise over it at the crown
+      archSpan(bg, br.deck, t0, t1, br.archRise || (br.type === 'archRail' ? 34 : 22), hex, W + 2, br.type === 'archRail' || !!br.archRise);
     } else if (br.key === 'willis') {
       // AR34 BRIDGES: the Willis Avenue Bridge's swing span of 2010, 350 ft (107 m) long, 77 ft wide, 65 ft high (Wikipedia,
       // "Willis Avenue Bridge"), a through truss deepest over its pivot pier in mid-river, with a rest pier at each end (the
@@ -346,30 +545,29 @@ export function buildBridges(bridges, scene, streamer) {
       const mid = sampleAt(br.deck, (t0 + t1) / 2);
       box(bg, 10, mid.y, 12, 0x8a8578, mid.x, mid.y / 2 - 1, mid.z, Math.atan2(mid.dirx, mid.dirz));
     }
-    // approach piers
+    // approach piers, as bents (BR36)
     // (AR34 BRIDGES: none under the Willis Avenue Bridge's swing span, whose piers are drawn above)
+    // (BR36: none in the water under a through arch or between a cable-stayed span's pylons, nor under a main span the
+    // record gives the real length of (`span`, between its towers))
+    if (!mainSpan && br.span && br.towers && br.towers.length === 2) {
+      const tp = (tw) => { let best = 0, bd = 1e18; for (let i = 0; i <= 400; i++) { const q = sampleAt(br.deck, i / 400); const d = (q.x - tw.x) ** 2 + (q.z - tw.z) ** 2; if (d < bd) { bd = d; best = i / 400; } } return best; };
+      mainSpan = br.towers.map(tp).sort((a, b) => a - b);
+    }
+    const piers = [];
     for (let d = 15; d < L - 10; d += 24) {
       const t = d / L;
-      if (t > t0 - 0.02 && t < t1 + 0.02 && (br.type === 'suspension' || br.type === 'archRail')) continue;
+      if (t > t0 - 0.02 && t < t1 + 0.02 && (br.type === 'suspension' || br.type === 'archRail' || (br.type === 'arch' && br.archRise))) continue;
       if (swing && t > swing[0] - 0.01 && t < swing[1] + 0.01) continue;
+      if (mainSpan && t > mainSpan[0] - 0.005 && t < mainSpan[1] + 0.005) continue;
       const s = sampleAt(br.deck, t);
-      const ground = streamer ? 1.0 : 1.0;
-      const h = s.y - 2.2;
-      if (h < 4) continue;
-      box(bg, 2.6, h, W * 0.7, 0x77716a, s.x, h / 2, s.z, Math.atan2(s.dirx, s.dirz));
+      const yTop = s.y - (br.decks === 2 ? DECK2_DROP : 0) - 2.2;
+      if (yTop < 4) continue;
+      pierBent(piers, s, yTop, W);
     }
-    // deck colliders (per 2 segments) — only where the deck is genuinely elevated,
-    // otherwise at-grade approaches become invisible walls across streets
-    for (let i = 0; i < br.deck.length - 1; i += 2) {
-      const A = br.deck[i], B = br.deck[Math.min(i + 2, br.deck.length - 1)];
-      const cx = (A[0] + B[0]) / 2, cy = (A[1] + B[1]) / 2, cz = (A[2] + B[2]) / 2;
-      const len = Math.hypot(B[0] - A[0], B[2] - A[2]);
-      if (len < 1) continue;
-      const endA = br.deck[0][1], endB = br.deck[br.deck.length - 1][1];
-      const nearEnd = i < br.deck.length / 2 ? endA : endB;
-      if (cy - nearEnd < 2.8) continue; // at-grade approach: no invisible wall across the street
-      COLLIDERS.addBox('bridges', { x: cx, y: cy - 1.2, z: cz, hw: len / 2 + 1, hh: 1.2, hd: W / 2, rotY: -Math.atan2(B[2] - A[2], B[0] - A[0]) });
-    }
+    // BR36: each deck end left standing above the ground lands on an abutment
+    for (const end of [0, 1]) if ((end ? br.deck[br.deck.length - 1] : br.deck[0])[1] > 8) abutment(piers, br.deck, end, W);
+    if (piers.length) bg.add(new THREE.Mesh(mergeGeos(piers), M(PIER_HEX)));
+    deckColliders(br, W);
     if (!br.foot) trafficDecks.push({ pts: br.deck.map((p) => [...p]), width: W, lanes: Math.max(2, Math.round(W / 3.6)), speed: 40, oneway: 0, rclass: 3, name: br.name, level: 1 });
     group.add(mergeBridgeGroup(bg));
   }

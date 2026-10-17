@@ -5,7 +5,7 @@ const [,, tdir, xs, zs, rs] = process.argv; const X = +xs, Z = +zs, R = +(rs || 
 const man = JSON.parse(fs.readFileSync(tdir + '/manifest.json', 'utf8')); const TILE = man.tile || man.tileSize || 512;
 for (let tx = Math.floor((X - R) / TILE); tx <= Math.floor((X + R) / TILE); tx++) for (let tz = Math.floor((Z - R) / TILE); tz <= Math.floor((Z + R) / TILE); tz++) {
   const ent = man.tiles[`${tx}_${tz}`]; if (!ent) continue;
-  const buf = fs.readFileSync(tdir + '/' + ent.f).buffer; const dv = new DataView(buf); const hLen = dv.getUint32(4, true);
+  const buf = ((b) => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength))(fs.readFileSync(tdir + '/' + ent.f)); const dv = new DataView(buf); const hLen = dv.getUint32(4, true);
   const h = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, hLen))); const base = 8 + hLen + ((4 - ((8 + hLen) % 4)) % 4);
   const S = {}; for (const s of h.sections) S[s.name] = new ({ Float32Array, Uint8Array, Uint32Array, Int16Array, Uint16Array }[s.type])(buf, base + s.offset, s.length);
   const [ox, oz] = h.origin; const meta = S.roads, verts = S.roadVerts; if (!meta) continue;

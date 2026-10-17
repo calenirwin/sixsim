@@ -125,3 +125,21 @@ export function buildSignText(signs, plaques = []) {
   mesh.renderOrder = 2;
   return mesh;
 }
+
+// ==== R1A the cell baker's read of this atlas (docs/specs/cell-package.md section 4, `cellTexture`): which name each
+// slot holds, and a slot painted as slotFor paints it. The slots are handed out in the order the tiles come in, so the
+// layout differs between two page loads; the baker packs each cell's names into a texture of the cell's own.
+export const r1aSignText = {
+  slots, AW, AH, CW, CH,
+  mat: () => mat,
+  paint(c, key, x0, y0) {   // the slot whose top-left corner is (x0, y0), as slotFor draws it
+    c.font = '700 25px "Arial Narrow", Arial, sans-serif';
+    c.fillStyle = '#f0f4ee';
+    c.textBaseline = 'middle';
+    c.textAlign = 'center';
+    let t = key;
+    while (c.measureText(t).width > CW - 20 && t.length > 3) t = t.slice(0, -1);
+    c.fillText(t, x0 + CW / 2, y0 + CH / 2 + 1);
+  },
+};
+// ==== R1A end

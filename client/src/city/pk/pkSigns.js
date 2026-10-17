@@ -134,7 +134,6 @@ function noP(x, cx, cy, s) {
   x.beginPath(); x.moveTo(cx - s * 0.25, cy - s * 0.25); x.lineTo(cx + s * 0.25, cy + s * 0.25); x.stroke();
 }
 const REG = [
-  // 0 NO STANDING ANYTIME, white on red
   (x, w, h) => {
     x.fillStyle = RED; x.fillRect(0, 0, w, h);
     x.strokeStyle = WHITE; x.lineWidth = w * 0.018; rrect(x, w * 0.04, w * 0.04, w * 0.92, h - w * 0.08, w * 0.05); x.stroke();
@@ -143,7 +142,6 @@ const REG = [
     text(x, 'ANYTIME', w / 2, h * 0.62, w * 0.78, h * 0.12, WHITE, 600);
     arrow(x, w / 2, h * 0.8, w * 0.72, h * 0.03, 0, WHITE);
   },
-  // 1 the no-parking symbol plate: P in the ring, the hours, the days, a red arrow
   (x, w, h) => {
     x.fillStyle = WHITE; x.fillRect(0, 0, w, h);
     noP(x, w * 0.27, h * 0.17, w * 0.36);
@@ -155,7 +153,6 @@ const REG = [
     text(x, 'MON & THURS', w / 2, h * 0.63, w * 0.84, h * 0.07, RED, 700);
     arrow(x, w / 2, h * 0.84, w * 0.72, h * 0.035, -1, RED);
   },
-  // 2 the two-hour metered plate: the green numeral box, the legend, a green arrow
   (x, w, h) => {
     x.fillStyle = WHITE; x.fillRect(0, 0, w, h);
     x.fillStyle = GREEN; x.fillRect(w * 0.08, h * 0.05, w * 0.34, h * 0.21);
@@ -231,7 +228,6 @@ const MUT = {
     x.strokeStyle = RED; x.lineWidth = w * 0.075; x.beginPath(); x.arc(w / 2, h / 2, w * 0.36, 0, Math.PI * 2); x.stroke();
     x.beginPath(); x.moveTo(w / 2 - w * 0.255, h / 2 - h * 0.255); x.lineTo(w / 2 + w * 0.255, h / 2 + h * 0.255); x.stroke();
   }],
-  // DON'T BLOCK THE BOX, 24 x 30 in
   dbtb: [0.61, 0.76, (x, w, h) => {
     REG[5](x, w, h);
   }],

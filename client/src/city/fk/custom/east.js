@@ -1,8 +1,8 @@
 // AR33 custom builders and sign marks, segment east: Fifth Avenue to the river. Specs name them as 'east:<fn>' (docs/notes/ar33-spec.md).
 // Owner: the EAST worker (docs/notes/ar33-east.md).
-// hoarding(group, ctx, spec, frame): a construction site where a compiled building no longer stands: the fence along the front edge, the lot's ground.
-// podiumTower(group, ctx, spec, frame): a tower block on the kit's podium (159 E 125th).
-// mountMorris(group, ctx, spec, frame): 81 E 125th, the Mount Morris Bank Building: oriels, entrance arch, slate mansard.
+//   shows a painted plywood hoarding on the lot line, or a mesh fence): the fence along the front edge, the lot's ground.
+//   podiumTower(group, ctx, spec, frame): a tower block on the kit's podium (159 E 125th).
+//   mountMorris(group, ctx, spec, frame): 81 E 125th, the Mount Morris Bank Building: oriels, entrance arch, slate mansard.
 import * as THREE from 'three';
 import { ENV, applyLightTrim, applyCityAO } from '../../../world/materials.js';
 import { COLLIDERS } from '../../colliders.js';   // the site block's keep-out for the walkers (siteBlock)
@@ -66,13 +66,11 @@ function paintHoarding(len, seed) {
   return tex;
 }
 
-// --- mural painters (begin): canvas only, no three.js (a preview page runs this block as it is: `muLib.muSite(...)`)
-// The Lexington Avenue SW corner hoarding: a run of plywood panels, each its own piece by its own
+// --- mural painters (begin): canvas only, no three.js (a preview page runs this block as it is: `muLib().muSite(...)`)
 // hand: stencil portraits in two to four flat tones, silhouettes on sprayed grounds, packed doodle walls, a crowd drawn in one black line
 // over a red-to-violet fade, leaves and figures; at the corner a green plywood sheet layered with chrome and marker tags. Painted with
 // brush and roller (ragged edges, coverage that varies, strokes in the grounds), then aged: sun fade toward the top, grime and splash
 // at the foot, rain runs, scuffs, stickers, the sheet joints every 1.22 m. Every face, figure and letter is invented; nothing is
-// traced from the photographs.
 // The block is one function that refers to nothing outside it, so a worker can run it from its source text (muWorker below; the body
 // keeps the indentation it had at the top level). Canvases come from muCanvas: a page's canvas, an OffscreenCanvas in a worker.
 function muLib() {
@@ -449,7 +447,6 @@ const MU_PANELS = {
   // reaching across a red field brushed dark at one side (invented figures in the real piece's palette)
   figure(g, R, x0, w, H, m) {
     muGround(g, R, x0, w, H, ['#b5302a', '#c43a2f', '#a72a26'], { len: 60, w: 16, ang: 0.2, spread: 1.5, hi: '#e2664c', lo: '#4a0f10', strokes: 1.6 });
-    // a big dark portrait in a cap at the west end, in the shadow tones of the red
     g.fillStyle = 'rgba(30,10,12,0.6)'; muBlob(g, R, x0 + w * 0.2, H * 0.55, w * 0.22, H * 0.5, 0.2, 20); g.fill();
     muPortrait(g, x0 + w * 0.2, H * 0.4, Math.min(w * 0.1, 0.36 * m), { pal: ['#1c0c0c', '#46201c', '#7c3a2e', '#b8735a'], hair: 'none', yaw: 0.3, seed: 791, shirt: ['#1c0c0c', '#46201c', '#7c3a2e'], lips: '#2a0f0f' });
     { const a = Math.min(w * 0.1, 0.36 * m), cx0 = x0 + w * 0.2 + a * 0.1, cy0 = H * 0.4 - a * 1.05; g.fillStyle = '#120808'; g.beginPath(); g.ellipse(cx0, cy0, a * 1.15, a * 0.55, 0.05, Math.PI, 0); g.fill(); g.beginPath(); g.ellipse(cx0 + a * 0.7, cy0 + a * 0.05, a * 0.85, a * 0.16, 0.08, 0, Math.PI * 2); g.fill(); }
@@ -830,7 +827,6 @@ export function hoarding(group, ctx, spec, frame) {
   }
 }
 
-// ================================================================== 122 E 125th St, Popeyes: the standing-seam
 // awning over the upper glass, the promotion posters in the windows and the round blade sign at the east corner. The posters are invented
 // (price numerals, chicken, fries and biscuits drawn from scratch, no logo); the roundel carries the brand's initial only, drawn here.
 // spec.awnings: [{ u0, u1, y (the valance's foot), drop (to the top at the wall), proj, color }], spec.posters: [{ u, y, w, h, upper }],
@@ -1174,7 +1170,7 @@ export function mountMorris(group, ctx, spec, frame) {
 
 // ================================================================== 35 E 125th St: the one-storey glazed west wing of the Harlem Children's Zone school
 // The spec's ring is the school block; the compiled lot's west part (u -29.9..0 of the front frame, 1.3 m behind the block's front except
-// the middle run u -25.95..-6.47, which stands on the front line) is this wing: 6.0 m high, a membrane roof.
+// storefront glass from a dark brick plinth to 5.0 m, a grey metal fascia to 6.0 m), a membrane roof.
 export function hczWing(group, ctx, spec, frame) {
   const K = frame.kit, H = 6.0;
   const wall = K.mat('panel_grey', { tint: '#5c6064', dirt: 0.35 });
@@ -1207,7 +1203,6 @@ export function hczWing(group, ctx, spec, frame) {
   void group; void ctx;
 }
 
-// ================================================================== 17 E 125th St: the closed gate painted as a mural
 // The shop's roll-down gate is down across the whole front and painted: a sunset over a brick wall with a pair of white wings in the
 // middle (invented composition in the real piece's palette; nothing traced). Drawn as the curtain itself: a housing box, the guides and the
 // painted slats on the face's base bay (spec bay kind 'wall', u0..u1 from spec.gateMural).
@@ -1439,7 +1434,6 @@ export function gasStation(group, ctx, spec, frame) {
 }
 
 // ================================================================== the block under construction on the south side, Lexington to Third (QA Q02, Q59)
-// 2026-08: a ten-storey block in a full frame scaffold wrapped in dark netting with
 // orange seams, a light screen round its top, from the Third Avenue corner west to a yard (Lexington to the block): the CORE sidewalk
 // shed along both street fronts (posts on the sidewalk 1.3 m in from the kerb, green-painted plank hoarding between them, a dark
 // netting band up to the deck, a green steel railing on the deck with the contractor's CORE boards), a bridge over the yard gate at the
@@ -1462,7 +1456,6 @@ function siteNetTex() {
   const S = 384, cv = siteCanvas(S, S), g = cv.getContext('2d'), R = rng(907), m = S / 3;
   g.fillStyle = 'rgba(46,38,34,0.76)'; g.fillRect(0, 0, S, S);
   for (let i = 0; i < 1400; i++) { g.fillStyle = R() < 0.5 ? 'rgba(8,7,6,0.25)' : 'rgba(110,92,80,0.10)'; g.fillRect(R() * S, R() * S, 1, 3 + R() * 14); }
-  // the orange-red seams
   for (let k = 0; k < 6; k++) { const x = (k + 0.5) * m * 0.5; g.fillStyle = 'rgba(176,98,72,0.62)'; g.fillRect(x - 1.5, 0, 3, S); }
   for (let k = 0; k < 2; k++) { const x = k * m * 1.5 + 3; g.fillStyle = 'rgba(120,112,104,0.4)'; g.fillRect(x, 0, 3, S); }
   // the ties at each lift (2 m): short darker bands
@@ -1657,7 +1650,6 @@ export function siteBlock(group, ctx, spec, frame) {
 
   // ---- the sidewalk shed along 125th and Third Avenue: posts at the kerb side and at the scaffold, dark beams, the plank deck with a
   // green fascia, the green railing on the deck's edge, green-painted plank hoarding between the kerb-side posts to 1.5 m and the dark
-  // netting band with orange ropes from there to the deck
   const dark = K.mat('steel_black', { dirt: 0.4 });
   const shedRuns = [
     { s0: scW, s1: outE, t0: out, t1: sc0, front: 'n' },      // 125th: the deck from the kerb-side posts back to the scaffold
@@ -1770,7 +1762,6 @@ export function siteBlock(group, ctx, spec, frame) {
   bx(galv, gs0 + 0.3, gs1 - 0.3, 0, 1.0, lot - 0.5, lot - 0.46, { near: true });
   bx(FX36 ? K.mat('plain', { tint: '#e3c232', rough: 0.55 }) : K.mat('metal_painted', { tint: '#e8c632' }), gs0 + 0.4, gs1 - 0.4, 0.25, 0.95, lot - 0.53, lot - 0.5, { near: true });
 
-  // ---- the yard's painted fence along 125th, Lexington to the gate, the yard's
   // dirt, the plant
   const [ys0, yt1] = B.yard;
   const fl = gs0 - ys0, fh2 = 2.5;

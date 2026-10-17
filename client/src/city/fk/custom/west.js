@@ -1,12 +1,12 @@
 // AR33 custom builders and sign marks, segment west: 12th Avenue (Dinosaur Bar-B-Que) to Morningside Avenue. Specs name them as 'west:<fn>' (docs/notes/ar33-spec.md).
-// Owner: the WEST worker (docs/notes/ar33-west.md).
-// references listed in fk/specs/west.js.
-// dino(group, ctx, spec, frame): Dinosaur Bar-B-Que, 700 W 125th St: the two-storey brick meatpacking building with
-// its basketweave frieze, the 125th Street front (raised entrance, ramp and railing, the black canopy "700 W. 125th
-// St." under a rust-red standing-seam roof, string lights, the painted "BBQ ENTRANCE" and "Cold Beer" signs), the
-// red neon "BAR BQUE" blade at the corner, the SE face (the old loading dock canopy on tie rods over Floridita, the
-// Dinosaur's own canopy "DINOSAUR BAR-B-QUE" over the outdoor seating), the graffiti wall toward the parkway, and
-// the roof: bulkhead, plant and three billboard structures (invented brands).
+// signs and the billboards' invented ads are drawn from scratch on canvases).
+//
+//   dino(group, ctx, spec, frame): Dinosaur Bar-B-Que, 700 W 125th St: the two-storey brick meatpacking building with
+//     its basketweave frieze, the 125th Street front (raised entrance, ramp and railing, the black canopy "700 W. 125th
+//     St." under a rust-red standing-seam roof, string lights, the painted "BBQ ENTRANCE" and "Cold Beer" signs), the
+//     red neon "BAR BQUE" blade at the corner, the SE face (the old loading dock canopy on tie rods over Floridita, the
+//     Dinosaur's own canopy "DINOSAUR BAR-B-QUE" over the outdoor seating), the graffiti wall toward the parkway, and
+//     the roof: bulkhead, plant and three billboard structures (invented brands).
 import * as THREE from 'three';
 import { ENV, applyLightTrim, applyCityAO } from '../../../world/materials.js';
 import { graffitiTex } from '../kitTex.js';
@@ -29,12 +29,14 @@ function ctex(c, srgb = true) {
 // fonts: SIGN's families (fk/signFonts.js) once fk/signKit.js has registered them; every canvas below is drawn at once
 // with fallbacks and redrawn when the fonts are in
 const REDRAW = [];
-let SIGNK = null;
+let SIGNK = null, FONTS_IN = false;
 const fontsIn = import('../signKit.js')
   .then((m) => { SIGNK = m; return m.signsReady ? Promise.race([m.signsReady, new Promise((r) => setTimeout(r, 20000))]) : null; })
   .catch(() => null)
   .then(() => (typeof document !== 'undefined' && document.fonts ? document.fonts.ready : null))
-  .then(() => { for (const f of REDRAW) { try { f(); } catch (e) { /* keep the first drawing */ } } });
+  // SPACE r2 (docs/notes/space-r2.md): once the fonts are in, the list is emptied and no longer filled (it kept every canvas
+  // ever drawn, about 2 MB each, at every visit to the west end of 125th Street)
+  .then(() => { for (const f of REDRAW) { try { f(); } catch (e) { /* keep the first drawing */ } } REDRAW.length = 0; FONTS_IN = true; });
 void fontsIn;
 const FONT = { slab: '"ar33 RobotoSlab", "Rockwell", Georgia, serif', serif: '"ar33 DMSerifDisplay", Georgia, serif',
   script: '"ar33 Lobster", "Brush Script MT", cursive', sans: '"ar33 Oswald", "Arial Narrow", Arial, sans-serif',
@@ -43,7 +45,7 @@ const FONT = { slab: '"ar33 RobotoSlab", "Rockwell", Georgia, serif', serif: '"a
 function drawnTex(w, h, draw, srgb = true) {
   const c = cnv(w, h), t = ctex(c, srgb);
   const run = () => { const g = c.getContext('2d'); g.clearRect(0, 0, w, h); draw(g, w, h); t.needsUpdate = true; };
-  run(); REDRAW.push(run);
+  run(); if (!FONTS_IN) REDRAW.push(run);
   return t;
 }
 // emissive x mix(day, night, ENV.night), then the city's light trim and AO
@@ -101,7 +103,6 @@ function timberMat(hex = '#7a6450', seed = 3) {
 // US modular brick: 203 x 68 mm module (3 courses = 1 brick length). One repeat: 1.2192 m (6 squares) across, 1.6256 m
 // up: a soldier course, then 7 rows of basketweave squares (3 stretchers / 3 soldiers). v = 0 at the band's foot, which
 // the caller gives (the NE front's band starts at 7.97 over the sidewalk, the SE wing's right over its low windows).
-// the band
 // averages (130,103,102) in the photo.
 const SQ = 0.2032, BW = 6 * SQ, BH = 8 * SQ;
 let _basketTex = null;
@@ -515,7 +516,7 @@ export function dino(group, ctx, spec, frame) {
   const K0 = frame.kit;
   const M = (name, tint, dirt) => K0.mat(name, { tint, dirt });
   const MAT = {
-    // w2r1: the b0 plates read 1.35x too bright against the 2022-03 wall patches: the tint scaled by (0.75, 0.69, 0.66)
+    // w2r1: the b0 plates read 1.35x too bright against the 2022-03 wall patches (twin (161,131,121) vs (120,90,80) sRGB between
     brick: M('brick_red', '#5f4137', 0.6), brickIn: M('brick_red', '#53392f', 0.6),
     coping: paintMat('#232426', 0.45, 0.35), black: paintMat('#18191a', 0.5, 0.2), sill: M('concrete_precast', '#aaa498', 0.35),
     green: paintMat('#2c4a3a', 0.45, 0.2), conc: M('concrete_precast', '#9d988e', 0.45), rail: paintMat('#1b1c1d', 0.45, 0.4),
@@ -928,7 +929,6 @@ export function dino(group, ctx, spec, frame) {
       // outlines, one teal, brick between them: 1.7x the painter's size, sparser, washed further toward chrome)
       const GS = HUB25 ? 1.7 : 1.3;
       for (const [y0, y1, seed, dens] of (HUB25 ? [[2.4, 6.0, 31 + s, 0.38], [6.0, 9.64, 57 + s, 0.5]] : [[2.4, 6.0, 31 + s, 0.8], [6.0, 9.64, 57 + s, 0.95]])) {
-        // painted 1.3x the painter's size
         const tx = graffitiTex((b - a) / GS, (y1 - y0) / GS, seed, { density: dens, style: 'throwups', bandTop: 0.03 });
         chromeWash(tx, HUB25 ? 0.85 : 0.5);
         const gm = kitGraffitiMat(tx, b - a, y1 - y0, a, y0);
@@ -953,7 +953,6 @@ export function dino(group, ctx, spec, frame) {
     K.box(paintMat('#2b2b2b'), 8.4, 9.6, -0.05, 2.3, -0.12, -0.07);
   }
   // ============ the St Clair Place corner (the shorter of the two collinear SW edges, at the 12th Avenue corner): stc23a
-  // the lower wall painted red to the canopy's line (~3.6 m), Floridita's two
   // red-framed windows with curtains and the name on the glass (5.1-7.2 and 2.4-3.4 m from the corner), two big green
   // second-floor windows over them, a wall-pack lamp; the brick and the frieze above as on every face (the AR33 build drew
   // this face plain)
@@ -966,6 +965,7 @@ export function dino(group, ctx, spec, frame) {
     const atL = Math.hypot(a1[0] - pc[0], a1[1] - pc[1]) < Math.hypot(a0[0] - pc[0], a0[1] - pc[1]);
     const U = (d) => (atL ? L - d : d);                    // u of a point d metres from the 12th Avenue corner
     const span = (d0, d1) => [Math.min(U(d0), U(d1)), Math.max(U(d0), U(d1))];
+    // (120, 21, 19) in s3r4: the paint set keeps the tint's chroma, so a lighter, less saturated red)
     const RED = K0.mat('brick_painted', { tint: '#b04a4c', dirt: 0.6 });
     const lowH = [], upH = [], upW = [];
     const lw = [[...span(5.12, 7.18), 2], [...span(2.41, 3.42), 1]];
@@ -976,7 +976,6 @@ export function dino(group, ctx, spec, frame) {
       if (two) upW.push({ T: WIN_DH, u0: h.u0, u1: mid, y0: h.y0, y1: h.y1, o: F2 }, { T: WIN_DH, u0: mid, u1: h.u1, y0: h.y0, y1: h.y1, o: F2 });
       else upW.push({ T: WIN_DH, u0: h.u0, u1: h.u1, y0: h.y0, y1: h.y1, o: F2 });
     }
-    // the far part of the face: the AR33 build's small windows and steel door, past the corner part
     const farH = [];
     for (const d of [10.0, 15.2]) if (d + 1.85 < L - 0.3) { const [a, b] = span(d, d + 1.85); upH.push({ u0: a, u1: b, y0: 7.05, y1: FR_NE }); upW.push({ T: WIN_SM, u0: a, u1: b, y0: 7.05, y1: FR_NE, o: F2 }); }
     if (L > 13) { const [a, b] = span(11.6, 12.8); farH.push([a, b]); lowH.push({ u0: a, u1: b, y0: -0.05, y1: 2.3 }); }
@@ -1084,8 +1083,6 @@ export function dino(group, ctx, spec, frame) {
     // a landscape board on a high frame over the 125th end (u 4.4-14.1, foot ~13 m), the big bulletin beside the brick
     // stack (u 21.5-37.0, foot ~11.2 m, 15 x 5 m), and at the SW end a tall board turned away from the parkway, its
     // steel back to it (u 44.6-55)
-    // within ~10 px): board 1 spans u 5.7-17.7, board 2 u 25.2-41.1, the
-    // brick stack between them u 17.9-21.2, top ~14.6 m, a flue over it; heights from s3r2's rows (face
     // edges at x 650 / 1150 / 1300 of 1600): both faces' feet at one row, ~0.9 m under s3r2's -> 11.05 m; board 1's face
     // 5.6 m tall, board 2's 5.0 m
     if (HUB25) { board(5.7, 12.0, 5.6, 11.05, -3.2, 'sofa', 'glass'); board(25.2, 15.6, 5.0, 11.05, -3.6, 'tip', 'radio'); }
@@ -1109,7 +1106,6 @@ export function dino(group, ctx, spec, frame) {
 }
 
 // ------------------------------------------------------------------ The Forum (Columbia, 605 W 125th St at Broadway)
-// Renzo Piano Building Workshop, 2018; renamed The Bollinger Forum. On 125th (u from the NW end, 71.7 m): a tall glazed ground floor set back
 // behind slender white round columns at 6.5 m, a pale concrete band (5.1-7.0 m) carrying "THE BOLLINGER FORUM" in blue
 // letters; above it the NW half is a clear glass curtain wall on two floors (floor lines 7.4 and 11.8 m, mullions at
 // 1.5 m) under a roof terrace rail, the SE half (from u 35.4, toward Broadway) the auditorium's concrete box with two
@@ -1131,7 +1127,6 @@ export function forum(group, ctx, spec, frame) {
   // over a lit interior: the reflective tower set (BID2's 'glass_tower_grey' reads light and reflective from the street)
   const CW = { kind: 'fixed', frame: { mat: 'alu_clear', tint: '#c9ccce' }, frameW: 0.05, reveal: 0.03, lintel: null, sillStone: null, glass: 'glass_tower_grey', lit: 0.8, blinds: 0 };
   const VG = {
-    // the twin mirrored a
     upper: pbrMaterial('glass_vision', { tint: '#b6cde6', storey: [4.4, 7.4], bay: 1.5, blinds: 0.05, trans: 0.6, depth: 9, street: 70, seed: 605 }),
     lobby: pbrMaterial('glass_vision_grey', { storey: [5.1, 0], bay: 1.6, blinds: 0.0, trans: 0.45, depth: 11, seed: 606 }),
   };
@@ -1309,32 +1304,30 @@ export function cityPrime(g, w, h) {
 }
 
 // ------------------------------------------------------------------ Henry R. Kravis Hall (Columbia Business School)
-// Diller Scofidio + Renfro, 2022, seen across the 2023 construction lot on the north side of 125th. w2b3 rebuild (the lead's review: "a stack of glass floors with offset, curving fritted
+// EDDCLfHf 2023-08, h45 p14 f100). w2b3 rebuild (the lead's review: "a stack of glass floors with offset, curving fritted
 // glass bands and deep slab edges"): a double-height glass lobby set back under a deep soffit, then two-storey cycles,
 // each a projecting tray (fritted glass between a white slab edge and a white cap, the cap kinked up or down along each
 // face, prows at some corners) over a recessed strip of dark vision glass whose corners curve back, and a fritted screen
-// round the roof plant. at the ring's distance: tray soffits 9.0 / 18.5 / 28.7 / 38.5 m,
 // tray tops 16.4 / 26.3 / 36.3 m at the W end and 14.6 / 24.7 / 34.7 m east of a slanted step at u 11-14 m on the S face,
-// the W face's trays 2.3 m proud of the ring at 20.7 m. Above 38.5 m: b3r5's n12av_26 pair puts the real top at ~51 m: four cycles and the screen (roof 48.2 m, screen top 52.2 m); b3r1-b3r5 drew five
-// The compiled 38.4 m is the construction-time height.
+// from a lens 9.3 m over the street): four cycles and the screen (roof 48.2 m, screen top 52.2 m); b3r1-b3r5 drew five
 // Colours (refs/kravis23.jpg sRGB means): fritted glass (127-145, 132-151, 132-154), dark strips (43, 50, 49), lobby glass
 // (49, 50, 43), soffits (147, 147, 146).
 export function kravis(group, ctx, spec, frame) {
   const FACES = facesOf(frame), K0 = frame.kit, Y0 = frame.y0;
   const LOB = 9.0, CYC = 9.8, NC = 4, ROOF = LOB + NC * CYC, SCR = 4.0;
-  // the slab edge under each tray
   const SE = 0.85;
   const GW = -0.45, LG = -1.7, RC = 2.4;   // the vision glass and the lobby glass behind the ring line; their corners' radius
   const MAT = {
     // mid grey; now the body (the frit read as a matt grey under the coating) with the street and sky in the reflection. The
-    // strips: b3r1's read light (the sky in them);
+    // (AR34 w2 s2: MATS 03:19 / 03:33: since the library change the body no longer takes the sun as a wall and '#62676a'
+    // (75-95, 95-115, 115-135), a sky-blue grey darker than either: the body stays. By night a lit floor behind the frit
+    // (MATS's `glow`, 0.06-0.1 by their snapshot), storeys of half a cycle)
     frit: pbrMaterial('glass_vision', { tint: '#c3cacc', body: '#62676a', room: 0, f0: 0.05, street: 60, glow: 0.08, storey: [CYC / 2, LOB], seed: 401 }),
     dark: pbrMaterial('glass_vision_grey', { tint: '#5d6668', storey: [CYC / 2, LOB], bay: 1.5, blinds: 0.12, trans: 0.1, f0: 0.07, seed: 402 }),
-    // the E face's wall behind the trays
+    // strips are blue-grey glass)
     eWall: pbrMaterial('glass_vision', { tint: '#8a8584', body: '#3d3838', room: 0, f0: 0.05, street: 60, glow: 0.05, storey: [CYC / 2, LOB], seed: 404 }),   // s2r1: '#463e3b' read brown in the sun
     lobby: pbrMaterial('glass_vision_grey', { storey: [6.1, 0], bay: 1.5, blinds: 0.05, depth: 14, seed: 403 }),
-    // the trays' rims: thin and grey, little lighter than the frit; the twin's read as white
-    // bands, (188-231) in QA's w2r2: '#cfd2d1' -> '#8e9191'
+    // frit's (130-140); lot26 2026-08 in sun, x 1250: (90-130) over (75-95, 95-115, 115-135)); the twin's read as white
     edge: K0.mat('alu_white', { tint: '#8e9191', dirt: 0.1 }), soffit: K0.mat('alu_white', { tint: '#b2b5b4', dirt: 0.06 }),
     mull: K0.mat('alu_clear', { tint: '#a9aeb0' }), roof: K0.mat('roof_membrane', { tint: '#b4b2ac', dirt: 0.45 }),
     pent: K0.mat('panel_grey', { tint: '#c4c7c7', dirt: 0.2 }), louvre: paintMat('#7d8284', 0.55, 0.3),
@@ -1352,13 +1345,12 @@ export function kravis(group, ctx, spec, frame) {
     { o: 1.1, hc: [7.2, 5.8, 6.3, 7.4], p: [0.3, 0.42, 0.6, 0.3] },
     { o: 1.5, hc: [7.5, 6.2, 7.0, 5.8], p: [0.25, 0.6, 0.45, 0.55] },
   ];
-  // prows: a tray's end carried past the corner as a wedge; face index in SEQ, the end (1 = the face's right end), wedge length and reach
+  // pointed ends at other corners); face index in SEQ, the end (1 = the face's right end), wedge length and reach
   const PROW = [{ c: 0, f: 0, end: 1, len: 15, ext: 3.4 }, { c: 2, f: 3, end: 1, len: 10, ext: 2.4 }, { c: 3, f: 1, end: 1, len: 12, ext: 2.8 }, { c: 1, f: 2, end: 0, len: 9, ext: 2.0 }];
   const prof = (fi, c, L, o) => {
     const C = CY[c], a = C.hc[fi], b = C.hc[(fi + 1) % 4], u0 = -o, u1 = L + o;
     if (Math.abs(a - b) < 0.05) return [[u0, a], [u1, a]];
     const s0 = Math.max(u0 + 0.5, Math.min(u1 - 4.5, C.p[fi] * L)), out = [[u0, a]];
-    // the step as an S-curve over 4 m
     for (let k = 0; k <= 6; k++) { const t = k / 6, e = t * t * (3 - 2 * t); out.push([s0 + 4.0 * t, a + (b - a) * e]); }
     out.push([u1, b]);
     return out;
@@ -1374,11 +1366,9 @@ export function kravis(group, ctx, spec, frame) {
       K.poly(mat, [[ua, a0, w], [ub, b0, w], [ub, b1, w], [ua, a1, w]], typeof nrm === 'function' ? nrm(ua, ub) : nrm);
     }
   };
-  // a pane's normal tilted up
   // to ~1.1 deg either way (seeded per pane), the panes cut at the mullions
   const jit = (seed) => (ua, ub) => { const h = (q) => { const x = Math.sin(seed * 12.9898 + (ua + ub) * 7.233 + q * 78.233) * 43758.5453; return (x - Math.floor(x)) * 2 - 1; }; return [h(1) * 0.02, h(2) * 0.02, 1]; };
-  // AR34 w2 s2: on the E face
-  // the trays of cycles 1-3 break in two with the dark wall between: u of each gap.
+  // at the trays' rows, to u along the face through the pair's lens, calibrated at the SE corner; +-1 m): u of each gap.
   // s2r1 (k_sv_e): the right-hand tray's end, 1-2 m proud of the wall and seen from the south, hid most of each gap: the gaps
   // run on 1.6 m past the measured edge
   const GAPS = { 1: [11.6, 17.6], 2: [21.8, 28.4], 3: [9.5, 15.4] };
@@ -1499,7 +1489,6 @@ export function kravis(group, ctx, spec, frame) {
     K.box(MAT.edge, -LG + RC - 0.6, L + LG - RC + 0.6, 6.0, 6.3, LG, LG + 0.08, { c: 0.01 });
     K.box(MAT.edge, -LG + RC - 0.6, L + LG - RC + 0.6, -0.3, 0.12, LG - 0.05, LG + 0.12, { c: 0.01 });
   });
-  // the roof inside the screen and the plant penthouse
   const F = K0.F;
   const loc = ([x, z]) => { const dx = x - F.p0[0], dz = z - F.p0[1]; return [dx * F.U[0] + dz * F.U[1], dx * F.N[0] + dz * F.N[1]]; };
   K0.poly(MAT.roof, frame.ring.map((p) => { const [u, w] = loc(p); return [u, ROOF + 0.02, w]; }), [0, 1, 0]);

@@ -15,6 +15,7 @@ exclude_docs: |
   techniques.md
   interior-mapping.md
   typology/
+  specs/
   hooks/
   overrides/
   assets/figures/raw/

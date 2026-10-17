@@ -5,15 +5,15 @@ message: >-
   cite it as below. Valdrada is developed and
   maintained by Mehmet Kerem Turkcan.
 type: software
-version: "0.3.1"
+version: "0.4.0"
 abstract: >-
-  A city-scale digital twin of four New York City boroughs compiled from public
-  municipal records. 930,787 building footprints, joined to tax-lot records and
+  A city-scale digital twin of the five boroughs of New York City compiled from
+  public municipal records. 1,085,937 buildings, joined to tax-lot records and
   facade-inspection filings, are extruded, classified into 16 facade typologies
   and dressed with procedural architectural detail. Street centrelines with their
   recorded widths, lane counts, directions and speed limits become the roadbed,
   sidewalks, markings and the lane graph on which traffic is simulated. The city
-  is compiled offline into 2,884 binary 512 m tiles and 210 far-field 2,048 m
+  is compiled offline into 3,532 binary 512 m tiles and 261 far-field 2,048 m
   tiles, which a WebGL2 client streams within a 1 km detail radius and a 13 km
   far-field radius. A CARLA-style server and Python API provide synchronous
   stepping, vehicle and pedestrian control, and RGB, semantic, instance and depth

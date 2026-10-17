@@ -53,6 +53,13 @@ root.subLayerPaths.append(over_path)
 root.subLayerPaths.append(src_root)
 for k in ('startTimeCode', 'endTimeCode', 'timeCodesPerSecond', 'framesPerSecond'):
     setattr(root, k, getattr(rl, k))
+# UE13 (UE track, 2026-10-09): the over layer on the root's clock. Written without timeCodesPerSecond it fell back to
+# USD's 24 under a root at 30, so every sample authored here (the moving sets and signal pools as keyed Xforms, the
+# walkers' pre-roll copies) was stretched by 30/24 when composed and imported: Unreal's traffic and walkers kept
+# harvest frame 0.8 t at take frame t while the camera kept t. BXUE_OVERCLOCK=0: a test aid, the old behaviour
+if os.environ.get('BXUE_OVERCLOCK', '1') != '0':
+    over.timeCodesPerSecond = rl.timeCodesPerSecond; over.framesPerSecond = rl.framesPerSecond
+# UE13 end
 root.defaultPrim = rl.defaultPrim or 'World'
 cld = dict(data); cld['ue_prep'] = time.strftime('%Y-%m-%d %H:%M:%S')
 root.customLayerData = cld
@@ -106,6 +113,7 @@ def far_fix():
     macros, MS = TM.get('macros') or {}, float(TM.get('macro') or 2048)
     fx['tiles_dir'] = os.path.basename(tdir); fx['near_tiles'] = len(near)
     bins = {}
+    lf39m = {}   # FW14 / LF39: the web's macro additions, read once
 
     def tile(key):
         if key not in bins:
@@ -165,6 +173,18 @@ def far_fix():
             if 'pos' not in sec or 'col' not in sec: continue
             pos = np.frombuffer(b, np.int16, sec['pos']['length'], base + sec['pos']['offset']).reshape(-1, 3).astype(np.float64)
             col = np.frombuffer(b, np.uint8, sec['col']['length'], base + sec['col']['offset']).reshape(-1, 4)
+            # ==== FW14 / LF39 (round 14, LOTFIX): the web's macro additions (LF39: 53 W 53rd St and the other buildings our
+            # footprint export lacks, public/data/lf39/lf39.json, the compile's own macro format) join the tile here as the
+            # streamer appends them; `?lf39=0` in the harvest's url leaves them out
+            if (q_.get('lf39') or ['1'])[0] != '0':
+                try:
+                    LF = lf39m.get('v') if 'v' in lf39m else lf39m.setdefault('v', json.load(open(os.path.join(os.path.dirname(tdir), 'data', 'lf39', 'lf39.json'))).get('macros') or {})
+                    am = LF.get(k_)
+                    if am and am.get('pos'):
+                        pos = np.concatenate([pos, np.asarray(am['pos'], np.float64).reshape(-1, 3)])
+                        col = np.concatenate([col, np.asarray(am['col'], np.uint8).reshape(-1, 4)])
+                except Exception as e: fx['errors'].append(f'lf39: {e}'[:120])
+            # ==== /FW14 / LF39
             nt = len(pos) // 3
             if not nt: continue
             O_ = np.array([float(hd['origin'][0]), 0.0, float(hd['origin'][1])])
@@ -179,6 +199,18 @@ def far_fix():
             keep &= dmin <= R
             if not keep.any(): continue
             Qk = Q.reshape(nt, 3, 3)[keep].reshape(-1, 3)
+            # ==== FW14 (round 14, world/materials.js fw14Uv): the far window grid's uv, the web's rule on the bake's own
+            # positions (along the wall in metres from the world origin / 12 m, height / 15.2 m; roofs on a white texel),
+            # so the plain master draws the harvested far material's window texture (`?fw14=0` in the harvest's url: none)
+            STk = None
+            if (q_.get('fw14') or ['1'])[0] != '0':
+                P0 = (O_ + pos[:nt * 3] * float(hd.get('scale', 0.125))).reshape(nt, 3, 3)[keep]
+                nrm = np.cross(P0[:, 1] - P0[:, 0], P0[:, 2] - P0[:, 0]); nrm /= np.maximum(np.linalg.norm(nrm, axis=1, keepdims=True), 1e-9)
+                tl = np.maximum(np.hypot(nrm[:, 0], nrm[:, 2]), 1e-9); tx, tz = -nrm[:, 2] / tl, nrm[:, 0] / tl
+                u = (P0[:, :, 0] * tx[:, None] + P0[:, :, 2] * tz[:, None]) / 12.0; v = P0[:, :, 1] / 15.2
+                roof = np.abs(nrm[:, 1]) > 0.7; u[roof] = 0.06; v[roof] = 0.24
+                STk = np.stack([u.reshape(-1), v.reshape(-1)], 1)
+            # ==== /FW14
             Ck = (col[:nt * 3, :3].astype(np.float32) / 255.0).reshape(nt, 3, 3)[keep].reshape(-1, 3) ** 2
             m_ = UsdGeom.Mesh.Define(st, f'/World/Far/r6_far_{k_.replace("-", "m")}')
             m_.GetPointsAttr().Set(Vt.Vec3fArray.FromNumpy(np.ascontiguousarray(Qk.astype(np.float32))))
@@ -188,6 +220,7 @@ def far_fix():
             m_.GetSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
             if ds is not None: m_.GetDoubleSidedAttr().Set(ds)
             UsdGeom.PrimvarsAPI(m_.GetPrim()).CreatePrimvar('bxCol', Sdf.ValueTypeNames.Color3fArray, UsdGeom.Tokens.vertex).Set(Vt.Vec3fArray.FromNumpy(np.ascontiguousarray(Ck.astype(np.float32))))
+            if STk is not None: put(UsdGeom.PrimvarsAPI(m_.GetPrim()), 'st', STk, UsdGeom.Tokens.vertex)   # FW14
             if mat: UsdShade.MaterialBindingAPI.Apply(m_.GetPrim()).Bind(mat)
             made += 1; nf += int(keep.sum())
         return {'tiles': made, 'faces': nf} if made else None
@@ -259,6 +292,76 @@ except Exception as e: stats['far_fix'] = {'error': str(e)[:200]}
 tags = {}
 previews = {}
 
+# TSQADS (2026-10-08): the TA31 boards (usd_mat `board`). simT: the web's sim time of every frame (usd_write's bx:simT on
+# the camera: ENV.windT, which harvest.mjs and record.mjs set to the shot's constant at frame 0), by which each board
+# picks its ad (ue_mat.board_take keys it on MPC_bx.SimT). board_pack: a board mesh's playlist as UV sets (UE keeps a
+# 14-bit mantissa per UV in Nanite, so the numbers stay small): st1 = (class base, count), st2 = (phase, duration; a
+# ticker by a negative duration), st3 = aSize; a vinyl board (one ad for 1e6 s) as its fixed cell (count 1), a cycling
+# board's phase reduced modulo its playlist (count x duration). board_table: a board material's cells (rect, mean colour)
+# as a small RGB PNG for M_bx_board's Tab.
+simT = None
+try:
+    _cq = st.GetPrimAtPath(data.get('camera') or '/World/Cameras/' + shot)
+    _sa = _cq.GetAttribute('bx:simT') if _cq else None
+    if _sa and _sa.HasValue():
+        simT = [float(_sa.Get(Usd.TimeCode(f))) for f in frames]
+except Exception as e_:
+    stats['simT_error'] = str(e_)[:120]
+
+
+def board_pack(api, pv_ad):
+    ad = flat(pv_ad).astype(np.float64)
+    interp = pv_ad.GetInterpolation()
+    n_ = len(ad)
+    szq = api.GetPrimvar('aSize')
+    sz = flat(szq)[:, :2].astype(np.float64) if szq and szq.HasValue() else np.zeros((n_, 2))
+    base, cnt, ph, du = np.round(ad[:, 0]), np.round(ad[:, 1]), ad[:, 2].copy(), ad[:, 3].copy()
+    t0_ = simT[0] if simT else 0.0
+    vin = du > 1e5
+    if vin.any():
+        k_ = np.floor((t0_ + ph[vin]) / du[vin])
+        c_ = np.maximum(cnt[vin], 1)
+        base[vin] = base[vin] + (k_ - c_ * np.floor(k_ / c_))
+        cnt[vin] = 1; ph[vin] = 0.0; du[vin] = 1000.0
+    cyc = (du > 0) & ~vin & (cnt >= 1)
+    per = cnt[cyc] * du[cyc]
+    ph[cyc] = ph[cyc] - np.floor(ph[cyc] / per) * per
+    put(api, 'st1', np.stack([base, cnt], 1), interp)
+    put(api, 'st2', np.stack([ph, du], 1), interp)
+    put(api, 'st3', sz, interp)
+    if not api.HasPrimvar('st'):
+        stats['no_st'] += 1
+        put(api, 'st', np.zeros((n_, 2), np.float32), interp)
+    stats['boards'] = stats.get('boards', 0) + 1
+    stats['board_vinyl'] = stats.get('board_vinyl', 0) + int(vin.sum())
+
+
+def board_table(nm, P):
+    from PIL import Image
+    R = np.asarray(P.get('rects') or [], np.float64).reshape(-1, 4)
+    W_, H_ = [float(v) for v in (P.get('atlas') or [4096, 2048])[:2]]
+    M = np.asarray(P.get('means') or [], np.float64).reshape(-1, 3)
+    if len(M) != len(R):   # the means from the atlas, as billboards.js taMeans (a 512 x 256 reduction, linear)
+        im = np.asarray(Image.open(P['tex']['map']).convert('RGB').resize((512, 256), Image.BILINEAR), np.float64) / 255.0
+        lin = np.where(im <= 0.04045, im / 12.92, ((im + 0.055) / 1.055) ** 2.4)
+        M = []
+        for x, y, w, h in R:   # three's uv (v from the bottom) -> image rows from the top
+            x0, x1 = int(np.floor(x * 512)), int(np.ceil((x + w) * 512))
+            y0, y1 = int(np.floor((1 - y - h) * 256)), int(np.ceil((1 - y) * 256))
+            M.append(lin[y0:y1, x0:x1].reshape(-1, 3).mean(0))
+        M = np.asarray(M).reshape(-1, 3)
+        P['means_from'] = 'atlas'
+    q = lambda v, k: np.clip(np.round(np.asarray(v) * k), 0, 2 ** 24 - 1).astype(np.int64)
+    rows = [q(R[:, 0] * W_, 256), q(R[:, 1] * H_, 256), q(R[:, 2] * W_, 256), q(R[:, 3] * H_, 256), q(M[:, 0], 1e6), q(M[:, 1], 1e6), q(M[:, 2], 1e6)]
+    img = np.full((len(rows), len(R), 4), 255, np.uint8)
+    for r_, v in enumerate(rows):
+        img[r_, :, 0] = (v >> 16) & 255; img[r_, :, 1] = (v >> 8) & 255; img[r_, :, 2] = v & 255
+    fp = os.path.join(out, f'board_tab_{shot}_{nm}.png')
+    Image.fromarray(img, 'RGBA').save(fp)
+    P['tab'] = fp
+    P['nc'] = int(len(R))
+# TSQADS end
+
 
 def preview_tag(mat):
     """an untagged material's UsdPreviewSurface as data: its textures (file, colour space, scale), opacity and threshold,
@@ -325,10 +428,25 @@ for p in st.Traverse():
         else:
             pt = preview_tag(p)
             if pt: previews[p.GetName()] = pt
+            # R9-TSQ (UE track, 2026-10-08): the web's unnamed unlit textured materials (MeshBasicMaterial with a map: Times
+            # Square's LED and printed boards, its neon, the sign faces) are light sources there, drawn at their colour
+            # whatever the light: tagged 'basic' (ue_families.json: the colour as emission at the boards' day and night
+            # gains, no diffuse). Named ones (a grime streak) and those without a map (far crowns, fills) stay as they are
+            th = p.GetCustomDataByKey('three') or {}
+            dt_ = ((pt or {}).get('tex') or {}).get('diffuseColor') or {}
+            if th.get('type') == 'MeshBasicMaterial' and not th.get('name') and dt_.get('file') and not os.environ.get('BXUE_R9OFF'):
+                sc_ = dt_.get('scale') or [1.0, 1.0, 1.0, 1.0]
+                tags[p.GetName()] = {'kind': 'basic', 'path': str(p.GetPath()), 'color': [float(v) for v in sc_[:3]],
+                                     'preview': {k: v for k, v in pt.items() if k not in ('kind', 'path')}, 'look': 'basic'}
+                stats['basic'] = stats.get('basic', 0) + 1
+            # R9-TSQ end
         continue
     if not p.IsA(UsdGeom.Mesh):
         continue
     api = UsdGeom.PrimvarsAPI(p)
+    _pad = api.GetPrimvar('aAd')   # TSQADS: a TA31 board mesh
+    if _pad and _pad.HasValue():
+        board_pack(api, _pad); continue
     have = {q.GetPrimvarName(): q for q in api.GetPrimvars() if q.GetPrimvarName() in KIT + ('bxCol', 'aRv', 'aJ', 'matId', 'gpK') and q.HasValue()}
     if not have:
         continue
@@ -375,6 +493,307 @@ for p in st.Traverse():
         stats['no_st'] += 1
         put(api, 'st', z, interp)
     stats['meshes_repacked'][kind] = stats['meshes_repacked'].get(kind, 0) + 1
+# UELOOK10 (2026-10-08): the facade bake's per-face grid data for M_bx_facade's rooms (usd_windows.py's uniform fa1-fa3:
+# floorH, winW; style; wallLen) as two more UV sets on the bxw_fac meshes (every triangle has its own three vertices):
+# st2 = (floorH, winW), st3 = (the bays' side margin, style); UE sorts UV sets by name (fst, st, st2, st3: UV 2 and 3)
+def fac_grid():
+    n_ = 0
+    for p_ in st.Traverse():
+        if not (p_.GetName().startswith('bxw_') and '_fac' in p_.GetName()) or not p_.IsA(UsdGeom.Mesh) or p_.IsInstanceProxy(): continue
+        api_ = UsdGeom.PrimvarsAPI(p_)
+        q1, q2, q3 = api_.GetPrimvar('fa1'), api_.GetPrimvar('fa2'), api_.GetPrimvar('fa3')
+        if not (q1 and q2 and q3 and q1.HasValue() and q2.HasValue() and q3.HasValue()): continue
+        fc = UsdGeom.Mesh(p_).GetFaceVertexCountsAttr().Get()
+        if fc is None or len(fc) == 0 or any(int(c) != 3 for c in fc[:64]): continue
+        a1 = np.asarray(q1.Get(), np.float64); a2 = np.asarray(q2.Get(), np.float64); a3 = np.asarray(q3.Get(), np.float64)
+        if not (len(a1) == len(a2) == len(a3) == len(fc)): continue
+        fH = np.maximum(a1[:, 0], 0.5); wW = np.maximum(a1[:, 1], 0.3); wl = np.maximum(a3[:, 2], 0.01)
+        bayN = np.floor((wl - 0.44) / wW)
+        sM = (wl - np.maximum(bayN, 0.0) * wW) * 0.5
+        put(api_, 'st2', np.repeat(np.stack([fH, wW], 1), 3, axis=0).astype(np.float32), UsdGeom.Tokens.vertex)
+        put(api_, 'st3', np.repeat(np.stack([sM, a2[:, 0]], 1), 3, axis=0).astype(np.float32), UsdGeom.Tokens.vertex)
+        n_ += 1
+    return n_
+
+
+try: stats['fac_grid'] = fac_grid()
+except Exception as e: stats['fac_grid'] = {'error': str(e)[:200]}
+# UELOOK10 end
+# UELOOK10 (2026-10-08): the Lake's rowers and passengers (cpLakeside.js CP33L persons: a shader on texture arrays with
+# per-vertex parts and per-boat tints the export does not carry, so UE and Cycles drew them white): their materials,
+# bound only to the persons' meshes, tagged 'person' (part opaque or hair) for M_bx_person
+def person_tags():
+    use, other = {}, set()
+    for p_ in st.Traverse():
+        if not p_.IsA(UsdGeom.Mesh): continue
+        b_ = UsdShade.MaterialBindingAPI(p_).ComputeBoundMaterial()[0]
+        if not b_: continue
+        nm_ = b_.GetPrim().GetName()
+        if 'cp33l_person' in str(p_.GetPath()): use.setdefault(nm_, set()).add('hair' if '_hair' in str(p_.GetPath()) else 'opaque')
+        else: other.add(nm_)
+    n_ = 0
+    for nm_, parts in use.items():
+        if nm_ in other or len(parts) != 1: continue
+        T_ = dict(tags.get(nm_) or {'path': str(st.GetPrimAtPath('/World/Looks/' + nm_).GetPath())})
+        T_.update({'kind': 'person', 'part': next(iter(parts)), 'hair': 1.0 if 'hair' in parts else 0.0, 'look': 'person_' + nm_})
+        tags[nm_] = T_; n_ += 1
+    return n_
+
+
+try: stats['persons'] = person_tags()
+except Exception as e: stats['persons'] = {'error': str(e)[:200]}
+# UELOOK10 end
+# UELOOK10 (2026-10-08): the Lake's rowers and passengers textured as the web draws them (cpLakeside.js: the crowd's PV2
+# shading on its texture arrays, the layer resolved per vertex). The baked people (models/cp33/lakeside/people/<name>.bin:
+# three LODs; per vertex aMeta = the crowd's layer, class, tint part, lean weight) match the harvest's prototypes vertex for
+# vertex and index for index, so each prototype gets usd_peds.py's treatment: GeomSubsets per (layer, class) bound to looks
+# of the crowd's unpacked layers (peds24 albedo / normal / ORM, the hair array; usd_peds' texture cache), named as the
+# walkers' (peds24_L<layer>_<kind>_<class>, so ue_families.json's walker rule gives them M_bx_walker's skin, cloth and eyes,
+# and the hair takes the web's alpha test), and the texture coordinates folded and flipped as usd_peds writes them. The
+# stroke lean and the outfit tints are per instance and per frame in the web (aLean, aTT, aTB): not in the export.
+LAKE_PEOPLE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'public', 'models', 'cp33', 'lakeside', 'people'))
+PEDS_TEX = os.path.join(os.environ.get('BX_PEDS_TEXCACHE', '/data0/projectnyc_aux/tmp/bx/peds/tex'), 'peds24')
+
+
+def lake_people():
+    import re as re_, struct as struct_
+    bins, lk = {}, {}
+
+    def person(nm):
+        if nm not in bins:
+            try:
+                b_ = open(os.path.join(LAKE_PEOPLE, nm + '.bin'), 'rb').read(); jl = struct_.unpack('<I', b_[:4])[0]
+                bins[nm] = (json.loads(b_[4:4 + jl]), b_, 4 + jl)
+            except Exception: bins[nm] = None
+        return bins[nm]
+
+    def look(L, kind, c):
+        if (L, kind, c) in lk: return lk[(L, kind, c)]
+        fs = {k: os.path.join(PEDS_TEX, f'{k}_{L:03d}.png') for k in (('hair',) if kind == 'hair' else ('albedo', 'normal', 'orm'))}
+        if not all(os.path.exists(f) for f in fs.values()): lk[(L, kind, c)] = None; return None
+        path = f'/World/Looks/peds24_L{L:03d}_{kind}_{c}'
+        mat = UsdShade.Material.Define(st, path)
+        sh = UsdShade.Shader.Define(st, path + '/pbr'); sh.CreateIdAttr('UsdPreviewSurface')
+        mat.CreateSurfaceOutput().ConnectToSource(sh.ConnectableAPI(), 'surface')
+        rd = UsdShade.Shader.Define(st, path + '/st'); rd.CreateIdAttr('UsdPrimvarReader_float2'); rd.CreateInput('varname', Sdf.ValueTypeNames.Token).Set('st')
+
+        def tex(name, f, cs):
+            t_ = UsdShade.Shader.Define(st, path + '/' + name); t_.CreateIdAttr('UsdUVTexture')
+            t_.CreateInput('file', Sdf.ValueTypeNames.Asset).Set(f)
+            t_.CreateInput('sourceColorSpace', Sdf.ValueTypeNames.Token).Set(cs)
+            t_.CreateInput('st', Sdf.ValueTypeNames.Float2).ConnectToSource(rd.ConnectableAPI(), 'result')
+            return t_
+        if kind == 'hair':
+            t_ = tex('hair', fs['hair'], 'sRGB')
+            sh.CreateInput('diffuseColor', Sdf.ValueTypeNames.Color3f).ConnectToSource(t_.ConnectableAPI(), 'rgb')
+            sh.CreateInput('opacity', Sdf.ValueTypeNames.Float).ConnectToSource(t_.ConnectableAPI(), 'a')
+            sh.CreateInput('opacityThreshold', Sdf.ValueTypeNames.Float).Set(0.35)
+            sh.CreateInput('roughness', Sdf.ValueTypeNames.Float).Set(0.75)
+        else:
+            ta, tn, to = tex('albedo', fs['albedo'], 'sRGB'), tex('normal', fs['normal'], 'raw'), tex('orm', fs['orm'], 'raw')
+            sh.CreateInput('diffuseColor', Sdf.ValueTypeNames.Color3f).ConnectToSource(ta.ConnectableAPI(), 'rgb')
+            tn.CreateInput('scale', Sdf.ValueTypeNames.Float4).Set(Gf.Vec4f(2, 2, 2, 1)); tn.CreateInput('bias', Sdf.ValueTypeNames.Float4).Set(Gf.Vec4f(-1, -1, -1, 0))
+            sh.CreateInput('normal', Sdf.ValueTypeNames.Normal3f).ConnectToSource(tn.ConnectableAPI(), 'rgb')
+            sh.CreateInput('roughness', Sdf.ValueTypeNames.Float).ConnectToSource(to.ConnectableAPI(), 'g')
+            sh.CreateInput('occlusion', Sdf.ValueTypeNames.Float).ConnectToSource(to.ConnectableAPI(), 'r')
+        pt_ = preview_tag(mat.GetPrim())
+        if pt_: previews[mat.GetPrim().GetName()] = pt_
+        lk[(L, kind, c)] = mat
+        return mat
+
+    n_ = 0
+    for p_ in st.Traverse():
+        if '/protos/' not in str(p_.GetPath()) or not p_.IsA(UsdGeom.Mesh): continue
+        m_ = re_.search(r'cp33l_person_([A-Za-z]+\d*)_(\d)_(opaque|hair)', p_.GetName())
+        B = person(m_.group(1)) if m_ else None
+        if not B: continue
+        meta_, b_, base = B
+        li, kind = int(m_.group(2)), m_.group(3)
+        P_ = (meta_['lods'][li]['prims'] if li < len(meta_['lods']) else {}).get(kind)
+        mesh = UsdGeom.Mesh(p_)
+        pts = mesh.GetPointsAttr().Get()
+        if not P_ or pts is None or len(pts) != int(P_['n']): continue
+        nv = int(P_['n'])
+        am = np.frombuffer(b_, np.uint8, nv * 4, base + P_['meta']).reshape(nv, 4)
+        uv = np.frombuffer(b_, np.float32, nv * 2, base + P_['uv']).reshape(nv, 2).astype(np.float64)
+        fvi = np.asarray(mesh.GetFaceVertexIndicesAttr().Get()).reshape(-1, 3)
+        lay = am[fvi[:, 0], 0].astype(int)
+        if kind == 'opaque':
+            cls = am[fvi[:, 0], 1].astype(int)
+            lay = lay + np.maximum(np.floor(uv[fvi, 0].mean(axis=1)).astype(int), 0)   # (the UDIM tile is the face's layer offset)
+        else:
+            cls = np.full(len(fvi), 3)
+        s2 = uv.copy(); s2[:, 0] -= np.floor(s2[:, 0]); s2[:, 1] = 1.0 - s2[:, 1]
+        UsdGeom.PrimvarsAPI(p_).CreatePrimvar('st', Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.vertex).Set(Vt.Vec2fArray.FromNumpy(np.ascontiguousarray(s2.astype(np.float32))))
+        lv = np.array([0.0, 0.1, 0.5, 0.9, 0.0], np.float32)   # (peds_parts' levels: R the garment part, G the class)
+        col = np.zeros((nv, 3), np.float32)
+        col[:, 0] = lv[np.clip(am[:, 2].astype(int), 0, 4)] if kind == 'opaque' else 0.0
+        col[:, 1] = lv[np.clip(am[:, 1].astype(int), 0, 4)]
+        UsdGeom.PrimvarsAPI(p_).CreatePrimvar('displayColor', Sdf.ValueTypeNames.Color3fArray, UsdGeom.Tokens.vertex).Set(Vt.Vec3fArray.FromNumpy(col))
+        for (L, c) in sorted({(int(a_), int(c_)) for a_, c_ in zip(lay, cls)}):
+            mat = look(L, kind, c)
+            if mat is None: continue
+            fs_ = np.nonzero((lay == L) & (cls == c))[0].astype(np.int32)
+            sub = UsdGeom.Subset.CreateGeomSubset(mesh, f'bx_L{L:03d}_{c}', UsdGeom.Tokens.face, Vt.IntArray.FromNumpy(fs_), 'materialBind')
+            UsdShade.MaterialBindingAPI.Apply(sub.GetPrim()).Bind(mat)
+        UsdGeom.Subset.SetFamilyType(mesh, 'materialBind', UsdGeom.Tokens.partition)
+        n_ += 1
+    return {'prototypes': n_, 'looks': sum(1 for v in lk.values() if v is not None)}
+
+
+try: stats['lake_people'] = lake_people()
+except Exception as e: stats['lake_people'] = {'error': str(e)[:200]}
+# UELOOK10 end
+# UELOOK10 (2026-10-08): Bethesda Fountain's bronze (cpBethesdaKit.js patinaBronze: the angel, the four cherubs and the
+# bronze of the fountain; a dark brown metal with a green-grey verdigris in the recesses and in streaks, drawn by its
+# shader, exported white at metalness 0.6, so UE drew silver): their materials (unnamed, roughness 0.42, metalness 0.6,
+# bound to the cp32b / cp33b meshes) tagged 'bronze' with the web's colours per figure (sRGB hex to linear)
+def bronze_tags():
+    lin = lambda h: [round(((c / 255.0 + 0.055) / 1.055) ** 2.4 if c / 255.0 > 0.04045 else c / 255.0 / 12.92, 5) for c in ((h >> 16) & 255, (h >> 8) & 255, h & 255)]
+    args = {'angel': (0x45382b, 0x6a8a76, 0.6), 'cherub': (0x40332a, 0x62826f, 0.62), '': (0x3b2f24, 0x5d7b69, 0.55)}
+    found = {}
+    for p_ in st.Traverse():
+        if not p_.IsA(UsdGeom.Mesh) or not any(s in p_.GetName() for s in ('cp32b', 'cp33b')): continue
+        b_ = UsdShade.MaterialBindingAPI(p_).ComputeBoundMaterial()[0]
+        if not b_: continue
+        T_ = tags.get(b_.GetPrim().GetName())
+        if not T_ or T_.get('name') or T_.get('type') != 'MeshStandardMaterial' or abs(float(T_.get('metal') or 0) - 0.6) > 1e-3 \
+           or abs(float(T_.get('rough') or 0) - 0.42) > 1e-3 or [float(c) for c in (T_.get('color') or [0, 0, 0])][:3] != [1.0, 1.0, 1.0]: continue
+        k_ = 'angel' if 'angel' in p_.GetName() else 'cherub' if 'cherub' in p_.GetName() else ''
+        if k_ or b_.GetPrim().GetName() not in found: found[b_.GetPrim().GetName()] = k_
+    for nm_, k_ in found.items():
+        b0, v0, am = args[k_]
+        cav = ((tags[nm_].get('preview') or {}).get('tex') or {}).get('diffuseColor', {}).get('file') if k_ == 'angel' else None
+        tags[nm_] = dict(tags[nm_], kind='bronze', bronze={'base': lin(b0) + [0.0], 'verd': lin(v0) + [0.0], 'amt': am, 'cav': cav})
+    return len(found)
+
+
+try: stats['bronze'] = bronze_tags()
+except Exception as e: stats['bronze'] = {'error': str(e)[:200]}
+# UELOOK10 end
+# UELOOK10 (2026-10-08): a tree crown's leaf cards (usd_write names them <material>_leaf: alpha-tested, the crown's
+# attributes; the web's trees.js crowns of the small and young trees), tagged 'untrim', reached UE as the importer's
+# opaque preview surface made masked without its opacity: whole twig cards, scLakeGolden's flat angular shards. Tagged
+# 'leafcard' (ue_families.json: the leaf master, cut by the texture's alpha)
+def leafcard_tags():
+    n_ = 0
+    for nm_, T_ in tags.items():
+        pv_ = T_.get('preview') or {}
+        if nm_.endswith('_leaf') and T_.get('kind') in ('untrim', 'plain') and (pv_.get('tex') or {}).get('opacity') and (pv_.get('tex') or {}).get('diffuseColor'):
+            T_['kind0'] = T_.get('kind'); T_['kind'] = 'leafcard'; n_ += 1
+    return n_
+
+
+try: stats['leafcards'] = leafcard_tags()
+except Exception as e: stats['leafcards'] = {'error': str(e)[:200]}
+# UELOOK10 end
+# UELOOK10 (2026-10-08): the fountains' falling water (fountainFX.js veilMat, three name 'fw26:veil'), exported with no `bx`
+# tag and an opaque white preview surface: tagged 'veil' (ue_families.json veil, M_bx_veil) with what the web's shader
+# reads from its arguments, rebuilt from the bound meshes: the lip (the meshes' top, web metres), the fall time to their
+# bottom, the centre, and the pattern by mesh name (cpBethesdaKit.js CP33: the upper basin's fringe, the lower basin's
+# eight spouts; else FW27's sheet), the sun for the forward lobe
+VEIL_ARGS = {'veilUpper': {'v0': 0.3, 'aer': [0.1, 0.7], 'holes': 0.8, 'body': 0.22, 'freq': 11.0, 'tear0': 0.0},
+             'veilLower': {'v0': 0.15, 'aer': [0.22, 0.9], 'holes': 0.32, 'body': 0.34, 'freq': 9.0, 'tear0': 0.3},
+             '': {'v0': 0.35, 'aer': [0.3, 0.95], 'holes': 0.45, 'body': 0.2, 'freq': 7.0, 'tear0': 0.22}}
+
+
+def veil_tags():
+    vm, meshes = {}, []
+    for p_ in st.Traverse():
+        if p_.IsA(UsdShade.Material):
+            if (p_.GetCustomDataByKey('three') or {}).get('name') == 'fw26:veil' and p_.GetName() not in tags: vm[str(p_.GetPath())] = p_
+        elif 'veil' in p_.GetName().lower() and p_.IsA(UsdGeom.Mesh):
+            meshes.append(p_)
+    if not vm: return 0
+    bc = UsdGeom.BBoxCache(Usd.TimeCode.Default(), [UsdGeom.Tokens.default_, UsdGeom.Tokens.render])
+    by = {}
+    for m_ in meshes:
+        b_ = UsdShade.MaterialBindingAPI(m_).ComputeBoundMaterial()[0]
+        if b_ and str(b_.GetPath()) in vm: by.setdefault(str(b_.GetPath()), []).append(m_)
+    sd = [float(v) for v in (data.get('sunDir') or [0, 1, 0])[:3]]; sc = [float(v) for v in (data.get('sunColor') or [1, 1, 1])[:3]]
+    n_ = 0
+    for path_, mp in vm.items():
+        ms = by.get(path_) or []
+        if not ms: continue
+        rng = Gf.Range3d()
+        for m_ in ms: rng.UnionWith(bc.ComputeWorldBound(m_).ComputeAlignedRange())
+        lo_, hi_ = rng.GetMin(), rng.GetMax()
+        nm_ = ms[0].GetName()
+        A = next((v for k, v in VEIL_ARGS.items() if k and k in nm_), VEIL_ARGS[''])
+        y0 = float(hi_[1]) - (0.042 if 'veilLower' in nm_ else 0.0)   # (the spouts' streams: the tube's radius over its axis)
+        H = max(y0 - float(lo_[1]), 0.05)
+        tmax = (-A['v0'] + math.sqrt(A['v0'] ** 2 + 19.62 * H)) / 9.81
+        tags[mp.GetName()] = {'kind': 'veil', 'path': path_, 'look': 'veil_' + mp.GetName(), 'name': 'fw26:veil', 'mesh': nm_,
+                              'veil': {'v0': [round(y0, 4), A['v0'], round(tmax, 4), A['tear0']], 'aer': A['aer'] + [A['holes'], A['body']],
+                                       'freq': A['freq'], 'cen': [round(0.5 * (lo_[0] + hi_[0]), 3), round(0.5 * (lo_[2] + hi_[2]), 3), 0, 0],
+                                       'sund': sd + [0.0], 'sunc': sc + [0.0]}}
+        # (the importer shares one material between identical preview surfaces: the look as an input keeps each veil's own)
+        sh_ = UsdShade.Material(mp).ComputeSurfaceSource()[0]
+        if sh_: sh_.CreateInput('bxLook', Sdf.ValueTypeNames.Token).Set('veil_' + mp.GetName())
+        n_ += 1
+    return n_
+
+
+try: stats['veils'] = veil_tags()
+except Exception as e: stats['veils'] = {'error': str(e)[:200]}
+# UELOOK10 end
+# UELOOK10 (2026-10-08): each material's web original as the harvest recorded it (h/manifest.json mats, by the material id
+# in the prim's name, m<id>...): transparent, alphaTest, blending, depthWrite, opacity, type, side, as 'web' on its tag or
+# preview, so ue_mat.web_alpha draws the alpha-tested ones masked and the transparent ones translucent as the web does
+def web_records():
+    import re as re_
+    try: mats_ = json.load(open(os.path.join(data.get('harvest') or '', 'manifest.json'))).get('mats') or []
+    except Exception: return None
+    byid = {int(m_.get('id')): m_ for m_ in mats_ if isinstance(m_, dict) and m_.get('id') is not None}
+    n_ = 0
+    for D in (tags, previews):
+        for nm_, T_ in D.items():
+            k_ = re_.match(r'm(\d+)', nm_)
+            m_ = byid.get(int(k_.group(1))) if k_ else None
+            if not m_: continue
+            T_['web'] = {'type': m_.get('type'), 'name': m_.get('name') or '', 'tr': bool(m_.get('transparent')), 'at': float(m_.get('alphaTest') or 0.0),
+                         'bl': int(m_.get('blending') or 1), 'dw': bool(m_.get('depthWrite', True)), 'op': float(m_.get('opacity', 1.0) or 0.0),
+                         'side': int(m_.get('side') or 0)}
+            n_ += 1
+    return n_
+
+
+try: stats['web_records'] = web_records()
+except Exception as e: stats['web_records'] = {'error': str(e)[:200]}
+# UELOOK10 end
+# AAA11 (2026-10-08): Bethesda's stone (cpBethesdaKit.js: unnamed MeshStandardMaterials on the cp32b / cp33b meshes, the
+# mesh named for its part: sand, gran, riser, carved, setts, paving, the fountain's basins; dielectric, the bronze, the
+# water and the veils tagged before) named 'aa11:stone', so ue_families.json aaa11's stone rule gives it M_bx_plain's
+# weathering (the leaves, the glass, the tiles and the iron left as they are)
+def aaa11_stone():
+    use = {}
+    for p_ in st.Traverse():
+        if not p_.IsA(UsdGeom.Mesh) or not any(s in p_.GetName() for s in ('cp32b', 'cp33b')): continue
+        b_ = UsdShade.MaterialBindingAPI(p_).ComputeBoundMaterial()[0]
+        if not b_: continue
+        part_ = p_.GetName().rsplit('_', 1)[-1]
+        use.setdefault(b_.GetPrim().GetName(), set()).add(part_)
+    n_ = 0
+    for nm_, parts_ in use.items():
+        T_ = tags.get(nm_)
+        if not T_ or T_.get('name') or T_.get('kind') != 'plain' or T_.get('type') != 'MeshStandardMaterial': continue
+        if float(T_.get('metal') or 0) > 0.1 or any(x in q_ for q_ in parts_ for x in ('leaf', 'glass', 'tile', 'iron', 'lamp')): continue
+        c_ = [float(x) for x in (T_.get('color') or [0, 0, 0])][:3]
+        if len(c_) < 3 or 0.2126 * c_[0] + 0.7152 * c_[1] + 0.0722 * c_[2] < 0.05: continue
+        tags[nm_] = dict(T_, name='aa11:stone'); n_ += 1
+    return n_
+
+
+try: stats['aaa11_stone'] = aaa11_stone()
+except Exception as e: stats['aaa11_stone'] = {'error': str(e)[:200]}
+# AAA11 end
+
+
+for _nm, _P in tags.items():   # TSQADS: each board material's cell table
+    if _P.get('kind') != 'board': continue
+    try: board_table(_nm, _P)
+    except Exception as e_: stats['board_tab_error'] = f'{_nm}: {e_}'[:200]
+stats['simT'] = [round(simT[0], 4), round(simT[-1], 4)] if simT else None
 t_pv = time.time() - t0
 
 # ---- the time-varying instancers as animated Xforms: UE's importer reads a PointInstancer at the default time code, so the
@@ -646,6 +1065,124 @@ except Exception as e_:
     peds_ = {'error': str(e_)[:160], 'walkers': {}}
 stats['peds'] = {'classes': peds_.get('classes', 0), 'walkers': len(peds_.get('walkers') or {}), 'error': peds_.get('error')}
 # R4-PEDS end
+
+
+# R9-WALKPRE (UE track, 2026-10-08): the walkers' motion before frame 0, so a take's real warm-up frames (ue_take.py
+# preroll) see the crowd already walking, and nothing starts at frame 0 (a park take with ~650 walkers starting at once
+# lost the GPU at its first frame). Per walker visible at frame 0: its skeleton clip runs on backward with the same phase
+# against the motion: its gait cycle (the lag at which the joint rotations repeat best, 12-60 frames, over its visible
+# frames) gives pose(t) = pose(t mod cycle) for t < 0, continuous into frame 0; a walker without a clear cycle (seated,
+# idle) mirrors its first frames (pose(-t)), also continuous; its root moves back along its first cycle's mean velocity
+# (none for one seated or still), facing as at frame 0; visible as at frame 0. The samples go in WALK_PRE frames before 0,
+# and since time samples do not merge across layers, the walker's own samples are copied into the override with them.
+WALK_PRE = int(os.environ.get('BXUE_WALKPRE') if os.environ.get('BXUE_WALKPRE') is not None else 64)
+def walk_preroll():
+    from pxr import UsdSkel
+    out = {'pre': WALK_PRE, 'walkers': 0, 'cycles': 0, 'mirrored': 0, 'still': 0, 'skipped': 0, 'cycle_frames': []}
+    peds = st.GetPrimAtPath('/World/Peds')
+    if not peds or WALK_PRE <= 0: return out
+    qd = lambda a, b: float(np.mean(1.0 - np.abs(np.sum(a * b, axis=-1))))
+    for w in peds.GetChildren():
+        if not w.IsA(UsdSkel.Root): continue
+        anim = st.GetPrimAtPath(w.GetPath().AppendChild('Anim'))
+        if not anim or not anim.IsA(UsdSkel.Animation): out['skipped'] += 1; continue
+        A = UsdSkel.Animation(anim); ra, ta = A.GetRotationsAttr(), A.GetTranslationsAttr()
+        ts = ra.GetTimeSamples()
+        va = UsdGeom.Imageable(w).GetVisibilityAttr(); xa = w.GetAttribute('xformOp:transform')
+        if not ts or ts[0] > 0.5 or va.Get(0.0) == UsdGeom.Tokens.invisible: out['skipped'] += 1; continue
+        N = int(ts[-1]) + 1
+        n = next((t for t in range(N) if va.Get(float(t)) == UsdGeom.Tokens.invisible), N)
+        R = np.stack([np.array(ra.Get(float(t))) for t in range(n)])
+        T = None
+        if n >= 30 and qd(R[1:], R[:-1]) > 2e-5:
+            lags = list(range(12, min(61, n - 8)))
+            es = [qd(R[L:], R[:-L]) for L in lags]
+            if es:
+                i = int(np.argmin(es))
+                if es[i] < 0.35 * float(np.median(es)): T = lags[i]
+        moving = T is not None
+        M0 = xa.Get(0.0) if xa else None
+        v0 = Gf.Vec3d(0, 0, 0)
+        if M0 is not None and moving:
+            M1 = xa.Get(float(T)); v0 = (M1.ExtractTranslation() - M0.ExtractTranslation()) / float(T)
+        for attr in (ra, ta, xa, va):
+            if not attr or not attr.HasAuthoredValue(): continue
+            stack = attr.GetPropertyStack(Usd.TimeCode.Default())
+            if not stack: continue
+            spec = stack[0]; path = attr.GetPath()
+            if spec.layer != over:
+                Sdf.CreatePrimInLayer(over, path.GetPrimPath())
+                Sdf.CopySpec(spec.layer, spec.path, over, path)
+            for t in range(-WALK_PRE, 0):
+                if attr in (ra, ta):
+                    s = t % T if moving else min(-t, n - 1)
+                    over.SetTimeSample(path, float(t), spec.layer.QueryTimeSample(spec.path, float(s)))
+                elif attr == xa and M0 is not None:
+                    M = Gf.Matrix4d(M0); M.SetTranslateOnly(M0.ExtractTranslation() + v0 * float(t))
+                    over.SetTimeSample(path, float(t), M)
+                elif attr == va:
+                    over.SetTimeSample(path, float(t), UsdGeom.Tokens.inherited)
+        out['walkers'] += 1
+        if moving: out['cycles'] += 1; out['cycle_frames'].append(T)
+        elif n >= 30 and qd(R[1:], R[:-1]) > 2e-5: out['mirrored'] += 1
+        else: out['still'] += 1
+    cf = out.pop('cycle_frames')
+    out['cycle_median'] = float(np.median(cf)) if cf else None
+    return out
+try: stats['walk_preroll'] = walk_preroll()
+except Exception as e_: stats['walk_preroll'] = {'error': f'{type(e_).__name__}: {e_}'[:200]}
+# R9-WALKPRE end
+# UE13 (UE track, 2026-10-09): a walker at the lens is hidden on that frame, as the web's near-plane handling (crowd.js
+# NF31/NF32) dissolves it: its surface in its own frame (scale k) is a head, a 0.125 k sphere 1.62 k up, and a body, a box
+# 0.48 k across and 0.65 k deep (a pack's depth behind the back) with 0.08 k round edges from the shins to the shoulders;
+# within LENS_NEAR of the lens (0.48 m: the web's 0.4 m near plane and its 0.08 m dissolve) the walker is invisible.
+# Each hidden walker's visibility goes into the override at every frame (samples do not merge across layers), the
+# pre-roll's kept. BXUE_LENSNEAR=0: a test aid without
+LENS_NEAR = float(os.environ.get('BXUE_LENSNEAR') if os.environ.get('BXUE_LENSNEAR') is not None else 0.48)
+def lens_hide():
+    from pxr import UsdSkel
+    out = {'near': LENS_NEAR, 'walkers': 0, 'frames': 0}
+    peds = st.GetPrimAtPath('/World/Peds'); camp = st.GetPrimAtPath(data.get('camera') or '/World/Cameras/' + shot)
+    if LENS_NEAR <= 0 or not peds or not camp: return {**out, 'skipped': True}
+    cxf = UsdGeom.Xformable(camp)
+    C = np.array([list(cxf.ComputeLocalToWorldTransform(float(f)).ExtractTranslation()) for f in frames])
+    P0 = UsdGeom.Xformable(peds).ComputeLocalToWorldTransform(0.0)
+    INV = UsdGeom.Tokens.invisible
+    for w in peds.GetChildren():
+        if not w.IsA(UsdSkel.Root): continue
+        xa = w.GetAttribute('xformOp:transform'); va = UsdGeom.Imageable(w).GetVisibilityAttr()
+        if not xa or not xa.HasAuthoredValue(): continue
+        Ms = [xa.Get(float(f)) * P0 for f in frames]
+        T = np.array([list(M.ExtractTranslation()) for M in Ms])
+        if np.min(np.linalg.norm(C - T, axis=1)) > 3.0: continue   # (never within 3 m of the lens)
+        hide = []
+        for i, f in enumerate(frames):
+            if va.Get(float(f)) == INV: continue
+            M = Ms[i]; k = Gf.Vec3d(M[1][0], M[1][1], M[1][2]).GetLength() or 1.0
+            fx, fz = M[2][0], M[2][2]; fl = math.hypot(fx, fz)
+            if fl < 1e-9: continue
+            fx, fz = fx / fl, fz / fl
+            d = C[i] - T[i]; la = abs(d[0] * fz - d[2] * fx); lf = d[0] * fx + d[2] * fz; ly = d[1]
+            sdH = math.sqrt(la * la + (lf - 0.02 * k) ** 2 + (ly - 1.62 * k) ** 2) - 0.125 * k
+            r = 0.08 * k; y0 = 0.1 * k; y1 = 1.45 * k
+            qx = max(0.0, la - 0.24 * k + r); qz = max(0.0, abs(lf + 0.175 * k) - 0.325 * k + r)
+            dy = y0 - ly if ly < y0 else (ly - y1 if ly > y1 else 0.0)
+            if min(sdH, math.sqrt(qx * qx + qz * qz + dy * dy) - r) < LENS_NEAR: hide.append(f)
+        if not hide: continue
+        vals = {f: va.Get(float(f)) for f in frames}
+        stack = va.GetPropertyStack(Usd.TimeCode.Default()); path = va.GetPath()
+        if stack and stack[0].layer != over:
+            Sdf.CreatePrimInLayer(over, path.GetPrimPath()); Sdf.CopySpec(stack[0].layer, stack[0].path, over, path)
+        elif not stack:
+            Sdf.CreatePrimInLayer(over, path.GetPrimPath())
+            Sdf.AttributeSpec(over.GetPrimAtPath(path.GetPrimPath()), 'visibility', Sdf.ValueTypeNames.Token, Sdf.VariabilityVarying)
+        hs = set(hide)
+        for f in frames: over.SetTimeSample(path, float(f), INV if f in hs else (vals[f] or UsdGeom.Tokens.inherited))
+        out['walkers'] += 1; out['frames'] += len(hide)
+    return out
+try: stats['lens_hide'] = lens_hide()
+except Exception as e_: stats['lens_hide'] = {'error': f'{type(e_).__name__}: {e_}'[:200]}
+# UE13 end
 over.Save()
 t_all = time.time() - t0
 # R3-PAINT: the fleet's per-car paint attributes (fleet24.js aPaint: metalness, road-film dirt, roughness; the car's seed;
@@ -795,7 +1332,8 @@ def hq_sets():
         m = M.get(sid) or {}; f = m.get('files') or {}
         if not all(k in f and os.path.exists(f[k]) for k in ('alb', 'nrm', 'arm')): return None
         return {'id': sid, 'alb': f['alb'], 'nrm': f['nrm'], 'arm': f['arm'], 'size': (m.get('size_m') or [2.0, 2.0])[:2],
-                'mean': (m.get('albedo_mean') or [0.5, 0.5, 0.5])[:3]}
+                'mean': (m.get('albedo_mean') or [0.5, 0.5, 0.5])[:3],
+                **({'disp': f['disp']} if f.get('disp') and os.path.exists(f['disp']) else {})}   # (MESH11: the height map)
 
     def mean_lin(path):
         im = Image.open(path).convert('RGB'); im.thumbnail((256, 256))
@@ -810,7 +1348,7 @@ def hq_sets():
             if not r or not alb or not os.path.exists(alb): continue
             if alb not in means: means[alb] = mean_lin(alb)
             pr = P.get('pbRatio') or [1.0, 1.0, 1.0]
-            P['hq'] = {'id': r['id'], 'alb': r['alb'], 'nrm': r['nrm'], 'arm': r['arm'], 'size': r['size'],
+            P['hq'] = {'id': r['id'], 'alb': r['alb'], 'nrm': r['nrm'], 'arm': r['arm'], 'size': r['size'], **({'disp': r['disp']} if r.get('disp') else {}),   # (MESH11)
                        'ratio': [round(float(pr[i]) * means[alb][i] / max(r['mean'][i], 1e-4), 4) for i in range(3)],
                        'unit': (T.get('unit') or {}).get(r['id'], [0.0, 0.0]), **(lay.get('pbr') or {})}
             out['pbr'] += 1
@@ -824,6 +1362,21 @@ def hq_sets():
     return out
 
 
+# R9-BPL (UE track, 2026-10-08): the park lamps' globes (bryantParkKit.js MATS.glow, an unlit vertex-coloured
+# MeshBasicMaterial on the bp31:glow mesh) glow as the web draws them: their material tagged 'basic' with its vertex colour
+# (ue_families.json basic, VcOn), not the lit paint the importer made (dark at dusk). Matched by the mesh's name only:
+# other unlit vertex-coloured materials (the far crowns) stay as they are
+if not os.environ.get('BXUE_R9OFF'):
+    for p_ in st.Traverse():
+        if not p_.IsA(UsdGeom.Mesh) or not p_.GetName().endswith('_bp31_glow'): continue
+        b_ = UsdShade.MaterialBindingAPI(p_).ComputeBoundMaterial()[0]
+        if not b_ or b_.GetPrim().GetName() in tags: continue
+        tags[b_.GetPrim().GetName()] = {'kind': 'basic', 'path': str(b_.GetPrim().GetPath()), 'color': [1.0, 1.0, 1.0], 'vc': 1,
+                                        'preview': {}, 'look': 'basic_vc'}
+        stats['basic'] = stats.get('basic', 0) + 1
+# R9-BPL end
+
+
 # R8-EMIT (UE track, 2026-10-08): the strong emissive surfaces (the Apollo's marquee panels and neon, the big lit signs) as
 # light sources. In the path tracer they light the sidewalk and the facade under them; UE's emissive surfaces light
 # nothing worth seeing at night (Lumen's surface cache, too coarse for a sign's bulbs), so tuApolloSweep's sidewalk under
@@ -831,6 +1384,7 @@ def hq_sets():
 # triangles grouped by facing (six axis bins): the area, the area-weighted centre, the mean normal and the extent across
 # it, and the emitted luminance x area as the light's candela (x ue_light EMIT_K). The strongest EMIT_MAX, in the web's
 # world. ue_light spawns them as rect lights at night.
+BASIC_NIGHT = 2.5   # (R9-TSQ: ue_families.json basic, its SelfK at night)
 EMIT_MIN, EMIT_MAX, EMIT_AREA, EMIT_TILE, EMIT_NEAR = 0.4, 96, 80.0, 4.0, 90.0   # (strength x m2 at least; at most 96 lights, a tile's 80 m2; 4 m tiles; within 90 m of the lens path)
 def emit_lights():
     from PIL import Image
@@ -841,6 +1395,9 @@ def emit_lights():
         pv = pv or {}
         e = pv.get('emissiveColor')
         tx = (pv.get('tex') or {}).get('emissiveColor')
+        bk = 1.0
+        if P is not None and P.get('kind') == 'basic':   # R9-TSQ: a board's colour is its light, at the night gain
+            tx, bk = (pv.get('tex') or {}).get('diffuseColor'), BASIC_NIGHT
         if isinstance(tx, dict) and tx.get('file'):
             f = tx['file']
             if f not in means:
@@ -850,7 +1407,7 @@ def emit_lights():
                     means[f] = lin.reshape(-1, 3).mean(0)
                 except Exception: means[f] = np.zeros(3)
             sc = np.array((tx.get('scale') or [1, 1, 1])[:3], np.float64)
-            return means[f] * sc
+            return means[f] * sc * bk
         if isinstance(e, list) and len(e) >= 3: return np.array(e[:3], np.float64)
         return None
     out = []
@@ -931,10 +1488,244 @@ stats['emit_lights'] = len(emit_)
 hq_ = hq_sets()
 stats['hq'] = {k: (v if not isinstance(v, dict) else sorted(v)) for k, v in hq_.items()}
 # R3-HQ end
+# UELOOK10 (2026-10-08): the harvest's sky domes as Radiance .hdr beside the capture (sky_vis.hdr, sky_env.hdr: ue_light's
+# sky light cubemap and the camera's sky sphere). Only blender_light.load_f16_image wrote them, so a shot without a Cycles
+# take (the trailer's Central Park and Times Square shots) had no sky in UE: a black sky behind the fog and a sky light
+# without a dome. Written as blender_light writes them (rows top first, flat RGBE scanlines), kept while newer than the .f16
+def sky_hdr():
+    h = data.get('harvest') or ''
+    try: LS = json.load(open(os.path.join(h, 'light_static.json')))
+    except Exception: return None
+    done = {}
+    for key, fn in (('skyVis', 'sky_vis.f16'), ('skyEnv', 'sky_env.f16')):
+        info = LS.get(key) or {}
+        p = os.path.join(h, info.get('file') or fn)
+        if not info.get('w') or not os.path.exists(p) or not (info.get('max') or 0) > 0: continue
+        hp = p[:-4] + '.hdr'
+        if os.path.exists(hp) and os.path.getmtime(hp) >= os.path.getmtime(p): done[key] = 'kept'; continue
+        w_, h_ = int(info['w']), int(info['h'])
+        a_ = np.fromfile(p, dtype=np.float16).astype(np.float32)
+        if a_.size != w_ * h_ * 3: done[key] = 'size'; continue
+        rgb = np.maximum(np.nan_to_num(a_.reshape(h_, w_, 3)[::-1], nan=0.0, posinf=0.0), 0.0)
+        m_ = rgb.max(axis=2); mant, ex = np.frexp(m_); ok = m_ > 1e-32
+        sc = np.where(ok, mant * 256.0 / np.maximum(m_, 1e-32), 0.0)
+        px = np.zeros((h_, w_, 4), np.uint8)
+        px[..., :3] = np.clip(np.floor(rgb * sc[..., None]), 0, 255).astype(np.uint8)
+        px[..., 3] = np.where(ok, ex + 128, 0).astype(np.uint8)
+        with open(hp + '.tmp', 'wb') as f_:
+            f_.write(b'#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n-Y %d +X %d\n' % (h_, w_)); f_.write(px.tobytes())
+        os.replace(hp + '.tmp', hp)
+        done[key] = 'written'
+    return done
+
+
+try: stats['sky_hdr'] = sky_hdr()
+except Exception as e: stats['sky_hdr'] = {'error': str(e)[:200]}
+# UELOOK10 end
+# LOOK13 (2026-10-09): (1) Bethesda's paving inlays at a stone's albedo. A brick-and-band paving texture on the cp32b /
+# cp33b meshes (cpBethesdaKit.js pavingMat, upperPavingMat: the brick where its linear red minus green is over 0.105, the
+# granite bands and the medallion under 0.075, as the web's own brickDetail splits them) gets a copy in the prep's tex
+# folder whose bands are scaled to weathered pale granite (ue_families.json look13.band_k: luminance 0.42 -> about 0.19,
+# a shade warmer), the brick untouched; the web trims every diffuse to 0.30 by day under its own light, Unreal's physical
+# light took the canvas as it is and the bands read blue-white in the shade. (2) The ground's lawn and gravel sets
+# (look13.ground: Grass004, gravel_floor) beside its A / W / K
+def look13():
+    out_ = {'paving': 0, 'ground': 0}
+    from PIL import Image
+    L = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ue_families.json'))).get('look13') or {}
+    if os.environ.get('BXUE_LOOK13OFF'): return {'off': True}
+    mats_ = set()
+    for p_ in st.Traverse():
+        if not p_.IsA(UsdGeom.Mesh) or not any(s in p_.GetName() for s in ('cp32b', 'cp33b')): continue
+        b_ = UsdShade.MaterialBindingAPI(p_).ComputeBoundMaterial()[0]
+        if b_: mats_.add(b_.GetPrim().GetName())
+    k_ = np.asarray(L.get('band_k') or [0.50, 0.46, 0.38], np.float32)
+    for nm_ in sorted(mats_):
+        T_ = tags.get(nm_)
+        if not T_: continue
+        tx_ = ((T_.get('preview') or {}).get('tex') or {}).get('diffuseColor') or {}
+        f_ = tx_.get('file')
+        if not f_ or not os.path.exists(f_): continue
+        a_ = np.asarray(Image.open(f_).convert('RGB'), np.float32) / 255.0
+        lin_ = np.where(a_ <= 0.04045, a_ / 12.92, ((a_ + 0.055) / 1.055) ** 2.4)
+        d_ = lin_[..., 0] - lin_[..., 1]
+        if not ((d_ > 0.105).mean() > 0.5 and 0.01 < (d_ < 0.075).mean() < 0.35): continue
+        # each texel as a mix of band and brick by its red minus green (the bands' mean 0.06, the brick's 0.13): the band's
+        # share of the mean band colour moved to its new level, so the anti-aliased edges carry no pale outline
+        bm_ = lin_[d_ < 0.075].mean(0)
+        fr_ = np.clip((0.13 - d_) / 0.07, 0.0, 1.0)
+        lin_ = np.maximum(lin_ + fr_[..., None] * (k_ - 1.0) * bm_, 0.0)
+        s_ = np.where(lin_ <= 0.0031308, lin_ * 12.92, 1.055 * np.power(np.maximum(lin_, 0.0), 1.0 / 2.4) - 0.055)
+        fo_ = os.path.join(out, 'tex', 'look13_' + os.path.basename(f_))
+        os.makedirs(os.path.dirname(fo_), exist_ok=True)
+        Image.fromarray(np.clip(s_ * 255.0 + 0.5, 0, 255).astype(np.uint8)).save(fo_)
+        T_ = dict(T_); pv_ = dict(T_['preview']); te_ = dict(pv_['tex']); te_['diffuseColor'] = dict(tx_, file=fo_)
+        pv_['tex'] = te_; T_['preview'] = pv_; tags[nm_] = T_; out_['paving'] += 1
+    try:
+        H_ = json.load(open(os.environ.get('BXUE_HQ') or (json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ue_families.json'))).get('hq') or {}).get('manifest') or '/data0/projectnyc_aux/assets/hq/hq.json'))
+    except Exception:
+        H_ = {}
+    def rec_(sid):
+        m_ = H_.get(sid) or {}; fl_ = m_.get('files') or {}
+        if not all(k in fl_ and os.path.exists(fl_[k]) for k in ('alb', 'nrm', 'arm')): return None
+        return {'id': sid, 'alb': fl_['alb'], 'nrm': fl_['nrm'], 'arm': fl_['arm'], 'size': (m_.get('size_m') or [2.0, 2.0])[:2],
+                'mean': (m_.get('albedo_mean') or [0.5, 0.5, 0.5])[:3]}
+    # (3) Bryant Park's stone kit (bryantParkKit.js: the terrace, its steps and balustrades, one vertex-coloured untextured
+    # MeshStandardMaterial that Unreal drew as a flat pale card; the web gives it the granite detail with flagstone joints
+    # on the decks): the pbr family, world-planar, the HQ concrete flags at their real size under the vertex colour (Ratio =
+    # 1 / the set's mean), so the stone keeps the web's tones and gains grain, flag joints and relief (and AAA11's
+    # weathering), its joints' dirt at 0.35 (hq.cav13; AAA11 gives the pbr walls 0.85)
+    st_meshes_ = tuple(L.get('stone_meshes') or ['_bp31_stone'])
+    sset_ = rec_(L.get('stone_set') or 'concrete_pavement')
+    out_['stone'] = 0
+    if sset_:
+        for p_ in st.Traverse():
+            if not p_.IsA(UsdGeom.Mesh) or not p_.GetName().endswith(st_meshes_): continue
+            b_ = UsdShade.MaterialBindingAPI(p_).ComputeBoundMaterial()[0]
+            if not b_: continue
+            nm_ = b_.GetPrim().GetName(); T_ = tags.get(nm_)
+            if not T_ or T_.get('kind') != 'plain' or not T_.get('vc'): continue
+            tags[nm_] = dict(T_, kind='pbr', set='look13_stone', pbWorld=1, pbDirt=0.35,
+                             tex={'alb': sset_['alb'], 'nrm': sset_['nrm'], 'orm': sset_['arm']},
+                             hq={'id': sset_['id'], 'alb': sset_['alb'], 'nrm': sset_['nrm'], 'arm': sset_['arm'], 'size': sset_['size'],
+                                 'ratio': [round(1.0 / max(m, 1e-3), 4) for m in sset_['mean']], 'unit': [1.0, 1.0],
+                                 'macro': 0.08, 'detail': 0.35, 'cavity': 0.5, 'cav13': 0.35})
+            out_['stone'] += 1
+    for P_ in tags.values():
+        if P_.get('kind') != 'ground' or not isinstance(P_.get('hq'), dict): continue
+        for key_, sid_ in (L.get('ground') or {}).items():
+            r_ = rec_(sid_)
+            if r_: P_['hq'][key_] = r_
+        out_['ground'] += 1
+    return out_
+
+
+try: stats['look13'] = look13()
+except Exception as e: stats['look13'] = {'error': str(e)[:200]}
+# LOOK13 end
+
+
+# LOOK13b (2026-10-09): the Lake's reeds (cpLand.js buildReeds / reedMat: clumps of four crossed quads that the web's
+# shader cuts into seven tapering, curving blades from a per-vertex aRd = (u, v, seed)). The export carries the quads and
+# their colours but not aRd, so Unreal drew every clump as solid grey cards. aRd is rebuilt here from the quads' own vertex
+# order (each quad six unwelded vertices: uv (0,0) (1,0) (1,1) (0,0) (1,1) (0,1), checked against the vertices' heights)
+# into st (u, v) and st2.y (the seed), and the material is tagged 'reed' (ue_families.json look13b: M_bx_reed cuts the
+# blades as the web does)
+def look13b_reeds():
+    out_ = {'meshes': 0, 'quads': 0, 'skipped': 0}
+    pat_ = np.array([[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], np.float32)
+    mats_ = set()
+    for p_ in st.Traverse():
+        if not p_.IsA(UsdGeom.Mesh) or p_.IsInstanceProxy() or not p_.GetName().endswith('cp32l_reeds'): continue
+        b_ = UsdShade.MaterialBindingAPI(p_).ComputeBoundMaterial()[0]
+        if not b_ or (tags.get(b_.GetPrim().GetName()) or {}).get('name') != 'cp32l:reeds': continue
+        m_ = UsdGeom.Mesh(p_)
+        P_ = np.asarray(m_.GetPointsAttr().Get() or [], np.float32)
+        fi_ = np.asarray(m_.GetFaceVertexIndicesAttr().Get() or [], np.int64)
+        n_ = len(P_)
+        if n_ == 0 or n_ % 6 or len(fi_) != n_ or not np.array_equal(fi_, np.arange(n_)):
+            out_['skipped'] += 1; continue
+        Q_ = P_.reshape(-1, 6, 3)
+        up_ = 1 if abs(Q_[:, :, 1].max() - Q_[:, :, 1].min()) > 0 else 1
+        hy_ = Q_[:, :, up_]
+        lo_, hi_ = hy_[:, [0, 1, 3]].max(1), hy_[:, [2, 4, 5]].min(1)
+        if (hi_ <= lo_).mean() > 0.02:   # the bottoms are not the first, second and fourth vertices: leave the mesh alone
+            out_['skipped'] += 1; continue
+        api_ = UsdGeom.PrimvarsAPI(p_)
+        uv_ = np.tile(pat_, (len(Q_), 1))
+        put(api_, 'st', uv_, UsdGeom.Tokens.vertex)
+        s2_ = api_.GetPrimvar('st2')
+        bx_ = np.asarray(s2_.Get(), np.float32)[:, 0] if s2_ and s2_.HasValue() and len(s2_.Get()) == n_ else np.ones(n_, np.float32)
+        seed_ = np.repeat((np.arange(len(Q_), dtype=np.float32) * 0.37) % 97.0, 6)
+        put(api_, 'st2', np.stack([bx_, seed_], 1), UsdGeom.Tokens.vertex)
+        mats_.add(b_.GetPrim().GetName()); out_['meshes'] += 1; out_['quads'] += len(Q_)
+    for nm_ in mats_:
+        tags[nm_] = dict(tags[nm_], kind='reed')
+    if out_['meshes']: over.Save()   # (the over layer was saved before this block)
+    return out_
+
+
+try: stats['look13b_reeds'] = look13b_reeds()
+except Exception as e: stats['look13b_reeds'] = {'error': str(e)[:200]}
+# LOOK13b end
+
+
+# LOOK13d (2026-10-09, owner: "water effects in the Bryant Park fountain look bad"): fountainFX.js veils whose meshes are not
+# named for them (bryantParkKit's bp28 fountain: the curtain off the bowl's rim, the dome off the jet, the jet's column)
+# escaped veil_tags and drew as the importer's clear glass. Every material the web named fw26:veil is tagged 'veil' here
+# from the geometry bound to it (lip, fall time, centre, as veil_tags); the column (under 0.15 m across) aerated through
+# its height. The pools a veil lands in (a dark untextured surface bound on the same fountain, level with a veil's
+# bottom) are tagged 'bp28:pool' with the landing ring (centre, radius) for M_bx_water's foam (ue_families.json look13d)
+def look13d_fountains():
+    out_ = {'veils': 0, 'pools': 0}
+    vm_ = {}
+    for p_ in st.Traverse():
+        if p_.IsA(UsdShade.Material) and (p_.GetCustomDataByKey('three') or {}).get('name') == 'fw26:veil' and \
+                (tags.get(p_.GetName()) or {}).get('kind') != 'veil':
+            vm_[str(p_.GetPath())] = p_
+    if not vm_: return out_
+    pts_ = {}
+    for p_ in st.Traverse():
+        if not p_.IsA(UsdGeom.Mesh) or p_.IsInstanceProxy(): continue
+        b_ = UsdShade.MaterialBindingAPI(p_).ComputeBoundMaterial()[0]
+        if not b_: continue
+        P_ = np.asarray(UsdGeom.Mesh(p_).GetPointsAttr().Get() or [], np.float64)
+        if not len(P_): continue
+        M_ = np.array(UsdGeom.Xformable(p_).ComputeLocalToWorldTransform(Usd.TimeCode.Default())).reshape(4, 4)
+        pts_.setdefault(str(b_.GetPath()), []).append(P_ @ M_[:3, :3] + M_[3, :3])
+    sd = [float(v) for v in (data.get('sunDir') or [0, 1, 0])[:3]]; sc = [float(v) for v in (data.get('sunColor') or [1, 1, 1])[:3]]
+    rings_ = []
+    for path_, mp in vm_.items():
+        if path_ not in pts_: continue
+        W_ = np.concatenate(pts_[path_])
+        lo_, hi_ = W_.min(0), W_.max(0)
+        cx_, cz_ = 0.5 * (lo_[0] + hi_[0]), 0.5 * (lo_[2] + hi_[2])
+        rr_ = np.hypot(W_[:, 0] - cx_, W_[:, 2] - cz_)
+        col_ = rr_.max() < 0.15
+        A = dict(VEIL_ARGS[''])
+        if col_: A.update({'aer': [0.0, 0.35], 'holes': 0.3, 'body': 0.45, 'freq': 14.0, 'tear0': 0.0})
+        y0 = float(hi_[1]); H = max(y0 - float(lo_[1]), 0.05)
+        # LOOK14 (the Lead 22:35 on the rebuilt Lowell fountain: "a heavy dark wall"; the real overflow is thin bright
+        # strands off the 13 ft bowl's lip, the stone seen through): a curtain over 2.2 m tall and 1.5 m round leaves the
+        # lip whole and breaks into fine strands as it falls (holes from the lip), white from the lip down, its glassy body
+        # all but clear (no dark fill)
+        if not col_ and H > 2.2 and rr_.max() > 1.5: A.update({'v0': 0.3, 'aer': [0.0, 0.3], 'holes': 0.5, 'body': 0.06, 'freq': 20.0, 'tear0': 0.15})
+        # LOOK14 end
+        tmax = (-A['v0'] + math.sqrt(A['v0'] ** 2 + 19.62 * H)) / 9.81
+        tags[mp.GetName()] = {'kind': 'veil', 'path': path_, 'look': 'veil_' + mp.GetName(), 'name': 'fw26:veil', 'mesh': 'look13d',
+                              'veil': {'v0': [round(y0, 4), A['v0'], round(tmax, 4), A['tear0']], 'aer': A['aer'] + [A['holes'], A['body']],
+                                       'freq': A['freq'], 'cen': [round(cx_, 3), round(cz_, 3), 0, 0], 'sund': sd + [0.0], 'sunc': sc + [0.0]}}
+        sh_ = UsdShade.Material(mp).ComputeSurfaceSource()[0]
+        if sh_: sh_.CreateInput('bxLook', Sdf.ValueTypeNames.Token).Set('veil_' + mp.GetName())
+        bot_ = W_[:, 1] < float(lo_[1]) + 0.12
+        if not col_ and bot_.any(): rings_.append((cx_, cz_, float(rr_[bot_].max()), float(lo_[1])))
+        out_['veils'] += 1
+    # the pools: flat (under 3 cm tall), dark, untextured, level with a veil's bottom and round its centre
+    for path_, Ws_ in pts_.items():
+        nm_ = path_.rsplit('/', 1)[-1]; T_ = tags.get(nm_)
+        if not T_ or T_.get('kind') not in ('plain', 'untrim') or T_.get('name') or ((T_.get('preview') or {}).get('tex') or {}).get('diffuseColor'): continue
+        c_ = [float(v) for v in (T_.get('color') or [1, 1, 1])][:3]
+        if max(c_) > 0.05: continue
+        W_ = np.concatenate(Ws_); lo_, hi_ = W_.min(0), W_.max(0)
+        if hi_[1] - lo_[1] > 0.03: continue
+        cx_, cz_ = 0.5 * (lo_[0] + hi_[0]), 0.5 * (lo_[2] + hi_[2])
+        rg_ = next((r for r in rings_ if abs(r[3] - lo_[1]) < 0.2 and math.hypot(r[0] - cx_, r[1] - cz_) < 0.6), None)
+        if rg_ is None: continue
+        tags[nm_] = dict(T_, kind='untrim', name='bp28:pool', foam=[round(rg_[0], 3), round(rg_[1], 3), round(rg_[2], 3), 1.0])
+        out_['pools'] += 1
+    return out_
+
+
+try: stats['look13d_fountains'] = look13d_fountains()
+except Exception as e: stats['look13d_fountains'] = {'error': str(e)[:200]}
+# LOOK13d end
+
+
 side = {'shot': shot, 'usd': usd, 'root': src_root, 'ue_root': root_path, 'frames': [f_lo, f_hi], 'fps': rl.framesPerSecond or 30, 'camera': camera, 'far': far,
         'data': {k: (list(v) if hasattr(v, '__len__') and not isinstance(v, str) else v) for k, v in data.items()},
         'materials': tags, 'previews': previews, 'moving': moving, 'ambient': ambient(), 'sky': sky_means(), 'hq': hq_,
         'walkers': peds_.get('walkers') or {}, 'emit_lights': emit_,   # R8-EMIT
         'stats': {**stats, 'moving': mstats, 'materials': len(tags), 'secs_primvars': round(t_pv, 1), 'secs': round(t_all, 1)}}
+side['simT'] = simT   # TSQADS: the web's sim time per frame (ue_mat.board_take)
 json.dump(side, open(os.path.join(out, f'ue_{shot}.json'), 'w'), indent=0)
 print('UE_PREP ' + json.dumps({'root': root_path, **side['stats']}))

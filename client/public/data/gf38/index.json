@@ -3,6 +3,7 @@
 "1_-3": {
 "bytes": 684004,
 "walk_to_road_m2": 0.0,
+"ckey": "53d2ff7fd42b1b53",
 "road": 563,
 "walk": 2991,
 "walk_kinds": {
@@ -35,6 +36,7 @@
 "1_-4": {
 "bytes": 1044180,
 "walk_to_road_m2": 0.0,
+"ckey": "5b010a65a6e3dad6",
 "road": 477,
 "walk": 2352,
 "walk_kinds": {
@@ -68,6 +70,7 @@
 "1_-5": {
 "bytes": 869788,
 "walk_to_road_m2": 0.0,
+"ckey": "72933e79c9de6bd7",
 "road": 620,
 "walk": 9119,
 "walk_kinds": {
@@ -102,6 +105,7 @@
 "1_-6": {
 "bytes": 1677308,
 "walk_to_road_m2": 0.0,
+"ckey": "c23acb203b3ab4bf",
 "road": 247,
 "walk": 801,
 "walk_kinds": {
@@ -135,19 +139,20 @@
 }
 },
 "1_-7": {
-"bytes": 2586596,
+"bytes": 2605820,
 "walk_to_road_m2": 0.6,
-"road": 2275,
-"walk": 4927,
+"ckey": "29df4acddd828d0e",
+"road": 2269,
+"walk": 4379,
 "walk_kinds": {
-"sidewalk": 134
+"sidewalk": 139
 },
-"lawn": 3426,
+"lawn": 1200,
 "passes": 3,
-"cell_quads": 13,
-"kerb_m": 1082.8,
+"cell_quads": 19,
+"kerb_m": 1075.5,
 "area": {
-"roadbed": 627.2,
+"roadbed": 626.6,
 "median_flat": 0.0,
 "parking": 169.6,
 "median": 735.6,
@@ -155,82 +160,85 @@
 "plaza": 99.1,
 "carriage": 0.6,
 "left_road": 2057.2,
-"left_walk": 728.7,
-"left_grass": 620.9
+"left_walk": 740.3,
+"left_grass": 1385.7
 },
 "tris": {
-"asphalt": 2275,
-"sidewalk": 4927,
-"grass": 3426,
-"curb": 1028
+"asphalt": 2269,
+"sidewalk": 4379,
+"grass": 1200,
+"curb": 1040
 }
 },
 "1_-8": {
-"bytes": 2471724,
+"bytes": 2525736,
 "walk_to_road_m2": 68.5,
-"road": 3906,
-"walk": 6772,
+"ckey": "0e3ca18717bf056f",
+"road": 3931,
+"walk": 6833,
 "walk_kinds": {
-"path": 9,
-"sidewalk": 161
+"path": 18,
+"sidewalk": 167
 },
 "lawn": 3151,
 "passes": 3,
-"cell_quads": 18,
-"kerb_m": 2158.8,
+"cell_quads": 17,
+"kerb_m": 2197.9,
 "area": {
-"roadbed": 1526.6,
+"roadbed": 1520.6,
 "median_flat": 73.3,
 "parking": 7488.8,
 "median": 210.5,
 "sidewalk": 809.0,
 "plaza": 1603.0,
 "carriage": 68.5,
-"left_road": 7790.4,
-"left_walk": 2134.9,
+"left_road": 7781.3,
+"left_walk": 2443.3,
 "left_grass": 720.0
 },
 "tris": {
-"asphalt": 3906,
-"path": 108,
-"sidewalk": 6676,
+"asphalt": 3931,
+"path": 171,
+"sidewalk": 6674,
 "grass": 3151,
-"curb": 2768
+"curb": 2788
 }
 },
 "1_-9": {
-"bytes": 309744,
+"bytes": 338552,
 "walk_to_road_m2": 0.0,
-"road": 566,
-"walk": 398,
+"ckey": "91e13a0a05aaac8d",
+"road": 571,
+"walk": 322,
 "walk_kinds": {
-"sidewalk": 7
+"sidewalk": 10
 },
 "lawn": 0,
 "passes": 3,
 "cell_quads": 0,
-"kerb_m": 139.9,
+"kerb_m": 145.5,
 "area": {
-"roadbed": 414.1,
+"roadbed": 411.8,
 "median_flat": 0.0,
 "parking": 0.0,
 "median": 0.0,
 "sidewalk": 9.8,
 "plaza": 0.0,
 "carriage": 0.0,
-"left_road": 643.3,
-"left_walk": 257.3,
+"left_road": 638.7,
+"left_walk": 261.9,
 "left_grass": 0.0
 },
 "tris": {
-"asphalt": 566,
-"sidewalk": 398,
-"curb": 504
+"asphalt": 571,
+"sidewalk": 322,
+"curb": 514
 }
 },
 "2_-3": {
 "bytes": 291696,
 "walk_to_road_m2": 0.0,
+"ckey": "2c6ae1e59c12e8e6",
 "road": 318,
 "walk": 204,
 "walk_kinds": {
@@ -261,6 +269,7 @@
 "2_-4": {
 "bytes": 1018512,
 "walk_to_road_m2": 55.4,
+"ckey": "1481512b03c0dc65",
 "road": 720,
 "walk": 2795,
 "walk_kinds": {
@@ -292,6 +301,7 @@
 "2_-5": {
 "bytes": 1026264,
 "walk_to_road_m2": 0.0,
+"ckey": "3a3fe293d658c39d",
 "road": 304,
 "walk": 3016,
 "walk_kinds": {
@@ -322,6 +332,7 @@
 "2_-6": {
 "bytes": 1551696,
 "walk_to_road_m2": 55.8,
+"ckey": "5d056e3584415225",
 "road": 665,
 "walk": 1405,
 "walk_kinds": {
@@ -356,6 +367,7 @@
 "2_-7": {
 "bytes": 1157728,
 "walk_to_road_m2": 0.1,
+"ckey": "51e2a15c0c41b89d",
 "road": 908,
 "walk": 6996,
 "walk_kinds": {
@@ -386,18 +398,19 @@
 }
 },
 "2_-8": {
-"bytes": 784460,
+"bytes": 792920,
 "walk_to_road_m2": 0.0,
-"road": 839,
-"walk": 6398,
+"ckey": "90e69053c13d4440",
+"road": 836,
+"walk": 6383,
 "walk_kinds": {
-"sidewalk": 130,
+"sidewalk": 131,
 "path": 10
 },
 "lawn": 0,
 "passes": 3,
-"cell_quads": 22,
-"kerb_m": 3596.9,
+"cell_quads": 25,
+"kerb_m": 3596.1,
 "area": {
 "roadbed": 274.2,
 "median_flat": 0.0,
@@ -411,48 +424,50 @@
 "left_grass": 0.0
 },
 "tris": {
-"asphalt": 839,
-"sidewalk": 5776,
-"path": 622,
-"curb": 720
+"asphalt": 836,
+"sidewalk": 5766,
+"path": 617,
+"curb": 716
 }
 },
 "2_-9": {
-"bytes": 1362188,
+"bytes": 1402960,
 "walk_to_road_m2": 3.9,
-"road": 7303,
-"walk": 8024,
+"ckey": "74a62fc1295c79ab",
+"road": 7416,
+"walk": 8762,
 "walk_kinds": {
-"path": 4,
-"sidewalk": 119
+"path": 6,
+"sidewalk": 122
 },
 "lawn": 3,
 "passes": 3,
-"cell_quads": 15,
-"kerb_m": 2047.2,
+"cell_quads": 17,
+"kerb_m": 2139.2,
 "area": {
-"roadbed": 3217.4,
-"median_flat": 18.1,
+"roadbed": 3114.3,
+"median_flat": 24.2,
 "parking": 4963.8,
-"median": 15.2,
-"sidewalk": 1099.5,
+"median": 19.8,
+"sidewalk": 1091.3,
 "plaza": 0.0,
 "carriage": 3.9,
-"left_road": 6018.6,
-"left_walk": 2043.9,
+"left_road": 5954.2,
+"left_walk": 2150.5,
 "left_grass": 0.0
 },
 "tris": {
-"asphalt": 7303,
-"path": 1826,
-"sidewalk": 6226,
+"asphalt": 7416,
+"path": 2454,
+"sidewalk": 6336,
 "grass": 3,
-"curb": 2348
+"curb": 3096
 }
 },
 "3_-3": {
 "bytes": 724208,
 "walk_to_road_m2": 0.1,
+"ckey": "b4b50429d28c6649",
 "road": 448,
 "walk": 1299,
 "walk_kinds": {
@@ -484,6 +499,7 @@
 "3_-4": {
 "bytes": 1087648,
 "walk_to_road_m2": 1.0,
+"ckey": "53536e89c112485b",
 "road": 1010,
 "walk": 6515,
 "walk_kinds": {
@@ -517,6 +533,7 @@
 "3_-5": {
 "bytes": 1089228,
 "walk_to_road_m2": 0.0,
+"ckey": "2911169b6c673a7f",
 "road": 512,
 "walk": 5935,
 "walk_kinds": {
@@ -548,6 +565,7 @@
 "3_-6": {
 "bytes": 1445448,
 "walk_to_road_m2": 0.0,
+"ckey": "2e87c03967f77086",
 "road": 667,
 "walk": 2461,
 "walk_kinds": {
@@ -579,6 +597,7 @@
 "3_-7": {
 "bytes": 1064964,
 "walk_to_road_m2": 0.0,
+"ckey": "c8ee4c23660f8de5",
 "road": 750,
 "walk": 5250,
 "walk_kinds": {
@@ -611,6 +630,7 @@
 "3_-8": {
 "bytes": 1441120,
 "walk_to_road_m2": 1.6,
+"ckey": "8d94e1e4fe4fcb09",
 "road": 1084,
 "walk": 6818,
 "walk_kinds": {
@@ -641,6 +661,7 @@
 "3_-9": {
 "bytes": 833280,
 "walk_to_road_m2": 0.0,
+"ckey": "058b277087e74119",
 "road": 610,
 "walk": 3189,
 "walk_kinds": {
@@ -672,6 +693,7 @@
 "4_-3": {
 "bytes": 945404,
 "walk_to_road_m2": 0.0,
+"ckey": "d93aabec73a2461a",
 "road": 744,
 "walk": 2443,
 "walk_kinds": {
@@ -705,6 +727,7 @@
 "4_-4": {
 "bytes": 798660,
 "walk_to_road_m2": 0.0,
+"ckey": "6e5f662d4540f3ae",
 "road": 1128,
 "walk": 9499,
 "walk_kinds": {
@@ -737,16 +760,17 @@
 "4_-5": {
 "bytes": 983660,
 "walk_to_road_m2": 29.4,
-"road": 618,
-"walk": 2893,
+"ckey": "3cc8aad9b8925d99",
+"road": 600,
+"walk": 2885,
 "walk_kinds": {
-"sidewalk": 114,
+"sidewalk": 112,
 "path": 6
 },
 "lawn": 0,
 "passes": 2,
-"cell_quads": 22,
-"kerb_m": 1270.2,
+"cell_quads": 23,
+"kerb_m": 1268.4,
 "area": {
 "roadbed": 205.7,
 "median_flat": 0.0,
@@ -760,15 +784,16 @@
 "left_grass": 0.0
 },
 "tris": {
-"asphalt": 618,
-"sidewalk": 2869,
+"asphalt": 600,
+"sidewalk": 2861,
 "path": 27,
-"curb": 294
+"curb": 286
 }
 },
 "4_-6": {
 "bytes": 1181752,
 "walk_to_road_m2": 0.0,
+"ckey": "c47a01973d0f4f2d",
 "road": 260,
 "walk": 2423,
 "walk_kinds": {
@@ -799,6 +824,7 @@
 "4_-7": {
 "bytes": 939264,
 "walk_to_road_m2": 0.0,
+"ckey": "b29b614199c1e1e4",
 "road": 691,
 "walk": 5045,
 "walk_kinds": {
@@ -832,6 +858,7 @@
 "4_-8": {
 "bytes": 989956,
 "walk_to_road_m2": 0.0,
+"ckey": "7e6fe10f6db93e34",
 "road": 1451,
 "walk": 9044,
 "walk_kinds": {
@@ -865,6 +892,7 @@
 "4_-9": {
 "bytes": 1163832,
 "walk_to_road_m2": 0.1,
+"ckey": "b87898c3ecf9769a",
 "road": 579,
 "walk": 3297,
 "walk_kinds": {
@@ -895,6 +923,7 @@
 "5_-3": {
 "bytes": 1040628,
 "walk_to_road_m2": 24.4,
+"ckey": "8d67ff26309745ba",
 "road": 985,
 "walk": 5895,
 "walk_kinds": {
@@ -927,6 +956,7 @@
 "5_-4": {
 "bytes": 1072632,
 "walk_to_road_m2": 0.0,
+"ckey": "f24bc5203dd40ee4",
 "road": 775,
 "walk": 3246,
 "walk_kinds": {
@@ -958,22 +988,23 @@
 "5_-5": {
 "bytes": 1089496,
 "walk_to_road_m2": 0.1,
-"road": 1243,
-"walk": 7142,
+"ckey": "135bd54db03ba04c",
+"road": 1247,
+"walk": 7121,
 "walk_kinds": {
 "sidewalk": 124,
-"path": 2
+"path": 1
 },
 "lawn": 1460,
 "passes": 3,
 "cell_quads": 15,
-"kerb_m": 5026.6,
+"kerb_m": 5027.8,
 "area": {
 "roadbed": 123.9,
 "median_flat": 0.0,
 "parking": 20226.3,
 "median": 0.0,
-"sidewalk": 3674.7,
+"sidewalk": 3675.0,
 "plaza": 1845.2,
 "carriage": 0.1,
 "left_road": 1.0,
@@ -981,81 +1012,84 @@
 "left_grass": 390.9
 },
 "tris": {
-"asphalt": 1243,
-"sidewalk": 7133,
-"path": 23,
+"asphalt": 1247,
+"sidewalk": 7122,
+"path": 13,
 "grass": 1460,
-"curb": 1414
+"curb": 1418
 }
 },
 "5_-6": {
 "bytes": 881420,
 "walk_to_road_m2": 1.4,
-"road": 2033,
-"walk": 7962,
+"ckey": "947abbdfab3576d8",
+"road": 2050,
+"walk": 7950,
 "walk_kinds": {
-"sidewalk": 185,
-"path": 9
+"sidewalk": 184,
+"path": 11
 },
-"lawn": 301,
+"lawn": 223,
 "passes": 3,
 "cell_quads": 21,
-"kerb_m": 3958.0,
+"kerb_m": 3953.8,
 "area": {
 "roadbed": 1480.2,
 "median_flat": 0.0,
-"parking": 8799.2,
+"parking": 8799.3,
 "median": 0.0,
-"sidewalk": 4106.9,
+"sidewalk": 4084.2,
 "plaza": 1375.2,
 "carriage": 1.4,
-"left_road": 56.4,
+"left_road": 56.3,
 "left_walk": 3058.0,
-"left_grass": 791.0
+"left_grass": 739.5
 },
 "tris": {
-"asphalt": 2033,
-"sidewalk": 7823,
-"path": 139,
-"grass": 301,
-"curb": 1796
+"asphalt": 2050,
+"sidewalk": 7819,
+"path": 131,
+"grass": 223,
+"curb": 1788
 }
 },
 "5_-7": {
 "bytes": 758696,
 "walk_to_road_m2": 43.8,
-"road": 2245,
-"walk": 12140,
+"ckey": "a4d8e4e6bba45655",
+"road": 2225,
+"walk": 12171,
 "walk_kinds": {
-"sidewalk": 137,
-"path": 11
+"sidewalk": 142,
+"path": 10
 },
 "lawn": 0,
 "passes": 3,
-"cell_quads": 25,
-"kerb_m": 7118.0,
+"cell_quads": 27,
+"kerb_m": 7118.8,
 "area": {
 "roadbed": 3866.2,
 "median_flat": 168.3,
-"parking": 20634.8,
+"parking": 20635.0,
 "median": 2.8,
-"sidewalk": 12070.5,
+"sidewalk": 12077.7,
 "plaza": 3491.9,
 "carriage": 43.8,
 "left_road": 196.3,
-"left_walk": 6263.6,
+"left_walk": 6275.5,
 "left_grass": 0.0
 },
 "tris": {
-"asphalt": 2245,
-"sidewalk": 10814,
-"path": 1330,
-"curb": 2880
+"asphalt": 2225,
+"sidewalk": 11632,
+"path": 543,
+"curb": 2872
 }
 },
 "5_-8": {
 "bytes": 855952,
 "walk_to_road_m2": 0.0,
+"ckey": "34455d7c1134a790",
 "road": 899,
 "walk": 7286,
 "walk_kinds": {
@@ -1086,18 +1120,19 @@
 }
 },
 "5_-9": {
-"bytes": 739320,
+"bytes": 742400,
 "walk_to_road_m2": 0.0,
-"road": 824,
-"walk": 6760,
+"ckey": "efac116ebf057dea",
+"road": 879,
+"walk": 6772,
 "walk_kinds": {
-"sidewalk": 58,
+"sidewalk": 61,
 "path": 3
 },
 "lawn": 2,
 "passes": 3,
-"cell_quads": 6,
-"kerb_m": 5167.8,
+"cell_quads": 9,
+"kerb_m": 5167.9,
 "area": {
 "roadbed": 4407.6,
 "median_flat": 0.0,
@@ -1107,30 +1142,31 @@
 "plaza": 8363.9,
 "carriage": 0.0,
 "left_road": 438.2,
-"left_walk": 3368.7,
+"left_walk": 3174.4,
 "left_grass": 0.0
 },
 "tris": {
-"asphalt": 824,
-"sidewalk": 6729,
-"path": 31,
+"asphalt": 879,
+"sidewalk": 6742,
+"path": 30,
 "grass": 2,
 "curb": 1172
 }
 },
 "6_-3": {
-"bytes": 781764,
+"bytes": 822240,
 "walk_to_road_m2": 18.1,
-"road": 2597,
-"walk": 5640,
+"ckey": "167c29f34c1214fc",
+"road": 2641,
+"walk": 5746,
 "walk_kinds": {
-"sidewalk": 45,
-"path": 5
+"sidewalk": 56,
+"path": 8
 },
 "lawn": 34,
 "passes": 3,
-"cell_quads": 6,
-"kerb_m": 1368.9,
+"cell_quads": 7,
+"kerb_m": 1370.6,
 "area": {
 "roadbed": 1266.4,
 "median_flat": 19.6,
@@ -1139,226 +1175,233 @@
 "sidewalk": 1904.3,
 "plaza": 0.0,
 "carriage": 18.1,
-"left_road": 1695.8,
-"left_walk": 2483.2,
+"left_road": 1448.2,
+"left_walk": 3168.7,
 "left_grass": 1.8
 },
 "tris": {
-"asphalt": 2597,
-"sidewalk": 5466,
-"path": 183,
+"asphalt": 2641,
+"sidewalk": 5542,
+"path": 212,
 "grass": 34,
-"curb": 1800
+"curb": 2056
 }
 },
 "6_-4": {
-"bytes": 1211192,
+"bytes": 1248140,
 "walk_to_road_m2": 26.1,
-"road": 2591,
-"walk": 11827,
+"ckey": "a140b306ec0e0ed8",
+"road": 3023,
+"walk": 11966,
 "walk_kinds": {
-"sidewalk": 141,
-"path": 32
+"sidewalk": 185,
+"path": 27
 },
-"lawn": 3602,
+"lawn": 3593,
 "passes": 3,
-"cell_quads": 14,
-"kerb_m": 5494.0,
+"cell_quads": 16,
+"kerb_m": 5428.8,
 "area": {
-"roadbed": 5092.9,
+"roadbed": 5071.4,
 "median_flat": 83.7,
 "parking": 10355.0,
-"median": 5.9,
-"sidewalk": 12309.1,
+"median": 6.0,
+"sidewalk": 12304.3,
 "plaza": 0.0,
 "carriage": 26.1,
-"left_road": 21.3,
-"left_walk": 6560.6,
+"left_road": 21.2,
+"left_walk": 6489.8,
 "left_grass": 3727.5
 },
 "tris": {
-"asphalt": 2591,
-"sidewalk": 7619,
-"path": 4214,
-"grass": 3602,
-"curb": 1624
+"asphalt": 3023,
+"sidewalk": 7641,
+"path": 4331,
+"grass": 3593,
+"curb": 1644
 }
 },
 "6_-5": {
-"bytes": 1183308,
-"walk_to_road_m2": 32.0,
-"road": 4082,
-"walk": 7910,
+"bytes": 1256740,
+"walk_to_road_m2": 29.2,
+"ckey": "5575299811817cb4",
+"road": 4003,
+"walk": 10923,
 "walk_kinds": {
-"path": 13,
-"sidewalk": 138
+"path": 29,
+"sidewalk": 148
 },
-"lawn": 2256,
+"lawn": 2220,
 "passes": 3,
 "cell_quads": 9,
-"kerb_m": 5299.3,
+"kerb_m": 6255.1,
 "area": {
-"roadbed": 18393.5,
+"roadbed": 18292.0,
 "median_flat": 108.7,
 "parking": 12499.8,
 "median": 735.6,
-"sidewalk": 2364.3,
+"sidewalk": 2305.6,
 "plaza": 0.0,
-"carriage": 32.0,
-"left_road": 102.4,
-"left_walk": 4483.3,
-"left_grass": 2105.0
+"carriage": 29.2,
+"left_road": 101.4,
+"left_walk": 5843.9,
+"left_grass": 2106.4
 },
 "tris": {
-"asphalt": 4082,
-"path": 265,
-"sidewalk": 7645,
-"grass": 2261,
-"curb": 2298
+"asphalt": 4003,
+"path": 307,
+"sidewalk": 10616,
+"grass": 2225,
+"curb": 2356
 }
 },
 "6_-6": {
-"bytes": 943784,
+"bytes": 1026400,
 "walk_to_road_m2": 55.9,
-"road": 2499,
-"walk": 8917,
+"ckey": "f69bf475c5018089",
+"road": 2464,
+"walk": 8891,
 "walk_kinds": {
-"path": 15,
-"sidewalk": 78
+"path": 12,
+"sidewalk": 90
 },
 "lawn": 261,
 "passes": 3,
 "cell_quads": 28,
-"kerb_m": 5239.1,
+"kerb_m": 5240.3,
 "area": {
-"roadbed": 9368.8,
+"roadbed": 9376.0,
 "median_flat": 183.5,
 "parking": 13545.1,
 "median": 0.0,
-"sidewalk": 1382.0,
+"sidewalk": 1436.0,
 "plaza": 224.7,
 "carriage": 55.9,
 "left_road": 546.3,
-"left_walk": 3818.9,
+"left_walk": 4278.3,
 "left_grass": 629.8
 },
 "tris": {
-"asphalt": 2499,
-"path": 379,
-"sidewalk": 8576,
+"asphalt": 2464,
+"path": 259,
+"sidewalk": 8670,
 "grass": 261,
-"curb": 1280
+"curb": 1254
 }
 },
 "6_-7": {
-"bytes": 1957244,
+"bytes": 2059808,
 "walk_to_road_m2": 45.5,
-"road": 10155,
-"walk": 12128,
+"ckey": "a97d610e69e1a712",
+"road": 10168,
+"walk": 11922,
 "walk_kinds": {
 "sidewalk": 166,
 "path": 11
 },
 "lawn": 487,
 "passes": 3,
-"cell_quads": 14,
-"kerb_m": 8769.1,
+"cell_quads": 12,
+"kerb_m": 8760.7,
 "area": {
-"roadbed": 8538.2,
+"roadbed": 8535.3,
 "median_flat": 88.4,
-"parking": 17060.5,
+"parking": 17060.4,
 "median": 47.9,
 "sidewalk": 1460.5,
 "plaza": 658.0,
 "carriage": 45.5,
 "left_road": 3607.4,
-"left_walk": 6625.0,
+"left_walk": 6605.8,
 "left_grass": 917.0
 },
 "tris": {
-"asphalt": 10155,
-"sidewalk": 11987,
-"path": 149,
+"asphalt": 10168,
+"sidewalk": 11776,
+"path": 154,
 "grass": 487,
-"curb": 6826
+"curb": 6830
 }
 },
 "6_-8": {
-"bytes": 913356,
+"bytes": 983768,
 "walk_to_road_m2": 0.7,
-"road": 3451,
-"walk": 3234,
+"ckey": "86720f0a20f253ee",
+"road": 3437,
+"walk": 3532,
 "walk_kinds": {
 "sidewalk": 104,
 "path": 3
 },
 "lawn": 700,
 "passes": 3,
-"cell_quads": 12,
-"kerb_m": 5921.9,
+"cell_quads": 19,
+"kerb_m": 5933.2,
 "area": {
-"roadbed": 4727.2,
+"roadbed": 4726.4,
 "median_flat": 0.0,
 "parking": 17036.6,
 "median": 22.3,
-"sidewalk": 3609.0,
+"sidewalk": 3606.9,
 "plaza": 113.1,
 "carriage": 0.7,
 "left_road": 5364.1,
-"left_walk": 4336.1,
+"left_walk": 4257.2,
 "left_grass": 1041.4
 },
 "tris": {
-"asphalt": 3451,
-"sidewalk": 3092,
+"asphalt": 3437,
+"sidewalk": 3404,
 "path": 166,
 "grass": 700,
-"curb": 2754
+"curb": 2746
 }
 },
 "6_-9": {
-"bytes": 1063132,
+"bytes": 1167352,
 "walk_to_road_m2": 0.1,
-"road": 1348,
-"walk": 3045,
+"ckey": "adf898e7e0dcad27",
+"road": 1590,
+"walk": 3079,
 "walk_kinds": {
-"sidewalk": 31
+"sidewalk": 98
 },
 "lawn": 115,
 "passes": 3,
-"cell_quads": 16,
-"kerb_m": 2543.9,
+"cell_quads": 14,
+"kerb_m": 2617.9,
 "area": {
 "roadbed": 2806.3,
 "median_flat": 0.0,
-"parking": 12688.6,
+"parking": 12666.6,
 "median": 0.0,
 "sidewalk": 861.9,
 "plaza": 1451.2,
 "carriage": 0.1,
 "left_road": 1378.1,
-"left_walk": 4080.1,
+"left_walk": 4408.6,
 "left_grass": 85.9
 },
 "tris": {
-"asphalt": 1348,
-"sidewalk": 3060,
+"asphalt": 1590,
+"sidewalk": 3094,
 "grass": 115,
-"curb": 714
+"curb": 758
 }
 },
 "7_-3": {
-"bytes": 1160272,
+"bytes": 1196428,
 "walk_to_road_m2": 0.0,
-"road": 8317,
-"walk": 6165,
+"ckey": "702a3decb3356bbd",
+"road": 8313,
+"walk": 6166,
 "walk_kinds": {
-"sidewalk": 6,
+"sidewalk": 5,
 "path": 3
 },
 "lawn": 0,
 "passes": 3,
-"cell_quads": 1,
+"cell_quads": 0,
 "kerb_m": 1352.6,
 "area": {
 "roadbed": 0.0,
@@ -1373,120 +1416,124 @@
 "left_grass": 0.0
 },
 "tris": {
-"asphalt": 8317,
+"asphalt": 8313,
 "sidewalk": 80,
-"path": 6085,
+"path": 6086,
 "curb": 4668
 }
 },
 "7_-4": {
-"bytes": 1988608,
+"bytes": 2024404,
 "walk_to_road_m2": 3.0,
-"road": 9851,
-"walk": 12268,
+"ckey": "8739bf809906a469",
+"road": 9784,
+"walk": 12157,
 "walk_kinds": {
-"sidewalk": 60,
-"path": 5
+"sidewalk": 57,
+"path": 6
 },
 "lawn": 0,
 "passes": 4,
-"cell_quads": 9,
-"kerb_m": 2903.0,
+"cell_quads": 10,
+"kerb_m": 2882.2,
 "area": {
 "roadbed": 2564.5,
 "median_flat": 0.0,
-"parking": 2492.5,
+"parking": 2487.9,
 "median": 2.9,
-"sidewalk": 393.9,
+"sidewalk": 389.3,
 "plaza": 0.0,
 "carriage": 3.0,
-"left_road": 11616.7,
-"left_walk": 2553.1,
+"left_road": 11596.4,
+"left_walk": 2531.5,
 "left_grass": 0.0
 },
 "tris": {
-"asphalt": 9851,
-"sidewalk": 5329,
-"path": 6953,
-"curb": 8900
+"asphalt": 9784,
+"sidewalk": 5337,
+"path": 6841,
+"curb": 8824
 }
 },
 "7_-5": {
-"bytes": 362972,
+"bytes": 517364,
 "walk_to_road_m2": 0.0,
-"road": 8567,
-"walk": 21647,
+"ckey": "0b6cdb54a04a621e",
+"road": 8666,
+"walk": 20852,
 "walk_kinds": {
-"sidewalk": 53
+"sidewalk": 79
 },
 "lawn": 0,
 "passes": 3,
 "cell_quads": 9,
-"kerb_m": 5573.7,
+"kerb_m": 5826.6,
 "area": {
-"roadbed": 14841.1,
+"roadbed": 14034.9,
 "median_flat": 7.3,
-"parking": 14586.7,
+"parking": 14588.9,
 "median": 0.0,
-"sidewalk": 756.1,
+"sidewalk": 608.4,
 "plaza": 0.0,
 "carriage": 0.0,
-"left_road": 3369.4,
-"left_walk": 6597.5,
+"left_road": 4337.6,
+"left_walk": 7129.2,
 "left_grass": 0.0
 },
 "tris": {
-"asphalt": 8567,
-"sidewalk": 21672,
-"curb": 9716
+"asphalt": 8666,
+"sidewalk": 20860,
+"curb": 10906
 }
 },
 "7_-6": {
-"bytes": 861916,
+"bytes": 865156,
 "walk_to_road_m2": 0.6,
-"road": 8114,
-"walk": 17536,
+"ckey": "7cdb24d400bfcc43",
+"road": 7987,
+"walk": 17580,
 "walk_kinds": {
-"sidewalk": 92,
+"sidewalk": 91,
 "path": 16
 },
 "lawn": 31,
 "passes": 3,
-"cell_quads": 9,
-"kerb_m": 5365.6,
+"cell_quads": 8,
+"kerb_m": 5388.1,
 "area": {
-"roadbed": 9050.2,
+"roadbed": 9599.8,
 "median_flat": 0.0,
 "parking": 12682.3,
 "median": 0.0,
 "sidewalk": 4708.9,
 "plaza": 285.8,
 "carriage": 0.6,
-"left_road": 5191.8,
+"left_road": 5215.4,
 "left_walk": 5443.7,
 "left_grass": 383.4
 },
 "tris": {
-"asphalt": 8114,
-"sidewalk": 15436,
-"path": 2100,
+"asphalt": 7987,
+"sidewalk": 15446,
+"path": 2134,
 "grass": 31,
 "curb": 5056
 }
 },
 "7_-7": {
-"bytes": 810012,
+"bytes": 844016,
 "walk_to_road_m2": 0.3,
-"road": 676,
+"ckey": "6c111c0e2063205f",
+"road": 701,
 "walk": 1711,
 "walk_kinds": {
-"sidewalk": 97,
+"sidewalk": 102,
 "path": 2
 },
 "lawn": 336,
 "passes": 3,
 "cell_quads": 17,
-"kerb_m": 1300.6,
+"kerb_m": 1300.2,
 "area": {
 "roadbed": 10.2,
 "median_flat": 0.0,
@@ -1500,72 +1547,74 @@
 "left_grass": 89.0
 },
 "tris": {
-"asphalt": 676,
-"sidewalk": 1683,
-"path": 28,
+"asphalt": 701,
+"sidewalk": 1685,
+"path": 26,
 "grass": 336,
-"curb": 400
+"curb": 396
 }
 },
 "7_-8": {
-"bytes": 788452,
+"bytes": 945436,
 "walk_to_road_m2": 0.6,
-"road": 748,
-"walk": 3810,
+"ckey": "c57b976dd8a6f87a",
+"road": 755,
+"walk": 3462,
 "walk_kinds": {
-"sidewalk": 78
+"sidewalk": 80
 },
 "lawn": 0,
 "passes": 4,
 "cell_quads": 7,
-"kerb_m": 2838.9,
+"kerb_m": 2719.6,
 "area": {
-"roadbed": 573.6,
+"roadbed": 436.8,
 "median_flat": 0.0,
-"parking": 10157.1,
+"parking": 10129.9,
 "median": 58.6,
-"sidewalk": 566.0,
+"sidewalk": 452.3,
 "plaza": 2107.5,
 "carriage": 0.6,
 "left_road": 1.7,
-"left_walk": 3304.5,
+"left_walk": 3230.1,
 "left_grass": 0.0
 },
 "tris": {
-"asphalt": 748,
-"sidewalk": 3810,
-"curb": 992
+"asphalt": 755,
+"sidewalk": 3462,
+"curb": 942
 }
 },
 "7_-9": {
-"bytes": 1625220,
+"bytes": 1708284,
 "walk_to_road_m2": 0.0,
-"road": 848,
-"walk": 659,
+"ckey": "822f23d7bb73f52a",
+"road": 859,
+"walk": 639,
 "walk_kinds": {
-"sidewalk": 113
+"sidewalk": 107
 },
-"lawn": 160,
+"lawn": 184,
 "passes": 2,
-"cell_quads": 14,
-"kerb_m": 744.5,
+"cell_quads": 12,
+"kerb_m": 671.4,
 "area": {
-"roadbed": 2.4,
+"roadbed": 2.3,
 "median_flat": 0.3,
 "parking": 1276.2,
 "median": 44.8,
-"sidewalk": 489.8,
+"sidewalk": 489.3,
 "plaza": 0.0,
 "carriage": 0.0,
 "left_road": 40.4,
-"left_walk": 1296.0,
-"left_grass": 63.9
+"left_walk": 1013.7,
+"left_grass": 170.4
 },
 "tris": {
-"asphalt": 848,
-"sidewalk": 659,
-"grass": 160,
-"curb": 304
+"asphalt": 859,
+"sidewalk": 639,
+"grass": 184,
+"curb": 288
 }
 }
 },

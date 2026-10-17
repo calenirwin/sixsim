@@ -22,7 +22,7 @@ const load = (key) => {
   if (T.has(key)) return T.get(key);
   const ent = man.tiles[key]; let rec = null;
   if (ent) {
-    const buf = fs.readFileSync(tdir + '/' + ent.f).buffer; const dv = new DataView(buf); const hLen = dv.getUint32(4, true);
+    const buf = ((b) => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength))(fs.readFileSync(tdir + '/' + ent.f)); const dv = new DataView(buf); const hLen = dv.getUint32(4, true);
     const header = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, hLen)));
     const base = 8 + hLen + ((4 - ((8 + hLen) % 4)) % 4); const S = {};
     for (const s of header.sections) S[s.name] = new ({ Float32Array, Uint8Array, Uint32Array, Int16Array, Uint16Array }[s.type])(buf, base + s.offset, s.length);

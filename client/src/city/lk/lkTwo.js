@@ -1,4 +1,3 @@
-// AR34 LIFE two-wheelers (part lk, docs/notes/ar34-life.md), built in code to real sizes and
 // (120 W 125th, Wing Stop, the Posh rack): bicycles (a diamond frame on 28 in laced wheels), the orange share e-bikes (a
 // step-through on six-spoke mag wheels, full fenders, a front basket, the yellow battery box over the rear wheel), the
 // delivery e-bikes (fat tyres, a down-tube battery, a hub motor, a rack with an insulated bag box) and the delivery riders'

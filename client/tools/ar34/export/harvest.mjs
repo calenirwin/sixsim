@@ -26,6 +26,7 @@
 //   --region: pools and moving sets within this half-width (m) of the centre; --far: meshes (tiles, buildings, viaducts)
 import { chromium } from 'playwright';
 import { acquireGpu } from '../../../../tools/gpulock.mjs';
+import { expandTakes, takeHold } from '../../../../tools/ad/takes.mjs';
 import { installGuard, watchPage } from '../../../../tools/harness_guard.mjs';
 import { spawn } from 'node:child_process';
 import { promises as fs, createWriteStream } from 'node:fs';
@@ -48,7 +49,7 @@ const T0 = Date.now();
 
 const MAIN = JSON.parse(await fs.readFile(path.join(root, 'tools/ad/shots.json'), 'utf8'));
 const META = MAIN._meta || {};
-const POOL = { ...(MAIN.shots || {}), ...(MAIN.probes || {}) };
+const POOL = expandTakes({ ...(MAIN.shots || {}), ...(MAIN.probes || {}) }, root);   // CONTROL: player takes (tools/ad/takes.mjs)
 const names = (opt('shots', 't7ArchTrack,t7ArchCrane')).split(',').filter((n) => POOL[n] || (console.log('unknown shot', n), false));
 const KEYF = (opt('frames', '0,54,107')).split(',').map(Number);
 const FPS = Number(META.fps || 30);
@@ -167,9 +168,12 @@ const settleWorld = async (page, budget, minDwellMs = 9000, needQuiet = 8) => {
     await sleep(180);
   }
 };
-const holdOf = (P) => ({ duration: 1e6, ease: 0, abs: P.abs, tension: P.tension, fov: P.fov, keys: [P.keys[0], { p: [P.keys[0].p[0] + 1e-6, P.keys[0].p[1] + 1e-6, P.keys[0].p[2]], look: P.keys[0].look }] });
+const holdOf = (P) => ({ duration: 1e6, ease: 0, abs: P.abs, tension: P.tension, fov: P.fov, keys: [P.keys[0], { p: [P.keys[0].p[0] + 1e-6, P.keys[0].p[1] + 1e-6, P.keys[0].p[2]], look: P.keys[0].look }], ...takeHold(P) });
 const holdAt = (P, K) => ({ duration: 1e6, ease: 0, abs: P.abs, tension: P.tension, fov: P.fov, keys: [K, { p: [K.p[0] + 1e-6, K.p[1] + 1e-6, K.p[2]], look: K.look }] });
 const midKey = (a, b) => ({ p: a.p.map((v, i) => (v + b.p[i]) / 2), look: a.look.map((v, i) => (v + b.look[i]) / 2) });
+// TSQADS: a shot's sim time at its first frame, whole seconds in [120, 360) from its name (FNV-1a), the same in
+// tools/ad/record.mjs: small enough that the renderers' 14-bit UV mantissas keep a board's cycle to a frame
+const simTimeOf = (name) => { let h = 0x811c9dc5; for (const ch of String(name)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return 120 + (h % 240); };
 
 // ---- BX-SEQ: a take's per-frame moving records -> tracks with stable ids (mov_<shot>.json, docs/notes/ar34-bx-seq.md) -----
 // cars: one per (group tag, storage slot, generation), kept when it comes within --region + 30 m of the lens path; its
@@ -395,6 +399,10 @@ function exportLib(cfg) {
       try { obc.call(m, sh, undefined); } catch (e) { d.obcErr = String(e).slice(0, 120); }
       for (const [k, u] of Object.entries(sh.uniforms || {})) uniVal(u && typeof u === 'object' && 'value' in u ? u.value : u, d.uni, k);
       d.obcAttrs = [...new Set([...(sh.vertexShader || '').matchAll(/attribute\s+\w+\s+(\w+)\s*;/g)].map((x) => x[1]))];
+      // TSQADS: the TA31 board's cell rects and mean colours (arrays of vectors, which uniVal skips), and its atlas kept at
+      // full size by readTextures (the renderers fetch inside 2 px insets of 4096 x 2048 cells)
+      for (const k of ['taRect', 'taMean']) { const v = sh.uniforms?.[k]?.value; if (Array.isArray(v) && v.length && v.every((x) => x && typeof x.toArray === 'function')) d.uni[k] = { vecs: v.map((x) => x.toArray().map(num)) }; }
+      if (d.obcAttrs.includes('aAd') && d.maps.map !== undefined) (X.fullTex ||= new Set()).add(d.maps.map);
     }
     if (m.uniforms) for (const [k, u] of Object.entries(m.uniforms)) uniVal(u?.value, d.uni, k);
     try {
@@ -416,6 +424,7 @@ function exportLib(cfg) {
   WANT.push('sgRect', 'sgBg', 'sgFg', 'sgLamp', 'sgP', 'sgF');   // BX-MAT: the sign faces' per-vertex terms (fk/signKit.js faceAttrs)
   WANT.push('_lamp', 'aux');   // BX-LIGHT: lamp roles per vertex for blender_light.py (fleet24's _lamp; the trains' aux: city/trains/kit.js)
   WANT.push('_wheel');   // BX-FIN: fleet24's wheel index per vertex (1..4 FL FR RL RR, 5..8 more axles), for a wheel rig (spin / steer are in mov_<shot>.json)
+  WANT.push('aAd', 'aSize');   // TSQADS: the TA31 boards' playlist (class base, count, phase, duration) and LED size per vertex (billboards.js)
   const attrF32 = (a) => {
     const n = a.count, s = a.itemSize, out = new Float32Array(n * s);
     if (!a.isInterleavedBufferAttribute && !a.normalized && a.array instanceof Float32Array && a.array.length >= n * s) { out.set(a.array.subarray(0, n * s)); return out; }
@@ -880,7 +889,7 @@ function exportLib(cfg) {
         let w = t.mipmaps && t.mipmaps[0] && t.mipmaps[0].width ? t.mipmaps[0].width : (img.width || img.videoWidth || 0);
         let h = t.mipmaps && t.mipmaps[0] && t.mipmaps[0].height ? t.mipmaps[0].height : (img.height || img.videoHeight || 0);
         if (!w || !h) { info.err = 'no size'; out.push(info); continue; }
-        const s = Math.min(1, maxDim / Math.max(w, h));
+        const s = Math.min(1, (X.fullTex && X.fullTex.has(id) ? Math.max(maxDim, 4096) : maxDim) / Math.max(w, h));   // (TSQADS: the board atlas at full size)
         const ow = Math.max(1, Math.round(w * s)), oh = Math.max(1, Math.round(h * s));
         const srgb = t.colorSpace === T.SRGBColorSpace;
         const rt = new T.WebGLRenderTarget(ow, oh, { depthBuffer: false, type: T.UnsignedByteType, colorSpace: srgb ? T.SRGBColorSpace : T.NoColorSpace });
@@ -932,7 +941,11 @@ try {
   const errors = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text().slice(0, 250)); });
   page.on('pageerror', (e) => errors.push('PAGEERROR ' + String(e).slice(0, 300)));
-  const q = `?shot=1&record=1&${BASE_FLAGS}&x=${sx.toFixed(1)}&z=${sz.toFixed(1)}&y=${(first.keys[0].p[2] + 40).toFixed(1)}&time=${first.time || 'golden'}${first.flags ? '&' + first.flags : ''}`;
+  let q = `?shot=1&record=1&${BASE_FLAGS}&x=${sx.toFixed(1)}&z=${sz.toFixed(1)}&y=${(first.keys[0].p[2] + 40).toFixed(1)}&time=${first.time || 'golden'}${first.flags ? '&' + first.flags : ''}`;
+  // SOLID12 (2026-10-09): the hero ring's appliqué AC boxes left out of the harvest (heroskip=ac, merged into any heroskip
+  // already in the flags): usd_facdetail.py instances every window AC unit of the facade shader's rule, so the near band
+  // would carry two. --nofacdetail keeps the web's hero boxes (and the USD writer's --nofacdetail drops the instances).
+  if (!has('nofacdetail')) q = /[?&]heroskip=/.test(q) ? q.replace(/([?&]heroskip=)([^&]*)/, (m, a, b) => a + (b ? b + ',' : '') + 'ac') : q + '&heroskip=ac';
   const url = `http://127.0.0.1:${port}/${q}`;
   manifest.url = q;
   console.log(`    ${url}`);
@@ -987,6 +1000,12 @@ try {
     await runHooks('shotReady', name);   // BX-SEQ hooks
     const nF = Math.round(P.duration * FPS);
     const cams = [], MOVF = [];   // BX-SEQ: MOVF the moving sets of every frame
+    // TSQADS: the sim time (ENV.windT: the boards' playlist, the wind, the water) set to the shot's own constant at its first
+    // frame, as record.mjs does, so the take and the web take show the same ad on the same frame; each frame's value goes
+    // into cam_<shot>.json (simT)
+    const simT0 = simTimeOf(name);
+    const simSet = await page.evaluate((v) => { const E = window.__ENV; if (!E || !E.windT) return null; E.windT.value = v; return E.windT.value; }, simT0);
+    console.log(`     sim time ${simSet === null ? 'not set (no window.__ENV)' : simT0 + ' s at frame 0'}`);
     const shot = { title: P.title, time: P.time, frames: nF, key: [], fov: P.fov };
     for (let i = 0; i < nF; i++) {
       const key = KEYF.includes(i) || i === nF - 1 && KEYF.includes(107);
@@ -994,6 +1013,7 @@ try {
       // onBeforeRender)
       if (i > 0) await page.evaluate(([d, nd]) => window.__advance(d, nd), [1 / FPS, !key && MOVING !== 'all']);
       cams.push(await page.evaluate(() => window.__EXP.camera()));
+      cams[cams.length - 1].simT = await page.evaluate(() => window.__ENV?.windT?.value ?? null);   // TSQADS
       if (MOVING === 'all' || (MOVING === 'keys' && key)) MOVF.push(await page.evaluate((a) => window.__EXP.moving(a), { i, R: REGION + 150 }));   // BX-SEQ
       await runHooks('frame', name, i);   // BX-SEQ hooks
       if (!key) continue;

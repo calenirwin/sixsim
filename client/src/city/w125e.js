@@ -437,7 +437,6 @@ export function apply(tile, ox, oz) {
   try { const n = lexApply(tile, ox, oz); if (n) console.log(`[ar32] w125e: ${n} sidewalk triangles cut for the Lexington Avenue stairs`); } catch (e) { console.warn('[ar32] w125e lex apply', e); }
   try { rfkApply(tile, ox, oz); } catch (e) { console.warn('[rfk34] apply', e); }
 }
-// site's shed
 const GONE_TREES = [[2875.12, -2336.81], [2883.80, -2333.02], [2892.04, -2328.45], [2899.81, -2323.04], [2907.95, -2319.62], [2915.13, -2314.49],
   [2923.06, -2310.07], [2930.51, -2305.92]];
 // compiled street furniture standing in a stair's well, and those trees

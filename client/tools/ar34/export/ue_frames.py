@@ -68,23 +68,38 @@ d0 = float(cam.get('focal', 21.65)) / max(1e-6, float(cam.get('hap', 42.67)))
 hh = 0.5 * H / W
 vf = [[0.5, hh, -d0], [0.5, -hh, -d0], [-0.5, -hh, -d0], [-0.5, hh, -d0]]
 order = sorted(frames, key=lambda f: os.path.getmtime(frames[f].get(('FinalImage', 'png')) or next(iter(frames[f].values()))))
-for f in order:
+# ==== R1C (lane C, 2026-10-11): the frames converted in parallel (each frame's PNG, EXR and depth are independent; 120
+# frames took 92 s in one process). R1C_FRAMES_SERIAL=1: one process, as before
+def _r1c_one(f):
     src = frames[f].get(('FinalImage', 'png')) or frames[f].get(('FinalImage', 'jpg')) or frames[f].get(('FinalImage', 'jpeg'))
-    if not src: continue
+    if not src: return f, None, 0
     mt = os.path.getmtime(src)
     Image.open(src).convert('RGB').save(os.path.join(a.out, f'frame_{f:05d}.jpg'), quality=a.quality)
-    per.append({'frame': f, 'secs': round(mt - prev, 2)}); prev = mt
     ex = frames[f].get(('Data', 'exr'))
-    if ex:
-        R, G = read_exr(ex)
-        Image.fromarray(np.clip(np.round(R), 0, 255).astype(np.uint8)).save(os.path.join(reg_dir, f'frame_{f:05d}.png'))
-        z = np.clip(G, 0.25, 65536.0)
-        v = np.clip((np.log2(z) + 2.0) / 18.0 * 65535.0, 0, 65535).astype(np.uint16)
-        Image.fromarray(v).save(os.path.join(dep_dir, 'depth_%04d.png' % f))
-        nreg += 1; ndep += 1
+    if not ex: return f, mt, 0
+    R, G = read_exr(ex)
+    Image.fromarray(np.clip(np.round(R), 0, 255).astype(np.uint8)).save(os.path.join(reg_dir, f'frame_{f:05d}.png'))
+    z = np.clip(G, 0.25, 65536.0)
+    v = np.clip((np.log2(z) + 2.0) / 18.0 * 65535.0, 0, 65535).astype(np.uint16)
+    Image.fromarray(v).save(os.path.join(dep_dir, 'depth_%04d.png' % f))
+    return f, mt, 1
+
+
+if os.environ.get('R1C_FRAMES_SERIAL') == '1':
+    _r1c_res = {f: _r1c_one(f) for f in order}
+else:
+    from concurrent.futures import ProcessPoolExecutor
+    with ProcessPoolExecutor(max_workers=min(16, os.cpu_count() or 4)) as _ex:
+        _r1c_res = {r[0]: r for r in _ex.map(_r1c_one, order)}
+for f in order:
+    _, mt, nd = _r1c_res[f]
+    if mt is None: continue
+    per.append({'frame': f, 'secs': round(mt - prev, 2)}); prev = mt
+    nreg += nd; ndep += nd
     k = f - f0
     if 0 <= k < len(U) and U[k].get('m'):
         cams['frames'][str(f)] = {'m': U[k]['m'], 'vf': vf}
+# ==== R1C end
 if cams['frames']:
     old = {}
     try: old = json.load(open(os.path.join(dep_dir, 'cams.json')))

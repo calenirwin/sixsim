@@ -57,6 +57,7 @@ HOOKS = [
     'usd_mat',       # BX-MAT: primvars instead of material variants and the node-group tags (blender_nodes.py); --nobxmat: off
     'usd_peds',      # BX-PEDS: the walkers as UsdSkel (peds_<shot>.usdc, <shot>_peds.usda) and peds_<shot>.npz for blender_peds.py (--nopeds, --peds-usd 0)
     'usd_ramps',     # R7-RAMP (UE track, 2026-10-08): decks under the vehicles the harvest has driving through the air (the web's undecked ramps)
+    'usd_facdetail', # SOLID12 (2026-10-09): the facade shader's window AC units as PointInstancers from the bake's per-wall data (--nofacdetail: off)
 ]
 import importlib, types, traceback
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -399,6 +400,22 @@ def material(mid, mul=None, dc=False, ground=None, paint=False, ipaint=False):
         if 'ior' in d: inp('ior', F).Set(float(d['ior']))
     if d.get('transmission', 0) > 0.01:
         inp('opacity', F).Set(float(max(0.05, 1 - d['transmission'])))
+    # R9-VEIL (UE track, 2026-10-08): the fountains' falling water and jets (city/fountainFX.js veilMat: a transparent white
+    # MeshPhysicalMaterial whose shader tears the sheet into ropes and aerated foam, its opacity from that pattern; the
+    # material's own opacity is 1, so it exported as an opaque white shell in Cycles and UE): a thin sheet of water instead,
+    # its opacity three quarters of the veil's body plus a little of its aeration, a dim water tint, glossy, the water's ior
+    U_ = d.get('uni') or {}
+    if d.get('name') == 'fw26:veil' or ('fwV' in U_ and 'fwA' in U_):
+        fa = (U_.get('fwA') or {}).get('vec') if isinstance(U_.get('fwA'), dict) else None
+        body = float(fa[3]) if fa and len(fa) > 3 else 0.28
+        aer = float(fa[1]) if fa and len(fa) > 1 else 0.9
+        # (19:25, t3Fountain f054 against the web: at body + aer / 4 and a 0.85 white the sheet read milky over the bowl;
+        # the web's veil is mostly clear water with torn ropes)
+        inp('diffuseColor', C3).Set(Gf.Vec3f(0.42, 0.47, 0.50))
+        inp('opacity', F).Set(float(min(0.5, max(0.15, 0.75 * body + 0.08 * aer))))
+        inp('roughness', F).Set(0.08); inp('metallic', F).Set(0.0); inp('ior', F).Set(1.333)
+        stats['veils'] = stats.get('veils', 0) + 1
+    # R9-VEIL end
     if ipaint:   # BX-SEQ: the car's own paint (linear), a per-instance primvar of the take's PointInstancer
         rd = UsdShade.Shader.Define(looks_stage, path + '/ipaint'); rd.CreateIdAttr('UsdPrimvarReader_float3')
         rd.CreateInput('varname', Sdf.ValueTypeNames.Token).Set('nyc_paint')
@@ -1080,6 +1097,11 @@ def cam_layer(shot, info):
     for f, cm in enumerate(cams):
         op.Set(Gf.Matrix4d(*[float(v) for v in cm['m']]), Usd.TimeCode(f))
         if abs(cm['fov'] - c0['fov']) > 1e-4: c.GetFocalLengthAttr().Set((vap / 2) / math.tan(math.radians(cm['fov']) / 2), Usd.TimeCode(f))
+    # TSQADS (2026-10-08): the web's sim time of every frame (ENV.windT, which harvest.mjs and record.mjs set to the shot's
+    # constant at frame 0) as bx:simT time samples on the camera: the renderers pick each board's ad by it, as the web does
+    if cams and all(isinstance(cm.get('simT'), (int, float)) for cm in cams):
+        sat = c.GetPrim().CreateAttribute('bx:simT', Sdf.ValueTypeNames.Double, custom=True)
+        for f, cm in enumerate(cams): sat.Set(float(cm['simT']), Usd.TimeCode(f))
     s.GetRootLayer().Save()
     return fn, c.GetPath()
 

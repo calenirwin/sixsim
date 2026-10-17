@@ -81,6 +81,17 @@ const HP26 = PY25 && typeof location !== 'undefined' && new URLSearchParams(loca
 // walker as well as ahead (a take walking faster than the crowd went through the backs it caught up with). `?lw26=0`: off.
 const LW26 = PY25 && (typeof location === 'undefined' || new URLSearchParams(location.search).get('lw26') !== '0');
 const LW_HW = 1.1;
+// ==== PL42 (owner 2026-10-09, shApolloNightWalk: oncoming walkers walked into the player's lens, faces filling the frame)
+// In walk mode and in a take's replay (record mode) the player and the third-person lens are obstacles every walker plans
+// round from 12 m (4.5 s) ahead, not LW26's 3.2 m: the lens 1.8 m either side of the walker's line (1.2 m clear of a
+// shoulder with room for a squeeze past a kiosk), the player's body 1.0 m, the line between them 1.3-1.2 m. An oncoming walker already on that side, or near the
+// middle, passes them on its own right (keeps right) when its band has room there; one clearly on the other side keeps
+// to it (no crossing in front of the lens). The sidestep is the usual eased 0.8 m/s, so it starts early and reads as a
+// person making way. control.js hands the positions over (peds.pl42 = { lens, body, f }). `?pl42=0`: off; `?pl42log=1`:
+// the console logs every frame a walker stands within 1.5 m of the lens (window.__PL42 keeps the closest).
+const PL42 = PY25 && (typeof location === 'undefined' || new URLSearchParams(location.search).get('pl42') !== '0');
+const PL42LOG = typeof location !== 'undefined' && new URLSearchParams(location.search).get('pl42log') === '1';
+// ==== /PL42
 // TB27 (owner 2026-09-26: "they should walk intelligently and traverse the streetscape intelligently"): one walker in five
 // turned back along the same sidewalk at every corner, which in a take reads as someone walking to a corner and giving up.
 // Now one in twenty-five (a changed mind). `?tb27=0` restores one in five.
@@ -113,6 +124,12 @@ const minLen = (e) => (e.campus ? 4 : MIN_EDGE);
 // PY25 walker spacing (see _avoid): walker hash cell, street-furniture cell and range, and the instancer pools a walker
 // can walk into (tree trunks and guards, poles, hydrants, bins, boxes, benches, racks, shelters, stoops, kiosks ...)
 const WH = 2, OBS_C = 4, OBS_R = 340;
+// CT39 (CONTROL, docs/notes/ar34-control.md): Central Park's paving and terraces are collider prisms laid over the sections
+// (Bethesda's lower terrace: paving -2.96 over a section at -3.50, so its walkers stood sunk to the knee): a walker in the
+// park stands on a prism top at most 0.75 m over its walk. On with ?play (the play mode and its takes) or ?ct39=1.
+const CT39Q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
+const CT39 = !!CT39Q && (CT39Q.has('play') || CT39Q.get('ct39') === '1') && CT39Q.get('ct39') !== '0';
+const inPark39 = (x, z) => { const qx = x - 447.2, qz = z - 82.2; return Math.abs(qx * 0.4848 - qz * 0.8746) < 2084 && Math.abs(qx * 0.8746 + qz * 0.4848) < 451; };
 const OBS_POOL = /^(tree[A-Z]\d*Trunk|treeFence|lampCobra|lampCrook|hydrant|signalMast|signalPed|signPole|signPoleOneWay|streetSign|litter|mailbox|busShelter|subway|linknyc|newsstand|bench|bikeRack|phone|planter|stoop|standpipe|parkingMeter|bollard|newsbox|dumpster|foodcart|viaductPier|cone|bike|trashbag|cbox|barrier|warnsign)$/;
 // a pool's footprint below head height (local bounds of the vertices under 1.9 m): a lamp's arm, a shelter's roof or a
 // crown is overhead and does not block the pavement
@@ -1155,6 +1172,8 @@ export class Peds {
         }
         L._x = c.x; L._y = c.y - 1.7; L._z = c.z;
       }
+      // PL42: the player's lens, body and the line between them, with their velocities (see PL42)
+      if (PL42 || PL42LOG) this._pl42Update(dt);   // (the log measures with PL42 off too)
       // the furniture boxes: when tiles changed (at most every 45 updates) or the camera went 80 m from their centre
       this._obsF = (this._obsF || 0) + 1;
       const oa = this._obsAt;
@@ -1608,6 +1627,14 @@ export class Peds {
       this.rig.setAmp(p.idx, moving ? 1 : 0);
       const lat = p.latS;
       this._v.set(s.x - s.dirz * ob * lat, s.y, s.z + s.dirx * ob * lat);
+      if (CT39 && inPark39(this._v.x, this._v.z)) {
+        if (p._ctX === undefined || Math.abs(p._ctX - this._v.x) + Math.abs(p._ctZ - this._v.z) > 0.4) {
+          const w = COLLIDERS.resolve({ x: this._v.x, y: this._v.y + 0.7, z: this._v.z }, 0.02, 0.1);
+          p._ctD = w.ground !== null && w.ground > this._v.y - 0.05 && w.ground < this._v.y + 0.75 ? w.ground - this._v.y : 0;
+          p._ctX = this._v.x; p._ctZ = this._v.z;
+        }
+        this._v.y += p._ctD;
+      }
       const face = p.stand > 0 ? p.standFace || 0 : 0;
       // PY25: a walker sidestepping round someone turns into the step (the lateral speed blended into the heading while it walks)
       const fwd = PY25 && moving ? p.v * (p.vf ?? 1) : 1, side = PY25 && moving ? p._latV || 0 : 0;
@@ -1629,6 +1656,38 @@ export class Peds {
   // the instancer as oriented footprint boxes in 4 m cells) and takes the free line across the pavement nearest the one
   // it wants, passing oncoming people on its right; with no free line it slows behind the one ahead or waits (a queue
   // at the kerb). Lines change at <= 0.8 m/s, speed eases: nobody jumps.
+  // ==== PL42: the obstacles from control.js's peds.pl42 (lens, two points on the line, body), velocities eased as LW26's
+  _pl42Update(dt) {
+    const S = this.pl42;
+    if (!S || !S.lens || !S.body) { this._plQ = null; return; }
+    const Q = this._plQ || (this._plQ = [{ hw: 1.8 }, { hw: 1.3 }, { hw: 1.2 }, { hw: 1.0 }]);
+    for (let i = 0; i < 4; i++) {
+      const f = i / 3, o = Q[i], x = S.lens[0] + (S.body[0] - S.lens[0]) * f, z = S.lens[2] + (S.body[2] - S.lens[2]) * f;
+      if (o._x !== undefined && dt > 0 && Math.hypot(x - o._x, z - o._z) < 5) { const k = Math.min(1, dt * 8); o._vx += ((x - o._x) / dt - o._vx) * k; o._vz += ((z - o._z) / dt - o._vz) * k; }
+      else if (o._x === undefined || Math.hypot(x - o._x, z - o._z) >= 5) { o._vx = 0; o._vz = 0; }
+      o._x = x; o._y = S.body[1]; o._z = z;
+    }
+    // a take's warm-up hold (nothing is captured yet): a walker within 2.2 m of the held lens or the player turns back the
+    // way the sim turns a blocked walker, so the take does not open with someone at the lens's shoulder
+    if (PL42 && S.hold && dt > 0) for (const p of this.peds) {
+      if (p._x === undefined || p.player || p.ghost || !p.e || p.cross || Math.abs((p._y ?? S.body[1]) - S.body[1]) > 1.6) continue;
+      if (Math.hypot(p._x - S.lens[0], p._z - S.lens[2]) > 2.2 && Math.hypot(p._x - S.body[0], p._z - S.body[2]) > 1.6) continue;
+      if (p._pl42T !== undefined && this._simT - p._pl42T < 3) continue;
+      p._pl42T = this._simT; p.stand = 0; p.dir = -p.dir; p.lat = this._pickLat(p.e, p.dir, p); p._latA = undefined;
+    }
+    if (PL42LOG && dt > 0) {
+      let dm = 1e9, wi = -1;
+      for (const p of this.peds) {
+        if (p._x === undefined || p.player || p.ghost || Math.abs((p._y ?? S.body[1]) - S.body[1]) > 1.6) continue;
+        const d = Math.hypot(p._x - S.lens[0], p._z - S.lens[2]);
+        if (d < dm) { dm = d; wi = p.idx; }
+      }
+      const W = (typeof window !== 'undefined') ? (window.__PL42 = window.__PL42 || { min: 1e9, f: -1, n: 0 }) : null;
+      if (W && dm < W.min) { W.min = dm; W.f = S.f ?? -1; }
+      if (dm < 1.5) { if (W) W.n++; console.log(`[pl42] f=${S.f ?? -1} walker ${wi} ${dm.toFixed(2)} m from the lens`); }
+    }
+  }
+  // ==== /PL42
   _hashWalkers() {
     const H = this._wh || (this._wh = new Map());
     if (((this._whN = (this._whN || 0) + 1) & 255) === 0) H.clear();   // drop the cells nobody walks any more
@@ -1857,6 +1916,25 @@ export class Peds {
         } else if (qa - speed > 0.1 && (-a - 0.45) / (qa - speed) <= 2.6) iv.push(cur + b - LW_HW, cur + b + LW_HW, 0, qa, 3);
       }
     }
+    // ==== PL42: the player's lens, body and the line between them, planned from 12 m ahead (see PL42)
+    const PQ = PL42 && !p.player && !p.ghost ? this._plQ : null;
+    if (PQ) for (const o of PQ) {
+      if (o._x === undefined || Math.abs(o._y - y) > 1.6) continue;
+      const rx = o._x - x, rz = o._z - z, a = rx * fx + rz * fz, b = rx * nx + rz * nz, ol = cur + b;
+      if (a < -12 || a > 12 || Math.abs(b) > 4.5 || ol + o.hw < Lmin || ol - o.hw > Lmax) continue;
+      const qa = o._vx * fx + o._vz * fz;
+      let aa = -1;
+      if (a >= -0.35) {
+        if (!(a > 0.5 && qa > 0.2 && speed - qa < 0.1) && (a <= 0.45 || (a - 0.45) / Math.max(0.15, speed - qa) <= 4.5)) aa = Math.max(0, a);
+      } else if (qa - speed > 0.1 && (-a - 0.45) / (qa - speed) <= 4.5) aa = 0;   // behind me and catching up
+      if (aa < 0) continue;
+      let l0 = ol - o.hw, l1 = ol + o.hw;
+      // oncoming: passed on my right (rs: +1 when +lat is my right) when I am on that side or near the middle and the band
+      // has room there
+      if (qa < -0.25 && (cur - ol) * rs > -0.4) { if (rs > 0 && l1 <= hi) l0 = Math.min(l0, lo - 1); else if (rs < 0 && l0 >= lo) l1 = Math.max(l1, hi + 1); }
+      iv.push(l0, l1, aa, qa, 3);
+    }
+    // ==== /PL42
     // furniture and parked cars ahead
     for (let src = 0; src < 2; src++) {
       const G = src ? this._pkG : this._obsG, OL = src ? this._pkL : this._obsL;

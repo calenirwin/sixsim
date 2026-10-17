@@ -1,5 +1,3 @@
-// AR33 facade kit test specs (loaded only with ?fktest=1). Owner: KIT (docs/notes/ar33-kit.md). References:
-// h30 (243 W 125th), h45 (2330 8th Ave).
 // The segment workers' own specs (fk/specs/bid2.js) take over these buildings; a segment spec for the same footprint
 // wins (the kit's test specs load last).
 export default [

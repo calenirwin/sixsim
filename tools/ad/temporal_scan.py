@@ -173,6 +173,87 @@ EP37 = os.environ.get('EP37', '1') != '0'
 CASCADE = ('nearBox', 'farBox', 'farMap')
 
 
+# ==== R1C (lane C, 2026-10-11): Z-FIGHT at 1280 px. The owner's rejection of nyc_vg_r1c_ue2 (t8LenoxDive f24-26: a back
+# facade with a second facade in its plane) passed this scan: the analysis copy is 320 px wide and its differences are
+# low-passed over 40 px at 2560, the z-fight check counts only surfaces moving 4 px a frame or less at 320, and its level is
+# absolute (3 levels): at night the two facades differ by some 10 levels in a dark wall, their patches are 10-40 px at 2560,
+# and the dive moves the lens 16-21 px a frame at 320. Here each frame is compared with its neighbours at 1280 px, the
+# 320 px block vectors refined to a pixel there (+-2 px per 40 px block), in the log of the luminance (a ratio: the same
+# for a dark wall at night as for a sunlit one), a pixel brighter (or darker) than both compensated neighbours by over
+# ZH_T (log); a 40 px cell (80 at 2560) counts when ZH_FR of its pixels do on a surface whose block vectors agree (spread
+# under ZH_S px), the flips all one way (ZH_COH) and large (median ZH_MED); a frame counts with ZH_N cells; ZH_F frames
+# fail the take. Calibrated on t8LenoxDive: the ue2 take fails, the web take and six web takes of client/shots/ad pass.
+ZH_W, ZH_H, ZH_C = 1280, 720, 40
+ZH_T, ZH_FR, ZH_S, ZH_N, ZH_F = 0.15, 0.10, 4.0, 3, 3
+ZH_FW = 12                   # (a web take: see the verdict)
+ZH_COH, ZH_MED = 0.6, 0.22   # (a z-fight flips one way per cell (sign coherence 0.91 on the ue2 facade) and by a ratio (median
+                             # 0.32); a fine texture the vectors do not quite register flips both ways (0.15-0.22) near the level
+
+
+def _load_hr(d, k):
+    p = os.path.join(d, 'frame_%05d.jpg' % k)
+    if not os.path.exists(p): return None
+    im = Image.open(p); im.draft('RGB', (ZH_W, ZH_H))
+    return np.asarray(im.convert('RGB').resize((ZH_W, ZH_H), Image.BOX), np.float32) @ np.array([0.2126, 0.7152, 0.0722], np.float32)
+
+
+def _refine_hr(cur, ref, vy, vx, r=2):
+    gy, gx = ZH_H // ZH_C, ZH_W // ZH_C
+    yy, xx = np.mgrid[0:ZH_H, 0:ZH_W]
+    by, bx = np.minimum(yy // ZH_C, gy - 1), np.minimum(xx // ZH_C, gx - 1)
+    best = None
+    for dy in range(-r, r + 1):
+        for dx in range(-r, r + 1):
+            ty = np.clip(yy + vy[by, bx] + dy, 0, ZH_H - 1).astype(np.int32); tx = np.clip(xx + vx[by, bx] + dx, 0, ZH_W - 1).astype(np.int32)
+            e = np.abs(cur - ref[ty, tx]).reshape(gy, ZH_C, gx, ZH_C).sum(axis=(1, 3))
+            if best is None: best = [e, np.full_like(e, dy), np.full_like(e, dx)]
+            else:
+                m = e < best[0]; best[0] = np.where(m, e, best[0]); best[1] = np.where(m, dy, best[1]); best[2] = np.where(m, dx, best[2])
+    return vy + best[1], vx + best[2]
+
+
+def _warp_hr(ref, vy, vx):
+    yy, xx = np.mgrid[0:ZH_H, 0:ZH_W]
+    by, bx = np.minimum(yy // ZH_C, ZH_H // ZH_C - 1), np.minimum(xx // ZH_C, ZH_W // ZH_C - 1)
+    ty = np.clip(yy + vy[by, bx], 0, ZH_H - 1.001); tx = np.clip(xx + vx[by, bx], 0, ZH_W - 1.001)
+    y0, x0 = np.floor(ty).astype(np.int32), np.floor(tx).astype(np.int32); wy, wx = ty - y0, tx - x0
+    return ref[y0, x0] * (1 - wy) * (1 - wx) + ref[y0, x0 + 1] * (1 - wy) * wx + ref[y0 + 1, x0] * wy * (1 - wx) + ref[y0 + 1, x0 + 1] * wy * wx
+
+
+def zfight_hr(d, idx, lum):
+    """the frames with ZH_N or more z-fighting 40 px cells at 1280 (see above), and where"""
+    L, frames, cells = {}, [], []
+    gy, gx = ZH_H // ZH_C, ZH_W // ZH_C
+    for i in range(1, len(idx) - 1):
+        for kk in (idx[i - 1], idx[i], idx[i + 1]):
+            if kk not in L: L[kk] = _load_hr(d, kk)
+        a, c, b = L[idx[i - 1]], L[idx[i]], L[idx[i + 1]]
+        if a is None or b is None or c is None: continue
+        va = motion(lum[i], lum[i - 1]); vb = motion(lum[i], lum[i + 1])
+        ay, ax = _refine_hr(c, a, np.rint(va[0] * 4), np.rint(va[1] * 4))
+        byv, bxv = _refine_hr(c, b, np.rint(vb[0] * 4), np.rint(vb[1] * 4))
+        lc = np.log(c + 8.0)
+        da = ndimage.uniform_filter(lc - np.log(_warp_hr(a, ay, ax) + 8.0), 5); db = ndimage.uniform_filter(lc - np.log(_warp_hr(b, byv, bxv) + 8.0), 5)
+        z = np.sqrt(np.maximum(0.0, da * db))
+        sp = np.zeros((gy, gx), np.float32)
+        for v_ in (ay, ax, byv, bxv): sp = np.maximum(sp, ndimage.maximum_filter(v_, 3) - ndimage.minimum_filter(v_, 3))
+        hit = z > ZH_T
+        hc = hit.reshape(gy, ZH_C, gx, ZH_C).transpose(0, 2, 1, 3).reshape(gy, gx, -1)
+        zc_ = z.reshape(gy, ZH_C, gx, ZH_C).transpose(0, 2, 1, 3).reshape(gy, gx, -1)
+        sg_ = np.sign(da).reshape(gy, ZH_C, gx, ZH_C).transpose(0, 2, 1, 3).reshape(gy, gx, -1)
+        n_ = np.maximum(hc.sum(-1), 1)
+        coh = np.abs((sg_ * hc).sum(-1)) / n_                                    # (the flips of one cell all one way: one surface over the other)
+        med = np.array([[np.median(zc_[y_, x_][hc[y_, x_]]) if hc[y_, x_].any() else 0.0 for x_ in range(gx)] for y_ in range(gy)])
+        m = (hc.mean(-1) > ZH_FR) & (sp <= ZH_S) & (coh >= ZH_COH) & (med >= ZH_MED)
+        if m.sum() >= ZH_N:
+            ys, xs = np.nonzero(m)
+            frames.append(idx[i]); cells.append({'frame': idx[i], 'cells': int(m.sum()), 'x': [int(xs.min()) * ZH_C * 2, int(xs.max() + 1) * ZH_C * 2],
+                                                  'y': [int(ys.min()) * ZH_C * 2, int(ys.max() + 1) * ZH_C * 2]})
+        L.pop(idx[i - 1], None)
+    return {'frames': frames[:40], 'count': len(frames), 'where': sorted(cells, key=lambda c_: -c_['cells'])[:8]}
+# ==== R1C end
+
+
 def _binom_tail(h, n, p):
     """P(H >= h) for H ~ Binomial(n, p)"""
     from math import comb
@@ -382,10 +463,31 @@ def scan(d, f0=0, f1=100000, out_dir=None, name=None):
             if drops: why.append('REFLECTION DROPOUT: %d frame(s), first f%d %s at weight %.2f' % (len(drops), drops[0][0], drops[0][1], drops[0][2]))
         except Exception as e:
             rep['water'] = {'error': str(e)[:120]}
+    # ==== R1C (lane C, 2026-10-11): Z-FIGHT at 1280 px (zfight_hr above)
+    zh = None
+    try:
+        zh = zfight_hr(d, idx, lum)
+        rep['zfight_hr'] = zh
+        if zh['count'] >= ZH_F:
+            w_ = zh['where'][0]
+            msg = 'Z-FIGHT (1280 px): %d frames with >= %d cells where a surface flips against both neighbours by over %.0f %% (worst f%d, %d cells at x %d-%d y %d-%d)' % (
+                zh['count'], ZH_N, ZH_T * 100, w_['frame'], w_['cells'], w_['x'][0], w_['x'][1], w_['y'][0], w_['y'][1])
+            # (an Unreal take (render_take's take_ue.json beside its frames) fails at ZH_F frames: its surfaces are the world's
+            # own, a flip is two of them in one plane; a web take's animated boards and screens flip by design (scNeonLow: 6
+            # frames on its LED boards), so a web take fails at ZH_FW frames and is listed for review below that)
+            if os.path.exists(os.path.join(d, 'take_ue.json')) or zh['count'] >= ZH_FW: why.append(msg)
+            else: review.append(msg)
+    except Exception as e:
+        rep['zfight_hr'] = {'error': '%s: %s' % (type(e).__name__, e)}
+    # ==== R1C end
     rep['fail'] = bool(why); rep['why'] = why; rep['review'] = review
     if out_dir and (why or review):
         os.makedirs(out_dir, exist_ok=True)
         evs = [('burst', b) for b in bursts[:3]] + [('step', s) for s in sorted(steps, key=lambda s: -s['d'])[:4]]
+        # ==== R1C (lane C, 2026-10-11): the 1280 px z-fight's worst frames as strips
+        for w_ in ((zh or {}).get('where') or [])[:3] if isinstance(zh, dict) else []:
+            evs.append(('zfight_hr', {'frame': w_['frame'], 'x': w_['x'], 'y': w_['y']}))
+        # ==== R1C end
         for f_ in zf[:3]:
             k_ = idx.index(f_); m_ = (zc[k_] > ZF_T) & ok[k_] & (vm[k_] <= ZF_V); ys_, xs_ = np.nonzero(m_)
             evs.append(('zfight', {'frame': f_, 'x': [int(xs_.min()) * C * 8, int(xs_.max() + 1) * C * 8], 'y': [int(ys_.min()) * C * 8, int(ys_.max() + 1) * C * 8]}))

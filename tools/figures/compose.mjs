@@ -222,7 +222,7 @@ FIGS.coverage = () => {
   for (const k of M.tileKeys) { const [i, j] = k.split('_').map(Number);
     grid += `<rect x="${i * M.tile}" y="${j * M.tile}" width="${M.tile}" height="${M.tile}" fill="none" stroke="${inR(k, 1000) ? '#f7c325' : 'rgba(255,255,255,0.10)'}" stroke-width="${inR(k, 1000) ? 26 : 9}"/>`; }
   const mh = project(-73.9905, 40.7468);
-  const labels = [['MANHATTAN', mh[0], mh[1], -61], ['THE BRONX', 6200, -9600, 0], ['QUEENS', 13000, 3200, 0], ['BROOKLYN', 3900, 12600, 0]];
+  const labels = [['MANHATTAN', mh[0], mh[1], -61], ['THE BRONX', 6200, -9600, 0], ['QUEENS', 13000, 3200, 0], ['BROOKLYN', 3900, 12600, 0], ['STATEN ISLAND', -15071, 22015, 0]];
   const lbl = labels.map(([t, x, z, r]) => `<text x="${x}" y="${z}" transform="rotate(${r} ${x} ${z})" font-family="Inter" font-weight="700" font-size="620" letter-spacing="160" fill="#ffffff" fill-opacity="0.94" text-anchor="middle" paint-order="stroke" stroke="#05080c" stroke-opacity="0.6" stroke-width="150" stroke-linejoin="round">${t}</text>`).join('');
   const overlay = `<svg viewBox="${M.x0} ${M.z0} ${M.x1 - M.x0} ${M.z1 - M.z0}" style="position:absolute;inset:0;width:100%;height:100%" xmlns="http://www.w3.org/2000/svg">${grid}
     <circle cx="${cam[0]}" cy="${cam[1]}" r="13000" fill="rgba(92,200,245,0.05)" stroke="#5cc8f5" stroke-width="40" stroke-dasharray="260 180"/>
@@ -237,7 +237,10 @@ FIGS.coverage = () => {
   const cone = (() => { const th = Math.atan2(2167 - 2094, 2740 - 2609), d = 520, a = 0.5;
     const p = (s) => [cam[0] + Math.sin(th + s) * d, cam[1] - Math.cos(th + s) * d];
     return `${cam[0]},${cam[1]} ${p(-a).join(',')} ${p(a).join(',')}`; })();
-  const inset = `<div class="panel" style="height:830px;margin-top:40px">
+  // (0.4.0: the five boroughs' map is square, so the text column is narrower: the inset keeps its view's aspect instead of
+  // a fixed 830 px, which cropped the view's sides and the scale bar)
+  const colW = W - (84 + mapW + 100) - 96, insetH = Math.min(830, Math.round(colW * IV[3] / IV[2]));
+  const inset = `<div class="panel" style="height:${insetH}px;margin-top:40px">
       <svg viewBox="${IV.join(' ')}" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
         <image href="${f(MAPS, 'citymap_harlem.png')}" x="${HM.x0}" y="${HM.z0}" width="${HM.x1 - HM.x0}" height="${HM.z1 - HM.z0}" preserveAspectRatio="none"/>
         ${igrid}<circle cx="${cam[0]}" cy="${cam[1]}" r="1000" fill="none" stroke="#f7c325" stroke-width="12" stroke-dasharray="40 26"/>
@@ -252,7 +255,7 @@ FIGS.coverage = () => {
       <img src="${f(MAPS, 'citymap.png')}" style="position:absolute;inset:0;width:100%;height:100%">${overlay}</div>
     <div style="position:absolute;left:${84 + mapW + 100}px;right:96px;top:84px">
       <h1>The whole city, streamed</h1>
-      <div class="sub" style="max-width:none;font-size:22px">Every building of Manhattan, the Bronx, Brooklyn and Queens, shaded by height on its street network. The client streams full-detail tiles around the camera (yellow) and coarser far-field tiles beyond them (blue).</div>
+      <div class="sub" style="max-width:none;font-size:22px">Every building of the five boroughs, shaded by height on its street network. The client streams full-detail tiles around the camera (yellow) and coarser far-field tiles beyond them (blue).</div>
       <div style="display:flex;gap:44px;align-items:flex-end;margin-top:40px">
         <div style="flex:1">
           <div style="font-size:17px;font-weight:600;color:var(--soft)">Building height</div>

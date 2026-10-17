@@ -1,6 +1,5 @@
 // AR33 building specs, segment bid1: Morningside Avenue to Frederick Douglass Boulevard (schema: docs/notes/ar33-spec.md; inventory: docs/notes/ar33-frontage/bid1.json).
 // Owner: the BID1 worker (docs/notes/ar33-bid1.md).
-// Measured off facade orthos rectified:
 // heights from the sidewalk at the building's front, u from the left end of the face as seen from the street. Shops as of 2026-08.
 
 // ---------------------------------------------------------------- shared pieces
@@ -12,10 +11,10 @@ const tenWin = (o = {}) => ({
 });
 // the four-storey 20 ft tenement row 383-377 W 125th (1901-05): storefront 0-3.5 m, signband to 4.45 m, three floors of
 // 3.30 m, three windows 0.88 x 2.3 m (sills 0.25 m over the floor) in each 20 ft front, continuous brownstone head and sill courses, a bracketed
-// pressed-metal cornice 1.6 m deep over a 0.7 m parapet.
 // Brick re-measured 2026-10-02 on round a3 (the brick set now renders redder: 381 twin #d2845f against t1's #c48667): brick-only means real / twin
-// 383 (1.00, 1.17, 1.41) and 381 (0.85, 0.92, 0.98), geometric means over the s381 / s383 / s379 views, applied as ratio^0.65; 379 / 377 take 381's factor; wall dirt 0.6. Second pass on b3: 383 (1.03, 1.06, 1.12), 381 (0.96, 1.04, 1.09)
+// 383 (1.00, 1.17, 1.41) and 381 (0.85, 0.92, 0.98), geometric means over the s381 / s383 / s379 views, applied as ratio^0.65; 379 / 377 (behind the
 const tenFloors = [{ n: 3, h: 3.3, win: 'A' }];
+// from oYgEN6qT, 5-10 px from 4vfYmN8), the cornice 1.1 m tall and 0.55 m deep with its top at 15.15 m (the roofline against the sky read 35 px high from
 const TD = -0.15;
 const tenBands = (L) => [
   { at: 6.94 + TD, h: 0.13, proj: 0.035, mat: 'brownstone', tint: BROWN }, { at: 10.24 + TD, h: 0.13, proj: 0.035, mat: 'brownstone', tint: BROWN },
@@ -28,7 +27,6 @@ const bays3 = (L) => ({ widths: [L / 2 - 1.0, 2.0, L / 2 - 1.0] });
 const B16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 
 // Gates (round a1, 2026-10-01): the kit draws a gate box over every store bay and its roll-down curtain in the chipped-paint
-// A bay without a closed gate gets
 // none; a closed one is kept as data (spec.gates: edge, u0, u1, H, color, down, tags) for fk/custom/bid1.js (bid1:gates), which
 // draws the housing, guides, ribbed curtain and spray tags in smooth painted panel.
 // A/B flags: ?b1gates=kit keeps the kit's own gates (its slat curtains and tags, 2026-10-01 17:15), ?b1lit=1 keeps the spec's own `lit`
@@ -38,7 +36,6 @@ const KITGATES = !!(QS && QS.get('b1gates') === 'kit'), KEEPLIT = !!(QS && QS.ge
 // font-lettered tags that read as text (a3_s319). ?b1gates=own keeps my drawn gates (bid1:gates) for an A/B
 const OWNGATES = !!(QS && QS.get('b1gates') === 'own');
 // BF36 (BIDFIX, 2026-10-02: teaser 8's t8StNickDive / t8StNickDiveE frames): 324's St. Nicholas face read as a blind white box with
-// four black slits. Rebuilt: the light grey panel box
 // over a charcoal herringbone base, the corner entrance under a grey projecting canopy, the pharmacy's posted windows with louvres
 // over them, the imaging centre's six second-floor windows round the corner (posters, the purple header), the lobby door to the
 // south. `?bf36=0` keeps the blind face and the white wall.
@@ -61,7 +58,6 @@ const W324_STNICH = BF36 ? {
   items: [[5.3, 2.4], [8.7, 2.4], [12.1, 2.0], [25.0, 3.0]].map(([u, w]) => ({ k: 'vent', u, y: 4.2, w, h: 0.62, tint: '#1c1c1c' })),
   cornice: { kind: 'parapet', h: 0.25, mat: 'panel_grey', tint: '#a9aba8' },
 } : {
-  // the St. Nicholas Ave face: the charcoal
   // corner pier, a dark herringbone-brick base with black louvre panels, a blind white upper box (the compiled default drew 15 small windows)
   edge: [1561.51, -3030.95, 1574.66, -3055.08],
   base: {
@@ -73,7 +69,29 @@ const W324_STNICH = BF36 ? {
   items: [4, 9, 14, 25].map((u) => ({ k: 'vent', u, y: 4.2, w: 3.0, h: 0.8, tint: '#1c1c1c' })),
   cornice: { kind: 'parapet', h: 0.25, mat: 'panel_alu', tint: '#c9c8c4' },
 };
-const EV = {};
+const EV = {
+  'w125-383': '',
+  'w125-381': '',
+  'w125-379': '',
+  'w125-377': '',
+  'w125-375': '',
+  'w125-365': '',
+  'w125-361': '',
+  'w125-351': '',
+  'w125-321': '',
+  'w125-319': '',
+  'w125-317': '',
+  'w125-313': '',
+  'w125-309': '',
+  'w125-307': '',
+  'w125-305': '',
+  '2329-8av': '',
+  'w125-374': '',
+  'hancock-11': '',
+  'w125-350': '',
+  'w125-324': '',
+  '280-stnich': '',
+};
 const prep = (spec) => {
   const gates = [];
   for (const f of spec.faces || []) {
@@ -109,7 +127,7 @@ const SPECS = [
         base: {
           h: 3.35, fascia: { h: 0.95, mat: 'panel_alu', tint: '#121212', proj: 0.3 },
           bays: [
-            // CAPSULE: RobotoSlab-900 sets narrower than AlfaSlabOne, so the same span takes taller letters
+            // bulbs as the light): RobotoSlab-900 sets narrower than AlfaSlabOne, so the same span takes taller letters
             { u0: 0.05, u1: 5.87, kind: 'store', name: 'Capsule', interior: { kind: 'shop_clothing', tone: '#2a2a2c', lit: 0.6 },
               sign: { kind: 'channel', text: 'CAPSULE', font: 'RobotoSlab-900', fg: '#5e4f3a', bg: null, u0: 0.35, u1: 3.95, h: 0.66, y: 3.49, depth: 0.08, lit: 'face', tracking: 0.04, bulbs: true },
               glazing: { bulkhead: 0.35, transom: 0, mullions: 3, frame: 'steel_black', kick: 'steel_black' },
@@ -120,7 +138,6 @@ const SPECS = [
         cornice: tenCornice('#6e4a45'),
       },
       {
-        // Morningside Ave side: a
         // brick ground floor with a side door, the Capsule window at the corner, eight irregular bays, a stair fire escape
         // at the north end and round iron balconies by the corner (bid1:w383)
         edge: [1469.47, -3148.56, 1480.55, -3168.65],
@@ -135,16 +152,15 @@ const SPECS = [
         },
         floors: tenFloors, bays: { widths: [2.4, 2.8, 2.5, 2.5, 2.3, 2.4, 4.2, 3.81] }, windows: { A: tenWin({ lintel: { kind: 'hood', mat: 'brownstone', tint: BROWN, h: 0.36, ext: 0.16, proj: 0.08 }, sillStone: { mat: 'brownstone', tint: BROWN, h: 0.18, proj: 0.08, lug: 0.13 }, frame: { mat: 'alu_black', tint: '#2e2723' }, sheer: 0.85, blinds: 0.6, sheerTint: '#ffffff' }) }, bands: tenBands(22.94),
         fireEscape: { bays: [0, 1], floors: [1, 3], depth: 1.0, drop: true },
-        // the red base carries one sprayed tag (ms383_S, 2026-08): invented tags in its place and size; the base paint re-measured on b3: real #805242 / twin #823d30, ratio^0.65 from #9c4b3d
         graffiti: { u0: 8.2, u1: 12.2, y0: 1.0, y1: 2.6, density: 0.7, style: 'tags', seed: 383 },   // (d3: at 0.35 the tags hardly showed)
         cornice: tenCornice('#6e4a45'),
       },
     ],
     custom: { fn: 'bid1:w383', with: 'kit' },
     roof: { ...tenRoof, items: [{ k: 'bulkhead', at: [0.5, 0.8], w: 2.6, d: 2.4, h: 2.6 }] },
-    refs: [],
+    refs: ['', '', ''],
     notes: 'Capsule: gold marquee-bulb letters on a black box fascia that wraps the corner (SIGN request: bulb letters). ' +
-      'Morningside face bays approximate; roof items not checked yet.',
+      '',
   },
   {
     id: 'w125-381', addr: '381 W 125th St', bin: '1059319', status: 'measured',
@@ -166,7 +182,7 @@ const SPECS = [
       cornice: tenCornice('#454546'),
     }],
     roof: tenRoof,
-    refs: [],
+    refs: ['', ''],
     notes: 'the residential door (left) serves 381; the sign: white brush-script "Blessing" with a K monogram, bold "GOOD YEAR", two small service lines and phone numbers (drawn by bid1:blessing).',
   },
   {
@@ -190,7 +206,7 @@ const SPECS = [
       cornice: tenCornice('#454546'),
     }],
     roof: tenRoof,
-    refs: [],
+    refs: ['', ''],
     notes: 'residential door with a round-arched transom (the kit draws a flat transom); sign: red script "Family" over white "PHARMACY & SURGICAL" on blue, a red strip "FARMACIA * LOTTO", "379 W 125 ST".',
   },
   {
@@ -212,7 +228,7 @@ const SPECS = [
       cornice: tenCornice('#454546'),
     }],
     roof: tenRoof,
-    refs: [],
+    refs: ['', '', ''],
     notes: 'a street tree hides the upper floors in 2026; the leaf-off 2023-03 view confirms the row pattern (three windows, brownstone heads and sills, black bracketed cornice). Arabic gold-on-brown sign with an eight-pointed star ornament at the left; two black vertical blades with gold Arabic on the piers.',
   },
   {
@@ -238,7 +254,7 @@ const SPECS = [
       cornice: tenCornice('#454546'),
     }],
     roof: tenRoof,
-    refs: [],
+    refs: ['', ''],
     notes: 'ground floor front is exposed red brick (the painted white starts above the signband) -> a base wall override is not in the schema; Showmans: white lightbox with black script plus a black canopy with white script.',
   },
   {
@@ -264,7 +280,6 @@ const SPECS = [
       bays: { widths: [3.1, 6.87, 1.33, 6.67, 1.23, 6.67, 4.23] },
       windows: { R: { w: 6.6, h: 2.0, sill: 2.0, kind: 'ribbon', mullions: 5, transom: 0.7, frame: 'alu_white', reveal: 0.16, lintel: { kind: 'none' }, sillStone: { mat: 'cast_stone', tint: '#cfc8b8', h: 0.12, proj: 0.04 }, surround: { mat: 'cast_stone', tint: '#d4cdbe', w: 0.12, proj: 0.03 }, blinds: 0.2, lit: 0.3 } },
       items: [
-        // raised brushed-aluminium letters over the entrance and the blue-and-white
         // Post Office sign standing on the parapet over the centre
         { k: 'sign', sign: { kind: 'channel', text: 'UNITED STATES POST OFFICE', font: 'Inter-500', fg: '#7a7068', bg: null, u0: 8.8, u1: 19.5, h: 0.46, y: 5.35, depth: 0.05, lit: 'none', tracking: 0.45 } },
         { k: 'sign', sign: { kind: 'panel', text: 'Post Office', font: 'Inter-700', fg: '#0b3d91', bg: '#ffffff', u0: 13.0, u1: 16.4, h: 1.0, y: 11.5, depth: 0.1, lit: 'none', logo: 'bid1:usps', logoAt: 'right' } },
@@ -274,7 +289,7 @@ const SPECS = [
     custom: { fn: 'bid1:w365', with: 'kit' },
     roof: { kind: 'flat', parapet: { h: 0.5, coping: 'terracotta' }, membrane: 'white',
       items: [{ k: 'antenna', at: [0.47, 0.1], h: 6.5 }] },
-    refs: [],
+    refs: ['', ''],
     notes: 'the three 2nd-floor openings are steel sash grids (6 x 3 lights, the top row hoppers) in cast-stone frames; the rows ' +
       'bays list uses bays 1, 3, 5; "UNITED STATES POST OFFICE" is raised aluminium letters at 5.4-5.85 m (the plaque item ' +
       'stands in until a letters item exists); the entrance surround is pale green glazed tile (celadon) - not in the schema. ' +
@@ -301,7 +316,6 @@ const SPECS = [
             gate: { kind: 'grille', color: '#6e5a50', down: 1 } },
         ],
       },
-      // one opening of three double-hung sashes in dark bronze between each pair of piers
       floors: [{ n: 5, h: 3.55, win: 'A', bays: [1, 2, 3] }],
       bays: { widths: [0.33, 4.667, 4.667, 4.667, 1.07] },
       windows: { A: { w: 3.85, h: 2.5, sill: 0.1, kind: 'fixed', mullions: 2, transom: 1.25, frame: { mat: 'alu_bronze', tint: '#3e3a2e' }, frameW: 0.06, reveal: 0.14, lintel: { kind: 'none' }, sillStone: { mat: 'cast_stone', tint: '#c9a88e', h: 0.12, proj: 0.04 }, ac: 0.3, blinds: 0.85, sheer: 0.15, sheerTint: '#ffffff', lit: 0.4 } },
@@ -309,15 +323,13 @@ const SPECS = [
       bands: [2, 3, 4, 5, 6, 7].map((n) => ({ at: `floor:${n}`, h: 0.22, proj: 0.06, mat: 'cast_stone', tint: '#c9a88e' })),
       items: [
         { k: 'sign', sign: { kind: 'panel', text: '', bg: '#141414', u0: 3.1, u1: 11.1, h: 0.62, y: 10.94, depth: 0.08, lit: 'none' }, z: 0.2 },
-        // the letters,
-        // the cap height ~0.55-0.6 of the bar, the letters' tops at the bar's top edge, deep returns
         { k: 'sign', sign: { kind: 'channel', text: 'HARLEM COMMONWEALTH COUNCIL', font: 'LibreFranklin-800', fg: '#f4f4f2', bg: null, u0: 3.2, u1: 11.0, h: 0.5, y: 11.11, fill: 0.76, tracking: 0.02, depth: 0.1, lit: 'none' }, z: 0.29 },
       ],
       cornice: { kind: 'band', h: 0.6, proj: 0.12, mat: 'brick_red', tint: '#a85c3e' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.8, coping: 'terracotta' }, membrane: 'black', items: [{ k: 'bulkhead', at: [0.3, 0.6], w: 3.5, d: 3.0, h: 3.0 }] },
-    refs: [],
-    notes: 'HEIGHT: the inventory has 4 floors / 15.5 m; the building has six storeys to a 23.8 m parapet. ' +
+    refs: ['', ''],
+    notes: '' +
       'Three bays of triple windows between brick piers with panelled spandrels; "HARLEM COMMONWEALTH COUNCIL" black box sign with white letters at the 4th floor (plaque stands in); granite base band.',
   },
   {
@@ -362,7 +374,7 @@ const SPECS = [
         // levelled s351 (NCC +15 / +16 px at 10-16 m, the arched row +18) with the cornice's roofline at +4 px)
         floors: [{ n: 4, h: 3.13, win: 'A', bays: B16 }, { n: 1, h: 3.75, win: 'T', bays: B16 }],
         bays: { widths: [1.5, 1.77, 1.74, 1.84, 1.93, 1.97, 2.0, 1.93, 1.83, 1.84, 1.86, 1.84, 1.86, 1.9, 1.9, 1.95, 1.0] },
-        // dark sashes and dressed upper sashes: frame #3a3b3a, blinds 0.6, sheer 0.25 (both faces)
+        // y 210-255; upper sashes lum 177-192 = shades / curtains, lower 111-149): frame #3a3b3a, blinds 0.6, sheer 0.25 (both faces)
         windows: {
           A: { w: 0.93, h: 1.83, sill: 0.28, kind: 'dh', lights: '1/1', frame: { mat: 'plain', tint: '#3a3b3a', rough: 0.5 }, reveal: 0.12, lintel: { kind: 'none' },
             sillStone: { mat: 'cast_stone', tint: '#aaa392', h: 0.1, proj: 0.04 }, surround: { mat: 'cast_stone', tint: '#aaa392', w: 0.17, proj: 0.035 }, ac: 0.2, blinds: 0.6, sheer: 0.25, sheerTint: '#ffffff', lit: 0.4 },
@@ -375,7 +387,6 @@ const SPECS = [
         items: [],
       },
       {
-        // St. Nicholas Ave side (27.6 m), u from the 125th corner northward: the deli wraps the
         // corner, a gated store, a store boarded behind a poster, the residential entrance under a blue canopy, stone base
         edge: 'corner',
         base: {
@@ -406,7 +417,7 @@ const SPECS = [
     ],
     roof: { kind: 'flat', parapet: { h: 0.35, coping: 'panel_grey' }, membrane: 'black',
       items: [{ k: 'bulkhead', at: [0.3, 0.55], w: 3.2, d: 3.2, h: 3.0 }, { k: 'bulkhead', at: [0.72, 0.55], w: 3.2, d: 3.2, h: 3.0 }] },
-    refs: [],
+    refs: ['', '', '', '', ''],
     notes: '16 bays at a measured 1.73-2.0 m pitch; top floor windows are round-arched with brick voussoirs and a stone keystone (KIT request: arched heads - keystone lintel stands in); ' +
       'eared cast-stone architraves on every window (surround); two fire escapes (bays 3-4 and 11-12, only the first is in the schema: KIT request for a list); ' +
       'cornice: pressed metal, grey-green, a corona of 1.0 m over a 1.3 m frieze with scroll brackets at each pier; ' +
@@ -438,7 +449,7 @@ const SPECS = [
       piers: { mat: 'brick_buff', tint: '#d6cbad', w: 0.4, proj: 0.07, at: [0.2, 5.1, 10.1, 14.76], from: 'base', to: 10.75, capital: false, base: false },
       cornice: { kind: 'parapet', h: 0.3, mat: 'brick_buff', tint: '#e5d8b6' },
     }, {
-      // St. Nicholas Ave side: Gourmet Deli, Sea & Sea behind two graffiti gates, New Tang S.,
+      // 0.8 m low against this sidewalk: the levels here are the front's): Gourmet Deli, Sea & Sea behind two graffiti gates, New Tang S.,
       // a dark painted flank with a service door, Chipotle wrapping the corner; over it seven bays of steel sash between brick piers
       edge: 'corner',
       base: {
@@ -466,7 +477,7 @@ const SPECS = [
       cornice: { kind: 'parapet', h: 0.3, mat: 'brick_buff', tint: '#e5d8b6' },
     }],
     roof: { kind: 'flat', parapet: { h: 1.05, coping: 'terracotta' }, membrane: 'black', items: [] },
-    refs: [],
+    refs: ['', ''],
     notes: 'the three 2nd-floor openings (bays 1, 3, 5) are steel industrial sash 4 wide x 2 high plus a transom row; brick piers rise 0.3 m above the parapet; ' +
       'the signband is brown corrugated metal (ribbed: SIGN/MATS: a corrugated panel); Chipotle: white-edged red lightbox, pepper roundel at the left (bid1:chipotle). ' +
       'The St. Nicholas side (40 m) is not spec\'d yet (plain face).',
@@ -491,7 +502,7 @@ const SPECS = [
     }],
     custom: { fn: 'bid1:w319', with: 'kit' },
     roof: { kind: 'flat', parapet: { h: 1.6, coping: 'terracotta' }, membrane: 'black' },
-    refs: [],
+    refs: ['', '', ''],
     notes: 'shuttered store: the whole ground floor behind a graffiti-covered roll-down in a green-painted steel frame whose top rises to a shallow point at the centre (not in the schema: piers + band stand in).',
   },
   {
@@ -502,12 +513,11 @@ const SPECS = [
     faces: [{
       edge: 'front',
       base: {
+        // the letters real #9d7636 / #83591d, twin #995b1c / #a9631b at #f2a31b, ratio^0.65 -> #e1ab23)
         h: 3.47, fascia: { h: 1.3, mat: 'plain', tint: '#e1ab23', proj: 0.28 },
         bays: [
           { u0: 0.2, u1: 7.6, kind: 'store', name: 'Orange Beauty Supply', interior: 'shop_clothing', lit: 1,
-            // SIGNS' values:
             // letters 0.54 of the fascia's height over 0.77 of its width, faces #c14e35 in sun (fg #d4482c), Nunito sets ~10 % wide (tracking -0.02),
-            // the roundel taller than the letter band (logoScale 1.25);
             sign: { kind: 'channel', text: 'BEAUTY SUPPLY', font: 'Nunito-900', fg: '#d4482c', bg: null, u0: 0.25, u1: 7.45, y: 3.55, h: 1.15, fill: 0.78, depth: 0.1, lit: 'face', tracking: -0.02,
               logo: 'bid1:orangeBeauty', logoAt: 'left', logoScale: 1.25 },
             glazing: { bulkhead: 0.3, transom: 0.4, mullions: 3, frame: 'alu_clear' }, door: { u: 0.62, w: 1.0, kind: 'glass', recess: 0.2 } },
@@ -520,7 +530,7 @@ const SPECS = [
       cornice: { kind: 'band', h: 0.45, proj: 0.12, mat: 'terracotta_cream', tint: '#e4dfd4' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.8, coping: 'terracotta' }, membrane: 'black' },
-    refs: [],
+    refs: ['', 'c125/n2211_1176_lBxUK6Ri31nB8eQxEVtx-g_202211.jpg', '', ''],
     notes: 'the upper front is a blank white glazed-terracotta wall (no windows; painted-over tags) between edge pilasters, a belt course at 11.6 m, and a segmental arched parapet with a moulded coping rising from 13.3 m at the ends to 15.1 m at the crown (bid1:w317), per the leaf-off 2022-11 view (2026: the street tree hides it); orange logo roundel then red BEAUTY SUPPLY on an orange-yellow fascia.',
   },
   {
@@ -547,6 +557,7 @@ const SPECS = [
       },
       floors: [{ n: 4, h: 3.28, win: 'A' }],
       bays: { widths: [0.3, 1.47, 1.47, 1.47, 1.47, 1.47, 1.47, 1.47, 1.47, 1.47, 1.47, 0.06] },
+      // (1.47 m bays less 0.21 + 0.065 m) and ~0.8 of the 3.28 m storey, in dark grey-brown frames; the twin's 1.02 x 2.15 m in bronze read as a punched wall)
       windows: { A: { w: 1.16, h: 2.5, sill: 0.3, kind: 'dh', lights: '1/1', frame: { mat: 'plain', tint: '#35302b', rough: 0.5 }, frameW: 0.09, reveal: 0.14, lintel: { kind: 'none' }, sillStone: { mat: 'terracotta_cream', tint: '#dcd6ca', h: 0.12, proj: 0.04 }, ac: 0.15, blinds: 0.5, lit: 0.35 } },
       piers: { mat: 'terracotta_cream', tint: '#ebe7de', w: 0.42, proj: 0.12, at: [0.3, 3.24, 6.18, 9.12, 12.06, 15.0], from: 'base', to: 17.9 },
       bands: [{ at: 7.95, h: 0.3, proj: 0.07 }, { at: 11.23, h: 0.3, proj: 0.07 }, { at: 14.51, h: 0.3, proj: 0.07 }, { at: 17.45, h: 0.45, proj: 0.09 }],
@@ -554,7 +565,7 @@ const SPECS = [
       // (the exposed parts of the two party walls, over 317 and over P.C. Richard, are bid1:w313's: no face on a party wall, QA Q49 2026-10-02)
     }],
     roof: { kind: 'flat', parapet: { h: 0.7, coping: 'panel_grey' }, membrane: 'black', items: [{ k: 'bulkhead', at: [0.3, 0.7], w: 3.0, d: 3.0, h: 3.0 }] },
-    refs: [],
+    refs: ['', '', ''],
     notes: 'white-painted cast-iron / terracotta loft (1910): five bays between panelled Corinthian pilasters, each bay two windows split by a slender colonnette (the colonnettes: KIT request - piers at the odd bay edges stand in), ' +
       'spandrel panels, a frieze with an ornamental band and a modillion cornice (top 20.0 m). Ground floor: the Popeyes channel letters on white and a red Burger King / Popeyes "NOW OPEN" banner sign.',
   },
@@ -580,7 +591,7 @@ const SPECS = [
       items: [],
     }],
     roof: { kind: 'flat', parapet: { h: 0.0 }, membrane: 'white', items: [] },
-    refs: [],
+    refs: ['', ''],
     notes: 'a white-panel box: a two-storey glass curtain wall (mullions every 2.07 m, a spandrel line at 4.5 m carrying red "APPLIANCES - TV - ELECTRONICS - MATTRESSES" letters) under a 2.9 m white sign parapet with red italic "P.C. RICHARD & SON" (the custom bid1:pcrichard adds the letters, the spandrel lettering and the red dome awning text); parapet top 10.2 m.',
   },
   {
@@ -608,7 +619,7 @@ const SPECS = [
     }],
     custom: { fn: 'bid1:w307', with: 'kit' },
     roof: { ...tenRoof, parapet: { h: 0.6, coping: 'panel_grey' } },
-    refs: [],
+    refs: ['', 'c125/n2211_1260_rvS2yX3FnT61ukP1HYayEA_202211.jpg', '', ''],
     notes: 'measured off the leaf-off 2022-11 view: a tall commercial 2nd floor (4.6-10.5 m) with one big 4-light window (7.4-10.1 m, the kit places it at the centre bay: bid1:w307 widens it across the front) under the salon sign, then one residential floor of three windows and the bracketed cornice (top 16.0 m); cream-painted brick.',
   },
   {
@@ -632,7 +643,7 @@ const SPECS = [
     }],
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'panel_grey' }, membrane: 'black' },
     custom: { fn: 'bid1:w305', with: 'kit' },
-    refs: [],
+    refs: ['', ''],
     notes: 'the upper windows are boarded with grey panels (kind blind); the big white sign board covers the 2nd floor (4.0-6.6 m): red DISCOUNT JUNCTION + a red strip "SCHOOL & PARTY SUPPLIES  HARDWARE  BATH STUFF & MORE"; flaking paint on the brick (dirt 0.55).',
   },
   {
@@ -707,11 +718,11 @@ const SPECS = [
       },
     ],
     roof: { kind: 'flat', parapet: { h: 0.56, coping: 'panel_grey' }, membrane: 'white', items: [{ k: 'bulkhead', at: [0.2, 0.7], w: 3.4, d: 4.0, h: 3.0 }] },
-    refs: [],
-    notes: 'heights scaled 0.965 to the footprint: parapet 21.56 m, glass tower top 22.8 m = the survey 22.86; ' +
+    refs: ['', '', '', ''],
+    notes: '' +
       'zinc-grey metal panel skin (joints every ~1.0 m high x 2.3 m wide); floors 2-3: two double-height glazed blocks 5.86 x 7.6 m (u 1.22-7.08, 15.44-21.30, 4 x 3 lights, white frames) either side of a panel column carrying the Party City / FLAMING GRILL & MODERN BUFFET / PureGym letters on a darker ribbed panel; ' +
       'floor 4: six 2.32 x 2.25 m windows at 3.54 m pitch; the corner bay (u 22.6-28.4): a one-storey band window at 6.9-9.9 m then the structural-glass corner tower 11.5-22.8 m with the Party City / Capital One / PureGym signs inside; ' +
-      'the kit cannot place the glazed blocks (one bay layout per face, window width capped at the bay): bid1:eighth2329 adds them and the tower until KIT has per-floor openings (request).',
+      '',
   },
 
   // ============================================================== SOUTH SIDE, Morningside Ave to St. Nicholas Ave
@@ -739,11 +750,11 @@ const SPECS = [
       cornice: { kind: 'band', h: 0.5, proj: 0.08, mat: 'cast_stone', tint: '#bdb6aa' },
     }],
     roof: { kind: 'flat', parapet: { h: 1.8, coping: 'terracotta' }, membrane: 'gravel' },
-    refs: [],
+    refs: ['', '', '', '', ''],
     notes: 'grey multi-tone (grey, buff, charcoal) brick street wall of four storeys (ground + three at 4.33 m, eight 2.56 m windows in deep 0.25 m reveals, parapet to 19.8 m) ' +
       'across u 0-35.5 m; u 35.5-44.8 m (the Morningside corner) is a blue-glass curtain wall the full 19.8 m (bid1:w374 adds it, the kit has no curtain yet); ' +
-      'above, a tower set back ~4.4 m with five floors of 1.3 m square windows at 3.5 m pitch and a louvred mechanical band to 44.3 m: bid1:w374 builds it. ' +
-      'Ground floor: glazed storefronts and lobby doors (382 on one), no signs: Industrial Bank (2023) has left; bays vacant.',
+      '' +
+      '',
   },
   {
     id: 'hancock-11', addr: '11 Hancock Place (125th St frontage)', bin: '1059296', status: 'measured',
@@ -792,8 +803,8 @@ const SPECS = [
       cornice: { kind: 'parapet', h: 0.2, mat: 'panel_grey', tint: '#3c3f44' },
     }],
     roof: { kind: 'flat', parapet: { h: 1.1, coping: 'panel_grey' }, membrane: 'pavers', items: [{ k: 'bulkhead', at: [0.5, 0.6], w: 4.0, d: 5.0, h: 3.5 }] },
-    refs: [],
-    notes: 'MEASURED 2026-10-01: slab bands (the row-luminance minima) at 8.25, 11.15, 14.25, 17.0, 20.0, 23.0, 26.0 and 29.0 m, so a glazed ' +
+    refs: ['', ''],
+    notes: '' +
       'second storey (5.5-8.25 m) over the storefronts and a 3.0 m pitch above; three window bays of ~3 m between charcoal piers (2.6 / 5.7 m), a 0.75 m strip at the east end; ' +
       'ground floor: Gini\'s (red sign) at the west end, Fitness Factory (blue letters on a dark band at 4.9-5.4 m) with its entrance at the east. Dark metal-panel grid with black multi-light windows; ' +
       'the upper floors step back (above 29 m, not in the ortho: not modelled); only the 9.6 m on 125th is the street wall, the rest is set back 3 m on Hancock Pl. ' +
@@ -829,7 +840,6 @@ const SPECS = [
       bands: [{ at: 9.0, h: 0.35, proj: 0.05, mat: 'cast_stone', tint: '#cbc3b2' }],
       cornice: { kind: 'parapet', h: 0.3, mat: 'brick_tan', tint: '#a89c84' },
     }, {
-      // St. Nicholas Ave side: the entry pilaster,
       // Pizza Hut, a blank white-painted wall with three louvres, Chase wrapping the corner; above, five windows between tan brick
       // pilasters, each under a diaper-brick head panel
       edge: [1546.7, -3068.2, 1532.9, -3043.1],
@@ -860,30 +870,26 @@ const SPECS = [
       cornice: { kind: 'parapet', h: 0.3, mat: 'brick_tan', tint: '#a89c84' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'terracotta' }, membrane: 'black', items: [] },
-    refs: [],
+    refs: ['', ''],
     notes: 'two-storey tan brick (1955) with a cast-stone band; the 2nd floor windows carry "BR AC E2 / 212 222 3210" window lettering (a leasing office) - vinyl on the windows is not in the schema; a street tree hides the east half above the stores; St. Nicholas side not spec\'d.',
   },
   // ============================================================== SOUTH SIDE, St. Nicholas Ave to Frederick Douglass Blvd
   {
     id: 'w125-324', addr: '324 W 125th St (SE corner of St. Nicholas Ave)', bin: '1090670', status: 'measured',
     at: [1581.31, -3035.65], comp: '3_-6:187', h: 12.8,
-    // (BF36) painted light grey panels with weathered joints; the brushed aluminium set (panel_alu) is a sky
     // mirror and glowed white at dusk and night over the whole box (t8StNickDive, cvs_nw_dusk)
     wall: BF36 ? { mat: 'panel_grey', tint: '#b3b4af', dirt: 0.4 } : { mat: 'panel_alu', tint: '#c9c8c4', dirt: 0.2 },
     faces: [{
       edge: 'front',
       base: {
         h: 4.0, fascia: { h: 1.0, mat: 'brick_tan', tint: '#4b4d52', proj: 0.02 },
-        // (BF36) the piers between the openings are the charcoal brick of the base, not the panel wall
         ...(BF36 ? { wall: { mat: 'brick_tan', tint: '#45484e', dirt: 0.32, to: 4.0 } } : {}),
         bays: [
           { u0: 4.2, u1: 26.8, kind: 'store', name: 'CVS pharmacy', interior: { kind: 'pharmacy', tone: '#a06c68', lit: 0.75 },
             glazing: { bulkhead: 0.3, transom: 0.8, mullions: 9, frame: 'alu_clear' }, door: { u: 0.92, w: 1.0, kind: 'double', recess: 0.1 }, gate: { kind: 'none' } },
-          // (BF36) the pharmacy's corner doors are glass sliders under the canopy, not a panelled pair
           { u0: 27.6, u1: 29.9, kind: 'entrance', h: 3.2, door: BF36 ? { kind: 'glass', w: 2.0, transom: 0.6, frame: 'alu_clear', recess: 0.2 } : { kind: 'double', w: 1.0, transom: 0.6, frame: 'alu_clear' } },
         ],
       },
-      // (BF36) the west windows too (four, behind the ENTRANCE AROUND CORNER graphics; a street tree hides them in s324):
       floors: [{ n: 1, h: 2.8, win: 'none' }, { n: 1, h: 4.4, win: 'M', bays: BF36 ? [1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12] : [1, 2, 3, 4, 5, 6, 7] }],
       bays: { widths: BF36 ? [3.7, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 7.51, 1.6, 1.6, 1.6, 1.6, 1.5] : [3.7, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 15.41] },
       windows: {
@@ -895,7 +901,7 @@ const SPECS = [
     }, W324_STNICH],
     custom: { fn: 'bid1:w324', with: 'kit' },
     roof: { kind: 'flat', parapet: { h: 0.8, coping: 'panel_grey' }, membrane: 'white', items: [] },
-    refs: [],
+    refs: ['', ''],
     notes: '2016: a white panel box over a charcoal herringbone-brick band with four black louvre panels at 4.0-5.0 m; the big white sign band 5.1-7.8 m carries the CVS heart + "CVS pharmacy" (bid1:w324 adds the letters); the 2nd floor MRI / MRA / CT / XRAY / SONO windows (a medical imaging centre, "NOW OPEN" starburst) at 8.0-11.4 m; ' +
       'a charcoal brick pier at the St. Nicholas end (u 0-3.7) rises above the roof; the lobby door at the east end.',
   },
@@ -931,7 +937,7 @@ const SPECS = [
       windows: { none: { kind: 'none' } },
       cornice: { kind: 'parapet', h: 0.2, mat: 'panel_alu', tint: '#c3c7ca' },
     }, {
-      // the Frederick Douglass Blvd face: two storeys of retail glass over a louvre band, the glass curtain wall with its billboard above (bid1:harlemusa
+      // the Frederick Douglass Blvd face (ring edge 1667.5,-3003.46 -> 1637.81,-2949.86, 61.3 m, u from the south end, the 125th corner at u = 61.3;
       // draws them), TD Bank at the corner; the kit's default for an unspecified face was a white wall with small windows
       edge: [1667.5, -3003.46, 1637.81, -2949.86],
       base: {
@@ -946,7 +952,6 @@ const SPECS = [
       windows: { none: { kind: 'none' } },
       cornice: { kind: 'parapet', h: 0.2, mat: 'panel_alu', tint: '#c3c7ca' },
     }].concat(BF36 ? [{
-      // (BF36) the St. Nicholas Ave face south of the CVS: a tall blind box of light grey metal panels
       // over a dark base with the store glass, where the kit's default drew a white wall with rows of small black windows
       edge: [1561.51, -3030.95, 1545.2, -3001.1],
       wall: { mat: 'panel_grey', tint: '#b7babb', dirt: 0.35 },
@@ -959,7 +964,7 @@ const SPECS = [
       cornice: { kind: 'parapet', h: 0.2, mat: 'panel_grey', tint: '#a9adaf' },
     }] : []),
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'panel_grey' }, membrane: 'white', items: [{ k: 'antenna', at: [0.76, 0.05], h: 1.5 }] },
-    refs: [],
+    refs: ['', '', '', '', ''],
     notes: 'Harlem USA (1998-2000), 125th front measured off two orthos (u from FDB): the 3rd-4th floors are a point-fixed glass curtain wall 10.3-19.2 m over the whole 75.9 m (mullions ~2.2 m, joints at 12.4 / 14.9 / 17.4 m, an internal louvred sunshade band at 16.0-17.4 m) carrying a vinyl billboard at u 27.5-74 (a real fintech ad in 2026: an invented brand here, bid1:billboard); ' +
       'below: two storeys of retail glass (u 0-38.3 and 61.2-75.6, 4.1-8.6 m) over a louvre band 8.6-9.0 m; Old Navy portal of cast stone u 38.5-61.0 to 9.8 m round a white segmental-arched sign panel (4.7-8.5 m) with the blue letters; ' +
       'the red K&G band (FOR MEN / FOR WOMEN / FOR LESS) at 8.9-9.8 m over u 0-7.3 (the upper-floor store), TD Bank at the corner, Rainbow (blue panel + red script on the 2nd-floor glass), a clothing store at the west end; the FDB and St. Nicholas faces are not spec-ed yet. bid1:harlemusa builds the glass, the portal, the bands and the letters.',

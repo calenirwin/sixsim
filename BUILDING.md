@@ -44,7 +44,7 @@ The smaller banks (`basis/`, `data/`, `fonts/`, `luts/`, `settings/`) are commit
 ### Download (recommended)
 
 ```
-hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.3.1 \
+hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.4.0 \
     --include "Content/tiles/*" --include "Content/models/*" --include "Content/textures/*" --local-dir .cache/hf
 mv .cache/hf/Content/tiles .cache/hf/Content/models .cache/hf/Content/textures client/public/
 ```
@@ -59,13 +59,14 @@ tiles and the occlusion bake can be rebuilt from the public sources:
 
 ```
 cd client
-npm run fetch -- --boro 1,2,3,4      # NYC Open Data and NY State open data -> data/raw/ (cached; about 2.4 GB)
-npm run compile -- --boro 1,2,3,4    # -> public/tiles/, public/textures/cityao.*
+npm run fetch -- --boro 1,2,3,4,5      # NYC Open Data and NY State open data -> data/raw/ (cached)
+npm run compile -- --boro 1,2,3,4,5    # -> public/tiles/, public/textures/cityao.*
 ```
 
-Boroughs are 1 Manhattan, 2 the Bronx, 3 Brooklyn and 4 Queens. `fetch` pages through the Socrata endpoints listed in
-[client/DATA_SOURCES.md](client/DATA_SOURCES.md) and skips cached files. `compile` writes 2,884 near tiles
-(512 m), 210 far-field tiles (2,048 m), the bridge alignments and the occlusion bake.
+Boroughs are 1 Manhattan, 2 the Bronx, 3 Brooklyn, 4 Queens and 5 Staten Island. `fetch` pages through the Socrata
+endpoints listed in [client/DATA_SOURCES.md](client/DATA_SOURCES.md) and skips cached files. `compile` writes 3,532
+near tiles (512 m), 261 far-field tiles (2,048 m), the bridge alignments and the occlusion bake; the five-borough
+compile peaks at 17.7 GB resident, and the npm script gives Node a 24 GB heap.
 
 The inputs below are optional. The compiler uses each one when it is present in `client/data/raw/`. The
 published tiles were compiled with all of them.
@@ -193,7 +194,7 @@ server headless at 1280 × 720 and stops it afterwards, and without it the scrip
 listening:
 
 ```
-bash tools/figures/tutorial_images.sh --server release/Valdrada_0.3.1_win64/Valdrada.exe [--python python]
+bash tools/figures/tutorial_images.sh --server release/Valdrada_0.4.0_win64/Valdrada.exe [--python python]
 ```
 
 ## Offline rendering in Blender
@@ -206,7 +207,7 @@ and the window interiors are in the dataset's `Blender/` folder; point `BXTREES_
 `docs/blender-cycles.md` and `docs/unreal.md` give the full steps for each renderer.
 
 ```
-hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.3.1 \
+hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.4.0 \
     --include "Blender/bxtrees2/*" --include "Blender/bxwin/*" --local-dir .cache/hf
 export BXTREES_ASSETS=$PWD/.cache/hf/Blender/bxtrees2 BXTREES2_TEX=$PWD/.cache/hf/Blender/bxtrees2/tex
 node client/tools/ar34/export/harvest.mjs --shots <shot> --frames 0,54,107 --out <harvest dir>   # 1. harvest

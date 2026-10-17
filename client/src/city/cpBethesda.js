@@ -109,6 +109,22 @@ export function cpbInside(x, z, pad = 0) {
 }
 const quadOf = (B) => mkConvex([wld(B.a0, B.b0), wld(B.a0, B.b1), wld(B.a1, B.b1), wld(B.a1, B.b0)]);
 
+// LOOK14: the bays' walk cells clipped to the bays' arcs (see the walk sections in apply()); `?lk14b=0` restores
+const LK14B = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('lk14b') === '0');
+// a point of a walk cell in the terrace frame -> [a, b, outside]: past the lake wall's line (a > lakeA, within the lake
+// bay's span) or a side wall's line (|b| > sideB, within a side bay's span) it is pulled onto that bay's circle 5 cm inside
+// the outline when it lies beyond it; `outside` marks a point that was pulled
+function lk14Clamp(a, b) {
+  const c = PLAN.bay.c, R = PLAN.bay.r - 0.05, span = BAY_HALF + 1.2;
+  let cx = null, cz = null;
+  if (a > PLAN.lakeA && Math.abs(b) < span) { cx = c; cz = 0; }
+  else if (Math.abs(b) > PLAN.sideB && Math.abs(a) < span) { cx = 0; cz = Math.sign(b) * c; }
+  if (cx === null) return [a, b, false];
+  const da = a - cx, db = b - cz, d = Math.hypot(da, db);
+  if (d <= R) return [a, b, false];
+  return [cx + (da * R) / d, cz + (db * R) / d, true];
+}
+// LOOK14 end
 // ---- the walk surfaces (hidden 0.30 m inside the masonry; the walkers stand on the deck colliders over them) ---------
 // [a0, a1, b0, b1, y(a) at a0, y at a1] pieces, planar along a
 function walkPieces(L) {
@@ -202,6 +218,19 @@ export function apply(tile, ox, oz) {
       const [cx, cz] = wld(am, bm);
       if (cx < ox - 2 || cx > ox + 514 || cz < oz - 2 || cz > oz + 514) continue;
       const yA = (a) => y0 + ((y1 - y0) * (a - a0)) / (a1 - a0 || 1);
+      // LOOK14 (owner 2026-10-09, "white square edges protruding from the lake edge near the fountain"): the bays' walk
+      // pieces are rectangles while the bays are arcs, so their corners stood up to 1.25 m past the curved walls, the lake
+      // bay's two over the Lake 0.65 m above the water, lit like plates. Each corner past a bay's wall line is pulled onto
+      // the bay's circle 5 cm inside its outline (hidden under the paving); a cell with no corner inside is dropped.
+      // `?lk14b=0` restores the rectangles.
+      if (LK14B) {
+        const cs = [[A0, B0], [A1, B0], [A1, B1], [A0, B1]].map(([a, b]) => lk14Clamp(a, b));
+        if (cs.every((c) => c[2])) continue;
+        const q = cs.map(([a, b]) => { const [x, z] = wld(a, b); return [x - ox, yA(a), z - oz]; });
+        for (const t of [[0, 2, 1], [0, 3, 2]]) for (const k of t) walk.push(q[k][0], q[k][1], q[k][2]);
+        continue;
+      }
+      // LOOK14 end
       const q = [[A0, B0], [A1, B0], [A1, B1], [A0, B1]].map(([a, b]) => { const [x, z] = wld(a, b); return [x - ox, yA(a), z - oz]; });
       // wound like the compiled ground (counter-clockwise seen from above in x, z)
       for (const t of [[0, 2, 1], [0, 3, 2]]) for (const k of t) walk.push(q[k][0], q[k][1], q[k][2]);

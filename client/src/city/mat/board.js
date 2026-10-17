@@ -1,7 +1,6 @@
 // AR33 MATS test board: sample panels of the PBR library, in the city's own light, placed in front of the camera.
-// Loaded into a running page by tools/bshot.mjs --evalfile:
-// import('/src/city/mat/board.js').then((m) => m.place({ names: ['brick_red', 'stone_lime'], dist: 7 }))
-// place is idempotent (a second call replaces the board) and resolves once the textures are in and compiled.
+//   import('/src/city/mat/board.js').then((m) => m.place({ names: ['brick_red', 'stone_lime'], dist: 7 }))
+// place() is idempotent (a second call replaces the board) and resolves once the textures are in and compiled.
 import * as THREE from 'three';
 import { pbrMaterial, pbrReady, applyCityRefl } from './pbrLib.js';
 import { applyLightTrim, applyCityAO } from '../../world/materials.js';
@@ -68,8 +67,7 @@ export async function place(o = {}) {
 }
 
 // o.walls: [{ name, a: [x, z], b: [x, z], hdg (the face's outward compass heading), y0 (m over the terrain, default 0),
-// h (height, m), out (m in front of the frontage line, default 0.3), opts }]: a slab of the material laid on a real
-// building's frontage (docs/notes/ar33-frontage/*.json edges), for side-by-sides twin camera
+//   h (height, m), out (m in front of the frontage line, default 0.3), opts }]: a slab of the material laid on a real
 async function placeWalls(o, E, S) {
   const g = new THREE.Group(); g.name = 'pbrBoard';
   const ground = (x, z) => { const t = S && S.terrainAt ? S.terrainAt(x, z) : null; return t !== null && isFinite(t) ? t : 0; };
@@ -120,7 +118,6 @@ export async function placeRefl(o = {}) {
 }
 // AR34 s6 A/B board (the per-vertex options): 12 panels in front of the lens; odd calls draw them with per-material options
 // (dirt, seed, base, top, tint, body as uniforms), even calls with one material per set and the same values per vertex
-// (aWeather.w the dirt, aFkTr / aPgBody the tower glass's tint, body and dirt).
 export async function placeAB(opt = {}) {
   // opt.lift: the lowest row's height over the ground (2.2 = over the pedestrians); opt.same: also render both variants into
   // a float target in this frame (the same lights, people and shadows; no post) and compare them texel by texel

@@ -738,9 +738,13 @@ export class Instancer {
       }
       [bx0, bx1, bz0, bz1, by0, by1] = fp._box;
     }
+    // ==== R1A cells (client/src/cells/cellLoader.js, ?cells=1): an instance in a baked cell is drawn by its package
+    const R1A_CH = typeof window !== 'undefined' ? window.__R1A_CELLHIDE : null, R1A_PK = p.cellPkg;
+    // ==== /R1A
     for (let s = 0; s < top; s++) {
       if (!alive[s]) continue;
       const x = pos[s * 3], y = pos[s * 3 + 1], z = pos[s * 3 + 2];
+      if (R1A_CH && !(R1A_PK && R1A_PK[s]) && R1A_CH(x, z, p.name)) continue;   // ==== R1A
       const r = rad[s] + pad;
       const dx = x - camX, dy = y - camY, dz = z - camZ;
       if (planes) {
@@ -808,8 +812,10 @@ export class Instancer {
     const inst = new THREE.Matrix4();
     const mesh = p.far;
     let k = 0;
+    const R1A_CH = typeof window !== 'undefined' ? window.__R1A_CELLHIDE : null;   // ==== R1A cells (see _compact)
     for (let s = 0; s < p.top; s++) {
       if (!p.alive[s]) continue;
+      if (R1A_CH && !(p.cellPkg && p.cellPkg[s]) && R1A_CH(p.pos[s * 3], p.pos[s * 3 + 2], p.name)) continue;   // ==== R1A
       if (k >= mesh.instanceMatrix.count) this._growMesh(mesh, k + 1, false);
       inst.fromArray(p.mats, s * 16).multiply(local);
       mesh.instanceMatrix.array.set(inst.elements, k * 16);

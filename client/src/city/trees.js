@@ -412,7 +412,7 @@ const TR34S = TR34 && !(T25Q && T25Q.get('tr34s') === '0');
 // accumulation) integrates it into a partial-coverage edge. Away from the cut nothing changes, so the coverage holds.
 const TR34D = TR34 && !(T25Q && T25Q.get('tr34d') === '0');
 const DITH34 = { value: 0 };
-// TR35 STREET LEAVES. Every crown
+// TR35 STREET LEAVES (AR34 wave 2 round 2; the lead's review of the segments' sheets, 2026-10-01 23:53: "bright lime-green,
 // standing in the 125th Street and Hunters Point boxes (city/areas.js B125, BHPT) samples the street copies of its leaf
 // cells (treeAtlas.js STREET_CELLS: an olive pinnate honeylocust in place of the yellow-green bipinnate fern, and a darker,
 // less saturated sophora, oak, linden; a lighter, bluer pear); everything else keeps the cells as they were. (The first
@@ -452,16 +452,14 @@ const TR36_FETCH = (TR36 && TV25 && typeof window !== 'undefined' && typeof fetc
   : null;
 // x leaf relief gain, y / z the transmission at translucency 0 (veins, rachis, twigs) / 1 (the leaf blade), w the diffuse
 // share of the blade's transmission (trees25: 0.3 of `away`). A thin leaf passes about as much green light as it reflects, so
-// a sunlit crown seen from below glows; at 0.3 the up-views read L50 37 80 (tr36b S2082acp_up).
 // (x 1.0 -> 0.7 in v7: the leaflet tilts lowered the mean N.L of the sunlit tops; the lead's 05:59 review asks for lighter tops)
+// (TR38: y / z / w 0.35 / 1.15 / 0.8 -> 0.42 / 1.35 / 0.9, a little more glow through the blades from below: crown38.py at
 const LEAF36 = { value: new THREE.Vector4(0.7, 0.42, 1.35, 0.9) };
 // x the skylight a blade passes to its underside (x its translucency, the baked sky visibility and how much the normal faces
 // down; TR36 v5): from below, a sunlit crown under a bright sky glows. trees25 had only the sun's transmission, and the
-// up-views stayed dark with it: S2082acp_up foliage L50 37-39 80 (tr36b, tr36c; this term moved it ~2 only).
 // y: a ceiling on a TR36 leaf's outgoing radiance (linear, before the tone map), a guard against single-pixel fireflies only.
 // (Tried at 1.5 on the soft red halos of s313 / the golden Mall: they stayed, and the trees25 control has one too, so they are
 // not leaf fireflies. 1.5 and 8 rendered the front-lit views alike (tr36f, tr36g); 8 keeps it a pure guard.) z, w spare
-// z (TR38): a gain on the TR36 leaves' direct diffuse light; w spare
 const LEAF36B = { value: new THREE.Vector4(2.2, 8.0, 1.6, 0) };   // (TR38: x 1.5 -> 2.2; z the direct gain, 1.6 from the e38 sweep)
 // trees25 park cell / TR35 street cell (linear means of the baked atlases, 2026-10-02): honeylocust 5 / 16, sophora 1 / 18;
 // TR37: oak 0 / 19 (the plane and the zelkova have no street copy: their cells are calibrated to the one trees25 cell)
@@ -1180,7 +1178,7 @@ function makeBark36(B, k, ns, cal) {
   return m;
 }
 // bark colour (x the map; the vertex tint and AO are the generator's, as in trees25): bark_willow_02 is trees25's own willow
-// map at 2K (ez-tree took it from Poly Haven), so the honeylocust keeps TR34's 0.45 x 0.75; Bark001 (grey, 0.223 luminance) to the trees25 oak map x 0.45 x 0.8 (0.039)
+// than trees25's: s317 27 against 39-45); Bark001 (grey, 0.223 luminance) to the trees25 oak map x 0.45 x 0.8 (0.039)
 const BARK36 = { H: [0.34, 2.2], S: [0.18, 2.0] };   // (normal x2.2 / x2.0: in the canopy's shade the trunk is lit by the sky only, and at x1.6 it read as a smooth tube: tr36b hero_sun)
 // TR37: every species from its own scan (tools/ar35/trees/build36.py barkMeans) with the relief; the albedo factor puts the bark's
 // effective linear luma (scan mean x the form's baked tint x this) near: plane 0.13 (pale camouflage plates), zelkova 0.05,
@@ -1288,6 +1286,145 @@ async function applyTR36(instancer, cal) {
   return { n, nb, px38: T.px38, stats: T.stats };
 }
 
+// UE14 (2026-10-09, the owner: "Central Park: the tree leaves look rather low quality and have a lot of pop-in"; notes in
+// docs/notes/ar34-ue13.md). The trees25 forms (most of the park: elm, oak, maple, plane, zelkova, cherry ...) swapped their
+// crown from LOD0 to LOD1 at the 90 m LOD in one frame, and every form's trunk (TR36's too) vanished there, its far stand-in
+// being LOD1's bark quads. Both now cross-fade over TR37's band (LOD37.x +- LOD37.y) with TR37's dither: LOD0's crown and
+// trunk hand their pixels to LOD1's crown as the distance grows, an instance inside the band drawn at both levels.
+// `?fade14=0` restores the hard swap; the film (`filmlod=1`, no swap inside its range) is untouched.
+const FADE14 = !(T25Q && /^(0|flora)$/.test(T25Q.get('fade14') || '')) && T25.LOD < 1e3;   // (`fade14=flora`: cpFloraKit's fades only)
+const BAND14 = [];   // { p: the pool, two: LOD0's band instances also go to LOD1 (a crown; a trunk's LOD1 draws nothing) }
+const VAR14 = new Map();
+// a material's cross-fade level: level 0 keeps a pixel while the dither is under 1 - s, level 1 from there on (s: smoothstep
+// across the band), so the two levels share each pixel of an instance exactly once
+function fade14(base, level) {
+  const key = base.uuid + ':' + level;
+  if (VAR14.has(key)) return VAR14.get(key);
+  const m = base.clone();
+  // the maps follow the base (the bark scans land after the trees are up and are swapped into the base)
+  for (const k of ['map', 'normalMap']) Object.defineProperty(m, k, { get: () => base[k], set: () => {}, configurable: true });
+  m.shadowSide = base.shadowSide;
+  m.defines = { ...(base.defines || {}), FADE14: String(level) };
+  m.onBeforeCompile = (sh, r) => {
+    base.onBeforeCompile.call(base, sh, r);
+    sh.uniforms.uLod14 = LOD37; sh.uniforms.uDith14 = DITH34;
+    if (!sh.vertexShader.includes('#include <begin_vertex>') || !sh.fragmentShader.includes('#include <clipping_planes_fragment>')) console.warn('[ue14] no fade hook in', base.name || base.type);
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform vec4 uLod14; varying float vFade14;')
+      .replace('#include <begin_vertex>', `{
+  #ifdef USE_INSTANCING
+    vec3 o14 = ( modelMatrix * vec4( instanceMatrix[3].xyz, 1.0 ) ).xyz;
+  #else
+    vec3 o14 = ( modelMatrix * vec4( 0.0, 0.0, 0.0, 1.0 ) ).xyz;
+  #endif
+  vFade14 = 1.0 - smoothstep( uLod14.x - uLod14.y, uLod14.x + uLod14.y, length( o14.xz - cameraPosition.xz ) );
+}
+#include <begin_vertex>`);
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uDith14; varying float vFade14;')
+      .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+{
+  float h14 = fract( 52.9829189 * fract( dot( gl_FragCoord.xy + vec2( 3.31, 7.93 ) * uDith14 * 1.618, vec2( 0.06711056, 0.00583715 ) ) ) );
+  #if FADE14 == 0
+    if ( h14 >= vFade14 ) discard;
+  #else
+    if ( h14 < vFade14 ) discard;
+  #endif
+}`);
+  };
+  m.customProgramCacheKey = () => (base.customProgramCacheKey ? base.customProgramCacheKey() : '') + '|f14' + level;
+  VAR14.set(key, m);
+  return m;
+}
+// append src's instances `idx` to dst (as split37 does)
+function append14(instancer, src, idx, dst) {
+  if (!idx.length) return;
+  const k = dst.count, n = k + idx.length, wc = !!(src.instanceColor && dst.instanceColor);
+  if (n > dst.instanceMatrix.count) instancer._growMesh(dst, n, !!dst.instanceColor);
+  const S = src.instanceMatrix.array, D = dst.instanceMatrix.array, SC = wc ? src.instanceColor.array : null, DC = wc ? dst.instanceColor.array : null;
+  for (let j = 0; j < idx.length; j++) {
+    const i = idx[j], o = k + j;
+    D.set(S.subarray(i * 16, i * 16 + 16), o * 16);
+    if (wc) { DC[o * 3] = SC[i * 3]; DC[o * 3 + 1] = SC[i * 3 + 1]; DC[o * 3 + 2] = SC[i * 3 + 2]; }
+  }
+  dst.count = n; dst.visible = true; if (dst.userData) dst.userData.dcHid = false;
+  const im = dst.instanceMatrix; im.clearUpdateRanges(); im.addUpdateRange(0, n * 16); im.needsUpdate = true;
+  if (wc) { const ic = dst.instanceColor; ic.clearUpdateRanges(); ic.addUpdateRange(0, n * 3); ic.needsUpdate = true; }
+}
+// after every cull: the instances inside the band, written to both levels (a pool the instancer did not re-compact is left)
+function split14(instancer, camera) {
+  if (!camera) return;
+  const cx = camera.position.x, cz = camera.position.z, L = LOD37.value, a0 = L.x - L.y, a1 = L.x + L.y;
+  for (const B of BAND14) {
+    const p = B.p, m1 = p.mesh, m2 = p.mesh2;
+    if (!m2 || !p.n) continue;
+    if (m1.instanceMatrix === B.a1 && m1.instanceMatrix.version === B.v1 && m2.instanceMatrix === B.a2 && m2.instanceMatrix.version === B.v2) continue;
+    const A1 = m1.instanceMatrix.array, A2 = m2.instanceMatrix.array, toM1 = [], toM2 = [];
+    for (let i = 0; i < m2.count; i++) { const o = i * 16; if (Math.hypot(A2[o + 12] - cx, A2[o + 14] - cz) < a1) toM1.push(i); }
+    if (B.two) for (let i = 0; i < m1.count; i++) { const o = i * 16; if (Math.hypot(A1[o + 12] - cx, A1[o + 14] - cz) > a0) toM2.push(i); }
+    const k1 = m1.count;
+    append14(instancer, m2, toM1, m1);
+    if (B.two && toM2.length) { append14(instancer, m1, toM2, m2); }
+    B.a1 = m1.instanceMatrix; B.v1 = m1.instanceMatrix.version; B.a2 = m2.instanceMatrix; B.v2 = m2.instanceMatrix.version;
+    B.n = [k1, toM1.length, toM2.length];
+  }
+}
+function applyFade14(instancer, geos) {
+  let crowns = 0, trunks = 0;
+  for (const base of geos.keys()) {
+    const pT = instancer.pools.get(base + 'Trunk'), pC = instancer.pools.get(base + 'Crown');
+    // (a TR36 crown has its own material and TR37's fades already)
+    if (pC && pC.mesh2 && pC.mesh.material === instancer.crownMat && pC.mesh2.material === instancer.crownMat) {
+      pC.mesh.material = fade14(instancer.crownMat, 0); pC.mesh2.material = fade14(instancer.crownMat, 1);
+      BAND14.push({ p: pC, two: true, a1: null, v1: -1, a2: null, v2: -1 }); crowns++;
+    }
+    if (pT && pT.mesh2 && pT.mesh.material) {
+      pT.mesh.material = fade14(pT.mesh.material, 0);
+      BAND14.push({ p: pT, two: false, a1: null, v1: -1, a2: null, v2: -1 }); trunks++;
+    }
+  }
+  if (BAND14.length && !instancer.__band14) {
+    const cull0 = instancer.cull.bind(instancer);
+    // (a failure here must never take the frame loop with it: the band switches itself off; the hard swap is back on the
+    // next re-compaction, the variants then drawing past the band as the base levels do)
+    instancer.cull = (camera = instancer.engine?.camera) => {
+      cull0(camera);
+      if (!BAND14.length) return;
+      try { split14(instancer, camera); } catch (e) {
+        console.warn('[ue14] cross-fade off', e);
+        for (const B of BAND14) B.p.dirty = true;
+        BAND14.length = 0; LOD37.value.y = 1e-3;
+      }
+    };
+    instancer.__band14 = true;
+  }
+  if (typeof window !== 'undefined') window.__FADE14 = { BAND14, VAR14 };
+  return { crowns, trunks };
+}
+// UE14: a sharper mip of the leaf atlas for every crown built on the shared crown program (trees25, TR36, cpFlora's elms,
+// willows, shrubs and ferns): a negative LOD bias on the leaf colour and its cut, -0.6 (the Mall's canopy and the Lake's crowns
+// crisper at mid range; recorded interactive takes t7Mall / t4Sheep: flicker max 8 % / 4 % as without it). `?leafbias14=<b>`
+// sets it, `?leafbias14=0` = as before
+const BIAS14 = (() => { const q = T25Q?.get('leafbias14'); return Math.max(-2, Math.min(0, q === null || q === undefined ? -0.6 : Number(q) || 0)); })();
+// `?leafao14=<k>`: the baked crown AO on the canopy's fill light raised to k (deeper inside the crown; 1 = as before), the
+// web's counterpart of the Unreal crowns' in-crown occlusion (a measurement switch)
+const AO14 = Math.max(1, Math.min(4, Number(T25Q?.get('leafao14')) || 1));
+function applyBias14(m) {
+  if ((!BIAS14 && AO14 === 1) || m.__bias14) return false;
+  m.__bias14 = true;
+  const prev = m.onBeforeCompile, prevKey = m.customProgramCacheKey, b = BIAS14.toFixed(2), k = AO14.toFixed(2);
+  m.onBeforeCompile = (sh, r) => {
+    prev?.call(m, sh, r);
+    if (BIAS14) sh.fragmentShader = sh.fragmentShader.replace('texture2D( map, uv35 )', `texture2D( map, uv35, ${b} )`)
+      .replace('#include <map_fragment>', `#ifdef USE_MAP\n  diffuseColor *= texture2D( map, vMapUv, ${b} );\n#endif`);
+    if (AO14 !== 1) sh.fragmentShader = sh.fragmentShader.replaceAll('mix(uLeafBal.w, 1.0, vAO25)', `mix(uLeafBal.w, 1.0, pow(vAO25, ${k}))`);
+  };
+  m.customProgramCacheKey = () => (prevKey ? prevKey.call(m) : '') + '|b14' + b + '|a14' + k;
+  m.needsUpdate = true;
+  return true;
+}
+// UE14 end
+
 async function upgradeTreesTV25(instancer) {
   const t0 = performance.now();
   let T = null, from = 'bake';
@@ -1300,7 +1437,7 @@ async function upgradeTreesTV25(instancer) {
   // ---- bark: the prop light trim (STREET_CAL) like every other thing standing on the pavement. Four materials, one
   // program (identical defines and hooks; only the textures differ).
   const STREET_CAL = [1.94, 1.70, 1.47];
-  // TR34 (2026-10-01, `?tr34=0` restores): the street trunks rendered pale and smooth. Measured at s120: trunk sRGB (94,91,88), luma p50 92 / std 9.7, against the real
+  // TR34 (2026-10-01, `?tr34=0` restores): the street trunks rendered pale and smooth. Measured at s120 (BID3 r12 plate vs
   // (39,37,31), p50 34 / std 17.2. New York's honeylocust, sophora, oak and maple bark is dark and furrowed; the plane's
   // camouflage plates are pale in life and keep most of theirs. A first step (oak/willow 0.58) moved that trunk only from
   // luma ~97 to ~88 (shots/ar34/trees/w2r1a, the trunk at x 960-995, rows 520-680): the trunk under a crown is lit by the
@@ -1354,7 +1491,6 @@ async function upgradeTreesTV25(instancer) {
   if (TA2C) instancer.crownMat.alphaToCoverage = true;
   // TR34S: a leaf's cuticle is glossy, and the sky it reflects is what makes real foliage read blue-green and less saturated
   // than its albedo. The crown was at roughness 0.95 (instancer.js), i.e. no sky reflection: measured over six 125th Street
-  // s313 0.561 -> 0.467, lenoxW 0.609 -> 0.494 (0.479) (shots/ar34/trees/w2r1d_rough vs w2r1a/w2r1c).
   // NOT ON BY DEFAULT: in Central Park (record.mjs --probe t4Lake/t4Mall, shots/ar34/trees/cp_after vs cp_before) the same
   // 0.55 turned the sunlit crowns teal and the Mall's golden canopy blue-grey. `?leafrough=<r>` is the measurement switch.
   { const lr = Number(T25Q?.get('leafrough')); if (lr > 0 && lr <= 1) instancer.crownMat.roughness = lr; }
@@ -1367,6 +1503,10 @@ async function upgradeTreesTV25(instancer) {
     try { tr36 = await applyTR36(instancer, STREET_CAL); tr36.ms = performance.now() - t36; }
     catch (e) { console.warn(`[trees36] kept trees25 (${e.message}): run \`node tools/ar35/trees/bake36.mjs\``); }
   }
+  // UE14: the 90 m swap as a cross-fade for the trees25 crowns and every trunk (see FADE14)
+  if (FADE14) { try { console.log('[ue14] cross-fade', JSON.stringify(applyFade14(instancer, T.geos))); } catch (e) { console.warn('[ue14] hard swap kept', e); } }
+  if (applyBias14(instancer.crownMat)) console.log('[ue14] leaf mip bias', BIAS14);
+  // UE14 end
   // BX-TREES (`?bxtrees=1`, OFF by default; city/bxTrees.js, docs/notes/ar34-bx-trees.md): the asset set shared with the
   // Cycles export over its forms' pools. Without the flag nothing here runs and bxTrees.js is never fetched.
   if (T25Q && T25Q.get('bxtrees') === '1') {

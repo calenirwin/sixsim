@@ -1,3 +1,4 @@
+import { TW_TOWERS } from '../city/tk/tkOverrides.js';   // TW: the towers lane's facts per tower (colour, style)
 // Landmark registry — compiler marks the building footprint containing (lat,lon)
 // with the landmark id; the runtime swaps in / decorates with a custom builder.
 // mode: 'replace' = custom massing replaces the extrusion
@@ -51,9 +52,13 @@ export const LANDMARKS = [
   { id: 41, key: 'p56leonard',      name: '56 Leonard',                  lat: 40.71790, lon: -74.00480, mode: 'replace' },
   { id: 42, key: 'p8spruce',        name: '8 Spruce Street',             lat: 40.71100, lon: -74.00550, mode: 'replace' },
   { id: 43, key: 'msg',             name: 'Madison Square Garden',       lat: 40.75050, lon: -73.99340, mode: 'replace' },
-  { id: 44, key: 'metMuseum',       name: 'The Met',                     lat: 40.77940, lon: -73.96320, mode: 'decorate' },
+  // LM16 (2026-10-16): the Met draws all its walls (city/lmMetMuseum.js), so 'replace' (the tiles already compiled carry -44:
+  // the read-time override LM16 below turns them; `?met16=0` keeps the old decorate builder on the extrusion)
+  { id: 44, key: 'metMuseum',       name: 'The Met',                     lat: 40.77940, lon: -73.96320, mode: 'replace' },
   { id: 45, key: 'guggenheim',      name: 'Guggenheim Museum',           lat: 40.78300, lon: -73.95900, mode: 'replace' },
-  { id: 46, key: 'amnh',            name: 'Museum of Natural History',   lat: 40.78130, lon: -73.97400, mode: 'decorate' },
+  // LM16 (2026-10-16): the museum is modelled whole (city/lmAmnh.js), so it replaces the extrusion; its north side (the Gilder
+  // Center, the 81st Street terrace, tile -1_0 #211) is its own footprint, id 78 below
+  { id: 46, key: 'amnh',            name: 'Museum of Natural History',   lat: 40.78130, lon: -73.97400, mode: 'replace' },
   { id: 47, key: 'dakota',          name: 'The Dakota',                  lat: 40.77650, lon: -73.97610, mode: 'decorate' },
   // CP33: the old point (40.77490, -73.97660) was 370 m south-west of the San Remo, on an 18-storey block at Columbus Avenue
   // and W 73rd (the twin-tower builder had replaced that block; the San Remo stayed a plain 120 m extrusion). This point is
@@ -77,7 +82,40 @@ export const LANDMARKS = [
   // inaccessibility of the compiled footprints (tile -2_3 #37 and #50)
   { id: 61, key: 'essexHouse',      name: 'Essex House (160 Central Park South)', lat: 40.766182, lon: -73.978516, mode: 'decorate' },
   { id: 62, key: 'hampshireHouse',  name: 'Hampshire House (150 Central Park South)', lat: 40.766044, lon: -73.977978, mode: 'decorate' },
+  // CW38 (Central Park West's tower houses, city/lmCPW.js): each compiled footprint is one ring at the towers' height; the
+  // points sit 8 m behind the park front, mid-block, inside the U's front bar (the read-time overrides below do the same
+  // on the tiles already built)
+  { id: 63, key: 'majestic',        name: 'The Majestic (115 Central Park West)',  lat: 40.775957, lon: -73.976454, mode: 'replace' },
+  { id: 64, key: 'century',         name: 'The Century (25 Central Park West)',    lat: 40.770316, lon: -73.980561, mode: 'replace' },
+  { id: 65, key: 'eldorado',        name: 'The Eldorado (300 Central Park West)',  lat: 40.788273, lon: -73.967478, mode: 'replace' },
+  { id: 66, key: 'beresford',       name: 'The Beresford (211 Central Park West)', lat: 40.782497, lon: -73.971690, mode: 'replace' },
+  // LB39 (city/liberty.js): the Statue of Liberty, her pedestal and Fort Wood, resident and drawn by their own module; the
+  // point is inside the compiled footprint of the fort's star (tile -13_20), which the builder replaces by nothing
+  { id: 67, key: 'statueOfLiberty', name: 'Statue of Liberty (Liberty Enlightening the World), pedestal and Fort Wood', lat: 40.689266, lon: -74.044581, mode: 'replace' },
+  // LB39: Liberty Island's other buildings (the museum, the pavilions, the service buildings), drawn by city/libertyIsland.js
+  // on their OpenStreetMap footprints; the compiled footprints there are replaced by nothing
+  { id: 68, key: 'libertyIslandBuilding', name: 'Liberty Island building (city/libertyIsland.js)', lat: 40.690849, lon: -74.046412, mode: 'replace' },
+  // TW (towers lane, city/tk/tkLandmarks.js): the towers that hold the skyline from Central Park, points inside the compiled
+  // footprints (client/tools/towers census: tile and index in the comment)
+  { id: 70, key: 'tw220cps',        name: '220 Central Park South',      lat: 40.767050, lon: -73.980337, mode: 'replace' },   // -2_3:57
+  { id: 71, key: 'twTimeWarner',    name: 'Deutsche Bank Center (Time Warner Center)', lat: 40.768470, lon: -73.982969, mode: 'replace' },   // -2_3:4
+  { id: 72, key: 'twGM',            name: 'General Motors Building',     lat: 40.763562, lon: -73.972301, mode: 'replace' },   // -1_4:56
+  { id: 73, key: 'twSherry',        name: 'The Sherry-Netherland',       lat: 40.764318, lon: -73.972531, mode: 'replace' },   // -1_4:147
+  { id: 74, key: 'twTrumpIntl',     name: '1 Central Park West',         lat: 40.769118, lon: -73.981570, mode: 'replace' },   // -2_3:14
+  { id: 75, key: 'tw53w53',         name: '53 West 53rd',                lat: 40.761815, lon: -73.978094, mode: 'replace' },   // LF39 (BIN 1090777)
+  { id: 76, key: 'tw520park',       name: '520 Park Avenue',             lat: 40.764030, lon: -73.970024, mode: 'replace' },   // 0_4:194
+  { id: 77, key: 'tw270park',       name: '270 Park Avenue',             lat: 40.755978, lon: -73.975968, mode: 'replace' },   // -1_5:106
+  // /TW
+  // LM16: the AMNH's north side (city/lmAmnh.js buildAmnhNorth); the point is inside the compiled footprint (tile -1_0 #211)
+  { id: 78, key: 'amnhNorth',       name: 'Museum of Natural History, north side (Gilder Center, 81st Street terrace)', lat: 40.781899, lon: -73.974332, mode: 'replace' },
 ];
+// TW: the points of four landmarks that fell on the wrong footprint in the five-borough compile (each now inside its own;
+// 30 Rockefeller Plaza's 28 m inside the complex's ring of the live tiles and of runs 7-9, the point the records lane gave)
+{
+  const fix = { 23: [40.758977, -73.979196], 31: [40.766518, -73.983557], 32: [40.758504, -73.970086], 50: [40.756511, -73.973347], 60: [40.765590, -73.979071] };
+  for (const l of LANDMARKS) if (fix[l.id]) { l.lat = fix[l.id][0]; l.lon = fix[l.id][1]; }
+}
+// /TW
 // AR32C (city/w125c.js): the 125th Street part builds the Apollo's front itself (the terracotta, the marquee, the blade
 // sign); the old decorate builder's red and white boxes are kept off by giving the entry, in the browser only, a key no
 // builder has (the compiled footprint keeps its landmark id). `?ar32c=0` or `?ar32=0` restores it.
@@ -213,4 +251,80 @@ export const BUILDING_OVERRIDES = [
       landmarkId: -62, clear: ['SETBACKS'] },
   );
 }
+// CW38 (records lane, 2026-10-11): the Central Park West tower houses on the tiles already compiled (live set run 6), the
+// same points as their LANDMARKS entries; `?cw38=0` leaves them to the tile (one footprint, the tower pass's crown)
+{
+  const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
+  if (!q || q.get('cw38') !== '0') BUILDING_OVERRIDES.push(
+    { key: 'cw38Majestic', name: 'The Majestic, 115 Central Park West (tile -1_1 #6)', lat: 40.775957, lon: -73.976454, landmarkId: 63 },
+    { key: 'cw38Century', name: 'The Century, 25 Central Park West (tile -2_2 #22)', lat: 40.770316, lon: -73.980561, landmarkId: 64 },
+    { key: 'cw38Eldorado', name: 'The Eldorado, 300 Central Park West (tile 0_-2 #73)', lat: 40.788273, lon: -73.967478, landmarkId: 65 },
+    { key: 'cw38Beresford', name: 'The Beresford, 211 Central Park West (tile -1_0 #175)', lat: 40.782497, lon: -73.971690, landmarkId: 66 },
+  );
+}
+// LM16 (landmarks round, 2026-10-16): the AMNH on the tiles already compiled, the same ids as its LANDMARKS entries: the main
+// block (tile -1_0 #82, compiled as a decorate, -46) replaced by city/lmAmnh.js buildAmnh, the north side (#211, no id)
+// by buildAmnhNorth; each point 10+ m inside its footprint; `?lm16=0` leaves both to the tile (and landmarks.js the old builder)
+{
+  const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
+  if (!q || q.get('lm16') !== '0') BUILDING_OVERRIDES.push(
+    { key: 'lm16Amnh', name: 'American Museum of Natural History, 77th Street to the Rose Center (tile -1_0 #82)', lat: 40.781112, lon: -73.974907, landmarkId: 46 },
+    { key: 'lm16AmnhNorth', name: 'AMNH north side: Gilder Center, 81st Street terrace (tile -1_0 #211)', lat: 40.781899, lon: -73.974332, landmarkId: 78 },
+  );
+}
+// LB39 (landmarks lane, 2026-10-11): the Statue of Liberty's footprint on the tiles already compiled (live set run 6: the star
+// fort as a 36 m prism, tile -13_20 #3), the same point as its LANDMARKS entry; `?lb39=0` leaves the tile's prism
+{
+  const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
+  if (!q || q.get('lb39') !== '0') BUILDING_OVERRIDES.push(
+    { key: 'lb39Liberty', name: 'Fort Wood under the Statue of Liberty (tile -13_20)', lat: 40.689266, lon: -74.044581, landmarkId: 67 },
+    // the island's ten other compiled footprints (tile -13_20; each point 4-18 m clear inside its footprint)
+    ...[[40.69039, -74.046758], [40.690731, -74.047042], [40.689683, -74.044913], [40.689867, -74.04714], [40.690849, -74.046412],
+      [40.69049, -74.046494], [40.689993, -74.046065], [40.690506, -74.04694], [40.689622, -74.046235], [40.689741, -74.044259]]
+      .map(([lat, lon], i) => ({ key: 'lb39Island' + i, name: 'Liberty Island compiled footprint (city/libertyIsland.js draws the island)', lat, lon, landmarkId: 68 })),
+  );
+}
 // /CP33
+
+// TW (towers lane, docs/notes/r2-towers.md): read-time, like CP33 (`?rto=0` disables them; `?twlm=0` too): the towers lane's
+// landmark ids on the tiles already built, the wrong footprints cleared, and 30 Rockefeller Plaza's height (the compiled
+// footprint carries 10.0 m; the live footprint dataset 254.4 m to the roof, 259 m to the parapet)
+{
+  const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
+  if (!q || (q.get('twlm') !== '0')) BUILDING_OVERRIDES.push(
+    { key: 'twOne57', name: 'One57 (tile -2_3 #13)', lat: 40.765590, lon: -73.979071, landmarkId: 60 },
+    { key: 'twHearst', name: 'Hearst Tower, 959 Eighth Avenue (tile -3_3 #212)', lat: 40.766518, lon: -73.983557, landmarkId: 31 },
+    { key: 'twNotHearst', name: '347 W 55th St, which id 31 had replaced (tile -3_3 #126)', lat: 40.766393, lon: -73.985586, landmarkId: 0 },
+    { key: 'twCitigroup', name: 'Citigroup Center, 601 Lexington (tile 0_5 #208)', lat: 40.758504, lon: -73.970086, landmarkId: 32 },
+    { key: 'twNotCitigroup', name: '641 Lexington, which id 32 had replaced (tile 0_5 #51)', lat: 40.758986, lon: -73.969887, landmarkId: 0 },
+    { key: 'twWaldorf', name: 'Waldorf Astoria, 301 Park (tile -1_5 #82)', lat: 40.756511, lon: -73.973347, landmarkId: -50 },
+    { key: 'twNotWaldorf', name: '299 Park, which id 50 had decorated (tile -1_5 #20)', lat: 40.756039, lon: -73.974177, landmarkId: 0 },
+    { key: 'tw30Rock', name: '30 Rockefeller Plaza (tile -2_5 #177; #179 in runs 7-9)', lat: 40.758977, lon: -73.979196, landmarkId: 23, height: 259, floors: 70 },
+    { key: 'twNot30Rock', name: 'the 4.6 m building id 23 had replaced (tile -2_5 #169)', lat: 40.758856, lon: -73.978291, landmarkId: 0 },
+    { key: 'twNot30Rock7', name: 'the 3.7 m building id 23 fell to in runs 7-9 (tile -2_5 #178)', lat: 40.758458, lon: -73.978577, landmarkId: 0 },
+    { key: 'tw220cps', name: '220 Central Park South (tile -2_3 #57)', lat: 40.767050, lon: -73.980337, landmarkId: 70 },
+    { key: 'twTimeWarner', name: 'Deutsche Bank Center (tile -2_3 #4)', lat: 40.768470, lon: -73.982969, landmarkId: 71 },
+    { key: 'twGM', name: 'General Motors Building (tile -1_4 #56)', lat: 40.763562, lon: -73.972301, landmarkId: 72 },
+    { key: 'twSherry', name: 'The Sherry-Netherland (tile -1_4 #147)', lat: 40.764318, lon: -73.972531, landmarkId: 73 },
+    { key: 'twTrumpIntl', name: '1 Central Park West (tile -2_3 #14)', lat: 40.769118, lon: -73.981570, landmarkId: 74 },
+    { key: 'tw53w53', name: '53 West 53rd (LF39, BIN 1090777)', lat: 40.761815, lon: -73.978094, landmarkId: 75 },
+    { key: 'tw520park', name: '520 Park Avenue (tile 0_4 #194)', lat: 40.764030, lon: -73.970024, landmarkId: 76 },
+    { key: 'tw270park', name: '270 Park Avenue (tile -1_5 #106)', lat: 40.755978, lon: -73.975968, landmarkId: 77 },
+  );
+  // the colours (and a curtain wall's style) of the towers the kit dresses from facts the records lack (city/tk/tkOverrides.js)
+  if (!q || (q.get('twlm') !== '0')) {
+    for (const t of TW_TOWERS) if (t.color || t.style) BUILDING_OVERRIDES.push({ key: 'tw:' + t.key, name: t.name, lat: t.lat, lon: t.lon, ...(t.color ? { color: t.color } : {}), ...(t.style ? { style: t.style } : {}) });
+  }
+}
+// /TW
+// LM16 (landmarks round, 2026-10-16): the Metropolitan Museum's compiled footprint (one 63-sided ring at 26.8 m, landmark id
+// -44, decorate) becomes a replace landmark on the tiles already built: city/lmMetMuseum.js draws its walls and roofs, so the
+// extrusion goes. The point is its LANDMARKS entry's (inside the ring, about 50 m in from the Fifth Avenue front). `?met16=0` keeps
+// the decorate builder on the extrusion.
+{
+  const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
+  if (!q || q.get('met16') !== '0') BUILDING_OVERRIDES.push(
+    { key: 'lm16Met', name: 'The Metropolitan Museum of Art (city/lmMetMuseum.js)', lat: 40.77940, lon: -73.96320, landmarkId: 44 },
+  );
+}
+// /LM16

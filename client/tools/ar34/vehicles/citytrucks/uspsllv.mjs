@@ -65,7 +65,7 @@ export function build(q) {
   P.box('detail', [-W2 - 0.01, W2 + 0.01], [0.26, 0.5], [ZF - 0.14, ZF], 0.04, { sw: 'satinBlack' });
   // rear: roll-up door frame, corner lamp columns, step bumper
   // rear: the roll-up door in its frame, a round lamp column at each corner (tail, signal, reverse from the top), as
-  // the LLV on 125th Street shows them
+  // x +-0.83 m, y 1.40 / 1.27 / 1.15 m; measured on the crop with the 2.159 m height as the scale)
   P.box('detail', [-0.75, 0.75], [0.5, 2.02], [ZR + 0.105, ZR + 0.12], 0, { sw: 'darkGrey' });
   P.box('paint', [-0.71, 0.71], [0.53, 1.99], [ZR + 0.1, ZR + 0.11], 0.005);
   if (q === 0) P.box('detail', [-0.06, 0.06], [0.62, 0.66], [ZR + 0.08, ZR + 0.1], 0.01, { sw: 'chrome' });
@@ -107,7 +107,6 @@ export function liverySVG() {
     { const [x, y] = P(0.0, 2.04); t.push(`<text x='${x}' y='${y}' ${F} font-weight='bold' font-size='34' fill='#222' text-anchor='middle'>${NUM}</text>`); }
     if (s > 0) { const [x, y] = P(-1.85, 0.62); t.push(`<text x='${x}' y='${y}' ${F} font-weight='bold' font-size='16' fill='${R}' text-anchor='middle'>GASOLINE</text>`); }
   }
-  // rear: slats, the eagle centred high on the door, the stripes across it, number on top, web address low right
   { const [x0, y0] = px.rear(0.71, 1.99), [x1, y1] = px.rear(-0.71, 0.53);
     for (let y = y0; y < y1; y += 0.1 * px.my) t.push(`<rect x='${x0}' y='${y}' width='${x1 - x0}' height='2' fill='#c4c6c3'/>`);
     const [ex, ey] = px.rear(0.32, 1.65), [fx, fy] = px.rear(-0.32, 1.27); t.push(eagle(ex, ey, fx - ex, fy - ey, B));

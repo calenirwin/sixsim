@@ -1,0 +1,10 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1",
+	"FriendlyName": "Valdrada Cells",
+	"Description": "City cells as instance tables over an imported-once kit, assembled at load",
+	"Category": "Valdrada",
+	"CanContainContent": false,
+	"Modules": [ { "Name": "ValdradaCells", "Type": "Runtime", "LoadingPhase": "Default" } ]
+}

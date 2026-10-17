@@ -233,7 +233,6 @@ export function polyMesh(frame, mat, pts, w, box) {
 // ------------------------------------------------------------------ AR34: glass, lit rooms and shutters
 // An opaque curtain-wall glass of the library (mat/pbrLib.js glass_tower*: the analytic sky reflection with the canyon term,
 // Fresnel) with a body colour of our own: the library's bodies are near black, the real towers' glass reads mid grey-green or
-// grey-blue by day. `key` makes the
 // material distinct (the library caches by its options); `night` = [emissive hex, intensity] lights it after dark.
 export function towerGlass(name, body, key = 0, night = null, tint = null) {
   const m = pbrMaterial(name, { body, dirt: 0.1 + key * 1e-4, ...(tint ? { tint } : {}) });
@@ -467,10 +466,9 @@ export function curtain(K, o) {
 }
 
 
-// thin pale anodised aluminium
 let _PMULL = null;
 export function paleMullion() {
-  // through wallMat's value curve
+  // through wallMat's value curve (a plain applyLightTrim material reads 0.3 x its albedo by day: the mullions of the north-facing
   if (!_PMULL) _PMULL = wallMat({ color: 0xdfe1de, roughness: 0.4, metalness: 0.2, soot: 0, streak: 0 });
   return _PMULL;
 }

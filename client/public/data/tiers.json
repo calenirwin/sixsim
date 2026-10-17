@@ -1,0 +1,47 @@
+{
+  "schema": "valdrada.tiers/0",
+  "note": "Quality tiers (docs/notes/tile-system.md section 7): content is identical at every tier, only budgets and shading differ; every tier draws the whole worldspace and every landmark (?lod16=1's persistent tier). ?tier=<name> applies a preset's `flags` before any module reads the URL (client/src/lod/tiers.js); a flag given explicitly in the URL wins over the preset, and gfx keys merge. loadedGrid is the architecture's L0 grid in 128 m cells; until cells stream, today's client loads 512 m tiles within nearRadiusM.",
+  "default": "high",
+  "tiers": {
+    "low": {
+      "label": "Low (\"Vice City\" class): RTX 3060 at 1080p, 60 fps, 4 GB of video memory",
+      "loadedGrid": { "cells": 5, "nearRadiusM": 600 },
+      "screenErrorPx": 3,
+      "pixelRatio": 1,
+      "shadows": { "cascades": 1, "nearMapPx": 2048 },
+      "effects": { "ssao": false, "bakedCityAO": true, "ssgi": false, "lightProbe": false, "ssr": false, "godRays": false, "motionBlur": false, "bloom": true },
+      "lod": { "maxBytes": 402653184, "maxNodes": 48 },
+      "flags": { "near": 600, "pr": 1, "nocascade2": 1, "sm": 2048, "ao": 0, "gi": 0, "probe": 0, "lod16": 1, "lodtier": "low", "gfx": "ssr:0,godrays:0,motionBlur:0" }
+    },
+    "medium": {
+      "label": "Medium: RTX 3060 at 1440p 60 fps, or 1080p with headroom",
+      "loadedGrid": { "cells": 7, "nearRadiusM": 800 },
+      "screenErrorPx": 2,
+      "pixelRatio": 1,
+      "shadows": { "cascades": 2, "nearMapPx": 4096 },
+      "effects": { "ssao": true, "bakedCityAO": true, "ssgi": false, "lightProbe": true, "ssr": false, "godRays": true, "motionBlur": true, "bloom": true },
+      "lod": { "maxBytes": 671088640, "maxNodes": 96 },
+      "flags": { "near": 800, "pr": 1, "gi": 0, "lod16": 1, "lodtier": "medium", "gfx": "ssr:0" }
+    },
+    "high": {
+      "label": "High (\"GTA V\" class): RTX 3070 to 4070 class at 1440p 60 fps",
+      "loadedGrid": { "cells": 9, "nearRadiusM": 1000 },
+      "screenErrorPx": 1,
+      "pixelRatio": 1.6,
+      "shadows": { "cascades": 2, "nearMapPx": 4096 },
+      "effects": { "ssao": true, "bakedCityAO": true, "ssgi": true, "lightProbe": true, "ssr": true, "godRays": true, "motionBlur": true, "bloom": true },
+      "lod": { "maxBytes": 1073741824, "maxNodes": 160 },
+      "flags": { "near": 1000, "pr": 1.6, "lod16": 1, "lodtier": "high" }
+    },
+    "cinematic": {
+      "label": "Cinematic preview in three.js (the Unreal and Cycles tier renders from the packages)",
+      "loadedGrid": { "cells": 11, "nearRadiusM": 1300, "viewFar": 2500 },
+      "screenErrorPx": 1,
+      "pixelRatio": 2,
+      "shadows": { "cascades": 2, "nearMapPx": 8192 },
+      "effects": { "ssao": true, "bakedCityAO": true, "ssgi": true, "lightProbe": true, "ssr": true, "godRays": true, "motionBlur": true, "bloom": true },
+      "lod": { "maxBytes": 2147483648, "maxNodes": 320 },
+      "flags": { "near": 1300, "pr": 2, "sm": 8192, "lod16": 1, "lodtier": "cinematic" }
+    }
+  }
+}

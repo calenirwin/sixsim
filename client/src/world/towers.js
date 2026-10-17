@@ -94,9 +94,21 @@ function pointInRing(x, z, ring) {
   return ins;
 }
 const NM24T = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('nm24') === '0');
+// FB38 (2026-10-11): every crown piece stands on its own building. A crown's tiers were scaled toward the footprint's
+// vertex mean while its pylon and mast went to the most interior point of the roof, so on a footprint whose vertices
+// bunch on one side the pylon could stand beside the tier stack instead of on it (the Majestic, 115 Central Park West:
+// a 6.6 m box hanging 10 m over the roof). Now each piece goes inside the deck it stands on, a tier that would overhang
+// the deck below ends the stack, the first tier rises from the roof deck instead of the parapet's top, and a box whose
+// foot is still over a lower deck comes down to it. `?fb38=0` restores the old placement.
+const FB38 = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('fb38') === '0');
 function insetM(ring, d, cx, cz, minF = 0.3) {
   const R = meanRadius(ring, cx, cz);
   return scaleRing(ring, Math.max(minF, (R - d) / Math.max(R, 0.01)), cx, cz);
+}
+// FB38: a crown inset is a true offset of its ring where one exists (NM24's miter offset: every edge moves d inward,
+// so the inset stays inside a notched plan), the scaled inset otherwise
+function insetFB(ring, d, cx, cz, minF) {
+  return (FB38 && ringOffsetMiter(ring, d)) || insetM(ring, d, cx, cz, minF);
 }
 // oriented bounding box in the ring's own dominant direction (long axis first)
 function ringOBB(pts) {
@@ -150,6 +162,15 @@ function boxInRing(ring, cx, cz, hw, hh, ang) {
   if (!inRing(ring, cx, cz)) return false;
   if (hw <= 0 && hh <= 0) return true;
   for (const [x, z] of rectRing(cx, cz, hw, hh, ang)) if (!inRing(ring, x, z)) return false;
+  // FB38: corners inside a concave ring are not enough, a notch can cut across the box between them (the box then hangs
+  // over the notch); no vertex of the ring may lie inside the box
+  if (FB38) {
+    const c = Math.cos(ang), s = Math.sin(ang);
+    for (const [x, z] of ring) {
+      const lx = (x - cx) * c + (z - cz) * s, lz = -(x - cx) * s + (z - cz) * c;
+      if (Math.abs(lx) < hw - 1e-3 && Math.abs(lz) < hh - 1e-3) return false;
+    }
+  }
   return true;
 }
 function edgeDist(ring, x, z) {
@@ -366,6 +387,14 @@ export function crownKind(b) {
 // Returns { roofRing, roofY, areaF } so the rooftop engine plants its tanks,
 // dunnage and davits on the tier the crown actually left exposed.
 // ============================================================================
+// FB38: the sculpted crown's shoulder (and the cap on it) is an inset toward the vertex mean; on a notched plan it can
+// reach past the roof, and then the tower takes the plain bulkhead instead
+function sculptFits(pRing, ring, cx, cz) {
+  const shoulder = insetFB(pRing, Math.max(1.2, meanRadius(ring, cx, cz) * 0.16), cx, cz, 0.3);
+  if (!shoulder.every(([x, z]) => pointInRing(x, z, ring))) return false;
+  const capR = insetFB(shoulder, Math.max(0.9, meanRadius(ring, cx, cz) * 0.16), cx, cz, 0.2);
+  return capR.every(([x, z]) => pointInRing(x, z, shoulder));
+}
 export function buildTower(buf, ring, cx, cz, y0, topY, b, opts = {}) {
   const col = [b.r / 255, b.g / 255, b.b / 255];
   const h = b.height;
@@ -379,6 +408,9 @@ export function buildTower(buf, ring, cx, cz, y0, topY, b, opts = {}) {
   const kind = crownKind(b);
   const r0 = hash1(cv * 617.3 + 1.7), r1 = hash1(cv * 311.7 + 5.3), r2 = hash1(cv * 907.1 + 11.9);
   const masonry = MASONRY.has(b.style);
+  // FB38: the decks a piece can stand on, lowest first (the roof over the footprint, then each crown tier)
+  const support = [{ ring, y: topY }];
+  const deckUnder = (x, z, yb) => { let best = null; for (const d of support) if (d.y <= yb + 0.5 && (best === null || d.y > best) && pointInRing(x, z, d.ring)) best = d.y; return best; };
 
   // ---- 1. PARAPET. A tower's parapet is 1.1-2.4 m with a proud coping, not the
   // 0.55-1.15 m lip every building gets. It is the dark line that separates a
@@ -421,8 +453,19 @@ export function buildTower(buf, ring, cx, cz, y0, topY, b, opts = {}) {
     for (let i = 0; i < pRing.length && i < 10; i++) {
       const [vx, vz] = pRing[i];
       // pull the pier a touch inside the wall line so it cannot poke through
-      const ix = cx + (vx - cx) * 0.985, iz = cz + (vz - cz) * 0.985;
-      box(buf, ix, iz, pw2, pw2, topY + paraH * 0.2, topY + paraH + 0.22 + pierH, obb.ang, pcol, aux,
+      let ix = cx + (vx - cx) * 0.985, iz = cz + (vz - cz) * 0.985;
+      // FB38: centred on the corner, half the pier and its cap hung outside the roof over the street; it is drawn
+      // where the whole cap block stands on the roof (pulled in along the line to the centre), or not at all
+      if (FB38) {
+        const L = Math.hypot(vx - cx, vz - cz) || 1;
+        let fit = false;
+        for (const f of [1.0, 1.5, 2.2, 3.0]) {
+          const px = vx - ((vx - cx) / L) * pw2 * 1.32 * f, pz = vz - ((vz - cz) / L) * pw2 * 1.32 * f;
+          if (boxInRing(ring, px, pz, pw2 * 1.32, pw2 * 1.32, obb.ang)) { ix = px; iz = pz; fit = true; break; }
+        }
+        if (!fit) continue;
+      }
+      box(buf, ix, iz, pw2, pw2, topY + (FB38 ? 0 : paraH * 0.2), topY + paraH + 0.22 + pierH, obb.ang, pcol, aux,
         [0, b.lit, cv, crownFlags], y0);
       // a stepped cap block, the cast-stone terminal in the reference
       box(buf, ix, iz, pw2 * 1.32, pw2 * 1.32, topY + paraH + 0.22 + pierH,
@@ -458,30 +501,39 @@ export function buildTower(buf, ring, cx, cz, y0, topY, b, opts = {}) {
     const budget = Math.min(16, Math.max(4.5, h * 0.07));
     const wSum = tiers + 0.4;                       // last tier weighs 1.4
     for (let t = 0; t < tiers; t++) {
-      cur = insetM(cur, stepM * (0.8 + hash1(cv * 71 + t * 13.7) * 0.5), cx, cz, 0.22);
+      const nextT = insetFB(cur, stepM * (0.8 + hash1(cv * 71 + t * 13.7) * 0.5), cx, cz, 0.22);
+      // FB38: a tier must stand inside the deck below it (an inset toward a vertex mean off a notched plan can overhang)
+      if (FB38 && !nextT.every(([x, z]) => pointInRing(x, z, support[support.length - 1].ring))) break;
+      cur = nextT;
       const th = (budget / wSum) * (t === tiers - 1 ? 1.4 : 1) * (0.82 + hash1(cv * 53 + t * 7.1) * 0.36);
-      // tier wall (blind: a crown has no window grid to speak of at this range)
-      prism(buf, cur, yy, yy + th, lite, aux, [0, b.lit, cv, crownFlags], y0);
+      // tier wall (blind: a crown has no window grid to speak of at this range); FB38: the first rises from the roof deck
+      prism(buf, cur, FB38 && t === 0 ? topY : yy, yy + th, lite, aux, [0, b.lit, cv, crownFlags], y0);
       const lip = scaleRing(cur, 1.02, cx, cz);
       prism(buf, lip, yy + th, yy + th + 0.35, cop, aux, [0, b.lit, cv, crownFlags], y0);
       cap(buf, cur, yy + th + 0.35, col.map((c2) => c2 * 0.62), b.style, b.floorH, b.winW,
         [0, b.lit, cv, FF.ROOF], 2);                         // tier terrace, membrane
       strip(buf, cur, lip, yy + th + 0.35, cop, [b.floorH, b.winW, 2, b.style], [0, b.lit, cv, FF.ROOF]);
       yy += th + 0.35;
+      support.push({ ring: cur, y: yy });
       if (t === 0) { roofRing = cur; roofY = topY; areaF = 0.8; }
       if (meanRadius(cur, cx, cz) < 3.2) break;
     }
-    // a mechanical pylon on the crown of the taller ones
+    // a mechanical pylon on the crown of the taller ones; FB38: inside the top deck, from that deck
+    const deckTop = support[support.length - 1];
     if (h > 95 && r2 < 0.65) {
       const [pw] = fitBox(obb.w * 0.5, Math.max(1.6, obb.w * 0.13), 0);
       const [ph] = fitBox(obb.h * 0.5, Math.max(1.4, obb.h * 0.16), 0);
       const pyH = Math.min(9, 2.6 + r2 * 4.5 + h * 0.012);
-      const pl0 = placeInside(ring, obb.center[0], obb.center[1], pw, ph, obb.ang);   // RB34
-      if (pl0) box(buf, pl0.x, pl0.z, pl0.hw, pl0.hh, yy, yy + pyH, obb.ang,
+      const pc = FB38 ? centroidOf(deckTop.ring) : obb.center;
+      const pl0 = placeInside(FB38 ? deckTop.ring : ring, pc[0], pc[1], pw, ph, obb.ang);   // RB34
+      const pyB = FB38 && pl0 ? (deckUnder(pl0.x, pl0.z, yy) ?? yy) : yy;
+      if (pl0) box(buf, pl0.x, pl0.z, pl0.hw, pl0.hh, pyB, yy + pyH, obb.ang,
         lite.map((c) => c * 0.92), aux, [0, b.lit, cv, crownFlags], y0, MECH_OPTS);
-      yy += pyH;
+      if (pl0 && FB38) support.push({ ring: rectRing(pl0.x, pl0.z, pl0.hw, pl0.hh, obb.ang), y: yy + pyH });
+      if (pl0 || !FB38) yy += pyH;   // FB38: no pylon fitted, nothing to stand the mast on up there
     }
-    if (h > 175 || (h > 130 && r1 < 0.16)) mast(buf, obb, yy, h, y0, b, cv, aux, ring);
+    // FB38: with no tier and no pylon drawn the mast rises from the roof deck, not from the parapet's top
+    if (h > 175 || (h > 130 && r1 < 0.16)) mast(buf, obb, FB38 && support.length === 1 ? topY : yy, h, y0, b, cv, aux, FB38 ? support[support.length - 1].ring : ring);
   } else if (kind === 'modern') {
     // 1945-79 office slab: a big louvred mechanical penthouse pushed to one end
     // of the roof, a lower stair/lift head beside it, screen walls. Nearly every
@@ -503,23 +555,31 @@ export function buildTower(buf, ring, cx, cz, y0, topY, b, opts = {}) {
     if (pl2) box(buf, pl2.x, pl2.z, pl2.hw, pl2.hh, topY, topY + paraH + mHt * 0.62, obb.ang,
       mech.map((v) => v * 0.9), aux, [0, b.lit, cv, mechFlags], y0, MECH_OPTS);
     roofRing = pRing; roofY = topY; areaF = 0.6;
-    if (h > 185 || (h > 140 && r2 < 0.14)) mast(buf, obb, topY + paraH + mHt, h, y0, b, cv, aux, ring);
-  } else if (kind === 'sculpt' && steppable) {
+    // FB38: the mast stands on the penthouse it rises from (it went to the roof's centre, beside a penthouse pushed to one end)
+    if (h > 185 || (h > 140 && r2 < 0.14)) {
+      if (!FB38) mast(buf, obb, topY + paraH + mHt, h, y0, b, cv, aux, ring);
+      else if (pl1) mast(buf, obb, topY + paraH + mHt, h, y0, b, cv, aux, rectRing(pl1.x, pl1.z, pl1.hw, pl1.hh, obb.ang));
+      else mast(buf, obb, topY, h, y0, b, cv, aux, ring);
+    }
+  } else if (kind === 'sculpt' && steppable && (!FB38 || sculptFits(pRing, ring, cx, cz))) {
     // post-2000 tower: the crown is part of the massing — one inset shoulder,
     // then a tapered cap, then a spire on the tallest. Reads as a silhouette,
     // which is the whole point of these buildings.
     const sBud = Math.min(17, Math.max(5, h * 0.075));
     const sh1 = sBud * 0.62;
-    const shoulder = insetM(pRing, Math.max(1.2, meanRadius(ring, cx, cz) * 0.16), cx, cz, 0.3);
-    prism(buf, shoulder, topY + paraH + 0.22, topY + paraH + 0.22 + sh1, col, aux, [0, b.lit, cv, blindAll], y0);
-    const capR = insetM(shoulder, Math.max(0.9, meanRadius(ring, cx, cz) * 0.16), cx, cz, 0.2);
+    const shoulder = insetFB(pRing, Math.max(1.2, meanRadius(ring, cx, cz) * 0.16), cx, cz, 0.3);
+    // FB38: the shoulder rises from the roof deck (it hung over the deck by the parapet's height)
+    prism(buf, shoulder, FB38 ? topY : topY + paraH + 0.22, topY + paraH + 0.22 + sh1, col, aux, [0, b.lit, cv, blindAll], y0);
+    const capR = insetFB(shoulder, Math.max(0.9, meanRadius(ring, cx, cz) * 0.16), cx, cz, 0.2);
     const capH = sBud * 0.38;
     prism(buf, capR, topY + paraH + 0.22 + sh1, topY + paraH + 0.22 + sh1 + capH,
       [0.30, 0.32, 0.35], aux, [0, b.lit, cv, mechFlags], y0);
     cap(buf, capR, topY + paraH + 0.22 + sh1 + capH, [0.30, 0.32, 0.35], b.style, b.floorH, b.winW,
       [0, b.lit, cv, FF.ROOF], 2);
+    // FB38: the shoulder's own top, round the cap (it was open: the cap stood on nothing and the deck showed through)
+    if (FB38) strip(buf, capR, shoulder, topY + paraH + 0.22 + sh1, col.map((c) => c * 0.8), [b.floorH, b.winW, 2, b.style], [0, b.lit, cv, FF.ROOF]);
     roofRing = shoulder; roofY = topY; areaF = 0.55;
-    if (h > 170 || (h > 125 && r0 < 0.18)) mast(buf, obb, topY + paraH + 0.22 + sh1 + capH, h, y0, b, cv, aux, ring);
+    if (h > 170 || (h > 125 && r0 < 0.18)) mast(buf, obb, topY + paraH + 0.22 + sh1 + capH, h, y0, b, cv, aux, FB38 ? capR : ring);
   } else if (kind === 'slab') {
     // NYCHA / postwar brick slab: one long lift-and-tank bulkhead on the ridge,
     // brick like the shaft, plus a stair head. No crown — that IS the look.

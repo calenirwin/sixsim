@@ -8,7 +8,8 @@
 #   source /data0/projectnyc_aux/env.sh
 #   uv run --no-project --with pillow --with numpy python tools/assets/fetch_hq.py [--res 4k] [--only a,b] [--out <dir>]
 #
-# Every set here is CC0 (Poly Haven: https://polyhaven.com/license). A set that is already complete is not downloaded again.
+# Every set here is CC0 (Poly Haven: https://polyhaven.com/license; ambientCG: https://docs.ambientcg.com/license/). A set
+# that is already complete is not downloaded again.
 import argparse, json, os, sys, time, urllib.request
 import numpy as np
 from PIL import Image
@@ -29,8 +30,18 @@ SETS = [
     ('concrete_wall_008', 'polyhaven', 'cast-in-place concrete walls'),
     ('preconcrete_wall_001', 'polyhaven', 'precast concrete panels'),
     ('white_stucco', 'polyhaven', 'stucco'),
+    # R9-HQ (UE track, 2026-10-08): the parks and Times Square (rounds 9-10)
+    ('lichen_rock', 'polyhaven', 'Central Park schist outcrops and boulders, grey with lichen'),
+    ('dark_rock_02', 'polyhaven', 'the schist\'s dark foliated faces, wet rock at the water'),
+    ('castle_wall_slates', 'polyhaven', 'schist rubble masonry: Belvedere Castle, Gapstow Bridge, the park walls'),
+    ('gravel_floor', 'polyhaven', 'pale crushed gravel: Bryant Park, the park paths'),
+    ('hexagonal_concrete_paving', 'polyhaven', 'Central Park hexagonal pavers'),
+    ('marble_01', 'polyhaven', 'white marble ashlar: the NYPL'),
+    ('metal_plate_02', 'polyhaven', 'cast and wrought iron: railings, lamp posts, fences, Bow Bridge'),
+    ('Grass004', 'ambientcg', 'lawns: Sheep Meadow, the Great Lawn, Bryant Park'),
+    # R9-HQ end
 ]
-LICENCE = {'polyhaven': 'CC0 1.0 (https://polyhaven.com/license)'}
+LICENCE = {'polyhaven': 'CC0 1.0 (https://polyhaven.com/license)', 'ambientcg': 'CC0 1.0 (https://docs.ambientcg.com/license/)'}   # (R9-HQ: ambientCG)
 UA = {'User-Agent': 'valdrada-hq-fetch/1.0'}
 
 
@@ -73,6 +84,9 @@ def fetch_polyhaven(sid, out, res):
     d = os.path.join(out, sid); os.makedirs(d, exist_ok=True)
     rec = {'source': 'polyhaven', 'licence': LICENCE['polyhaven'], 'page': f'https://polyhaven.com/a/{sid}',
            'size_m': [round(float(v) / 1000.0, 3) for v in (info.get('dimensions') or [2000, 2000])[:2]], 'files': {}, 'urls': {}}
+    try:   # MESH11: the height map too
+        rec['files']['disp'], rec['urls']['disp'] = fetch_disp(sid, out)
+    except Exception: pass
     for key, name in (('Diffuse', 'alb'), ('nor_gl', 'nrm'), ('arm', 'arm')):
         url, r = pick(files, key, res)
         if not url: continue
@@ -98,6 +112,60 @@ def fetch_polyhaven(sid, out, res):
     return rec
 
 
+# R9-HQ: an ambientCG set (CC0): the zip at res, its colour, OpenGL normal, AO and roughness, AO / roughness packed as in
+# fetch_polyhaven; the real size from the asset's dimensions (cm)
+def fetch_ambientcg(sid, out, res):
+    import zipfile
+    info = get_json(f'https://ambientcg.com/api/v2/full_json?id={sid}&include=downloadData,dimensionsData')['foundAssets'][0]
+    want = f'{res.upper()}-JPG'
+    dls = info['downloadFolders']['default']['downloadFiletypeCategories']['zip']['downloads']
+    dl = next((x for x in dls if x['attribute'] == want), None) or next(x for x in dls if x['attribute'].endswith('-JPG'))
+    d = os.path.join(out, sid); os.makedirs(d, exist_ok=True)
+    zp = os.path.join(d, dl['fileName'])
+    if not os.path.exists(zp): download(dl['downloadLink'], zp)
+    r = dl['attribute'].split('-')[0].lower()
+    dims = [float(info.get('dimensionX') or 0), float(info.get('dimensionY') or 0)]
+    rec = {'source': 'ambientcg', 'licence': LICENCE['ambientcg'], 'page': f'https://ambientcg.com/a/{sid}',
+           'size_m': [round(v / 100.0, 3) for v in dims] if all(dims) else [2.0, 2.0], 'files': {}, 'urls': {'zip': dl['downloadLink']}}
+    with zipfile.ZipFile(zp) as z:
+        names = z.namelist()
+        def ext(suffix, name):
+            src = next((n for n in names if n.endswith(f'_{suffix}.jpg') or n.endswith(f'_{suffix}.png')), None)
+            if src is None: return None
+            dst = os.path.join(d, f'{sid}_{name}_{r}{os.path.splitext(src)[1]}')
+            if not os.path.exists(dst):
+                with z.open(src) as f_, open(dst + '.part', 'wb') as g_: g_.write(f_.read())
+                os.replace(dst + '.part', dst)
+            return dst
+        alb, nrm, ao, rough = ext('Color', 'alb'), ext('NormalGL', 'nrm'), ext('AmbientOcclusion', 'ao'), ext('Roughness', 'rough')
+        disp = ext('Displacement', 'disp')   # MESH11: the height map
+        if disp: rec['files']['disp'] = disp
+    if alb: rec['files']['alb'] = alb
+    if nrm: rec['files']['nrm'] = nrm
+    if rough:
+        R = Image.open(rough).convert('L')
+        A = Image.open(ao).convert('L').resize(R.size) if ao else Image.new('L', R.size, 255)
+        dst = os.path.join(d, f'{sid}_arm_{r}.jpg')
+        Image.merge('RGB', (A, R, Image.new('L', R.size, 0))).save(dst, quality=95)
+        rec['files']['arm'] = dst
+    if alb: rec['albedo_mean'] = mean_linear(alb)
+    return rec
+# R9-HQ end
+
+
+# MESH11 (UE track, 2026-10-08): a Poly Haven set's height map (Displacement, 2k PNG, 16-bit), beside its other maps
+def fetch_disp(sid, out, res='2k'):
+    files = get_json(f'https://api.polyhaven.com/files/{sid}')
+    m = (files.get('Displacement') or {}).get(res) or {}
+    url = (m.get('png') or m.get('jpg') or {}).get('url')
+    if not url: raise RuntimeError('no Displacement map')
+    d = os.path.join(out, sid); os.makedirs(d, exist_ok=True)
+    dst = os.path.join(d, f'{sid}_disp_{res}{os.path.splitext(url)[1]}')
+    if not os.path.exists(dst): download(url, dst)
+    return dst, url
+# MESH11 end
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--res', default='4k'); ap.add_argument('--only'); ap.add_argument('--out', default='/data0/projectnyc_aux/assets/hq')
@@ -109,10 +177,18 @@ def main():
     for sid, src, what in SETS:
         if only and sid not in only: continue
         if sid in man and all(os.path.exists(f) for f in man[sid].get('files', {}).values()) and len(man[sid].get('files', {})) >= 3:
+            # MESH11 (UE track, 2026-10-08): a complete set without its height map takes that alone (Poly Haven's
+            # Displacement at 2k, as a 16-bit PNG: the Nanite displacement's source)
+            if src == 'polyhaven' and 'disp' not in man[sid]['files']:
+                try:
+                    man[sid]['files']['disp'], man[sid]['urls']['disp'] = fetch_disp(sid, A.out)
+                    json.dump(man, open(jp, 'w'), indent=1); print(f'HQ {sid}: height map added')
+                except Exception as e: print(f'HQ {sid}: height map FAILED {e}')
+                continue
             print(f'HQ {sid}: have it'); continue
         t0 = time.time()
         try:
-            rec = fetch_polyhaven(sid, A.out, A.res) if src == 'polyhaven' else None
+            rec = fetch_polyhaven(sid, A.out, A.res) if src == 'polyhaven' else fetch_ambientcg(sid, A.out, A.res) if src == 'ambientcg' else None   # (R9-HQ)
         except Exception as e:
             print(f'HQ {sid}: FAILED {e}'); continue
         rec['use'] = what

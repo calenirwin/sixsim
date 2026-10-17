@@ -16,13 +16,18 @@ import { buildBillboards, buildTsqScreens } from '../city/billboards.js';
 import { BP28, bpDropTree, bpTrees, bpOwns, bpBuild, bpWorld, bpApply, bpSkipBuilding } from '../city/bryantPark.js';
 import { cpTileHit, cpApply, cpSkipBuilding, cpDropFurniture, cpFurniture, cpBuild, cpLift } from '../city/centralPark.js';
 import { st38ClipTri, st38GapFill } from '../city/stations/subEnt38.js';   // ST38 (STATIONS2): the stair openings cut out of the drawn grid
-import { gf38Load, gf38Apply } from '../city/groundFix38.js';   // GF38 (GROUNDFIX): the bare ground paved from the planimetric data
+import { gf38Load, gf38Apply, gf38Index } from '../city/groundFix38.js';   // GF38 (GROUNDFIX): the bare ground paved from the planimetric data
+import { tileContentKey } from '../shared/overlay.js';   // OV39: the overlays' content key
+import { lf39Load, lf39Apply } from './lotfix39.js';   // LF39 (LOTFIX): missing buildings, lot cars, NYCHA lawns and trees
 import { areaTileHit, areaApply, areaSkipBuilding, areaDropFurniture, areaFurniture, areaBuild } from '../city/areas.js';
 import { tpTileHit, tpApply, tpStepsOwner, tpBuildSteps, tpSkipBuilding, tpBuildFurniture, tpDropFrontage } from '../city/tsqPlaza.js';
 import { placeCurbRamps } from '../city/streetNYC.js';
 import { StaticPool } from './staticPool.js';
 import { buildTower, buildSetbacks, TOWER_H } from './towers.js';
+import { TW_BID } from '../city/tk/tkParams.js';   // TW: the tower kit's hide slot offset (world/towerKit.js)
 import { ringOffsetMiter, upTri } from './ringOffset.js';   // NM24
+import { disposeOwned, registerOwned } from './disposeOwned.js';   // SPACE r2: a tile's own materials and textures leave with it
+import { LOWMEM, geometryMark, freeArraysAfterUpload, lateSweep } from './cpuFree.js';   // SPACE r2: ?lowmem=1, the light build's memory peak
 
 // `?nodatum=1` — A/B switch for the 2026-09-03 seam pass (docs/notes/seams.md).
 // It restores the legacy datums (building base as serialized, furniture as
@@ -39,6 +44,8 @@ const NO_DATUM = typeof location !== 'undefined' && new URLSearchParams(location
 const NO_TOWER = typeof location !== 'undefined' && new URLSearchParams(location.search).get('notower') === '1';
 // TL26: the drawn terrain grid stays under every ground section laid on it (see the ground block); ?tl26=0 restores the flat 0.12 m drop
 const NO_TL26 = typeof location !== 'undefined' && new URLSearchParams(location.search).get('tl26') === '0';
+// RL36 (compile.mjs rail pass): `?rl36=0` leaves the drawn terrain whole over the open cuts
+const NO_RL36 = typeof location !== 'undefined' && new URLSearchParams(location.search).get('rl36') === '0';
 // `?fac8=0` — A/B switch for the round-8 facade/roof pass (docs/notes/facades-r8.md):
 // real parapets with a recessed deck and its own coping, the roof-membrane
 // redistribution, and the masonry palette correction. Everything below guarded
@@ -99,7 +106,6 @@ function tsxAt(a, x, z) {
 // compiler's TI14 infill: both p2 & 1) takes the class and trunk of the live inventory tree it matches (the same point,
 // then within 5 m), and is dropped when none is left (felled since 2015, or never there); a live inventory tree with no
 // tree within 3 m is added where it stands at a sidewalk (the inventory also holds park trees, which the tiles draw from
-// their own data). Then TREES' rows apply (public/data/tree_overlay.json: { rows: [{ op:
 // 'remove' | 'move' | 'set' | 'add', x, z (world m), to: [x, z], cls, dbh, pit: 'guard' | 'none' }] }; remove / move / set
 // take the nearest street tree within 1.5 m). `?tfo=0` / `?tov=0` turn each off.
 const QS34 = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
@@ -1606,9 +1612,17 @@ function cy12InCourt(holes, x, z) {
 }
 
 export async function assembleTile(key, arrayBuf, ctx) {
+  const geoMark = geometryMark();   // SPACE r2 (world/cpuFree.js): the geometries this assembly makes have ids from here
   const tile = parseTile(arrayBuf);
+  // OV39 (shared/overlay.js): the baked overlays (LF39, GF38) apply by the content key of the compiled tile, taken here
+  // before any pass changes its sections (only for a tile that has an overlay entry)
+  const lf39D = await lf39Load(), gf38I = await gf38Index().catch(() => null);
+  const ckey = (lf39D && lf39D.tiles && lf39D.tiles[key]) || (gf38I && gf38I.tiles && gf38I.tiles[key]) ? tileContentKey(tile) : null;
+  // LF39 (LOTFIX, world/lotfix39.js; `?lf39=0` none): the baked buildings, campus trees and lawn join the tile's sections
+  // before anything below reads them
+  try { lf39Apply(key, tile, arrayBuf.byteLength, lf39D, ckey); } catch (e) { console.warn('[lf39] apply', e); }
   const [ox, oz] = tile.header.origin;
-  const gf38P = gf38Load(key, arrayBuf.byteLength).catch(() => null);   // GF38: the tile's baked fill (applied below)
+  const gf38P = gf38Load(key, arrayBuf.byteLength, ckey).catch(() => null);   // GF38: the tile's baked fill (applied below)
   const group = new THREE.Group();
   group.name = 'tile_' + key;
   const claims = []; // [poolName, id]
@@ -1616,6 +1630,23 @@ export async function assembleTile(key, arrayBuf, ctx) {
   const buf = new GeoBuf();
   const landmarkBuilds = [];
   const heroRecs = [];
+  // TW (towers lane, city/tk/, world/towerKit.js): every tower over TOWER_H with the tiers its walls were extruded as (the
+  // rings, heights and blind masks), so the tower kit rebuilds the walls on the same massing and the same v datum
+  // The walls the kit replaces are drawn under their own hide slot, TW_BID + the building's index (a tile holds under 1,400
+  // buildings, the slots are 65,536): the kit hides that slot and the tower's roofs, terrace parapets, crown and bulkheads
+  // stay the tile's. The part below the ground keeps the building's own slot.
+  const towerRecs = [];
+  const twTiers = (tiers, y0b) => (bf, r, ya, yb, bb, o2) => {
+    const store = !(o2 && o2.noStore) && (bb.flags & BF.STOREFRONT) && bb.storeH > 0;
+    tiers.push({ ring: r, y0: Math.max(ya, y0b), y1: yb, blind: o2 && o2.blindMask !== undefined ? o2.blindMask : 0, store: !!store });
+    const cut = Math.min(yb, y0b);   // the shopfront band too: the kit draws it (tkBuild.js retailFaceF)
+    const saved = bf.curBid;
+    if (cut > ya + 1e-3) extrudePrism(bf, r, ya, cut, bb, o2);
+    bf.curBid = TW_BID + bb.i;
+    if (yb > Math.max(ya, cut) + 1e-3) extrudePrism(bf, r, Math.max(ya, cut), yb, bb, o2);
+    bf.curBid = saved;
+  };
+  // /TW
   const decalRecs = [];
   const doorAnchors = []; // per-building door position on its front edge (stoops slide to it)
   const skirtV = []; // ground-contact AO skirt verts: x,y,z,alpha
@@ -2125,7 +2156,9 @@ export async function assembleTile(key, arrayBuf, ctx) {
         roofFill(buf, topRing, topY, b);
       } else {
         heroTop = b.height * 0.42;
-        const set = buildSetbacks(buf, ring, cx, cz, y0, topY, b, { ...opts, fndY }, extrudePrism);
+        const twT = [];   // TW: the tiers, for the tower kit
+        const set = buildSetbacks(buf, ring, cx, cz, y0, topY, b, { ...opts, fndY }, b.height > TOWER_H && !(lmId > 0) ? twTiers(twT, y0) : extrudePrism);
+        if (twT.length) b.__twTiers = twT;   // TW
         topRing = set.top;
         towerCap = buildTower(buf, set.top, cx, cz, y0, topY, b);
       }
@@ -2203,6 +2236,10 @@ export async function assembleTile(key, arrayBuf, ctx) {
           crBuild(buf, ring, b, crP, cx, cz, y0);
         } else if (ROOF9 && b.style === STYLE.RETAIL_MODERN && b.height > 6 && b.storeH > 2) {
           retailModern(buf, ring, cx, cz, fndY, y0, topY, b, opts);
+        } else if (b.height > TOWER_H && !(lmId > 0) && !NO_TOWER) {   // TW: the tower kit's tier (the walls as ever; decorate landmarks too)
+          const twT = [];
+          twTiers(twT, y0)(buf, ring, fndY, topY, b, opts);
+          b.__twTiers = twT;
         } else extrudePrism(buf, ring, fndY, topY, b, opts);
         if (crP) {
           // CR24 built the whole roof above
@@ -2382,6 +2419,15 @@ export async function assembleTile(key, arrayBuf, ctx) {
         holes: holes.length ? holes : null,
       });
     }
+    // TW: the tower kit's record (any vertex count; the kit draws only the walls of the tiers above)
+    if (b.__twTiers && b.__twTiers.length) {
+      towerRecs.push({
+        key: `${key}:${b.i}`, bid: b.i, tile: key, ring, tiers: b.__twTiers, cx, cz, baseY: y0, height: b.height, style: b.style,
+        color: [b.r, b.g, b.b], floorH: b.floorH, winW: b.winW, storeH: b.storeH, colorVar: b.colorVar, blind: b.blind, flags: b.flags,
+        lit: b.lit, floors: b.floors, area: b.area, doorI: door.doorI, doorPack: door.doorPack, frontIdx: b.frontIdx, roofKind: b.roofKind,
+      });
+    }
+    // /TW
     // ground-contact AO: a soft occlusion gradient ribbon where the building
     // meets the pavement (buildings otherwise read pasted onto the sidewalk).
     // Terrain-following, alpha fades wall -> 0 over 0.55m, drawn as a decal.
@@ -2491,8 +2537,15 @@ export async function assembleTile(key, arrayBuf, ctx) {
   // lift. The shader does it in one line and one draw call. docs/notes/zfight.md.
   {
     const sections = [['asphalt', 0], ['sidewalk', 1], ['curb', 2], ['paintW', 3], ['paintY', 4], ['grass', 5], ['path', 6], ['paintG', 9], ['brick', 10], ['gutter', 11], ['busred', 12], ['warn', 13], ['warnIron', 14], ['grassU', 15], ['plaza', 16], ['gravel', 17]];   // plaza: TP28's re-kinded Broadway (city/tsqPlaza.js); gravel: BP28's walks
+    // RL36 rail (compile.mjs): rail steel 18, ballast 19, the sleeper bed 20 (its per-vertex matId 20 + bearing, rtopA),
+    // cut walls 21. Kept out of TL26 below: a cut's bed lies 3 m under the grade and must not pull the grid down to it.
+    const RAIL_SECTIONS = [['rsteel', 18], ['rbal', 19], ['rtop', 20], ['rwall', 21]];
+    // SA37 shore aprons (compile.mjs): land the 16 m grid leaves under water behind a bulkhead, laid at the drawn land grade
+    // and drawn as terrain (matId 7); kept out of TL26 too, so the grid beside an apron stays level with it
+    const APRON_SECTIONS = [['apron', 7]];
     let total = 0;
     for (const [name] of sections) total += (tile.S[name]?.length ?? 0) / 3;
+    for (const [name] of RAIL_SECTIONS.concat(APRON_SECTIONS)) total += (tile.S[name]?.length ?? 0) / 3;
     // terrain grid
     const res = tile.header.res, n = res + 1;
     const terr = tile.S.terrain;
@@ -2525,18 +2578,25 @@ export async function assembleTile(key, arrayBuf, ctx) {
     const pos = new Float32Array((total + terrVerts) * 3);
     const mat = new Float32Array(total + terrVerts);
     let o = 0;
-    for (const [name, mid] of sections) {
+    for (const [name, mid] of sections.concat(RAIL_SECTIONS, APRON_SECTIONS)) {
       const src = tile.S[name];
       if (!src) continue;
-      for (let i = 0; i < src.length; i += 3) {
+      const perV = name === 'rtop' && tile.S.rtopA && tile.S.rtopA.length * 3 === src.length ? tile.S.rtopA : null;
+      for (let i = 0, v = 0; i < src.length; i += 3, v++) {
         pos[o * 3] = src[i] + ox; pos[o * 3 + 1] = src[i + 1]; pos[o * 3 + 2] = src[i + 2] + oz;
-        mat[o] = mid; o++;
+        mat[o] = perV ? perV[v] : mid; o++;
       }
     }
     const T = TILE_OF(tile);
     // ST38 (STATIONS2, city/stations/subEnt38.js; `?st38=0` none): the subway stairs' openings are cut out of the walk, and
     // out of the drawn grid here, exactly: a cell they touch is drawn as its pieces outside them
-    const holes38 = tile.st38Holes && tile.st38Holes.length ? tile.st38Holes : null;
+    // RL36: the open cuts (tile header railCuts, [x, z, yaw, halfLen, halfW] tile-local) are cut out of the drawn grid
+    // the same way, as oriented rectangles in st38ClipTri's form
+    let railHoles = null;
+    if (tile.header.railCuts && tile.header.railCuts.length && !NO_RL36) {
+      railHoles = tile.header.railCuts.map(([x, z, yaw, hl, hw]) => ({ x: x + ox, z: z + oz, yaw: -yaw, x0: -hl, x1: hl, z0: -hw, z1: hw }));
+    }
+    const holes38 = (tile.st38Holes && tile.st38Holes.length) || railHoles ? [...(tile.st38Holes || []), ...(railHoles || [])] : null;
     let extra38 = null;
     for (let j = 0; j < res; j++) for (let i = 0; i < res; i++) {
       const x0 = ox + (i / res) * T, x1 = ox + ((i + 1) / res) * T;
@@ -2816,6 +2876,8 @@ export async function assembleTile(key, arrayBuf, ctx) {
         if (idF >= 0) { claims.push(['treeFence', idF]); vgG = 1; }
       }
       if (f.p2 === 1 && (vgG || surfY(wx, wz, WALK_KINDS, 0.25) !== null)) vgPits.push(wx, f.y, wz, f.rot, vgG);   // VG36 (GROUND)
+      // SPACE r2 (city/colliders.js addBarrier): a walker does not step over the guard (its 1.48 m box, the kerb's turn)
+      if (vgG) COLLIDERS.addBarrier(key, { x: wx, z: wz, hw: 0.74, hd: 0.74, rotY: f.rot });
       continue;
     }
     if (f.k === FURN.STREET_SIGN) {
@@ -3082,11 +3144,14 @@ export async function assembleTile(key, arrayBuf, ctx) {
     }, (x, z) => { const y = sidewalkYAt(x, z); return y !== null ? y : padYNear(x, z); });
   } catch (e) { if (!window.__rampErr) { window.__rampErr = 1; console.warn('curb ramps', e); } }
 
+  if (DISPOSE_OWNED) registerOwned(key, group);   // SPACE r2: what this tile draws with (two tiles' materials are shared: kept)
+  if (LOWMEM) { freeArraysAfterUpload(group, geoMark); lateSweep(group, geoMark); }   // SPACE r2 (?lowmem=1): the tile's own static geometry lets its arrays go once uploaded
   return {
     group,
     facadeMat: facMat,
     hideTex: facMat.userData.hideTex || null,
     bldgs: heroRecs,
+    towers: towerRecs,   // TW
     roads: roadsOut,
     nodes: nodesOut,
     terrain: { grid: tile.S.terrain, res: tile.header.res, ox, oz },
@@ -3112,10 +3177,16 @@ export async function assembleTile(key, arrayBuf, ctx) {
         for (let i = ctx.signalReg.length - 1; i >= 0; i--) if (ctx.signalReg[i].tile === key) ctx.signalReg.splice(i, 1);
       }
       group.traverse((n) => { if (n.geometry && n.geometry !== undefined) n.geometry.dispose?.(); });
+      // SPACE r2: a part's own unload hook (userData.onDispose: geometries it swaps in and out, caches it fills per tile)
+      if (DISPOSE_OWNED) group.traverse((n) => { const f = n.userData && n.userData.onDispose; if (typeof f === 'function') try { f(); } catch (e) { console.warn('[tile] onDispose', e); } });
       scene.remove(group);
       if (facMat !== ctx.facadeMat) { facMat.userData.hideTex?.dispose(); facMat.dispose(); }
+      // SPACE r2 (world/disposeOwned.js): the materials and textures only this tile drew with (the area kits' signs,
+      // storefronts and painted art) go too; they were left on the GPU and in memory at every unload. `?space2dispose=0` off.
+      if (DISPOSE_OWNED) disposeOwned(group, scene, key);
       COLLIDERS.removeTile(key);
     },
   };
 }
 function TILE_OF() { return 512; }
+const DISPOSE_OWNED = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('space2dispose') === '0');

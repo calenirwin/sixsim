@@ -347,6 +347,11 @@ try {
       try {
         await page.waitForFunction('!window.__DRESS || (function(){ const d = window.__DRESS(); return typeof d !== "object" || (d.queued === 0 && d.active > 0); })()', undefined, { timeout: 40000 });
       } catch { console.log(name, ': dresser queue did not drain'); }
+      // TW (towers lane): and the tower kit (world/towerKit.js) its build queue
+      try {
+        await page.waitForFunction('!window.__TW || (function(){ const d = window.__TW(); return !d || (d.ready && d.queued === 0); })()', undefined, { timeout: 90000 });
+      } catch { console.log(name, ': tower kit queue did not drain'); }
+      { const tw = await page.evaluate(() => window.__TW ? window.__TW() : null).catch(() => null); if (tw) console.log('  towers:', JSON.stringify(tw)); }
       await new Promise((s) => setTimeout(s, 1500));
       // steady-state profile: reset after loading/dressing, sample 4 s
       await page.evaluate(() => window.__PROF_RESET && window.__PROF_RESET()).catch(() => null);

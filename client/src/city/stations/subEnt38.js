@@ -190,7 +190,7 @@ export function st38Apply(tile, ox, oz) {
 // of a raised surface, in clusters that touch the roadway (a tree pit, walled off by its kerb, never does), grown by one
 // cell under their neighbours (under the road 3 mm down, under a walk or an island 0.13 m down: both hide it), as roadway. `?st38=0` leaves them.
 const GF_R = 0.5, GF_N = Math.round(512 / GF_R);
-const GF_ROAD = ['asphalt', 'gutter', 'busred'], GF_COVER = ['paintW', 'paintY', 'paintG', 'curb', 'sidewalk', 'grass', 'grassU', 'path', 'brick', 'plaza', 'gravel', 'warn', 'warnIron'];
+const GF_ROAD = ['asphalt', 'gutter', 'busred'], GF_COVER = ['paintW', 'paintY', 'paintG', 'curb', 'sidewalk', 'grass', 'grassU', 'path', 'brick', 'plaza', 'gravel', 'warn', 'warnIron', 'rbal', 'rtop', 'rsteel', 'rwall', 'apron'];   // rail (RL36) and the shore aprons (SA37) are no gap either
 const GF_RAISED = new Set(['curb', 'sidewalk']);   // street islands and walks (a park's lawns and paths keep their ground)
 export function st38GapFill(tile) {
   if (!ST38 || !tile || !tile.S || tile.gf38Done) return 0;

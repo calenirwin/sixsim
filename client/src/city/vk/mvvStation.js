@@ -1,12 +1,11 @@
 // AR33 VIADUCT: the IRT's 125th Street station on the Manhattan Valley Viaduct (Heins & LaFarge, 1904; platforms
-// lengthened 1948, the control house's mezzanine 1931, renovated 2002-04), as:
-// * two side platforms (OSM u -98.8.. +58, |l| 5.15.. 7.75): concrete on steel stringers and posts, the yellow
-// edge strip, the timber rubbing board;
-// * the enclosures: a green plate fascia under each platform, cream framed-panel walls in bays of ~4.2 m between green
-// steel pilasters (a panelled dado, three multi-light steel windows, a panelled frieze), a corrugated roof sloping
-// out to a red-brown eave on rafter tails, canopy columns along the platform, lamps under the roof;
-// * the control house east of the downtown platform at the station's south end (cream panelled walls, small windows,
-// the red-brown coping), its corridor to the platform's enclosed stair and a glazed stair down to the east sidewalk.
+//   * two side platforms (OSM u -98.8 .. +58, |l| 5.15 .. 7.75): concrete on steel stringers and posts, the yellow
+//     edge strip, the timber rubbing board;
+//   * the enclosures: a green plate fascia under each platform, cream framed-panel walls in bays of ~4.2 m between green
+//     steel pilasters (a panelled dado, three multi-light steel windows, a panelled frieze), a corrugated roof sloping
+//     out to a red-brown eave on rafter tails, canopy columns along the platform, lamps under the roof;
+//   * the control house east of the downtown platform at the station's south end (cream panelled walls, small windows,
+//     the red-brown coping), its corridor to the platform's enclosed stair and a glazed stair down to the east sidewalk.
 import { V, UP, RIV, ibeam, plateGirder, gusset, girderSpikes, angle } from './vkKit.js';
 import { otherMat, litMat, steelMat, netMat } from './vkMats.js';
 import { MV, P, DA, DN, LV, COLL, mvvMats } from './mvv.js';
@@ -28,10 +27,8 @@ export function stationMats() {
     // the enclosure's cream paint: smooth, a little dusty, soot-stained at the lower edges (no rivets)
     M.panel = steelMat('irtCream', { paint: 0xe3dccb, paint2: 0xdad3c1, rust: 0x8a7a66, rustD: 0x5d5043, rustAmt: 0.07, rough: 0.74, metal: 0.0, rivets: false, chalk: 0.05 });
     M.red = otherMat('canopy');
-    // the roofs: red-brown painted standing-seam metal from above, the eave
-    // fascia a weathered dark grey under the corrugation's ends
     M.roof = steelMat('irtRoof', { paint: 0x7b3f30, paint2: 0x733a2c, rust: 0x5a3a2a, rustD: 0x3d2a20, rustAmt: 0.15, rough: 0.66, metal: 0.05, rivets: false, chalk: 0.25, guano: 0.2 });
-    // the platform slab: concrete, its underside sooted and in the deck's shade
+    // the platform slab: concrete, its underside sooted and in the deck's shade (a2: it read as a beige band under the
     M.slab = steelMat('irtSlab', { paint: 0x5f5b55, paint2: 0x58544e, rust: 0x4a4038, rustD: 0x2e2822, rustAmt: 0.25, rough: 0.9, metal: 0.0, rivets: false, amb: 0.8, spec: 0.3, guano: 0.1 });
     M.eave = steelMat('irtEave', { paint: 0x3b403d, paint2: 0x363b38, rust: 0x5a4434, rustD: 0x3a2c22, rustAmt: 0.12, rough: 0.7, metal: 0.04, rivets: false });
     M.yellow = otherMat('yellow'); M.net = netMat(); M.louvre = otherMat('netting');
@@ -95,7 +92,7 @@ function slopeWall(g, M, l, sg, uA, uB, yA, yB, h0, h1, nx, louvre) {
   if (louvre) {
     const yl0 = hm + 0.1, yl1 = h1 - 0.12;
     g.rect(M.louvre, pt(0.04, (yl0 + yl1) / 2, -0.008), pt(0.96, (yl0 + yl1) / 2, -0.008), UP, 0.012, yl1 - yl0, { caps: false });
-    for (let y = yl0 + 0.05; y < yl1 - 0.03; y += 0.1) g.rect(M.steelU, pt(0.04, y, 0.004), pt(0.96, y, 0.004), UP, 0.03, 0.035, { caps: false, rv: [] });   // dark grille
+    for (let y = yl0 + 0.05; y < yl1 - 0.03; y += 0.1) g.rect(M.steelU, pt(0.04, y, 0.004), pt(0.96, y, 0.004), UP, 0.03, 0.035, { caps: false, rv: [] });
   }
 }
 
@@ -117,7 +114,6 @@ export function stationBuild(g, gy) {
     for (let u = u0 + 1.0; u < u1 - 0.5; u += 2.1) g.rect(M.steelU, P(u, L(lE + 1.15), yPl - 0.47), P(u, L(lE + 1.15), yPl - 0.2), DA, 0.04, 0.3, { rv: [] });
     for (let k = 0; k < nb; k += 2) { const cu = u0 + (k + 0.5) * bay; g.rect(M.steelU, P(cu - 0.32, L(lE + 1.6), yPl - 0.3), P(cu + 0.32, L(lE + 1.6), yPl - 0.3), UP, 0.2, 0.08, { rv: [] }); g.rect(M.lamp, P(cu - 0.28, L(lE + 1.6), yPl - 0.35), P(cu + 0.28, L(lE + 1.6), yPl - 0.35), UP, 0.14, 0.02, { caps: false }); }
     // the fascia girder under the enclosure (the green band) with its stiffeners
-    // the narrow dark green ledge under the enclosure's cream dado
     const fb = yPl - 0.18, ft = yPl + 0.14;
     plateGirder(g, st, P(u0, L(lW + 0.1), (fb + ft) / 2), P(u1, L(lW + 0.1), (fb + ft) / 2), UP, ft - fb, 0.22, { stiff: 1.4, seed: 400 });
     girderSpikes(g, P(u0 + 0.5, L(lW + 0.1), (fb + ft) / 2), P(u1 - 0.5, L(lW + 0.1), (fb + ft) / 2), UP, ft - fb, -sgn);   // pigeon spikes on its outer ledge
@@ -133,7 +129,8 @@ export function stationBuild(g, gy) {
       const ww = (bay - 0.24 - 4 * 0.16) / 3;
       for (let w = 0; w < 3; w++) {
         const wa = a + 0.28 + w * (ww + 0.16);
-        windowIn(g, M, XZ(P(wa, L(lW), 0)), XZ(P(wa + ww, L(lW), 0)), n, yD + 0.05, yW - 0.05, 3, 3);   // 3 x 3 lights
+        windowIn(g, M, XZ(P(wa, L(lW), 0)), XZ(P(wa + ww, L(lW), 0)), n, yD + 0.05, yW - 0.05, 3, 3);
+        // (ST34: from the platform the windows show the day outside through their green muntins (Commons photographs
         if (ST34) {
           const wl = L(lW - 0.05), ya = yD + 0.08, yb = yW - 0.08;
           signQuad(g, M.winIn, P(wa + ww / 2, wl, (ya + yb) / 2), right, inward, ww / 2 - 0.03, (yb - ya) / 2);
@@ -183,7 +180,7 @@ export function stationBuild(g, gy) {
     g.rect(M.roof, P(u0 - 0.3, L((lIn + lOut) / 2), (yIn + yOut) / 2), P(u1 + 0.3, L((lIn + lOut) / 2), (yIn + yOut) / 2), rU, wR, 0.04);
     for (let u = u0 - 0.2; u < u1 + 0.3; u += 0.26) g.rect(M.roof, add(P(u, L(lIn), yIn), mul(rU, 0.035)), add(P(u, L(lOut), yOut), mul(rU, 0.035)), rU, 0.05, 0.03, { caps: false });
     g.rect(M.eave, P(u0 - 0.3, L(lOut + 0.03), yOut - 0.14), P(u1 + 0.3, L(lOut + 0.03), yOut - 0.14), UP, 0.06, 0.42);
-    // the soffit under the corrugation, dark grey between the cream rafters
+    // band with light ticks; the red-brown of the roof's underside read through)
     g.rect(M.eave, add(P(u0 - 0.3, L((lW + lOut) / 2), (sl(lW) + sl(lOut)) / 2), mul(rU, -0.03)), add(P(u1 + 0.3, L((lW + lOut) / 2), (sl(lW) + sl(lOut)) / 2), mul(rU, -0.03)), rU, lOut - lW, 0.01, { caps: false });
     g.rect(M.eave, P(u0 - 0.3, L(lIn - 0.03), yIn - 0.09), P(u1 + 0.3, L(lIn - 0.03), yIn - 0.09), UP, 0.05, 0.3);
     // (ST34: the canopy's ceiling over the platform is painted light, the steel beams under it green: the photographs
@@ -191,7 +188,6 @@ export function stationBuild(g, gy) {
     if (ST34) { const cA = add(P(0, L(lIn), yIn), mul(rU, -0.05)), cB = add(P(0, L(lW), sl(lW)), mul(rU, -0.05)), cm = mul(add(cA, cB), 0.5), w = V.len(sub(cB, cA));
       g.rect(M.panel, add(cm, mul(DA, u0 - 0.2)), add(cm, mul(DA, u1 + 0.2)), rU, w, 0.012, { caps: false }); }
     // the rafters under the eave, painted cream like the walls: from the street their ends read as a row of light ticks
-    // under the dark eave
     for (let u = u0; u <= u1 + 0.01; u += bay / 8) g.rect(M.panel, P(u, L(lW), sl(lW) - 0.12), P(u, L(lOut - 0.03), sl(lOut) - 0.1), UP, 0.06, 0.14);
     for (let k = 0; k <= nb; k++) { const u = u0 + k * bay; g.rect(st, P(u, L(lIn), sl(lIn) - 0.2), P(u, L(lW), sl(lW) - 0.2), UP, 0.1, 0.22); }
     // railings across the platform ends
@@ -200,7 +196,6 @@ export function stationBuild(g, gy) {
       for (let l = lE + 0.1; l <= lW - 0.05; l += 0.5) g.rect(st, P(u, L(l), yPl), P(u, L(l), yPl + 1.05), DA, 0.04, 0.04, { caps: false });
     }
   }
-  // the black debris netting hung under the deck along the station, sagging between the floor beams
   // (over the arch it runs just under the floor beams, over the ribs; the control house stands east of the deck)
   { const H = MV.span / 2 + 1.8, step = 4.0;
     for (let u = u0 - 2; u < u1 + 2; u += step) {
@@ -213,7 +208,6 @@ export function stationBuild(g, gy) {
       }
     }
   }
-  // the control house: a cream panelled box EAST of the downtown platform, not under the deck.
   // (432 x c_Kwc and 432 x 486 agree within 0.5 m), the box 4 m deep to l 15.9, a one-storey corridor on a green plate
   // girder from it west to the platform's outer stringer (six windows on its north face), the coping at y 15.95 and the
   // box's foot at 10.8 (from 432 with its 1.5 m terrain offset). From the corridor the enclosed stair runs north along
@@ -222,6 +216,7 @@ export function stationBuild(g, gy) {
   const faces = (ua, ub, la, lb) => [[XZ(P(ua, la, 0)), XZ(P(ub, la, 0)), mul(DN, -1)], [XZ(P(ub, la, 0)), XZ(P(ub, lb, 0)), DA],
     [XZ(P(ub, lb, 0)), XZ(P(ua, lb, 0)), DN], [XZ(P(ua, lb, 0)), XZ(P(ua, la, 0)), mul(DA, -1)]];
   const along = (A, B, n, t, d) => [A[0] + (B[0] - A[0]) * t + n[0] * d, A[1] + (B[1] - A[1]) * t + n[2] * d];
+  // (the window's line 0.07 out of the wall: windowIn sets its glass 0.03 behind the line, which at 0.03 out sat in the wall's
   const winAt = (A, B, n, t0, t1, ya, yb) => windowIn(g, M, along(A, B, n, t0, 0.07), along(A, B, n, t1, 0.07), n, ya, yb, 2, 2, ST34 ? M.panel : null);
   const coping = (A, B, n, y) => g.rect(M.red, [A[0] + n[0] * 0.08, y, A[1] + n[2] * 0.08], [B[0] + n[0] * 0.08, y, B[1] + n[2] * 0.08], UP, 0.16, 0.3);
   const lmB = (Hs.l0 + Hs.l1) / 2, lmC = (Hs.cl0 + Hs.l0) / 2;
@@ -262,7 +257,7 @@ export function stationBuild(g, gy) {
     if (!ST34 || (u > Hs.cu0 && u < Hs.u1)) for (const l of [Hs.cl0 + 1.5, Hs.cl0 + 4.5]) g.rect(M.steelU, P(u, l, y0 - 0.1), P(u, l, Hs.cy0), DA, 0.16, 0.16, { seed: 434 });
   }
   // the enclosed stair from the corridor to the downtown (east) platform along the outside of its wall: a level passage
-  // north from the corridor, then a flight whose roof meets the enclosure's base
+  // itself at 19.6; at yB 16.3 the twin's head stood 1.6 m low with its end face in view; the last rise is inside)
   { const la = ST.lW + 0.35, lb = ST.lW + 2.6, lm = (la + lb) / 2, yA = Hs.cy1 + 0.05, yB = 17.9;
     const uL = Hs.u1 - 0.1, uA = -21.0, uB = -15.0, run = uB - uA;
     const bot = P(uA, lm, yA), top = P(uB, lm, yB);
@@ -280,7 +275,7 @@ export function stationBuild(g, gy) {
         gusset(g, M.panel, P(ua, l, ya - 0.45), P(ub, l, yb - 0.45), P(ub, l, yb + 2.3), P(ua, l, ya + 2.3), 0.05, { riv: false, seed: 451 });
       }
       gusset(g, M.panel, P(uL, l, yA - 0.45), P(uA, l, yA - 0.45), P(uA, l, yA + 2.3), P(uL, l, yA + 2.3), 0.05, { riv: false, seed: 451 });
-      slopeWall(g, M, l, l === lb ? 1 : -1, uA, uB, yA, yB, -0.45, 2.3, Math.max(2, Math.round(Math.abs(run) / 1.3)), false);   // the grille only on the passage
+      slopeWall(g, M, l, l === lb ? 1 : -1, uA, uB, yA, yB, -0.45, 2.3, Math.max(2, Math.round(Math.abs(run) / 1.3)), false);
       // (ST34, st432 2024-08 / stKwW 2026-08: the flight reads as a cream dado under a dark glazed band, not a white slab)
       if (ST34 && l === lb) for (let k = 0; k < 5; k++) {
         const t0 = k / 5, t1 = (k + 1) / 5, ua = uA + run * t0, ub = uA + run * t1, ya = yA + (yB - yA) * t0, yb = yA + (yB - yA) * t1;
@@ -294,7 +289,7 @@ export function stationBuild(g, gy) {
     g.rect(M.roof, P(uL, lm, yA + 2.4), add(bot, [0, 2.4, 0]), UP, 2.5, 0.06, { seed: 452 });
     g.rect(M.eave, add(P(uA, lb + 0.2, yA), [0, 2.32, 0]), add(P(uB, lb + 0.2, yB), [0, 2.32, 0]), rU, 0.05, 0.22, { seed: 453 });
     g.rect(M.eave, P(uL, lb + 0.2, yA + 2.32), P(uA, lb + 0.2, yA + 2.32), UP, 0.05, 0.22, { seed: 453 });
-    // its head closed against the platform's fascia
+    // the enclosure's base)
     panelWall(g, M, XZ(P(uB, la, 0)), XZ(P(uB, lb, 0)), DA, yB - 0.45, yB + 2.3, 0.8, { caps: true });
   }
   // the street stair: from a landing south of the box down to Broadway's east sidewalk, glazed over a panelled dado under

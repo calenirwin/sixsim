@@ -1,6 +1,5 @@
 // AR33 custom builders and sign marks, segment bid3: Adam Clayton Powell Jr. Boulevard to Lenox Avenue. Specs name them as 'bid3:<fn>' (docs/notes/ar33-spec.md).
 // Owner: the BID3 worker (docs/notes/ar33-bid3.md). Measurements come from orthographic elevations rectified out of the
-// each builder
 // names its references. Everything is placed through the kit's frame (frame.kit: u along the front from its left end as
 // seen from the street, y over the sidewalk, w out of the wall), so it merges into the kit's per-material meshes.
 import * as THREE from 'three';
@@ -29,12 +28,18 @@ function mats() {
   if (_M) return _M;
   const S = (o) => applyLightTrim(new THREE.MeshStandardMaterial(o));
   _M = {
-    // the State Office Building's glass: the library's opaque tower glass with a
+    // the spandrel panels dark (52,70,72), thin pale aluminium mullions every 1.62 m): the library's opaque tower glass with a
     // body of our own, three tones of vision pane so the wall is not one flat colour
     // three height classes (the reflected sky grows with height: the measured glass reads (108,120,121) low, (121,132,134) at
     // mid height and (146,148,141) near the top), each in three tones of vision pane so the wall is not one flat colour
+    // mid (102,120,123) vs (90,103,108), top (100,115,118) vs (107,121,123); the corner boxes' low glass reads green (64,83,70); the
+    // spandrels read (70-79,81-90,83-95) at their darkest, ours (42-49,61-71,72-76): the low and mid bodies darker and greener, a
+    // greener reflection tint low down, the spandrels lighter)
     // (w2b re-measure: low (85,112,108) vs (85,101,100), mid (79-80,104-108,105-107) vs (90-107,103-121,108-123): the mid class went
     // too dark and both too green: the mid bodies half way back, less green in the low tint)
+    // (115,127,126) p25-p75 (103-131, 111-148, 111-144): ~20 % darker and a narrower spread; bodies lifted ~20 %, the bright tone of each
+    // (AR34 batch 4: MATS's library fix of 03:19 lights a body by the sky and 0.15 of the sun: sobLobby's curtain went (111,129,129)
+    // (120,130,128), the value back but cyan: the bodies turned warmer (+6, -3, -12))
     set: [['#706e5e', '#838478', '#5d5b4b'], ['#999485', '#aaa89d', '#827d6e'], ['#b19f80', '#c1b296', '#978669']].map((c, k) => ({
       vision: towerGlass('glass_tower_green', c[0], 1 + k * 10, null, k === 0 ? '#aec6c0' : null),
       visionB: towerGlass('glass_tower_green', c[1], 2 + k * 10, null, k === 0 ? '#aec6c0' : null),
@@ -47,14 +52,12 @@ function mats() {
     lobbyLit: nightLit(S({ color: 0x9a9388, roughness: 0.6, metalness: 0.0, emissive: 0xfff1d8, emissiveIntensity: 1.0 })),
     interior: S({ color: 0x4a4540, roughness: 0.8, metalness: 0.0 }),
     // the Studio Museum
-    // the glass of the boxes reflects the sky
     smGlass: towerGlass('glass_tower_grey', '#8a8e90', 71),   // (wave 2: the tall box read (81,107,131) on w2b, the real (124,137,143))
     smGlassDk: towerGlass('glass_tower_grey', '#3f4549', 73),
     smGlassMirror: towerGlass('glass_tower_grey', '#4a4f55', 74),
     smGlassLit: towerGlass('glass_tower_grey', '#30353b', 72, [0xffe9cc, 0.7]),
     smVoid: S({ color: 0x101113, roughness: 0.9, metalness: 0.0 }),
     // the Urban League Empowerment Center's podium glass: a pale blue-grey mirror, measured (156-171, 175-183, 193-194) sRGB on
-    // (2026-08); three tones of pane and a dark transom
     ul: { vision: towerGlass('glass_tower_blue', '#8190a0', 61), visionB: towerGlass('glass_tower_blue', '#d3dce5', 62), visionC: towerGlass('glass_tower_blue', '#47566a', 63),
       lit: towerGlass('glass_tower_blue', '#a2b0bd', 64, [0xfff0dd, 0.55]), line: towerGlass('glass_tower_grey', '#3a4652', 65) },
     // the Harlem Center's office slab: ribbon glass
@@ -69,9 +72,6 @@ const hash = (a, b = 0, c = 0) => { const x = Math.sin(a * 127.1 + b * 311.7 + c
 // ================================================================== the Adam Clayton Powell Jr. State Office Building
 // 163 W 125th St (Ifill Johnson Hanchard, 1973). The spec's ring is the tower's bounding rectangle: the frame's u = s (from
 // the west face, east along 125th Street), w = b - 4.17 (b from the north pier faces at -20.52 to the south central front
-// at 4.17). Measured on the south face's orthographic elevation and the compiled pier
-// outline (the ring in docs/notes/ar33-frontage/bid3.json); the corners and the ends off and
-// The tower is symmetric about s = 30.86.
 const SOB = {
   L: 61.72, W0: 4.17,
   roof: 88.4, pierTop: 90.1, atticTop: 89.8, cw0: 12.5, cw1: 77.9, band0: 7.8, lobbyTop: 7.6,
@@ -79,11 +79,11 @@ const SOB = {
 };
 export function sob(group, ctx, spec, frame) {
   const K = frame.kit, M = mats(), S = SOB;
-  // the cladding: large-format stone panels (1.5 x 2.4 m, joints recessed) in a warm beige
   const st = panelMat([208, 191, 172], 1.5, 2.4, { cols: 2, rows: 2, seed: 3, tone: 0.05 });
   const stSoffit = panelMat([182, 167, 150], 1.5, 2.4, { cols: 2, rows: 2, seed: 7, tone: 0.04 });
   const roofM = K.mat('concrete_precast', { tint: '#8c8c88', dirt: 0.4 });
   const plant = K.mat('metal_painted', { tint: '#a9aba7' });
+  // (MATS 19:15: the lobby faces the plaza, ~70 m to the far building line: the reflection follows the ray that far; b3a read the lobby
   const lobbyGlass = pbrMaterial('glass_grey', { opacity: 0.55, dirt: 0.2, street: 70 });   // (wave 2: the lobby read (72,75,77), the real (42,42,37))   // dark reflective lobby glass, the hall behind it dim
   const bronze = K.mat('alu_bronze', { tint: '#4a3c2c' });
   const L = S.L, W0 = S.W0;
@@ -148,7 +148,7 @@ export function sob(group, ctx, spec, frame) {
     // the lobby: glass 3.9 m back under the band, bronze doors in two groups, the lit hall behind
     const bL = 0.25;
     litHall(K, s0, s1, S.lobbyTop, bL - W0 - 0.05, 8.2, { k: 0.2, columns: 7.2, lightStep: 3.0 });
-    K.sign({ kind: 'painted', text: '', logo: 'bid3:summerBanner', logoAt: 'fill', bg: null, u0: 25.0, u1: 36.5, y: 4.6, h: 2.0 }, { z: bL - W0 - 0.55 });   // the lobby seen through dark glass reads dim
+    K.sign({ kind: 'painted', text: '', logo: 'bid3:summerBanner', logoAt: 'fill', bg: null, u0: 25.0, u1: 36.5, y: 4.6, h: 2.0 }, { z: bL - W0 - 0.55 });
     K.box(lobbyGlass, s0, s1, 0.02, S.lobbyTop, bL - W0 - 0.02, bL - W0, { c: 0 });
     const n = 14, pw = (s1 - s0) / n;
     for (let i = 0; i <= n; i++) bx(bronze, s0 + i * pw - 0.06, s0 + i * pw + 0.06, 0, S.lobbyTop, bL - 0.1, bL + 0.12, { c: 0.01 });
@@ -280,9 +280,6 @@ export function sob(group, ctx, spec, frame) {
 // ================================================================== the Studio Museum in Harlem (144 W 125th St)
 // Adjaye Associates with Cooper Robertson, opened November 2025. The spec's ring is the whole lot between 148 W (west) and
 // 132 W (east), 22.87 m on 125th Street, 61.9 m back to 124th Street. Frame: u from the EAST end (the left end as seen
-// from the street), w out onto 125th Street. Measured on the front rectified out of (30 and 60 px/m, the
-// camera at u 10, 13.8 m out; projecting frames corrected for their depth), with the obliques h165 and
-// h245 for the depths. Heights over the sidewalk (the door sill).
 const SM = {
   H: 33.3,
   // [u0, u1, y0, y1, depth of the frame (out of the wall plane), frame bar]: the stacked boxes' picture frames
@@ -299,14 +296,15 @@ const SM = {
 };
 export function studio(group, ctx, spec, frame) {
   const K = frame.kit, M = mats(), L = frame.L;
-  // the charcoal precast as large panels with recessed joints, the bronze as a plain dark bronze (the library's alu_bronze mirrored the sky orange)
+  // the spandrels), the bronze as a plain dark bronze (the library's alu_bronze mirrored the sky orange)
   // (wave 2: the frames read (54,67,79) on the w2b plate studioA, the real piers (78,82,87): the sky light turns a grey base blue,
   // so the base is a warm grey, lighter)
+  // touch blue so the warm sun does not tint it brown)
   const pc = panelMat([88, 88, 94], 1.2, 1.2, { cols: 2, rows: 2, seed: 9, tone: 0.04, joint: 0.01 });
   const pcG = panelMat([74, 76, 80], 0.6, 0.6, { cols: 4, rows: 4, seed: 12, tone: 0.06, joint: 0.006 });       // the granular spandrel panels
   const bronze = wallMat({ color: 0x5a4531, roughness: 0.45, metalness: 0.3, soot: 0, streak: 0 });
   const glassT = K.mat('glass_storefront');
-  const glassL = pbrMaterial('glass_grey', { opacity: 0.62, dirt: 0.2 });   // the lobby's tall glass: reads dark and mirrors the street
+  const glassL = pbrMaterial('glass_grey', { opacity: 0.62, dirt: 0.2 });
   const D = 61.9, H = SM.H;
   // the volume, stepped back behind the lobby (0-8 m), the boxes (8-19.25) and the loggias (19.25 up); the top level
   // only u 2.9-20.3 wide (the elevation shows sky beside it)
@@ -363,7 +361,6 @@ export function studio(group, ctx, spec, frame) {
   K.box(M.smVoid, 3.5, 8.8, 26.6, 32.6, -2.4, -2.3, { c: 0 });
   K.box(pc, 9.0, 19.8, 26.4, 32.8, -0.4, -0.1, { c: 0.01 });
   K.box(pc, 3.3, 8.9, 26.0, 26.6, -2.4, 0.2, { c: 0 });
-  // the roof of the top box
   {
     const TOPF = 1 | 2 | 4 | 16 | 32;
     const roofD = K.mat('roof_epdm', { tint: '#4d5054', dirt: 0.3 });
@@ -402,7 +399,6 @@ export function studio(group, ctx, spec, frame) {
 // No footprint record (the compiled 30 m INDUSTRIAL box stands in for it). Frame: u from the west end, w out onto 125th
 // Street. The podium's glass front 30.6 m high (north mosaic, 22 px/m: vertical fins at an irregular pitch, a heavy
 // transom each ~4.3 m floor), the grey terrace box at u 31.8-47.2, 13.0-19.9 m, the ground-floor fascia 4.2-5.5 m with the
-// tenants' letters, the museum's portal at the east end; the residential slab (~17 storeys, 61 m) at the rear.
 export function ulec(group, ctx, spec, frame) {
   const K = frame.kit, M = mats(), L = frame.L;
   const grey = K.mat('panel_grey', { tint: '#3d4043', dirt: 0.15 });
@@ -416,7 +412,6 @@ export function ulec(group, ctx, spec, frame) {
   const G = { vision: M.ul.vision, visionB: M.ul.visionB, visionC: M.ul.visionC, lit: M.ul.lit, spandrel: M.ul.line, mullion: grey };
   curtain(K, { axis: 'u', a0: 0.3, a1: L - 0.3, plane: 0.1, dir: 1, y0: 5.5, y1: PH, floor: 1.5, y1st: 7.0, pane: 0.78, span: [0.035, 0.035], mull: [0.045, 0.3], seed: 5, M: G, lit: 0.2, patch: [7, 3] });
   K.box(grey, 0, L, PH, PH + 0.6, -1.2, 0.3, { c: 0.02 });
-  // the dark blades over the western half (u 0-31, 17.5-28.5 m): fins of alternating depth
   { const bl = K.mat('panel_grey', { tint: '#25282b', dirt: 0.1 }); let k = 0; for (let u = 0.8; u < 31; u += 1.55, k++) K.box(bl, u - 0.07, u + 0.07, 17.5, 28.6, 0.0, k % 2 ? 0.8 : 0.5, { c: 0.01 }); }
   // the terrace box (a grey frame round a recessed terrace)
   const t0 = 31.8, t1 = 47.2, ya = 13.0, yb = 19.9;
@@ -428,7 +423,6 @@ export function ulec(group, ctx, spec, frame) {
   K.box(grey, pu0, pu1, 0, 8.7, -0.2, 1.4, { c: 0.02, skip: 32 });
   K.box(M.smVoid, pu0 + 0.8, pu1 - 0.8, 0.05, 7.9, 1.2, 1.25, { c: 0 });
   K.sign({ kind: 'painted', lines: ['URBAN', 'CIVIL', 'RIGHTS', 'MUSEUM'], font: 'Inter-900', fg: '#f4f4f2', bg: '#151515', u0: pu0 + 1.8, u1: pu0 + 6.3, y: 4.9, h: 2.9, lit: 'face' }, { z: 1.27 });
-  // leasing vinyl on the glass of the vacant bays
   for (const u of [13.4, 16.6, 19.8, 48.0, 50.6]) K.sign({ kind: 'painted', lines: ['RETAIL', 'FOR LEASE', 'ON 125TH STREET'], font: 'Inter-700', fg: '#f4f4f0', bg: '#1b4a4a', u0: u, u1: u + 2.3, y: 0.7, h: 2.9 }, { z: 0.07 });
   // the tenants' letters (2026-08): target and TRADER JOE'S on the glass, PANDORA and SEPHORA on the fascia
   K.sign({ kind: 'channel', text: 'TRADER JOE\'S', font: 'AlfaSlabOne-400', fg: '#d6202a', bg: null, u0: 2.2, u1: 12.6, y: 9.0, h: 1.2, lit: 'face' }, { z: 0.4 });
@@ -439,7 +433,6 @@ export function ulec(group, ctx, spec, frame) {
   K.sign({ kind: 'painted', text: '', logo: 'bid3:targetMark', logoAt: 'fill', bg: null, u0: 0.8, u1: 1.7, y: 4.4, h: 0.88, lit: 'face' }, { z: 0.46 });
   K.sign({ kind: 'channel', text: 'target', font: 'Inter-700', fg: '#f7f7f7', bg: null, u0: 1.85, u1: 3.9, y: 4.4, h: 0.85, lit: 'face' }, { z: 0.46 });
   K.sign({ kind: 'channel', text: 'TRADER JOE\'S', font: 'AlfaSlabOne-400', fg: '#d6202a', bg: null, u0: 4.3, u1: 9.6, y: 4.45, h: 0.6, lit: 'face' }, { z: 0.46 });
-  // the block 64 m wide at 2.65 px/m): the podium's roof is a
   // pale grey membrane with a 2.2 m sedum strip along its front edge, one large olive sedum field (u 4-60, 5-21 m behind the front)
   // with a pale penthouse in it (u 24-47, 9-19 m behind), and the residential slab (17 storeys, 61 m) stands 23-52 m behind the
   // front, its south face a regular grid of punched windows in a pale warm grey wall, a sedum ring on its roof
@@ -470,9 +463,9 @@ export function ulec(group, ctx, spec, frame) {
   K.box(K.mat('panel_alu', { tint: '#d6d9db', dirt: 0.3 }), r1 - 14, r1 - 8, top, top + 2.2, rb0 + 8, rb0 + 12, { c: 0.04 });
   void group; void ctx; void spec;
 }
-// Panda Express's roundel: a red ring round a white disc with the panda's face
 export function pandaMark(c, w, h) {
   const r = Math.min(w, h) / 2, cx = w / 2, cy = h / 2;
+  // the top and CHINESE KITCHEN round the bottom of a white band between a red rim and a thin red ring)
   const arcText = (txt, rad, a0, a1, size, top) => {
     c.font = `800 ${size}px Inter, Arial, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
     const n = txt.length;
@@ -482,6 +475,7 @@ export function pandaMark(c, w, h) {
     }
   };
   c.save();
+  // panda on it; b3d-b3m drew white letters on red by a misreading at low resolution)
   c.fillStyle = '#d52b1e'; c.beginPath(); c.arc(cx, cy, r * 0.99, 0, Math.PI * 2); c.fill();
   c.fillStyle = '#f6f3ec'; c.beginPath(); c.arc(cx, cy, r * 0.94, 0, Math.PI * 2); c.fill();
   c.fillStyle = '#d52b1e'; c.beginPath(); c.arc(cx, cy, r * 0.69, 0, Math.PI * 2); c.fill();
@@ -510,7 +504,7 @@ export function summerBanner(c, w, h) {
   c.font = `800 ${h * 0.2}px Inter, Arial, sans-serif`; c.fillText('EVERY THURSDAY  -  FREE', w * 0.4, h * 0.3);
   c.font = `700 ${h * 0.16}px Inter, Arial, sans-serif`; c.fillText('LIVE MUSIC ON THE PLAZA  5 TO 9 PM', w * 0.4, h * 0.62);
 }
-// the leasing wrap on the glass of 105 W: a magenta-to-navy vinyl with white lettering
+// the leasing wrap on the glass of 105 W: a magenta-to-navy vinyl with white lettering (an invented brokerage and a 555 number;
 export function leaseWrap(c, w, h) {
   const g = c.createLinearGradient(0, 0, w, 0); g.addColorStop(0, '#c2306e'); g.addColorStop(0.42, '#7a2f78'); g.addColorStop(0.62, '#202f6e'); g.addColorStop(1, '#16255c');
   c.fillStyle = g; c.fillRect(0, 0, w, h);
@@ -529,7 +523,6 @@ export function leasePoster(c, w, h) {
   const g = c.createLinearGradient(0, 0, w, 0); g.addColorStop(0, '#c2306e'); g.addColorStop(1, '#202f6e'); c.fillStyle = g; c.fillRect(0, h * 0.74, w, h * 0.26);
 }
 // Raising Cane's oval mark: a red ellipse in a cream and black outline, the white script name, an orange ribbon with CHICKEN
-// FINGERS
 export function canesMark(c, w, h) {
   const cx = w / 2, cy = h / 2, rx = w * 0.47, ry = h * 0.46;
   c.save();
@@ -558,11 +551,9 @@ export function targetMark(c, w, h) {
 
 // ================================================================== the Harlem Center's office slab (105 W 125th St)
 // Over the kit's 21 m brick base: the grey slab of ribbon windows set back 4 m from 125th Street, to 53.3 m (the compiled
-// record), a brick return at the Lenox corner.
 export function hctop(group, ctx, spec, frame) {
   const K = frame.kit, M = mats(), L = frame.L;
   const y0 = spec.h ?? 21.0, top = 53.3;
-  // AR34: the slab is tan-pink brick with a continuous ribbon of pale blue-grey glass every ~3.9 m
   // (1.3 m tall, 2.6 m of brick between), set back 4 m from 125th Street; the brick return at the Lenox corner carries light stripes
   const slab = K.mat('brick_red', { tint: '#b88a74', dirt: 0.3 });
   const brick = K.mat('brick_red', { tint: '#b0705c', dirt: 0.3 });
@@ -584,7 +575,6 @@ export function hctop(group, ctx, spec, frame) {
     K.box(pale, a0, a1, y - 0.1, y, wF, wF + 0.1, { c: 0 });
     K.box(pale, a0, a1, y + 1.3, y + 1.4, wF, wF + 0.12, { c: 0 });
   }
-  // the slab's roof
   {
     const TOPF = 1 | 2 | 4 | 16 | 32;
     const roofT = K.mat('roof_gravel', { tint: '#8a8274', dirt: 0.3 });

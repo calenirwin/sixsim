@@ -1,10 +1,9 @@
 // AR34 sk: the red bus lanes of 125th Street where the compiled ground lays them at the kerb. From Morningside Avenue to
 // Adam Clayton Powell Jr Boulevard and from Third to Second Avenue the compiled `busred` covers the kerb lane (|b| 5.34-8.70 m
 // from the corridor centreline, gutter at 8.70-9.05), where the street really parks; from Adam Clayton Powell to Third Avenue
-// it lies one parking lane out (|b| 3.34-6.70, measured on the tiles 2026-10-01, docs/notes/ar33-street.md).
-// Morningside to Adam Clayton Powell parks at both kerbs with the red lane one lane out between two solid lines; from Third to Second the westbound kerb parks with no red, while the
+// 2023-08, 2024-08, 2026-08, the table below); from Third to Second the westbound kerb parks with no red, while the
 // eastbound kerb really has its red lane at the kerb (2026-08).
-// repaintBus re-kinds the tile's sections before anything samples or draws them (the same hook as city/tsqPlaza.js): the
+// repaintBus() re-kinds the tile's sections before anything samples or draws them (the same hook as city/tsqPlaza.js): the
 // kerbside red becomes asphalt, the red lane and its markings (the inner solid line, the BUS ONLY legends) move one parking
 // lane out (2.00 m) on an `offset` side and are dropped on a `none` side, the dashed lane line under the moved red goes;
 // a 'strip' side of a block whose red is already one lane out loses it (Park-Lexington eastbound, repaved 2026), and a
@@ -23,11 +22,16 @@ export const SK_BUS_SHIFT = 2.0;   // m toward the centreline: the compiled red'
 // the repainted blocks: corridor stations s0..s1 (the compiled red's own extent on both sides, measured), what is done on each
 // side (N, S: 'offset' = the red one parking lane out, 'none' = no bus lane, 'keep' = the compiled kerbside red is right),
 export const SK_BUS_BLOCKS = [
-  { name: 'Morningside Av - St Nicholas Av', s0: 1040.1, s1: 1138.0, N: 'offset', S: 'offset' },
-  { name: 'St Nicholas Av - Frederick Douglass Blvd', s0: 1177.3, s1: 1275.1, N: 'offset', S: 'offset', S0: 1217.0 },
-  { name: 'Frederick Douglass Blvd - Adam Clayton Powell Jr Blvd', s0: 1314.4, s1: 1543.8, N: 'offset', S: 'offset' },
-  { name: 'Third Av - Second Av', s0: 2796.3, s1: 2971.4, N: 'none', S: 'keep' },
-  { name: 'Park Av - Lexington Av', s0: 2492.5, s1: 2604.4, N: 'keep', S: 'strip', aLayout: true },
+  { name: 'Morningside Av - St Nicholas Av', s0: 1040.1, s1: 1138.0, N: 'offset', S: 'offset',
+    ref: 'c125 01080_yPNK7vQPpdYoCIAX82khEw (2023-08): parked cars at both kerbs, the red lane one lane out on both sides' },
+  { name: 'St Nicholas Av - Frederick Douglass Blvd', s0: 1177.3, s1: 1275.1, N: 'offset', S: 'offset', S0: 1217.0,
+    ref: 'c125 01200_RRQrnPJovCJl5w-hnpHlXg, 01224_ITsg-Srl6ppTUCEl1c3rog (2026-08): parked cars at both kerbs, the red one lane out, BUS ONLY in it; the eastbound side has no red at its bus stop by St Nicholas (01200 looking S and SE: a concrete bus pad, a dashed edge, no red to at least s ~1215; red with BUS ONLY from s ~1221 in 01224): its red starts at S0 1217' },
+  { name: 'Frederick Douglass Blvd - Adam Clayton Powell Jr Blvd', s0: 1314.4, s1: 1543.8, N: 'offset', S: 'offset',
+    ref: '' },
+  { name: 'Third Av - Second Av', s0: 2796.3, s1: 2971.4, N: 'none', S: 'keep',
+    ref: '' },
+  { name: 'Park Av - Lexington Av', s0: 2492.5, s1: 2604.4, N: 'keep', S: 'strip', aLayout: true,
+    ref: '' },
 ];
 // compiled cross-section on these blocks (|b|, m): kerb face ~9.05, gutter 8.70-9.05, parking line 6.60-6.80
 const OLD = [5.05, 8.9], PARK_LINE = [6.45, 6.95], LANE_LINE = [3.05, 3.55];
@@ -102,15 +106,14 @@ const WIDEN = 0.10;
 // moved ds metres along it (same orientation): [block name, side (+1 south), copied from s0..s1, ds, source]
 const ADD_LEGENDS = [
   ['St Nicholas Av - Frederick Douglass Blvd', 1, 1247.0, 1254.0, -26.3,
-    'BUS ONLY on its windows in the eastbound red at s ~1221-1229'],
+    'c125 01224_ITsg-Srl6ppTUCEl1c3rog 2026-08 (sbs_b1 sn26_s): BUS ONLY on its windows in the eastbound red at s ~1221-1229'],
 ];
 
 // blocks only): a copy of a compiled word of the same block and side, moved ds metres along the corridor, laid after the
-// source].
-// eastbound red; the compiled words copied are the block's pair at 2056.1-2058.7 (BUS) and 2060.1-2062.6 (ONLY), same tile.
+// the road); the compiled words copied are the block's pair at 2056.1-2058.7 (BUS) and 2060.1-2062.6 (ONLY), same tile.
 const ADD_WORDS = [
-  [1, 2055.9, 2058.9, 3.3, 6.75, -46.9, 'BUS'],
-  [1, 2059.8, 2062.9, 3.3, 6.75, -44.7, 'ONLY'],
+  [1, 2055.9, 2058.9, 3.3, 6.75, -46.9, ''],
+  [1, 2059.8, 2062.9, 3.3, 6.75, -44.7, ''],
 ];
 export function addWords(tile, ox, oz) {
   const st = { words: 0, tris: 0 };
@@ -450,7 +453,7 @@ export function repaintBus(tile, ox, oz) {
 export const _skBusWords = [];
 
 // NYC DOT lays the BUS ONLY legends of a red lane on unpainted asphalt: a dark window round each word inside the red
-// Letters of a word (side by side across the lane) are merged;
+// 10/11/2024: dark boxes under every legend in both lanes). Letters of a word (side by side across the lane) are merged;
 // the window is the word's box and 0.30 m along / 0.25 m across, kept 0.15 m inside the red band; the red inside it is
 // re-kinded to asphalt (no overlap: the GP32 rule above).
 function legendWindows(tile, ox, oz, wins, st) {

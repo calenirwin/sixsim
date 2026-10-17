@@ -152,7 +152,6 @@ export const ENV = {
   // specularColorBlended, set inside lights_physical_fragment before the trim ran: GROUND's 06:20 finding), 0 = as before
   gs35: { value: typeof location !== 'undefined' && new URLSearchParams(location.search).get('gs35') === '0' ? 0 : 1 },   // `?gs35=0` off
   // RV35 (makeWaterMaterial): 1 = by day the river mirrors the far shore's buildings at low reflected elevations and takes
-  // water's own small F0, 0 = as before
   rv35: { value: typeof location !== 'undefined' && new URLSearchParams(location.search).get('rv35') === '0' ? 0 : 1 },   // `?rv35=0` off
 };
 // LB14 — the DAY row of the four knobs above. sky.apply() writes these on `day` and the r13 row
@@ -284,7 +283,7 @@ export function applySnowCap(mat, amount = 1) {
 // they sit in (street audit round 3 §5) — a flat trim left every prop cooler and
 // darker than the pavement.
 // ST34 (LOOK, AR34 wave 2; VIADUCTS 19:06): the trim scaled the diffuse to 0.30 by day and left the specular whole, so on
-// a dark paint, iron or a matte metal the sheen outweighed the paint 3:1 and every dark trim read as a grey or sky-blue film. The specular of a
+// a dark paint, iron or a matte metal the sheen outweighed the paint 3:1 (the Manhattan Valley arch's lit chord read
 // trimmed material takes ENV.st34.x of itself by day (the dielectric F0 and the F90; a metal's F0 is its trimmed colour
 // already), back to whole at night; smooth glass-like surfaces keep their mirror (untouched under roughness 0.12, the
 // whole trim from 0.28).
@@ -318,7 +317,6 @@ export function applyLightTrim(mat, scale = 1) {
 // CS34 (LOOK, AR34 wave 2; BID4 19:02, MATS 19:20, KIT 19:30: dark paint, iron and metal panels read navy in shade by
 // day). The environment is the sky alone, so the reflection lobe of a wall, a cornice or a frame at street level saw open
 // sky where the real one sees the buildings across the street: a 0.04 Fresnel on a bright blue sky outweighs the diffuse
-// of a dark paint. Under the canyon's
 // skyline (seen from this height: ~33 deg at the sidewalk, the horizon from ~32 m up; MATS's pbCityK, so the city's
 // materials agree) the lobe takes the street wall instead, a near-neutral grey at cs34Col.a (0.8) of the sky's luminance
 // (MATS's 0.55 took the shaded 125th plates' medians down 2-8 levels: shots/ar34/look/b2day c120, s120), and the
@@ -464,6 +462,8 @@ const GTEX_DEFS = [
 // (docs/notes/skyscrapers.md): tower geometry in assemble.js, the tower facade
 // block below, the far-macro block, and the macro crowns in streamer.js.
 export const NO_TOWER_FX = typeof location !== 'undefined' && new URLSearchParams(location.search).get('notower') === '1';
+// WS36 water normals from rotated gradient-noise octaves (makeWaterMaterial); ?ws36=0 restores the value-noise field
+const WS36 = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('ws36') === '0');
 
 // ?aa=0 restores the pre-2026-09-10 SHADING-ANTIALIASING behaviour for A/B
 // measurement (docs/notes/shading-aa-r8.md; tools/tflick.mjs --flags "...&aa=0").
@@ -675,7 +675,14 @@ export function applySpecAA(mat, o = {}) {
 }
 
 export const GTEX = {};
-export const GTEX_UNIFORM_REFS = []; // sh.uniforms objects holding t_* slots
+// ==== MEM41: weak references, so a disposed material's uniforms (and its hideTex) can be collected; dead entries are
+// pruned when the list grows and on every texture arrival. The list only serves late KTX2 arrivals.
+export const GTEX_UNIFORM_REFS = []; // WeakRefs to sh.uniforms objects holding t_* slots
+function gtexRefPush(u) {
+  GTEX_UNIFORM_REFS.push(typeof WeakRef === 'function' ? new WeakRef(u) : { deref: () => u });
+  if (GTEX_UNIFORM_REFS.length % 256 === 0) for (let i = GTEX_UNIFORM_REFS.length - 1; i >= 0; i--) if (!GTEX_UNIFORM_REFS[i].deref()) GTEX_UNIFORM_REFS.splice(i, 1);
+}
+// ==== MEM41 end
 if (typeof document !== 'undefined') {
   for (const [k, , srgb] of GTEX_DEFS) {
     const t = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1);
@@ -905,7 +912,7 @@ export function initGTEX(renderer) {
       t.anisotropy = (AAFIX && srgb) ? 16 : 8;
       GTEX[k] = t;
       const un = 't_' + k;
-      for (const u of GTEX_UNIFORM_REFS) if (u[un]) u[un].value = t;
+      for (let i = GTEX_UNIFORM_REFS.length - 1; i >= 0; i--) { const u = GTEX_UNIFORM_REFS[i].deref(); if (!u) { GTEX_UNIFORM_REFS.splice(i, 1); continue; } if (u[un]) u[un].value = t; }   // MEM41
     };
     if (GP31) {
       // GP31: the two ground arrays (tools/assets/encode_ground_pbr.mjs). There is no JPG fallback for an array: until
@@ -1194,7 +1201,7 @@ export function makeFacadeMaterial({ hideTex = null } = {}) {
     sh.uniforms.lb14Roof = ENV.lb14Roof;   // LB14 — per-roof membrane value + speckle-scale spread (day only)
     skyReflUniforms(sh);
     for (const k of ['wA', 'wB', 'wC', 'wS', 'wP']) sh.uniforms['t_' + k] = { value: GTEX[k] };
-    GTEX_UNIFORM_REFS.push(sh.uniforms); // async KTX2 arrivals refresh these
+    gtexRefPush(sh.uniforms); // async KTX2 arrivals refresh these (MEM41: weakly held)
     sh.defines = sh.defines || {};
     if (FACDEBUG) sh.defines.FACDEBUG = FACDEBUG;
     if (!NO_TOWER_FX) sh.defines.TOWERFX = 1;
@@ -2465,6 +2472,22 @@ export function makeFacadeMaterial({ hideTex = null } = {}) {
               FAC_emis *= mullA;
               FAC_rough = mix(0.55, FAC_rough, mullA);
               if (fy < 0.3 && fy > 0.05 && style > 2.5 && style < 3.5) { albedo = diffuseColor.rgb * 0.55; FAC_emis = vec3(0.0); FAC_rough = 0.4; }
+              ${FD14 ? `// ==== FD14 (round 14, owner: Bryant Park's background towers looked too basic): depth a head-on view keeps
+              // (so the BX-WIN facade bake carries it to Cycles and Unreal): each bay's mullion reads as a projecting fin, lit
+              // on one face and shadowed on the other, with a shadow line it casts on the glass beside it; the blue
+              // towers (style 11, a uniform grid before) get the spandrel band at each floor line that style 3 has.
+              {
+                float fin = 1.0 - tiny;
+                float litF = smoothstep(0.955 - aaU, 0.955 + aaU, fx) * (1.0 - smoothstep(0.985 - aaU, 0.985 + aaU, fx));
+                float shF = 1.0 - smoothstep(0.012 + aaU, 0.03 + aaU, fx);
+                float castF = smoothstep(0.045 - aaU, 0.045 + aaU, fx) * (1.0 - smoothstep(0.075, 0.075 + 2.0 * aaU, fx));
+                albedo *= 1.0 + fin * (0.55 * litF - 0.35 * shF - 0.22 * castF);
+                if (style > 10.5 && style < 11.5 && fy > 0.05 && fy < 0.17) {
+                  float spM = fin * smoothstep(0.05, 0.05 + aaV, fy) * (1.0 - smoothstep(0.17 - aaV, 0.17, fy));
+                  albedo = mix(albedo, diffuseColor.rgb * 0.62, spM); FAC_emis *= 1.0 - spM; FAC_rough = mix(FAC_rough, 0.45, spM);
+                }
+              }
+              // ==== /FD14` : ''}
               // subpixel collapse: blended curtain-wall average
               vec3 cwAvg = mix(diffuseColor.rgb * 0.5, vec3(0.10, 0.125, 0.14), 0.55);
               albedo = mix(albedo, cwAvg, tiny);
@@ -3706,7 +3729,7 @@ const cpFarPhoto = () => {
 export const GP32 = GP31 && !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('gp32') === '0');
 // ?gp32k=<x> scales the crack net's density (an inspection aid for stills; 1 = the default)
 const GP32K = (typeof location !== 'undefined' ? Math.max(0, +(new URLSearchParams(location.search).get('gp32k') || 1)) : 1).toFixed(3);
-// AK34: `?asphk=<k>` scales the asphalt scan's detail
+// level, luminance high-pass std 16.6-25.7 twin against 4.1-12.2 real): `?asphk=<k>` scales the asphalt scan's detail
 // contrast about its mean (the chip ratio and the 30 m scan's tone) by k; 1 = unchanged until STREET's A/B picks a value.
 const ASPHK = (typeof location !== 'undefined' ? Math.max(0, Math.min(2, +(new URLSearchParams(location.search).get('asphk') || 1))) : 1).toFixed(3);
 // GP32 crack net: block cracking on the borders of a jittered cell grid, the crack look along a line (width wandering to
@@ -4945,7 +4968,7 @@ export function makeGroundMaterial() {
     for (const k of ['asC', 'asN', 'asR', 'asD', 'coC', 'coN', 'grC', 'grN', 'pvC', 'pvN']) sh.uniforms['t_' + k] = { value: GTEX[k] };
     sh.uniforms.cp32lMask = CP32L_GROUND.mask; sh.uniforms.cp32lRect = CP32L_GROUND.rect; sh.uniforms.cp32lOn = CP32L_GROUND.on;   // CP32L
     if (CP32R_MASK) sh.uniforms.cpFarPhoto = { value: cpFarPhoto() };   // CP32R: the far park's ground (matId 8) from the aerial
-    GTEX_UNIFORM_REFS.push(sh.uniforms); // async KTX2 arrivals refresh these
+    gtexRefPush(sh.uniforms); // async KTX2 arrivals refresh these (MEM41: weakly held)
     if (GP32) sh.uniforms.gpVN = { value: 1 };
     if (GP31) { sh.uniforms.t_gpA = GP31_TEX.alb; sh.uniforms.t_gpN = GP31_TEX.nrm; sh.uniforms.gpReady = GP31_TEX.ready; sh.uniforms.gpSun = ENV.sunDir; sh.uniforms.gpMacroL = GP31_TEX.macroL; sh.uniforms.gpGravelL = GP31_TEX.gravelL; }
     sh.uniforms.lb14StCal = ENV.lb14StCal;   // LB14
@@ -5860,6 +5883,31 @@ vec3 worn = mix(asph, paintC * 0.80, 0.62);
           albedo *= 1.0 - smoothstep(0.62, 0.92, gd) * 0.10;
           GND_rough = 0.95; GND_spec = 0.7;`}
         }
+        else if (m >= 18 && m <= 21) {
+          // RL36 rail (compile.mjs rail pass): 18 rail steel, 19 crushed-stone ballast, 20 the sleeper bed (its matId
+          // carries the track's bearing: 20 + 0.45 * bearing / pi), 21 the open cuts' concrete walls and street bridges
+          float rn = vnoise(vWPos.xz * 1.7 + 11.0), rn2 = fbm(vWPos.xz * 0.11 + 7.0);
+          vec3 ballast = mix(vec3(0.200, 0.188, 0.172), vec3(0.262, 0.248, 0.228), rn) * (0.92 + 0.16 * rn2);
+          if (m == 18) {
+            bool rTop = GND_wn.y > 0.7;   // the polished running surface over rust-brown flanks
+            albedo = rTop ? vec3(0.46, 0.46, 0.48) : mix(vec3(0.20, 0.12, 0.08), vec3(0.28, 0.17, 0.11), rn);
+            GND_rough = rTop ? 0.35 : 0.85; GND_spec = rTop ? 1.6 : 0.6;
+          } else if (m == 19) {
+            albedo = ballast; GND_rough = 0.97; GND_spec = 0.5;
+          } else if (m == 20) {
+            // concrete sleepers, 0.25 m wide every 0.6 m across the bed, box-filtered (pcov) so they fade to their mean
+            float bear = clamp((vMat - 20.0) / 0.45, 0.0, 1.0) * 3.14159265;
+            float along = dot(vWPos.xz, vec2(cos(bear), sin(bear))) / 0.6;
+            float tie = pcov(along, 0.0, 0.42, max(fwidth(along), 1e-4));
+            vec3 tieC = mix(vec3(0.42, 0.41, 0.39), vec3(0.50, 0.49, 0.47), rn) * (0.9 + 0.2 * rn2);
+            albedo = mix(ballast * 0.92, tieC, tie);
+            GND_rough = mix(0.96, 0.85, tie); GND_spec = mix(0.5, 0.8, tie);
+          } else {
+            float st = smoothstep(0.45, 0.85, fbm(vec2(dot(vWPos.xz, vec2(0.7071, 0.7071)) * 0.15, vWPos.y * 0.6) + 3.0));
+            albedo = mix(vec3(0.48, 0.47, 0.44), vec3(0.36, 0.35, 0.33), st);   // board-formed concrete, run-off streaks
+            GND_rough = 0.9; GND_spec = 0.7;
+          }
+        }
         else {
           // terrain / far carpet. Inside the city this is the filler between
           // compiled sidewalk polygons and the building line, so it must read
@@ -6587,8 +6635,50 @@ ${GP31_SURF_GLSL}
 }
 
 // ------------------------------------------------------------------ FAR LOD (unlit, baked shading, fog)
+// ==== FW14 (round 14, owner: the far skyline behind Central Park was untextured boxes): the far city carries a window
+// grid. One tiling texture (public/textures/far_windows_fw14.png: 4 bays x 4 floors, 12 x 15.2 m, white sills, spandrels
+// and mullions, darker cool glass with blinds variation) multiplies the macro colour through `uv`, which the streamer
+// computes per face (fw14Uv: along the wall in metres from the world origin, so a facade is continuous across macro
+// tiles; height from the street; roofs on a white texel). Mipmapped and anisotropic, so the grid fades to its average
+// with distance instead of shimmering. It is an ordinary map on an ordinary uv, so the harvest exports it and Unreal's
+// plain master draws it (ue_prep.py's far rebuild writes the same uv). `?fw14=0`: the flat boxes.
+export const FW14 = typeof location === 'undefined' || new URLSearchParams(location.search).get('fw14') !== '0';
+// FD14 (makeFacadeMaterial's glass branch): curtain-wall fins and the blue towers' spandrels; `?fd14=0` off
+export const FD14 = typeof location === 'undefined' || new URLSearchParams(location.search).get('fd14') !== '0';
+export const FW14_TILE = [12.0, 15.2];
+export function fw14Uv(pos, origin, scale = 1 / 8) {
+  const n = pos.length / 3, uv = new Float32Array(n * 2), ox = origin[0], oz = origin[1];
+  for (let t = 0; t + 2 < n; t += 3) {
+    const a = t * 3, b = a + 3, c = a + 6;
+    const ux = (pos[b] - pos[a]) * scale, uy = (pos[b + 1] - pos[a + 1]) * scale, uz = (pos[b + 2] - pos[a + 2]) * scale;
+    const vx = (pos[c] - pos[a]) * scale, vy = (pos[c + 1] - pos[a + 1]) * scale, vz = (pos[c + 2] - pos[a + 2]) * scale;
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const L = Math.hypot(nx, ny, nz) || 1; nx /= L; ny /= L; nz /= L;
+    for (let k = 0; k < 3; k++) {
+      const o = (t + k) * 3;
+      if (Math.abs(ny) > 0.7) { uv[(t + k) * 2] = 0.06; uv[(t + k) * 2 + 1] = 0.24; continue; }   // roof: a white texel
+      const tl = Math.hypot(nx, nz) || 1, tx = -nz / tl, tz = nx / tl;
+      const wx = pos[o] * scale + ox, wz = pos[o + 2] * scale + oz;
+      uv[(t + k) * 2] = (wx * tx + wz * tz) / FW14_TILE[0];
+      uv[(t + k) * 2 + 1] = (pos[o + 1] * scale) / FW14_TILE[1];
+    }
+  }
+  return uv;
+}
+let _fw14Tex = null;
+function fw14Tex() {
+  if (!_fw14Tex && typeof document !== 'undefined') {
+    _fw14Tex = new THREE.TextureLoader().load('textures/far_windows_fw14.png');
+    _fw14Tex.wrapS = _fw14Tex.wrapT = THREE.RepeatWrapping;
+    _fw14Tex.anisotropy = 8;
+    _fw14Tex.name = 'far_windows_fw14';
+  }
+  return _fw14Tex;
+}
+// ==== /FW14
 export function makeFarMaterial() {
   const mat = new THREE.MeshBasicMaterial({ vertexColors: true, fog: true });
+  if (FW14) { const t = fw14Tex(); if (t) mat.map = t; }   // FW14: the window grid (see above)
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.playerXZ = FAR_UNIFORMS.playerXZ;
     sh.uniforms.nearR = FAR_UNIFORMS.nearR;
@@ -6743,11 +6833,36 @@ export function makeWaterMaterial() {
       ${HASH_GLSL}
       // three-octave animated height field; taps widen with distance so the
       // derivative normals self-antialias instead of shimmering at range
+      ${WS36 ? `// WS36 (records lane, 2026-10-11): the octaves were VALUE noise on axis-aligned lattices. Its smoothstep blend
+      // has zero slope across every lattice line, so each line drew a flat band in the normals and, at a grazing look
+      // over open water (St. George from the harbour, the Narrows), the reflection laid those bands out as straight
+      // streaks converging on the horizon. Gradient noise (quintic blend, random unit gradients) has no such lines,
+      // each octave turns on its own axes so no two lattices line up, and the finest octave fades out where a pixel
+      // spans it (its 2 m ripples aliased into the same streaks at range). ?ws36=0 restores the old field.
+      vec2 wsG(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973)); p3 += dot(p3, p3.yzx + 33.33); float a = fract((p3.x + p3.y) * p3.z) * 6.2831853; return vec2(cos(a), sin(a)); }
+      // WS37: a lattice point's gradient is hashed from its index wrapped to 0..1023. Hashed from the raw index (~5,000 for
+      // the 2 m octave), the corner one cell reached as i + 1 and its neighbour reached as floor(p) could hash apart (the
+      // hash magnifies the last bit of a large product), so two cells disagreed on their shared edge's gradients and the
+      // 2 m octave drew such edges as thin bright seams converging on the horizon (the Seaport, Whitehall)
+      float wsN(vec2 p) {
+        vec2 i = floor(p), f = fract(p), u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+        vec2 i0 = mod(i, 1024.0), i1 = mod(i + 1.0, 1024.0);
+        float a = dot(wsG(i0), f), b = dot(wsG(vec2(i1.x, i0.y)), f - vec2(1.0, 0.0));
+        float c = dot(wsG(vec2(i0.x, i1.y)), f - vec2(0.0, 1.0)), d = dot(wsG(i1), f - vec2(1.0, 1.0));
+        return mix(mix(a, b, u.x), mix(c, d, u.x), u.y) * 0.85 + 0.5;
+      }
+      float wsFine = 1.0;
+      float wH(vec2 q) {
+        const mat2 R1 = mat2(0.8090, 0.5878, -0.5878, 0.8090), R2 = mat2(0.2588, -0.9659, 0.9659, 0.2588), R3 = mat2(-0.5299, 0.8480, -0.8480, -0.5299);
+        return wsN(R1 * q * 0.045 + vec2(time * 0.25, time * 0.17)) * 0.6
+             + wsN(R2 * q * 0.14 - vec2(time * 0.14, time * 0.2)) * 0.3
+             + wsN(R3 * q * 0.5 + vec2(time * 0.05, -time * 0.4)) * 0.1 * wsFine;
+      }` : `float wsFine = 1.0;
       float wH(vec2 q) {
         return vnoise(q * 0.045 + vec2(time * 0.25, time * 0.17)) * 0.6
              + vnoise(q * 0.14 - vec2(time * 0.14, time * 0.2)) * 0.3
              + vnoise(q * 0.5 + vec2(time * 0.05, -time * 0.4)) * 0.1;
-      }
+      }`}
       void main() {
         vec2 p = vWorld.xz;
         ${CP32R_MASK ? `if ${CP_PARK_IN('p')} discard;` : ''}
@@ -6756,6 +6871,9 @@ export function makeWaterMaterial() {
         float cur = fbm(p * 0.006 + vec2(time * 0.012, -time * 0.008));
         float amp = 0.7 + 0.9 * smoothstep(0.35, 0.75, cur);
         float e = max(0.35, vDist * 0.0045);
+        ${WS36 ? `// the 2 m octave fades out once a pixel's footprint (along the view, which a grazing look stretches) spans ~1 m
+        float wsFw = max(fwidth(p.x), fwidth(p.y));
+        wsFine = 1.0 - smoothstep(0.25, 1.0, wsFw);` : ''}
         float hC = wH(p), hX = wH(p + vec2(e, 0.0)), hZ = wH(p + vec2(0.0, e));
         vec3 N = normalize(vec3((hC - hX) / e * 1.7 * amp, 1.0, (hC - hZ) / e * 1.7 * amp));
         vec3 V = normalize(cameraPosition - vWorld);
@@ -6777,7 +6895,7 @@ export function makeWaterMaterial() {
         float rvK = rv35 * (1.0 - smoothstep(0.0, 0.05, night));
         float shore = (1.0 - smoothstep(0.012, 0.085, Rw.y)) * rvK;
         skyRef = mix(skyRef, horizonC * 0.42, shore * 0.8);
-        // the East and Harlem Rivers are turbid tidal water: an olive-teal body, and the ripples blur and grey the sky they mirror
+        // Gantry Plaza), and the ripples blur and grey the sky they mirror
         deep = mix(deep, mix(vec3(0.028, 0.052, 0.046), vec3(0.055, 0.090, 0.078), hC), rvK);
         skyRef = mix(skyRef, vec3(dot(skyRef, vec3(0.2126, 0.7152, 0.0722))), 0.5 * rvK);
         // and water's own Fresnel (Schlick, F0 0.02): ~3 % of the sky from a 40 deg aerial, most of it at a grazing look

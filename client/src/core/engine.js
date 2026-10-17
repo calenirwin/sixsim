@@ -683,7 +683,6 @@ const BC26 = !(typeof location !== 'undefined' && new URLSearchParams(location.s
 // docs/notes/ar34-glow.md
 const GL36 = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('gl36') === '0');
 const GL36_K = (() => { const v = typeof location !== 'undefined' ? parseFloat(new URLSearchParams(location.search).get('gl36k')) : NaN; return Number.isFinite(v) && v >= 0 ? v : 2.0; })();
-// LK34 (AR34 wave 2, the "flatness" of the 125th Street plates). against the twin at
 // the same lens (c120, s120, s351; luma percentiles of the 1600x900 plates): the photographs' 1st / 5th percentiles are
 // 2-11 / 9-21, the twin's 12-19 / 25-36, and the photographs' 99th runs to 218-228 where the twin's stops at 170-216:
 // the twin's range is lifted at the bottom and compressed at the top. By day the grade sets a black point and a white
@@ -1419,8 +1418,8 @@ export class Engine {
     this.sun.castShadow = true;
     const sh = this.sun.shadow;
     sh.mapSize.set(4096, 4096);
-    { const smq = Number(new URLSearchParams(location.search).get('sm')); if (smq >= 512) sh.mapSize.set(smq, smq); }   // LITE15
-    if (BS && BS.sm >= 1024) sh.mapSize.set(BS.sm, BS.sm);   // BS36: the film's near shadow map
+    if (BS && BS.sm >= 1024) sh.mapSize.set(BS.sm, BS.sm);
+    { const smq = Number(new URLSearchParams(location.search).get('sm')); if (smq >= 512) sh.mapSize.set(smq, smq); }   // LITE15   // BS36: the film's near shadow map
     // DEPTH RANGE (lighting-r6 1b/1c). This was 350..1150 with the light 700 m
     // up-sun of the camera, i.e. a slab from 350 m up-sun to 450 m down-sun.
     // Measured at the day preset (elev 42): a caster in the up-sun corner of the

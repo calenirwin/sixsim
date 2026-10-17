@@ -19,6 +19,7 @@ from pxr import Usd, UsdGeom, UsdShade, Sdf, Vt, Gf
 BX = False
 PBRT = {}
 HAS_SG = False
+HAS_AD = False   # TSQADS
 _done_geo = set()
 _need_geo = {}
 STATS = {'materials': {}, 'primvars': 0, 'ground_meshes': 0, 'geo_primvars': 0}
@@ -56,6 +57,10 @@ def setup(ctx):
     global HAS_SG
     HAS_SG = any(any(L['name'] == 'sgRect' for L in g['layout']) for g in ctx.man['geos'])
     STATS['sign_terms'] = HAS_SG
+    # TSQADS: the TA31 boards' playlist per vertex (harvests from 2026-10-08 14:00 on carry aAd / aSize)
+    global HAS_AD
+    HAS_AD = any(any(L['name'] == 'aAd' for L in g['layout']) for g in ctx.man['geos'])
+    STATS['board_terms'] = HAS_AD
     # the root carries the switch, so blender_nodes.py knows the primvars are there
     STATS['pbr_table'] = len(PBRT)
 
@@ -93,6 +98,23 @@ def classify(ctx, mid, d):
     if lt is not None:
         P['lt'] = lt
         P['night'] = night
+    # TSQADS (2026-10-08): the TA31 boards (billboards.js ensureTA): an emitter drawing one ad per screen from the atlas,
+    # chosen per vertex (aAd: the aspect class's first cell, its count, a phase and a duration, a ticker by a negative
+    # duration; aSize: an LED wall's metres, a printed board's width negative) and the sim time, with a 0.6 s wipe, every
+    # fetch inside its own cell (rect: the cell 2 px in, three's uv from the bottom), the cell's mean colour at distance,
+    # the LED wall's cabinets, diodes and off-axis falloff, and the web's day and night gains
+    if HAS_AD and 'aAd' in attrs and 'map' in maps and isinstance(U.get('taRect'), dict) and U['taRect'].get('vecs'):
+        P['kind'] = 'board'
+        P['tex'] = {'map': ctx.tex_file(maps['map'])}
+        P['rects'] = [[float(x) for x in r[:4]] for r in U['taRect']['vecs']]
+        mv = (U.get('taMean') or {}).get('vecs') or []
+        P['means'] = [[float(x) for x in m[:3]] for m in mv] if len(mv) == len(P['rects']) and any(sum(m[:3]) > 0 for m in mv) else []
+        P['atlas'] = _u(U, 'taAtlas') or [4096.0, 2048.0]
+        P['night'] = float(U['bbNight']) if not isinstance(U.get('bbNight'), dict) and U.get('bbNight') is not None else 0.0
+        P['ta'] = {'wipe': 0.6, 'wipeMax': 0.25, 'ledGain': [1.45, 1.9], 'printGain': [1.25, 1.7], 'knee': [1.1, 1.5],
+                   'gzScreen': [48.0, 160.0], 'gzTicker': [4.0, 14.0], 'cabinet': 0.96}
+        return P
+    # TSQADS end
     if 'matId' in attrs:
         P['kind'] = 'ground'
         tA = (U.get('t_gpA') or {}).get('tex')
@@ -339,11 +361,20 @@ def _primvars(m, G, unweld=None):
         if nm in G:
             put(nm, Sdf.ValueTypeNames.Float3Array, Vt.Vec3fArray.FromNumpy(np.ascontiguousarray(take(G[nm]).astype(np.float32).reshape(-1, 3))))
             n += 1
+    # TSQADS: the TA31 boards' playlist (vec4 as color4f, which Blender keeps) and size (vec2 as float3, z 0)
+    if 'aAd' in G:
+        put('aAd', Sdf.ValueTypeNames.Color4fArray, Vt.Vec4fArray.FromNumpy(np.ascontiguousarray(take(G['aAd']).astype(np.float32).reshape(-1, 4))))
+        n += 1
+    if 'aSize' in G:
+        s2 = take(G['aSize']).astype(np.float32).reshape(-1, 2)
+        put('aSize', Sdf.ValueTypeNames.Float3Array, Vt.Vec3fArray.FromNumpy(np.ascontiguousarray(np.concatenate([s2, np.zeros((len(s2), 1), np.float32)], axis=1))))
+        n += 1
     STATS['primvars'] += n
     return n
 
 
 WANT = ('aFkTr', 'aWeather', 'aGrime', 'color', 'matId', 'gpK', 'aRv', 'aJ', 'sgRect', 'sgBg', 'sgFg', 'sgLamp', 'sgP', 'sgF')
+WANT = WANT + ('aAd', 'aSize')   # TSQADS
 
 
 def mesh(ctx, stage, prim, gid, mats, G):

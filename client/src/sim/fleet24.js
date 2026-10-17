@@ -26,11 +26,8 @@ if (QS.get('record') === '1' && QS.get('fp37') !== '0') { LODD[0] = Math.max(LOD
 const LOD0_2 = LODD[0] * LODD[0], LOD1_2 = LODD[1] * LODD[1];
 const PAD_MAIN = 3, PAD_SHADOW = 12;
 // `?vclear=<m>` leaves out any vehicle, parked or moving, whose body comes within <m> metres of the lens (and whose roof
-// is not well below it). `vclear=3` there.
 const VCLEAR = Math.max(0, +(QS.get('vclear') || 0)) || 0;
-// `?vahead=<m>`: also leaves out a vehicle whose body overlaps the lane
 // straight ahead of the lens (1.6 m either side of the view line) within <m> metres: the camera car's own following gap,
-// empty. Off by default.
 const VAHEAD = Math.max(0, +(QS.get('vahead') || 0)) || 0;
 // `?f24art=<deg>` (look-dev, e.g. with the showroom): every articulated bus drawn at that articulation angle
 const ART_FORCE = QS.get('f24art') !== null && Number.isFinite(+QS.get('f24art')) ? (+QS.get('f24art') * Math.PI) / 180 : null;
@@ -91,7 +88,7 @@ export const KIND24 = {
   // mix (traffic.js PARK125) instead. MTA buses (w 0) run only as route buses (traffic.js BUS34: the M60 SBS on the
   // articulated LFS or XD60, the M101 / M125 / M100 locals on the XD40 and the LFS). The moving shares are rules, not counts.
   mtaxd60: { w: 0, pw: 0, cap: 12, palette: 'livery', nv34: true },
-  mtalfsa: { w: 0, pw: 0, cap: 12, palette: 'livery', nv34: true },   // Nova LFS Articulated, SBS livery
+  mtalfsa: { w: 0, pw: 0, cap: 12, palette: 'livery', nv34: true },
   mtalfsal: { w: 0, pw: 0, cap: 12, palette: 'livery', nv34: true },  // the same in the white local livery (BUSES 00:08: M101 / M125 artics)
   mtaxd40: { w: 0, pw: 0, cap: 12, palette: 'livery', nv34: true },
   mtalfs: { w: 0, pw: 0, cap: 12, palette: 'livery', nv34: true },
@@ -108,6 +105,12 @@ export const KIND24 = {
   icecream: { w: 0, pw: 0, cap: 4, palette: 'livery', nv34: true },
 };
 const F27 = QS.get('fleet27');
+// ==== R1D (CORE, docs/notes/arch-r1-d.md): the kind selection loadFleet24 applies, shared with the headless core
+// (core/sim/fleet.mjs builds the same trafficFleet from the GLBs' metadata, with no mesh), and the per-vehicle seed and
+// paint the renderer derives (core/tracks writes them into a take's actor tracks)
+export const R1D_FLEET_SEL = { F27, NV34, VH36_OUT, VH36_BASE, VH36_FILE, BASE };
+export const R1D_FLEET_FNS = { hash, paintFor };
+// ==== R1D end
 // RG32 (owner 2026-09-29: "a bug of tops of vehicles disappearing/looking broken sometimes", a red Model 3 from above,
 // its seats showing through the roof): the Model 3's roof and the MKZ's (lincoln, taxi2) are GLASS, 59-60 % of what each
 // shows from above, and glass cast no shadow, so the sun lit the seats through a pane 62 % opaque. Now the panes that
@@ -368,7 +371,6 @@ function tlcDecal(meta) {
   return out;
 }
 
-// VH36 BOX LIVERIES (boxtruck26): most 26 ft boxes on 125th Street carry an operator's name. Invented names and fictional 555-01xx numbers, drawn here; two of the five designs are blank (plain white
 // boxes), so a street shows a mix. Laid out on the box's sides only (meta.box: its front and rear z), both sides reading
 // front to rear as the TLC sheet does.
 function boxDecal(meta) {
@@ -1150,7 +1152,7 @@ export function installFleet24(traffic, engine, kinds) {
   for (const K of Object.values(kinds)) for (const parts of K.lods) for (const p of parts) allMats.add(p.material);
   let lastEnv;
   const probe = QS.get('f24probe') !== '0' ? new ReflectionProbe(engine, traffic.streamer?.surfaceAt ? (x, z) => traffic.streamer.surfaceAt(x, z) : null) : null;
-  if (typeof window !== 'undefined') window.__F24PROBE = probe;   // harness access
+  if (typeof window !== 'undefined') window.__F24PROBE = probe;
   const renderMeshes = _rm();
   const signGroups = {};
   for (const G of groups) if (G.cell) signGroups[G.kind] = G;
@@ -1231,7 +1233,11 @@ export function installFleet24(traffic, engine, kinds) {
         }
         // motion state (moving pools): spin from distance, steer from yaw rate, brake from deceleration / standstill
         let lampMask = 0, art = 0;
-        const seed = G.moving ? hash(i, G.kind.length * 131 + 7) : hash(Math.round(x * 10), Math.round(z * 10));
+        // ==== R1D (CORE, docs/notes/arch-r1-d.md): ?replay (src/replay/coreReplay.js) gives a moving pool the take's own seed
+        // per vehicle (P.r1d); without it the slot's hash, as before
+        const r1d = G.P.r1d && G.P.r1d.on[i] ? G.P.r1d : null;
+        const seed = r1d ? r1d.seed[i] : G.moving ? hash(i, G.kind.length * 131 + 7) : hash(Math.round(x * 10), Math.round(z * 10));
+        // ==== R1D end
         if (S && i < S.cap) {
           const yaw = Math.atan2(A[o + 8], A[o + 10]);
           if (still && S.ok[i]) { /* dt = 0 frame: keep spin / steer / brake / blinkers exactly as they were */ }
@@ -1278,6 +1284,9 @@ export function installFleet24(traffic, engine, kinds) {
           veh[0] = S.spin[i]; veh[1] = S.steer[i];
         } else { veh[0] = seed * 6.28; veh[1] = 0; }
         veh[2] = lampMask; veh[3] = seed;
+        // ==== R1D (CORE): ?replay: the take's wheel spin, steering, lamps and articulation for this vehicle
+        if (r1d) { veh[0] = r1d.spin[i]; veh[1] = r1d.steer[i]; veh[2] = r1d.lamps[i]; if (R) art = Math.max(-0.75, Math.min(0.75, r1d.bend[i])); }
+        // ==== R1D end
         const r = C ? C[i * 3] : 0.5, g = C ? C[i * 3 + 1] : 0.5, b = C ? C[i * 3 + 2] : 0.5;
         paintFor(G.palette, r, g, b, seed, col, paint);
         if (R && ART_FORCE !== null) art = Math.max(-0.75, Math.min(0.75, ART_FORCE));

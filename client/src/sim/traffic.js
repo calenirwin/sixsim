@@ -6,6 +6,7 @@ import { buildVehicleGeos, fleetColor, VH13 } from './vehicles.js';
 import { signalState } from './signals.js';
 import { CarLights } from './carlights.js';
 import { applySnowCap, ENV } from '../world/materials.js';
+import { lf39Stalls } from '../world/lotfix39.js';   // LF39 (LOTFIX): the cars in the city's parking lots
 // see world/assemble.js: `?nodatum=1` restores the pre-seam-pass datums for A/B plates
 const NO_DATUM = typeof location !== 'undefined' && new URLSearchParams(location.search).get('nodatum') === '1';
 
@@ -247,13 +248,13 @@ const cpDrive = (r) => {
   const q = r.pts[r.pts.length >> 1];
   return q[0] > -960 && q[0] < 1900 && q[2] > -2000 && q[2] < 2150;
 };
-// PK34. Three causes, measured with tools/ar34/vehicles/sim/park_probe.mjs on the
+// kerbs; the twin had 0-2 per block face). Three causes, measured with tools/ar34/vehicles/sim/park_probe.mjs on the
 // compiled tiles: (1) the occupancy hash |sin(...)| > 0.74 is not uniform (|sin| piles up near 1) and refused 283 of 588
 // slots on 125th (48 %, not the 26 % its comment said); (2) the slots on the compiled `busred` were refused (76 of 588),
 // and from Frederick Douglass to ACP and from Third to Second Avenue the compiled red lane lies AT the kerb, where the
-// real street parks; (3) the
 // parked LOD rebucket kept the first 320 records per kind in tile-load order, so in a batch render the tiles streamed for
 // earlier views took the cap and the camera's own block got none. On 125th Street (CSCL "W 125 ST" / "E 125 ST") the kerb
+// first, then sedans, full-size vans, black livery cars), the compiled kerbside red taken as the kerb lane it really is,
 // no car in a bus-stop zone (PROPS' surveyed stop signs and shelters, and the MTA GTFS stops, BUS125 below) or within
 // 15 ft of a hydrant (PROPS' survey); each kind stands off the kerb by its own wheel track. The rebucket keeps the
 // records nearest the camera, everywhere. `?pk34=0` restores all of it.
@@ -275,17 +276,18 @@ const OV41 = typeof location === 'undefined' || new URLSearchParams(location.sea
 const SKBUS = typeof location === 'undefined' || !['skbus', 'sk'].some((k) => new URLSearchParams(location.search).get(k) === '0');
 const C125 = /^(W|E) 125 ST$/;
 // 125th Street's parked mix (weights; a kind missing from the loaded fleet drops out)
-// NV34 (fleet24.js): the high-roof cargo van, the 26 ft box truck and
 // the NYPD's Police Interceptor Utility join it (their weights are rules too)
+// (batch 1: the fleet's only SUV is CARLA's full-size Patrol, so at 34 the same body stood two and three in a row where the
+// docs/notes/ar34-vehicles.md "Q53 kerb counts": 5 full-size or high-roof vans (4.5 %) and 5 box or step trucks (4.5 %);
+// the mix had vans at 16 % (van 9 + cargovan 5 of 88), and the tall bodies are what hides a ground floor from across the
+// street. Vans 9 -> 3, cargo vans 5 -> 2; the trucks stay)
 const PARK125 = { suv: 22, charger: 9, impala: 4, mercedes: 10, mini: 4, model3: 8, lincoln: 10, van: 3, cargovan: 2, boxtruck: 1, boxtruck26: 2, taxi2: 1, police: 0, nypd: 1, auditt: 1 };
 // NV34: 125th Street's moving traffic carries more working vehicles than the city's mix: a share of the spawns on its edges
-// comes from this bag
-// and its lanes carry more of the traffic than a side street: a share of all spawns picks a 125th Street edge (the
+// ...and its lanes carry more of the traffic than a side street: a share of all spawns picks a 125th Street edge (the
 // captures show queues in every lane at midday, the twin's spawns were spread evenly over every street in reach; a rule,
 // not a count). `?c125sp=0` off.
 const C125_SPAWN = typeof location !== 'undefined' && new URLSearchParams(location.search).get('c125sp') === '0' ? 0 : 0.3;
 const MOVE125 = { share: 0.22, bag: { cargovan: 5, stepvan: 4, boxtruck26: 3, uspsllv: 2, uspsngdv: 1, dsny: 1, schoolbus: 1, nypd: 1, taxinv200: 1 } };
-// double-parking: the share of each kind that stops in the kerb travel lane on 125th Street and elsewhere (the vans' old 6 %)
 const DP125 = { van: 0.2, boxtruck: 0.2, cargovan: 0.2, stepvan: 0.35, boxtruck26: 0.25, uspsllv: 0.5, uspsngdv: 0.5 };
 const DPK = new Set(['vwvan', 'sprinter', 'van', 'cargovan', 'stepvan', 'boxtruck26', 'uspsllv', 'uspsngdv']);
 // BUS125: the bus stops on 125th Street from MTA's Manhattan bus GTFS (feed of 2026-08-24, stops.txt / stop_times.txt;
@@ -319,7 +321,7 @@ const BUS125 = [
 const BUS34 = typeof location === 'undefined' || new URLSearchParams(location.search).get('bus34') !== '0';
 // TP34 (AR34 VEHICLES): after the camera jumps (a teleport: bshot's --onepage views, a map jump) the streets around it get
 // the first-20-s fill again for 20 s (cars from 25 m, weighted toward the camera, up to 30 % over the target while the cars
-// left behind drive out of the despawn ring): the later views of a batch showed 125th Street's lanes nearly empty. Never while a recording guards spawns. `?tp34=0` off.
+// left behind drive out of the despawn ring): the later views of a batch showed 125th Street's lanes nearly empty (sbs_b1
 const TP34 = typeof location === 'undefined' || new URLSearchParams(location.search).get('tp34') !== '0';
 // BL34 (AR34 VEHICLES, QA Q57 2026-10-02: in the teaser key t5ApolloDive_k1 about ten cars, vans and a cab stood nose to tail
 // in the westbound red bus lane in front of the Apollo while the general lane beside them held three). Three causes in the
@@ -411,11 +413,10 @@ const TN38 = typeof location === 'undefined' || new URLSearchParams(location.sea
 // queue standing across the junction is held that long by a body that is no deadlock at all: FILM 09:13, the owner's case
 // in teaser 4 v3's t4Sheep, a Lincoln on its connector driven into the rear of a box truck standing in a queue (frames
 // 35-70). A body ahead going my way is a queue and is waited for; in sight nothing is passed through.
-// `?busat=<x>,<z>[,<route>[,<kind>]]`: one route bus of that route
 // (else the routes' weights) stands in its kerb lane with its front at the 125th Street point nearest (x, z), on the kerb
 // of that side, for good (staged again if it despawns while the camera is away). Off by default.
 // `?vehat=<kind>,<x>,<z>[;<kind>,<x>,<z>...]` (stills, like busat): a vehicle of that kind stands double-parked for good in
-// the kerb travel lane of the street nearest (x, z), its centre there, travelling on that side's direction. Off by default.
+// the kerb travel lane of the street nearest (x, z), its centre there, travelling on that side's direction (a pair whose
 const VEHAT = (() => {
   if (typeof location === 'undefined') return [];
   return (new URLSearchParams(location.search).get('vehat') || '').split(';').map((t) => t.split(','))
@@ -431,8 +432,10 @@ const BUSAT = (() => {
 // 12:00-13:00 on 2026-10-01 (the service ids active that day only; counting every weekday calendar doubled them): M60 SBS
 // 6 each way, M101 6-8, M125 7 (the M100's weight is a guess: its 125th stops were not counted). [route, weight, kinds,
 // x from, x to] (the stretch of 125th it runs on, from its stops in BUS125)
-// The M60's bus: the Nova LFS Articulated or the XD60,
 // half each (one capture is one bus: the share is not measured)
+// (session 2: the M101 and the M125 also on the white LFS Artic `mtalfsal` and the M125 on the SBS XD60, BUSES 00:08 / 00:13:
+// LFS Artics 5821 / 5979 on the M101 at Lexington / 92nd 2019-02, LFS Artic 1207 on the Bx15 at Park Av 2020-01, XD60 6221
+// kind per bus, picked evenly: the shares are not measured)
 const BUS_ROUTES = [['M60', 6, ['mtalfsa', 'mtaxd60'], 1290, 3200], ['M101', 7, ['mtalfsal', 'mtaxd40', 'mtalfs'], 1290, 3000], ['M125', 7, ['mtalfsal', 'mtaxd60', 'mtalfs'], 900, 3400],
   ['M100', 2, ['mtaxd40', 'mtalfs'], 1290, 1560]];
 const BUS_PER_KM = 2.0;   // per direction: ~20 buses an hour (the feed) at an assumed ~10 km/h (the speed is not measured)
@@ -447,13 +450,9 @@ const NOSTAND125 = [
   // EAST 02:20: the south kerb from 118 E 125th (NMRC) to Lexington Avenue, corridor stations 2551-2610 (sk/skGeom.js LINE,
   // 8 m south): a stop with a NO STANDING ANYTIME plate in front of Popeyes and an empty kerb along the mural hoarding
   [2782.6, -2392.0, 2834.2, -2363.4, 'S', 'EAST 02:20'],
-  // Q53 (session 2), each read off one levelled crop: the Apollo's frontage, north kerb, stations ~1374-1398
   [1761.7, -2978.0, 1782.7, -2966.3, 'N', 'Q53 2024-08 8TfYv918'],
-  // Lexington - Third, south kerb along the mural hoarding and the shelter, ~2625-2690
   [2847.3, -2356.1, 2904.2, -2324.5, 'S', 'Q53 2026-08 SPzcJJuT'],
-  // Lexington - Third, north kerb along the planted walk, ~2695-2750
   [2916.3, -2336.1, 2964.4, -2309.4, 'N', 'Q53 2026-08 SPzcJJuT'],
-  // Third - Second, north kerb along the filling station, ~2915-2966
   [3108.5, -2229.0, 3153.0, -2204.2, 'N', 'Q53 2026-08 yDVJtToU'],
 ];
 // integer hash -> [0, 1) (uniform, unlike |sin|)
@@ -753,6 +752,55 @@ export class Traffic {
         }
       }
     }
+    // LF39 (LOTFIX, world/lotfix39.js; `?lf39=0` none): the stalls of the NYC Planimetric parking lots in this tile (GF38
+    // paves them as roadway; empty they read as vacant lots), laid out and 72 % occupied by tools/ar34/lotfix/lf39_bake.mjs.
+    // LF39b (lead 2026-10-09, OV41 on t7ArchSoffit: box trucks and vans in car stalls, 41 parked pairs inside each other):
+    // a stall takes only a kind whose DRAWN plan box (fleet24 LOD0, the box drawnOverlaps tests) fits a standard stall,
+    // 2.45 x 5.25 m, so the tile waits for the fleet's sizes as PK41's 125th Street kerbs do; and a body that would stand
+    // within 0.15 m of one already parked (this tile's kerb cars, the lots and kerbs of the loaded tiles around) is left out.
+    // No livery cabs or police cars in a residents' lot.
+    const st39 = lf39Stalls(key);
+    if (st39.length && this.parkedKinds && !(this.vehDims && this.fleet24 && this.fleet24.kinds)) (this._dimWait || (this._dimWait = new Map())).set(key, data);
+    else if (st39.length) {
+      const fit = (this.parkedKinds || ['sedan']).filter((k) => { if (!this.parked[k] || /taxi|police|nypd|cop/i.test(k)) return false; const bb = this._lf39BB(k); return bb[1] - bb[0] <= 2.45 && bb[3] - bb[2] <= 5.25; });
+      const G = new Map(), cell = (x, z) => Math.floor(x / 8) * 100003 + Math.floor(z / 8);
+      const body = (kind, M) => {   // plan box of a parked instance: centre, forward, half width / length (+ 0.075 m each side)
+        const bb = this._lf39BB(kind), yaw = Math.atan2(M[8], M[10]), fx = Math.sin(yaw), fz = Math.cos(yaw), mx = (bb[0] + bb[1]) / 2, mz = (bb[2] + bb[3]) / 2;
+        return { x: M[12] + fz * mx + fx * mz, z: M[14] - fx * mx + fz * mz, fx, fz, hw: (bb[1] - bb[0]) / 2 + 0.075, hl: (bb[3] - bb[2]) / 2 + 0.075 };
+      };
+      const put = (b) => { const k = cell(b.x, b.z); const L = G.get(k); if (L) L.push(b); else G.set(k, [b]); };
+      const hit = (a) => {
+        const gx = Math.floor(a.x / 8), gz = Math.floor(a.z / 8);
+        for (let u = gx - 1; u <= gx + 1; u++) for (let w = gz - 1; w <= gz + 1; w++) for (const b of G.get(u * 100003 + w) || []) {
+          const dx = b.x - a.x, dz = b.z - a.z; let sep = false;
+          for (const [ux, uz] of [[a.fx, a.fz], [a.fz, -a.fx], [b.fx, b.fz], [b.fz, -b.fx]]) {
+            const ra = a.hl * Math.abs(a.fx * ux + a.fz * uz) + a.hw * Math.abs(a.fz * ux - a.fx * uz);
+            const rb = b.hl * Math.abs(b.fx * ux + b.fz * uz) + b.hw * Math.abs(b.fz * ux - b.fx * uz);
+            if (Math.abs(dx * ux + dz * uz) >= ra + rb) { sep = true; break; }
+          }
+          if (!sep) return true;
+        }
+        return false;
+      };
+      const [tx, tz] = key.split('_').map(Number);
+      for (const r of recs) if (this.parked[r.kind]) put(body(r.kind, r.m));
+      for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
+        if (!dx && !dz) continue;
+        for (const r of this.parkedRecs.get(`${tx + dx}_${tz + dz}`) || []) if (this.parked[r.kind]) put(body(r.kind, r.m));
+      }
+      for (const [x, y, z, yaw, h] of st39) {
+        if (!fit.length) break;
+        const kind = fit[((h * 917.3) | 0) % fit.length];
+        this._v.set(x, y, z);
+        this._e.set(0, yaw + (h - 0.35) * 0.06, 0);
+        this._q.setFromEuler(this._e);
+        this._m.compose(this._v, this._q, this._s);
+        const M = Float32Array.from(this._m.elements), b = body(kind, M);
+        if (hit(b)) continue;
+        put(b);
+        recs.push({ kind, x, z, m: M, color: fleetColor(() => (h * 7.13) % 1) });
+      }
+    }
     this.parkedRecs.set(key, recs);
     this._parkDirty = true;
   }
@@ -772,6 +820,23 @@ export class Traffic {
       }
     }
     return best;
+  }
+  // LF39b: a kind's drawn plan box [x0, x1, z0, z1, top] in model space (fleet24 LOD0, the box drawnOverlaps tests; shared
+  // with it through _vfBB), the carHalf box before the fleet's parts exist (not cached then)
+  _lf39BB(k) {
+    const BB = this._vfBB || (this._vfBB = {});
+    if (BB[k] !== undefined) return BB[k];
+    const K = this.fleet24 && this.fleet24.kinds && this.fleet24.kinds[k];
+    let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9, y1 = 0;
+    for (const p of (K && K.lods && K.lods[0]) || []) {
+      const g = p.geometry;
+      if (!g || !g.attributes || !g.attributes.position) continue;
+      if (!g.boundingBox) g.computeBoundingBox();
+      const b = g.boundingBox;
+      x0 = Math.min(x0, b.min.x); x1 = Math.max(x1, b.max.x); z0 = Math.min(z0, b.min.z); z1 = Math.max(z1, b.max.z); y1 = Math.max(y1, b.max.y);
+    }
+    if (!(x0 < x1)) { const h = this.carHalf({ kind: k }); return [-h[0], h[0], -h[1], h[1], 1.6]; }
+    return (BB[k] = [x0, x1, z0, z1, y1]);
   }
   // PK41: a parked kind's slot length, the drawn model's (fleet24's kind size, or twice its LOD0 body's longer reach as
   // VLEN_FLEET takes it), the hand table only before fleet24 exists
@@ -833,7 +898,7 @@ export class Traffic {
         const cxp = s.x - s.dirz * off, czp = s.z + s.dirx * off;
         const si = this.streamer.surfaceInfoAt ? this.streamer.surfaceInfoAt(cxp, czp, 0.4) : null;
         // off the roadway (a plaza, a lawn): no car; the compiled kerbside red is the parking lane STREET repaints, so with the
-        // repaint on (SKBUS) a red left at the kerb is real and no standing; with the compiled paint
+        // repaint on (SKBUS) a red left at the kerb is real and no standing (STREET 00:00: Third - Second Avenue's south side,
         // (`skbus=0` / `sk=0`) its kerbside red is the parking lane and parks as before
         if ((si && !si.road) || (si && si.kind === 'busred' && SKBUS)) { d += L + gap; continue; }
         this._v.set(cxp, s.y + (NO_DATUM ? 0.03 : 0.002), czp);
@@ -853,7 +918,9 @@ export class Traffic {
   // endpoints in a 6m hash: the first endpoint in a neighborhood becomes the
   // canonical node; later endpoints within 12m alias onto it. Cars blend
   // across the residual geometric gap at edge transitions (see update()).
-  _canon(x, z) {
+  // RG44: an end aliases only onto a node within 3 m of its height (y given): a road in a cut ending under the street it
+  // passes beneath, or an elevated end over one, is not that street's junction (CSCL ends both at one point)
+  _canon(x, z, y = null) {
     const C = 6;
     const ci = Math.floor(x / C), cj = Math.floor(z / C);
     let best = null, bestD = 12;
@@ -862,6 +929,7 @@ export class Traffic {
       if (!arr) continue;
       for (const p of arr) {
         const d = Math.hypot(p.x - x, p.z - z);
+        if (y !== null && p.y !== null && Math.abs(p.y - y) > 3) continue;
         if (d < bestD) { bestD = d; best = p; }
       }
     }
@@ -870,8 +938,10 @@ export class Traffic {
     const key = `${ci}_${cj}`;
     let arr = this._nkGrid.get(key);
     if (!arr) this._nkGrid.set(key, (arr = []));
-    arr.push({ x, z, k });
-    return k;
+    // (a node at another height on the same quantized point keeps its own key)
+    const kk = y !== null && arr.some((p) => p.k === k) ? `${k}_${Math.round(y)}` : k;
+    arr.push({ x, z, y, k: kk });
+    return kk;
   }
   _addEdge(pts, r, tile) {
     const id = this.edgeIdSeq++;
@@ -884,7 +954,7 @@ export class Traffic {
       id, pts, cum, len: cum[cum.length - 1], width: r.width,
       lanes: Math.max(1, Math.min(r.lanes || 1, Math.floor((r.width - ((r.park | 0) >= 2 ? 4.6 : (r.park | 0) ? 2.3 : 0) - 0.6) / 2.9))),
       oneway: r.oneway | 0, speed: Math.max(6, (r.speed || 25) * 0.44704), rclass: r.rclass, tile,
-      a: this._canon(pts[0][0], pts[0][2]), b: this._canon(pts[pts.length - 1][0], pts[pts.length - 1][2]),
+      a: this._canon(pts[0][0], pts[0][2], pts[0][1]), b: this._canon(pts[pts.length - 1][0], pts[pts.length - 1][2], pts[pts.length - 1][1]),
       park: r.park | 0, segId: r.segId | 0,
       mouthA: r.mouthA || 0, mouthB: r.mouthB || 0, // junction boundary per end (0 = plain edge end)
       cars: new Set(),
@@ -1058,6 +1128,7 @@ export class Traffic {
       // (the first frames are the ones a capture takes); for the first 20 s, while under 75 % of the target, cars may
       // appear from 25 m, after which the out-of-sight ring takes over again
       const filling = !spawnGuard.on && ((this.time < 20 && this.cars.length < this.target * 0.75) || (TP34 && this.time < (this._refill || 0)));
+      // (TP34's refill after a jump starts 40 m out: a car spawned at 25 m often stood right in front of a street-level
       const r0 = filling ? Math.min(SPAWN_R0, this.time < 20 ? 25 : 40) : SPAWN_R0;
       if (dist < r0 || dist > SPAWN_R1) continue;
       // ...weighted toward the camera (half acceptance at 150 m), so the first frames look like a street, not a ring road
@@ -1097,9 +1168,8 @@ export class Traffic {
       car.laneF = car.lane;
       // lane 0 is the LEFT lane of travel (next to the centreline on a two-way street); the curb
       // lane is lanesDir - 1 — double-parked vans used to sit in the middle of two-way streets
-      // and never within 18 m of a junction, where the curb lane is the turning cars' entry
+      // ...and never within 18 m of a junction, where the curb lane is the turning cars' entry
       // PK34: on 125th Street delivery vans and box trucks double-park in the kerb travel lane (the red lane) far more often
-      // the share
       // is a rule, not a count
       // (BL34: a third of that where the kerb lane is a red bus lane: the census of session 2 counted 3-5 vans standing in the
       // red lanes within 220 m of the Apollo at once (lane_eval.js, s2_q57a), the twelve counted crops show about one per

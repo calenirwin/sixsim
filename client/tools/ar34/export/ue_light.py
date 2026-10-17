@@ -30,6 +30,7 @@ SKY_UE = {'night': 4.0}
 # (t8MuseumGlide buildings L* 19.4 / 21.7 / 23.6 at 0 / 0.15 / 0.3 against Cycles' 30.0; t8VictoriaCrane 15.2 / 18.3 /
 # 21.2 against 24.6); BXUE_LEAK: a test aid
 SKY_LEAK = {'night': 0.3}
+GI_PP = {}   # UE13: the post-process indirect lighting scale per time of day (physical light; see film())
 SKY_SRC = {'golden': 'vis', 'day': 'vis'}   # the sky light's dome: 'vis' the visible dome x1 (the sky the camera sees, so glass and wet stone reflect it), else the IBL dome
 SKY_VIS_LIGHT = {'golden': 1.0, 'day': 1.0}   # the visible dome as the sky light, x this
 LAMP_K = 1.0   # the street lamps' candela x the rig's gain x night x TL31's dim, x this
@@ -255,7 +256,8 @@ def apply(side, dest, cfg, world):
         sp(slc, 'source_type', unreal.SkyLightSourceType.SLS_SPECIFIED_CUBEMAP)
         sp(slc, 'cubemap', cube)
     if cube is cube_vis and cube_vis is not cube_env:   # the visible dome as the diffuse light (blender_light's golden rig, --skysrc vis)
-        sp(slc, 'intensity', (float(SKY_VIS_LIGHT.get(mode, 1.0)) if PH is None else float(PH.get('sky_k', 1.0)) * float(SKY_UE.get(mode, 1.0))) * SKY_K * float(os.environ.get('BXUE_SKYK') or 1.0))   # R3-PHYS, R7-SKY (BXUE_SKYK: a test aid)
+        sku_ = float(((cfg.get('night_look') or {}).get('sky')) if (mode == 'night' and (cfg.get('night_look') or {}).get('sky') is not None) else SKY_UE.get(mode, 1.0))   # GLOW45
+        sp(slc, 'intensity', (float(SKY_VIS_LIGHT.get(mode, 1.0)) if PH is None else float(PH.get('sky_k', 1.0)) * sku_) * SKY_K * float(os.environ.get('BXUE_SKYK') or 1.0))   # R3-PHYS, R7-SKY (BXUE_SKYK: a test aid)
     else:
         sp(slc, 'intensity', float(LS.get('envIntensity') or data.get('envIntensity') or 1.0) * SKY_ENV_K.get(mode, 2.0) * SKY_K)
     sp(slc, 'real_time_capture', False)
@@ -288,6 +290,64 @@ def apply(side, dest, cfg, world):
             try: sp(smc, p, False)
             except Exception: pass
 
+    # ==== R1C (lane C, 2026-10-11): the trailer's cinematic preset (cfg physsky): a physical sky in place of the captured dome
+    # on the sky sphere while the sun is up: UE's sky atmosphere lit by the sun, volumetric clouds (cfg clouds), the sky light
+    # capturing the scene in real time so the atmosphere and the clouds light the city; aerial perspective kept short (the
+    # owner's rule: no fog over the landmarks). After dark the captured dome stays the sky (the atmosphere is black without
+    # its sun).
+    if cfg.get('physsky') and sun_vis:
+        try:
+            if cube_vis is not None:
+                sph.set_actor_hidden_in_game(True); sph.set_is_temporarily_hidden_in_editor(True)
+            atm = spawn(unreal.SkyAtmosphere, unreal.Vector(0, 0, 0), None, 'BX_Atmosphere')
+            ac_ = atm.get_component_by_class(unreal.SkyAtmosphereComponent)
+            try: sp(ac_, 'aerial_pespective_view_distance_scale', float(cfg.get('aerial', 0.25)))
+            except Exception:
+                try: sp(ac_, 'aerial_perspective_view_distance_scale', float(cfg.get('aerial', 0.25)))
+                except Exception: pass
+            # (HAZE45, 2026-10-15: cfg aerial_start, km: the aerial perspective begins that far from the lens, so the city and
+            # its landmarks stay clear and the backdrop's ground 15-40 km out fades into the air instead of a flat tan plane)
+            if cfg.get('aerial_start') is not None:
+                try: sp(ac_, 'aerial_perspective_start_depth', float(cfg['aerial_start'])); out['aerial_start'] = float(cfg['aerial_start'])
+                except Exception as e: out['aerial_start_error'] = f'{type(e).__name__}: {e}'
+            sp(lc, 'atmosphere_sun_light', True)
+            # (the atmosphere colours the low sun itself: the web's warm sun colour on top of it doubled the warmth (2026-10-11
+            # 13:15, the lake a deep orange); half of it kept, the golden hour still golden)
+            c0_ = col if isinstance(col, (list, tuple)) and len(col) >= 3 else [1, 1, 1]
+            sp(lc, 'light_color', srgb8([0.5 + 0.5 * float(c0_[0]), 0.5 + 0.5 * float(c0_[1]), 0.5 + 0.5 * float(c0_[2])]))
+            if cfg.get('clouds'):
+                cl_ = spawn(unreal.VolumetricCloud, unreal.Vector(0, 0, 0), None, 'BX_Clouds')
+                cm_ = unreal.load_asset('/Engine/EngineSky/VolumetricClouds/m_SimpleVolumetricCloud_Inst')
+                if cm_ is not None: sp(cl_.get_component_by_class(unreal.VolumetricCloudComponent), 'material', cm_)
+                # (WATER3, 2026-10-15: the clouds' shadows on the ground and the water, the owner's "project cloud shadows
+                # onto the sea surface"; UE's sun casts none by default)
+                for p_, v_ in (('cast_cloud_shadows', True), ('cloud_shadow_strength', float(cfg.get('cloud_shadow', 0.8))),
+                               ('cloud_shadow_on_surface_strength', 1.0), ('cast_shadows_on_clouds', True)):
+                    try: sp(lc, p_, v_)
+                    except Exception as e: out.setdefault('cloud_shadow_errors', []).append(f'{p_}: {e}')
+                out['cloud_shadows'] = True
+            sp(slc, 'source_type', unreal.SkyLightSourceType.SLS_CAPTURED_SCENE)
+            sp(slc, 'real_time_capture', True)
+            out['physsky'] = {'clouds': bool(cfg.get('clouds')), 'sky_light': 'captured, real time'}
+        except Exception as e:
+            out['physsky_error'] = f'{type(e).__name__}: {e}'
+    elif cfg.get('physsky') and cfg.get('clouds') and mode == 'night':
+        # (after dark: the captured dome stays the sky; the clouds over it lit by a moon (an atmosphere light, low, no shadow
+        # of its own) and the sky light, the city's glow from under them)
+        try:
+            mr_ = unreal.MathLibrary.make_rot_from_x(ue_dir([-0.35, -0.6, 0.72]))
+            moon = spawn(unreal.DirectionalLight, unreal.Vector(0, 0, 10000), mr_, 'BX_Moon')
+            mc_ = moon.get_component_by_class(unreal.DirectionalLightComponent)
+            sp(mc_, 'intensity', float(cfg.get('moon', 0.04))); sp(mc_, 'light_color', unreal.Color(r=200, g=215, b=255, a=255))
+            sp(mc_, 'cast_shadows', False); sp(mc_, 'atmosphere_sun_light', True)
+            cl_ = spawn(unreal.VolumetricCloud, unreal.Vector(0, 0, 0), None, 'BX_Clouds')
+            cm_ = unreal.load_asset('/Engine/EngineSky/VolumetricClouds/m_SimpleVolumetricCloud_Inst')
+            if cm_ is not None: sp(cl_.get_component_by_class(unreal.VolumetricCloudComponent), 'material', cm_)
+            out['physsky'] = {'clouds': True, 'moon': float(cfg.get('moon', 0.04)), 'sky': 'captured dome'}
+        except Exception as e:
+            out['physsky_error'] = f'{type(e).__name__}: {e}'
+    # ==== R1C end
+
     # ---- the far ring (/World/Far: the macro city and terrain past the region) casts no shadows, as in the web (its
     # cascades end well inside it): a low sun would otherwise put the street in the far blocks' shadows
     nf = 0
@@ -307,6 +367,7 @@ def apply(side, dest, cfg, world):
     # ---- film: exposure, grade, bloom, motion blur, Lumen
     out['film'] = setup_film(side, cfg, LS, mode, dest)
     if cfg.get('cine'): out['fog'] = setup_fog(side, cfg, mode)   # R4-CINE
+    if cfg.get('cine'): out['fog_sun'] = fog_sun(side, cfg, mode)   # UELOOK10
     out['option_misses'] = sorted(set(MISS))
     out['secs'] = round(time.time() - t0, 1)
     return out
@@ -454,6 +515,20 @@ def setup_headlamps(side, cfg, LS, night, dest=None):
     for a in els.get_all_level_actors():
         par = a.get_attach_parent_actor()
         if par is not None: acts[(par.get_actor_label(), a.get_actor_label())] = a
+    # R9-HANG (UE track, 2026-10-08): only the headlamps of the HL_SHADOWED cars nearest the lens at frame 0 cast shadows; a
+    # moving light redraws its whole shadow every frame, and 544 of them (t8BusGlide) with the sign lights lost the GPU at the
+    # capture's first frame once in four even with real warm-up frames (BXUE_HLSHADOWED: the count)
+    near = None
+    try:
+        c0 = unreal.Vector(*side['camera']['ue'][0]['p'])
+        ds = []
+        for r in side.get('moving') or []:
+            if not r.get('vehicle') or not r.get('lamp'): continue
+            parts = r['path'].split('/'); car = acts.get((parts[-2], parts[-1]))
+            if car is not None: ds.append((car.get_actor_location().distance(c0), r['path']))
+        near = {p_ for _, p_ in sorted(ds)[:int(os.environ.get('BXUE_HLSHADOWED') or HL_SHADOWED)]}
+    except Exception:
+        near = None
     n = 0
     for r in side.get('moving') or []:
         if not r.get('vehicle') or not r.get('lamp'): continue
@@ -489,11 +564,12 @@ def setup_headlamps(side, cfg, LS, night, dest=None):
                 lc = spot.get_component_by_class(unreal.SpotLightComponent)
                 sp(lc, 'outer_cone_angle', math.degrees(ang))
                 sp(lc, 'inner_cone_angle', math.degrees(ang) * (1 - pen))
-            sp(lc, 'indirect_lighting_intensity', float(os.environ.get('BXUE_LAMPGI') or LAMP_GI))   # R4-NIGHT
+            sp(lc, 'indirect_lighting_intensity', float(os.environ.get('BXUE_HLGI') or HL_GI))   # R4-NIGHT, R9-EMIT: out of Lumen's scene lighting
             sp(lc, 'intensity_units', unreal.LightUnits.CANDELAS)
             sp(lc, 'intensity', cd)
             sp(lc, 'attenuation_radius', dist * 100)
             sp(lc, 'light_color', srgb8([1.0, 0.905, 0.79]))
+            sp(lc, 'cast_shadows', near is None or r['path'] in near)   # R9-HANG
             n += 1
     return n
 
@@ -507,6 +583,16 @@ def setup_headlamps(side, cfg, LS, night, dest=None):
 # 0.029 (0.008), at EMIT_K 1 (at 1 / pi the shops' light was left out and nothing moved)
 EMIT_K = 1.0
 EMIT_REACH = 25.0   # m
+# R9-EMIT (UE track, 2026-10-08): knobs for the night hang (t8BusGlide lost the GPU, Xid 109 at engine frame 54, once in
+# two with 664 lights and three times in three with 760, the 96 sign lights included; with the sign lights at zero it
+# rendered). The headlamps out of Lumen's scene lighting (BXUE_HLGI=0) with only 24 sign lights shadowed (BXUE_EMITSH=24)
+# hung as well (12:39), so both stay at round 8's values and the cause is open
+HL_GI = LAMP_GI
+# R9-HANG (15:20-15:58): capping the shadowed lights (sign lights 16, headlamps of the 32 nearest cars) did not stop
+# t8BusGlide's residual hang (15:24) and brightened the night (light through the occluders: the street at frame 11 +16 in
+# sRGB mean), so all of them cast shadows again, as in round 8; the caps stay as knobs (BXUE_EMITSH, BXUE_HLSHADOWED)
+EMIT_SHADOWED = 96
+HL_SHADOWED = 100000   # R9-HANG: the cars nearest the lens whose headlamps cast shadows (setup_headlamps): all
 
 
 def setup_emit_lights(side, mode):
@@ -525,8 +611,9 @@ def setup_emit_lights(side, mode):
         sp(lc, 'source_width', side_m * 100.0); sp(lc, 'source_height', side_m * 100.0)
         sp(lc, 'barn_door_angle', 88.0); sp(lc, 'barn_door_length', 0.0)
         sp(lc, 'attenuation_radius', EMIT_REACH * 100.0)
-        sp(lc, 'cast_shadows', True)
-        sp(lc, 'indirect_lighting_intensity', float(os.environ.get('BXUE_LAMPGI') or LAMP_GI))
+        near = n < int(os.environ.get('BXUE_EMITSH') or EMIT_SHADOWED)   # (R9-EMIT: ue_prep lists them strongest first)
+        sp(lc, 'cast_shadows', near)
+        sp(lc, 'indirect_lighting_intensity', float(os.environ.get('BXUE_LAMPGI') or LAMP_GI) if near else 0.0)
         n += 1
     return n
 
@@ -542,6 +629,11 @@ def setup_film(side, cfg, LS, mode, dest):
     s = ppv.get_editor_property('settings')
     ev = cfg.get('ev')
     ev = float(EV_BIAS.get(mode, 0.0)) if ev is None else float(ev)
+    # (GLOW45, cfg night_look {sky, leak, ev}: a photographic night, the walls under a fraction of the sky light the
+    # web-matched rig gives them (SKY_UE x4, leaking 0.3: walls as bright as their windows) and the exposure up, so the lit
+    # windows clip and the lens's glare (conv_bloom) haloes them as a camera sees a skyline at night)
+    nl_ = cfg.get('night_look') or {}
+    if mode == 'night' and nl_.get('ev') is not None: ev += float(nl_['ev'])
     ex = float(LS.get('exposure') or side['data'].get('exposure') or 1.0)
     PH = phys(cfg)   # R3-PHYS: the exposure fixed per time of day
     if PH is not None and (PH.get('exposure') or {}).get(mode): ex = float(PH['exposure'][mode])
@@ -557,9 +649,34 @@ def setup_film(side, cfg, LS, mode, dest):
         'lumen_reflection_quality': 2.0, 'lumen_max_trace_distance': 20000.0,
     }
     vals.update(bloom(bl))
+    # ==== GLOW45 (2026-10-15, the owner: lit skyscraper windows at night have an unmistakable glow that makes them look
+    # real): the lens's own glare (bloom, the halation of a real lens and sensor) as UE's convolution bloom at night and
+    # dusk: the image convolved by FFT with the engine's measured lens kernel (a bright core, a wide soft skirt, faint
+    # diffraction), every pixel by its energy (threshold -1, physically based) as glass does, in place of the web's
+    # Gaussian stack, which smudged; cfg conv_bloom {k: intensity, scale: the kernel's share of the frame}
+    cb_ = cfg.get('conv_bloom')
+    if cb_ and mode in ('night', 'dusk'):
+        vals.update({'bloom_method': unreal.BloomMethod.BM_FFT, 'bloom_intensity': float(cb_.get('k', 1.0)), 'bloom_threshold': -1.0,
+                     'bloom_convolution_scale': float(cb_.get('scale', 0.18)), 'bloom_convolution_buffer_scale': 0.5,
+                     'bloom_convolution_center_uv': unreal.Vector2D(0.5, 0.5)})
+    # ==== GLOW45 end
+    # ==== R1C (lane C, 2026-10-11): the trailer's cinematic preset (tools/ue/render_take_cine.json, cfg lumen_q): Lumen's
+    # reflections, scene detail and scene lighting at cinematic quality
+    lq_ = cfg.get('lumen_q') or {}
+    if lq_:
+        vals.update({'lumen_reflection_quality': float(lq_.get('reflection', 2.0)), 'lumen_scene_detail': float(lq_.get('scene_detail', 2.0)),
+                     'lumen_scene_lighting_quality': float(lq_.get('scene_lighting', 2.0))})
+    # ==== R1C end
     if os.environ.get('BXUE_DCB'): vals['lumen_diffuse_color_boost'] = float(os.environ['BXUE_DCB'])   # (R7: a test aid, Lumen's albedo boost)
     lk_ = float(os.environ.get('BXUE_LEAK') or SKY_LEAK.get(mode, 0.0)) if PH is not None else 0.0   # R7-SKY
+    if mode == 'night' and (cfg.get('night_look') or {}).get('leak') is not None: lk_ = float(cfg['night_look']['leak'])   # GLOW45
     if lk_ > 0: vals['lumen_skylight_leaking'] = lk_
+    # UE13 (UE track, 2026-10-09): the post-process indirect lighting scale (Lumen's bounce and sky light, not the sun's
+    # direct light), physical light only, per time of day (GI_PP, none); BXUE_PPGI: a test aid. Measured 2026-10-09 at 1.3 and
+    # 1.6 on t7ArchTrack f54: no change at all (Lumen's GI does not take it here), so it stays empty
+    gi_ = float(os.environ.get('BXUE_PPGI') or GI_PP.get(mode, 0.0)) if PH is not None else 0.0
+    if gi_ > 0: vals['indirect_lighting_intensity'] = gi_
+    # UE13 end
     # R3-REFL: Lumen's reflections with hardware ray tracing, lit at the hit (mirror-clear glass and paint show the street,
     # not the surface cache), and the front layer of translucency (the kit's glass) reflected at full quality
     # (R3-PHYS: hit lighting for the GI as well (--raylight HIT_LIGHTING) left the golden deck's underside where it was (61 ->
@@ -650,6 +767,59 @@ FOG_CUT = 12000.0   # m (R6-FAR)
 FOG_MAX_FAR = 0.45   # (R6-FAR)
 
 
+# UELOOK10 (2026-10-08): the cinematic fog against a low sun (scTerraceGolden, golden, the lens into the sun): R4-CINE's
+# volumetric fog (golden density 0.010, about 4.5x the web's haze, uDensity 0.00022 / m, and its sun lobe at g 0.6) put an
+# orange veil of about the sky's own radiance over the whole frame. Per shot, k = how far the lens looks into a low sun
+# (the camera's forward against the sun's direction over the take, x the sun's lowness): the volumetric density and the
+# sun's scattering in it scale down with k (to x FOG_SUN[0] and x FOG_SUN[1] at k 1) and the analytic fog's cap to
+# FOG_SUN[2], while the analytic fog takes the sun's glow along its direction (directional inscattering: the sun's colour x
+# FOG_SUN[3] x k, exponent FOG_SUN[4], from FOG_SUN[5] m), so the haze toward the sun is a bright, light veil over the
+# skyline as in the web, not a dark orange one. k 0 leaves the fog as it was (every other shot).
+FOG_SUN = (0.4, 0.6, 0.45, 1.0, 6.0, 250.0)
+
+
+def sun_k(side, mode):
+    if mode not in ('golden', 'day'): return 0.0
+    sd = side['data'].get('sunDir') or [0, 1, 0]
+    s = [float(sd[0]), float(sd[2]), float(sd[1])]   # UE axes (x, z up)
+    ls = math.sqrt(sum(v * v for v in s)) or 1.0
+    s = [v / ls for v in s]
+    low = 1.0 - smooth(0.35, 0.6, s[2])
+    if low <= 0.0: return 0.0
+    al = []
+    for c in (side.get('camera') or {}).get('ue') or []:
+        f = c.get('f') or [1, 0, 0]
+        lf = math.sqrt(sum(float(v) ** 2 for v in f)) or 1.0
+        d = sum(float(f[i]) / lf * s[i] for i in range(3))
+        al.append(smooth(math.cos(math.radians(75.0)), math.cos(math.radians(25.0)), d))
+    if not al: return 0.0
+    al.sort()
+    return round(low * al[int(0.75 * (len(al) - 1))], 3)
+
+
+def fog_sun(side, cfg, mode):
+    k = float(os.environ.get('BXUE_FOGSUNK') or sun_k(side, mode))   # (BXUE_FOGSUNK: a test aid)
+    if k <= 0.0: return {'k': 0.0}
+    fc = sl = None
+    for a in els.get_all_level_actors():
+        lab = a.get_actor_label()
+        if lab == 'BX_Fog': fc = a.get_component_by_class(unreal.ExponentialHeightFogComponent)
+        elif lab == 'BX_Sun': sl = a.get_component_by_class(unreal.DirectionalLightComponent)
+    if fc is None: return {'k': k, 'fog': None}
+    d0 = float(fc.get_editor_property('fog_density'))
+    m0 = float(fc.get_editor_property('fog_max_opacity'))
+    sp(fc, 'fog_density', d0 * (1.0 + (FOG_SUN[0] - 1.0) * k))
+    sp(fc, 'fog_max_opacity', m0 + (min(FOG_SUN[2], m0) - m0) * k)
+    col = side['data'].get('sunColor') or [1, 1, 1]
+    mx = max(float(v) for v in col[:3]) or 1.0
+    sp(fc, 'directional_inscattering_luminance', unreal.LinearColor(*[float(v) / mx * FOG_SUN[3] * k for v in col[:3]], 1.0))
+    sp(fc, 'directional_inscattering_exponent', FOG_SUN[4])
+    sp(fc, 'directional_inscattering_start_distance', FOG_SUN[5] * 100.0)
+    if sl is not None: sp(sl, 'volumetric_scattering_intensity', 1.0 + (FOG_SUN[1] - 1.0) * k)
+    return {'k': k, 'density': [d0, round(d0 * (1.0 + (FOG_SUN[0] - 1.0) * k), 5)], 'max_opacity': round(m0 + (min(FOG_SUN[2], m0) - m0) * k, 3)}
+# UELOOK10 end
+
+
 def setup_fog(side, cfg, mode):
     """an exponential height fog with volumetric fog at street level (the take's ground, z 0 in UE's world)."""
     for a in els.get_all_level_actors():
@@ -688,6 +858,9 @@ def key_focus(ls, cam, side, cfg):
     cc = cam.get_cine_camera_component() if hasattr(cam, 'get_cine_camera_component') else cam.get_component_by_class(unreal.CineCameraComponent)
     foc = {int(k): float(v) for k, v in (C_.get('focus') or {}).items()}
     fs = cc.get_editor_property('focus_settings')
+    if not foc:   # GB43: no focus keyed, no depth of field (20 m at the preset's f-stop blurred every aerial)
+        sp(fs, 'focus_method', unreal.CameraFocusMethod.DISABLE); sp(cc, 'focus_settings', fs)
+        return {'fstop': float(C_.get('fstop', 2.8)), 'keys': 0, 'dof': 'off (no focus keyed)'}
     sp(fs, 'focus_method', unreal.CameraFocusMethod.MANUAL)
     sp(fs, 'manual_focus_distance', (foc[min(foc)] if foc else 20.0) * 100.0)
     sp(cc, 'focus_settings', fs)

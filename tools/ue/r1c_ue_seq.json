@@ -1,0 +1,15 @@
+{
+ "first": 150.87,
+ "shots": [
+  {
+   "name": "t8LenoxDive",
+   "in": 0.1,
+   "beats": 8
+  },
+  {
+   "name": "scLakeGolden",
+   "in": 0.1,
+   "beats": 8
+  }
+ ]
+}

@@ -56,6 +56,9 @@ export const FIXTURES = [
   { key: 'led3000', hex: 0xffdcb6, cd: 245, range: 56, poolR: 7.4, pool: [0.052, 0.038, 0.022], head: [3.40, 2.60, 1.55], halo: [0.100, 0.070, 0.042] },
   { key: 'led4000', hex: 0xffeddc, cd: 275, range: 60, poolR: 8.0, pool: [0.055, 0.046, 0.035], head: [3.40, 2.95, 2.25], halo: [0.100, 0.083, 0.062] },
   { key: 'hps2000', hex: 0xffb972, cd: 185, range: 46, poolR: 6.2, pool: [0.050, 0.028, 0.010], head: [3.40, 2.05, 0.85], halo: [0.100, 0.052, 0.020] },
+  // BPL9 (2026-10-08): a park acorn globe, 4 m up (city/bryantParkKit.js): a diffusing globe of a quarter the cobrahead's
+  // candela over a shorter reach, so its pool on the walk under it matches a street lamp's at twice the height
+  { key: 'acorn3000', hex: 0xffd9ae, cd: 60, range: 24, poolR: 4.5, pool: [0.034, 0.024, 0.014], head: [3.40, 2.55, 1.45], halo: [0.100, 0.068, 0.040] },
 ];
 // ?n11=0 fixture: the single pre-round-11 lamp (carlights.js literals).
 export const LEGACY_FIXTURE = { key: 'legacy', hex: 0xffc27a, cd: 165, range: 44, poolR: 5.4, pool: [0.034, 0.025, 0.012], head: [3.40, 2.50, 1.35], halo: [0.100, 0.072, 0.038] };

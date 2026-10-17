@@ -38,6 +38,7 @@ function applyReadOverride(b, o) {
   if (o.roof) b.campusRoof = o.roof;
   if (o.memb != null) b.roofKind = (b.roofKind & ~24) | ((o.memb & 3) << 3);
   if (o.landmarkId != null) b.landmarkId = o.landmarkId;
+  if (o.height) b.height = o.height;   // TW: a compiled height the live footprints correct (30 Rockefeller Plaza)
 }
 // Binary tile parser (matches tools/pipeline/binio.mjs writer)
 export function parseTile(buf) {

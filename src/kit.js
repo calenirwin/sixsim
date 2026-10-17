@@ -867,7 +867,9 @@ export function makeKit(batcher, extra) {
       // bright enough to read THROUGH 30%-opacity glass by day: a lit shop
       // interior, not a black card
       inr.push({ geom: mk(box(gw, sfH - 0.7, 0.05, { segY: 1 }), new THREE.Color(0.42, 0.38, 0.32)), x: 0, y: 0.55, z: -rd - idp });
-      inr.push({ geom: mk(box(gw, 0.05, idp, { segY: 1 }), new THREE.Color(0.30, 0.27, 0.22)), x: 0, y: 0.55, z: -rd - idp / 2 });
+      // (TW: the floor starts 3 cm behind the frame's bottom rail, which stands on the same 0.55-0.60 m course: the two met
+      // in one plane over the rail's depth, the overlap gate's steelDark/shopFill pairs; it still ends at the back wall)
+      inr.push({ geom: mk(box(gw, 0.05, idp - 0.03, { segY: 1 }), new THREE.Color(0.30, 0.27, 0.22)), x: 0, y: 0.55, z: -rd - (idp + 0.03) / 2 });
       for (const sy of [1.15, 1.75]) {
         inr.push({ geom: mk(box(gw * 0.86, 0.5, 0.3, { segY: 1 }), new THREE.Color(0.50, 0.44, 0.36)), x: 0, y: sy, z: -rd - idp + 0.35 });
       }
@@ -894,7 +896,10 @@ export function makeKit(batcher, extra) {
     batcher.addInstance(glId, matrix.clone().multiply(tmat(0, 0, 0)));
     batcher.addInstance(glId + ':frame', matrix.clone().multiply(tmat(0, 0, 0)), frameTint);
     if (gate !== 2) {
-      batcher.addInstance(glId + ':interior', matrix.clone());
+      // (GB43: the interiors of a corner's two shopfronts reach 1.1 m in and met in one plane, their floors and shelves;
+      // each sits 3 mm higher per quarter turn of its wall, so no two perpendicular ones share a plane)
+      const qt = ((Math.round(Math.atan2(matrix.elements[8], matrix.elements[0]) / (Math.PI / 2)) % 4) + 4) % 4;
+      batcher.addInstance(glId + ':interior', matrix.clone().multiply(tmat(0, qt * 0.003, 0)));
       batcher.addInstance(glId + ':lights', matrix.clone().multiply(tmat(0, sfH - 0.85, -0.6)),
         new THREE.Color(1, 0.92, 0.78));
     }

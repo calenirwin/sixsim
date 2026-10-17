@@ -6,7 +6,6 @@ import { hash2, clipHalf, LINE, CROSS } from './skGeom.js';
 import { ROAD } from './skField.js';
 
 // QA Q46 (2026-10-02): no repaving placed by rule. The hashed junction boxes (about half the crossings, tone 0.58-0.88, hard
-// Both stay off unless `?skrule=1` (the old rule, for A/B); the trenches need `?sktrench=1`.
 const RULE = typeof location !== 'undefined' && new URLSearchParams(location.search).get('skrule') === '1';
 
 // atlas rectangles (u0, v0, u1, v1) of skMats.skCoverMat()'s 1024 x 1024 sheet
@@ -135,7 +134,7 @@ export function buildCovers(ctx) {
         const t = Math.max(0, Math.min(1, ((cx - ax) * dx + (cz - az) * dz) / L2)), d = Math.hypot(cx - ax - dx * t, cz - az - dz * t);
         if (d < bd) { bd = d; const L = Math.sqrt(L2); ux = dx / L; uz = dz / L; }
       }
-      // one per 1200 m2 of roadway. Placed by rule, not survey.
+      // one per 1200 m2 of roadway (was 240: one every ~13 m of 125th, dark ones at 0.72; the 2023-2026 pairs show few, and
       const wantP = area / 1200, kP = Math.floor(wantP) + (hash2(Math.round(cx * 17), Math.round(cz * 17) + seed) < wantP - Math.floor(wantP) ? 1 : 0);
       for (let q = 0; q < kP; q++) {
         const h1 = hash2(Math.round(cx * 5) + q * 97, Math.round(cz * 5) + seed + 9), h2 = hash2(Math.round(cx * 3) + q * 29, Math.round(cz * 9) + seed + 5), h3 = hash2(q + 3, Math.round(cx + cz) + seed);
@@ -236,7 +235,6 @@ export function buildCovers(ctx) {
 }
 
 // ---- repaving on 125th Street: a resurfaced junction box or a trench restoration (a strip of newer asphalt across the
-// Each is the compiled asphalt, bus lane and gutter clipped to the
 // row's box and laid as a soft-edged overlay (layMat); the compiled markings (24 mm up) stay on top of the new asphalt.
 // `?skrule=1` brings back the old rule-placed boxes (hashes, about half the crossings) and utility cuts; `?sktrench=1` the
 // rule-placed trenches.
@@ -274,7 +272,8 @@ function buildRepairs(ctx, n) {
     }
     return any;
   };
-  // trenches along the corridor line: off unless `?sktrench=1`
+  // trenches along the corridor line: off unless `?sktrench=1` (AR34 b1: placed by rule, one per ~70 m, and the 2024-08 /
+  // e_mid the same; the one real trench seen, b2_fdb's across Frederick Douglass, is not placed from its photo yet)
   const TRENCH = typeof location !== 'undefined' && new URLSearchParams(location.search).get('sktrench') === '1';
   if (TRENCH) for (let i = 1; i < LINE.length; i++) {
     const [x0, z0] = LINE[i - 1], [x1, z1] = LINE[i], L = Math.hypot(x1 - x0, z1 - z0);
@@ -323,27 +322,21 @@ function buildRepairs(ctx, n) {
   }
 }
 
-// nothing is laid by rule). u: along 125th eastward,
 // v: south, metres from the row's CROSS point. ratio: the new asphalt's albedo against the old asphalt beside it (linear),
-// measured in the same frame and light. Lenox: the inner edges of the junction's four compiled crossings
 // (paintW bars, node probe 2026-10-02: the crossings over 125th at u -19.85..-12.23 and 12.05..19.67, those over the avenue at
-// v -14.5..-9.9 and 9.8..14.4), so the mat stops at the crossings as. A row is laid by the tile holding its
 // box's centre and clipped to that tile's road: keep a box inside one tile (both rows are: 4_-6, 3_-6).
 export const REPAVES = [
   // junction box, the crossings left on the old asphalt, the mat's edge ragged along the bar ends; mat sRGB (110,109,105),
   // neutral, against (127,124,116) between the bars, warmer: 0.73 of it (linear luminance). Darker, not black.
-  { at: 'lenox', u: [-12.2, 12.0], v: [-9.9, 9.8], ratio: 0.73 },
-  // 2024-08 puts its edges at s 1300.0 / 1302.2 (b -0.6..+7.6 in frame) and
-  // band (131,131,129)-(136,135,135) against the old asphalt beside it
+  { at: 'lenox', u: [-12.2, 12.0], v: [-9.9, 9.8], ratio: 0.73, src: '' },
   // (156,154,149): 0.70-0.76 linear
-  { at: 'fdb', u: [6.0, 8.9], v: [-10.0, 10.0], ratio: 0.73 },
+  { at: 'fdb', u: [6.0, 8.9], v: [-10.0, 10.0], ratio: 0.73, src: '' },
 ];
 // the asphalt_patch material's albedo at vertex tone 1 against the ground shader's asphalt, as drawn (linear luminance of the
 // final frame): at tone 2.48 the Lenox mat drew 0.82-0.91 of the old asphalt between the bars (s2_after/lenox_s2, 2026-10-02),
 // so 0.35. (QA's A/B at 12th Av, the old box at tone 0.753: 0.22, i.e. 0.29: the tone curve is not linear; recheck after a
 // change of the ground's asphalt or of the exposure.)
 const PATCH_BASE = 0.35;
-// the mat is cooler than the old asphalt round it: its R - B is 6 sRGB levels under the old asphalt's (5 vs 11);
 // the twin's mat drew warmer than its old asphalt with a neutral vertex colour (s2_after) and level with it at (0.93, 1, 1.09)
 // (s2b: R - B 15 vs 14): red and blue moved on to close the rest; at (0.90, 1, 1.23) the mat drew (134,127,129), a shade of
 // magenta (s2c): green up, blue down a little

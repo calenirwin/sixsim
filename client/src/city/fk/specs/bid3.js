@@ -1,7 +1,7 @@
 // AR33 building specs, segment bid3: Adam Clayton Powell Jr. Boulevard to Lenox Avenue (schema: docs/notes/ar33-spec.md; inventory: docs/notes/ar33-frontage/bid3.json).
 // Owner: the BID3 worker (docs/notes/ar33-bid3.md). Measurements: orthographic elevations rectified from the newest
-// obliques. u along a face runs from its left end as seen from the street: on the
 // south side (facing south) from the EAST end, on the north side (facing north) from the WEST end.
+//
 // The south frontage in one coordinate (docs/notes/ar33-bid3.md "south-u"): metres west from the Lenox Avenue corner
 // (2140.3, -2740.5) along 125th Street: 100 W 0-45.8, 117 W 124th 45.8-76.3, 120 W 76.3-91.3, 124 W 91.3-122.2,
 // 132 W 122.2-152.5, the Studio Museum 152.5-175.4, 148 W 175.4-190.6, 158 W 190.6-221.6, 2089 ACP 221.6-227.8.
@@ -9,7 +9,6 @@
 // 0-100, 105 W (low) 100.0-130.5, the Urban League Empowerment Center 130.5-194.7, the Harlem Center 194.7-240.1.
 import { KC, KB } from '../custom/bid3Koch.js';
 // BF36 (BIDFIX 2026-10-02, teaser 8's plaza frames): the white block east of the State Office plaza (w125-105a) showed the kit's default
-// on its west wall over the plaza, four rows of small black windows;
 // by the street, a painted mural at the plaza's level and white panels above. `?bf36=0` keeps the default wall
 const BF36 = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('bf36') === '0');
 // the west wall: the ring's edge (2049.14, -2865.7) -> (2032.43, -2835.36), 34.64 m (docs/notes/ar33-frontage/bid3.json), the kit's u
@@ -47,7 +46,9 @@ export default [
     ring: [[1983.45, -2928.85], [2037.43, -2898.93], [2025.46, -2877.33], [1971.48, -2907.25]],
     h: 90.1, status: 'measured', custom: 'bid3:sob',
     wall: { mat: 'stone_lime', tint: STONE, dirt: 0.3 },
-    refs: [],
+    refs: ['',
+      '', '',
+      '', '', '', '', ''],
     notes: 'Ifill Johnson Hanchard, 1973; 19 storeys. South face (rectified at 14 px/m, u = s): four full-height piers ' +
       'A 4.9-8.1, B 14.8-18.0, C 42.8-46.0, D 53.1-56.4 rising to 90.1 m, two narrow glass bays (8.5-13.9, 47.4-52.4; 4 ' +
       'panes) topped at 77.9 by stone to 88.4, each broken at 42.6-47.6 by a stone shelf under a projecting upper box; ' +
@@ -56,8 +57,8 @@ export default [
       'set back below and open above; the base: a stone lettering band 7.8-12.5 (ADAM CLAYTON POWELL JR. STATE OFFICE ' +
       'BUILDING at 9.6, letters ~0.45 m, u 23.2-38.1; 163 at 8.7 over each door group), the lobby recessed behind it to ' +
       '7.6 m, open arcades under the narrow bays, battered pier feet. Floors: 17 of ~3.85 m over the lobby and the band ' +
-      'floor; vision glass over a dark spandrel each floor. North face assumed the mirror of the south (not measured). ' +
-      'Roof: piers as fins over a membrane roof with a plant penthouse and a drum.',
+      'floor; vision glass over a dark spandrel each floor. North face assumed the mirror of the south (not seen in a ' +
+      '',
   },
   {
     id: 'w125-105a', addr: '105 W 125th St (west part)', name: 'Harlem Center, the two-storey retail block (vacant)', bin: '1081601',
@@ -84,7 +85,7 @@ export default [
       items: [{ k: 'lamp', u: 11.0, y: 8.7 }, { k: 'lamp', u: 14.4, y: 8.7 }, { k: 'lamp', u: 16.0, y: 8.7 }, { k: 'lamp', u: 22.6, y: 8.7 }, { k: 'lamp', u: 24.2, y: 8.7 }, { k: 'lamp', u: 26.0, y: 8.7 }],
     }].concat(BF36 ? [W105A_WEST] : []),
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'metal' }, membrane: 'black', items: [{ k: 'hvac', at: [0.4, 0.5], n: 3 }, { k: 'hvac', at: [0.75, 0.6], n: 2 }] },
-    refs: [],
+    refs: ['mosaic refs/mos/north_00_u95.jpg (north-u 99-130)', '', '', ''],
     notes: 'Two tall storeys of white-painted panels, 13.2 m to the parapet (compiled 11.6). Vacant (2026-08): leasing ' +
       'graphics over the west store glass (magenta and navy, real agent banners drawn generic), a clerestory band 4.9-8.1 m ' +
       'over the west half, six gooseneck sign lamps at 8.7 m, a mural on the west wall facing the plaza (not modelled yet).',
@@ -109,15 +110,13 @@ export default [
       },
       floors: [],
     }],
-    refs: [],
-    // AR34 evidence: ground floor and podium measured on the elevation rectified from (2026-08, 20 px/m: shop doors at u 5.4, 21.0, 31.1, 41.6;
-    // signband 4.2-5.5; panes 0.78 m; blades 17.5-28.6 over u 0-31; terrace frame 31.8-47.2 x 13.0-19.9); the slab and the sedum roofs from
+    refs: ['mosaic refs/mos/north_00_u95.jpg, north_01_u145.jpg (north-u 130-195)', '', '', '', '', ''],
     // (2024-10-11, +-1.5 m); engine plates client/shots/ar34/bid3/sbs_r12/nulec.jpg.
     notes: 'No footprint record (newer than the data). A glass podium on 125th Street 30.6 m high (vertical fins at an ' +
       'irregular pitch, a slight inward cant, a heavy transom line every floor), a grey-framed terrace box cut in at ' +
       'north-u 162.3-177.7, 13.0-19.9 m; the museum\'s projecting grey portal at the east end (north-u 186-195, to 8.7 m); ' +
       'a dark ground-floor fascia 4.2-5.5 m with PANDORA and SEPHORA, target and TRADER JOE\'S channel letters at 8.7-10.5 m ' +
-      'on the glass; a residential slab (~17 storeys, ~61 m) set back to the rear on 126th Street, a green roof ' +
+      '' +
       'on the podium.',
   },
   {
@@ -146,14 +145,13 @@ export default [
     }],
     custom: { fn: 'bid3:hctop', with: 'kit' },
     roof: { kind: 'flat', parapet: { h: 0.9, coping: 'stone_lime' }, membrane: 'gravel', items: [{ k: 'hvac', at: [0.3, 0.5], n: 3 }, { k: 'hvac', at: [0.7, 0.6], n: 2 }, { k: 'bulkhead', at: [0.5, 0.8], w: 5, d: 4, h: 2.8 }] },
-    refs: [],
-    // the shed signs 3.9-4.2 m wide at 5.95-7.55 m; the slab's roof from; the slab's own windows are NOT measured (a plain ribbon).
+    refs: ['mosaic refs/mos/north_02_u195.jpg (north-u 195-240)', '', '', '', '', '', ''],
     notes: '2001. A red-brick base 21 m high (vertical-bond panels round four 2.6 m square 6-light windows at 12.1-14.7 m, ' +
       'cast-stone belts at 16.5 and 18.0), the Lenox corner a brick tower with light stripes to 20 m and a wide window ' +
       'lettered Marshalls; the grey office slab above set back (ribbon windows with white frames, ~53 m to the roof per ' +
       'the compiled record) is drawn here as a plain bulkhead until the custom top is in. A sidewalk shed with signs on its ' +
       'parapet (TurboTax, Marshalls, Dunkin\', CVS pharmacy, 2026-08) covers the ground floor: the shop signs stand on it ' +
-      'at 6.1 m.',
+      '',
   },
   // ============================================================== SOUTH SIDE, west to east
   {
@@ -185,10 +183,10 @@ export default [
       windows: { A: { w: 1.0, h: 1.6, sill: 0.9, kind: 'dh', frame: 'alu_white' } },
     }],
     roof: { kind: 'flat', parapet: { h: 0.5, coping: 'metal' }, membrane: 'black', items: [] },
-    refs: [],
+    refs: ['mosaic refs/mos/south_05_u194.jpg (south-u 220-230)', '', '', ''],
     notes: 'A narrow four-storey building (compiled 12.5 m; the billboard frame tops out at 18.3 m) clad on 125th Street ' +
       'and round the ACP corner in a grey metal billboard frame: one large panel 12.9-17.5 m and two stacked panels 5.2-10.8 m ' +
-      '(the real advertisers are replaced by invented brands, bid3:boards, pending), the east wall a blind ' +
+      '' +
       'cream-painted brick party wall. Verizon at the ground floor under a black fascia wrapping the corner (2024-08).',
   },
   {
@@ -199,6 +197,7 @@ export default [
     wall: { mat: 'stucco', tint: '#d7ccb2', dirt: 0.4 },
     faces: [{
       edge: 'front',
+      // b3f drew 1.1 m of beige wall over it and the board 0.3-0.5 m low: the front to 5.45 m, the boards to 5.4)
       base: {
         h: 5.3,
         bays: [
@@ -212,7 +211,7 @@ export default [
       cornice: { kind: 'none' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.12, coping: 'metal' }, membrane: 'black', items: [] },
-    refs: [],
+    refs: ['mosaic refs/mos/south_04_u154.jpg, south_05_u194.jpg (south-u 190-222)', '', ''],
     notes: 'The compiled record (31 m, two storeys) is two one-storey shops 5.8 m high (Apollo Beauty 191.1-198.6: a red ' +
       'sign board 2.5-5.1 m, APOLLO BEAUTY in white with a black outline, a small "Apollo" script above; metro by T-Mobile ' +
       '198.8-206.3: a white board 2.7-5.4 m, metro in purple, by T-Mobile in magenta) and a vacant lot 206.3-221.6 behind a ' +
@@ -224,14 +223,16 @@ export default [
     wall: { mat: 'panel_alu', tint: '#c9ccce', dirt: 0.2 },
     faces: [{
       edge: 'front',
+      // stood 77 px over it (49 px/m there): the curtain from ~5.0 m, not 6.2; base and fascia 1.2 m lower)
       base: {
         h: 4.3,
-        wall: { mat: 'stone_lime', tint: '#cfc8ba', dirt: 0.3, to: 4.3 },   // pale warm-grey stone panels
+        wall: { mat: 'stone_lime', tint: '#cfc8ba', dirt: 0.3, to: 4.3 },
         fascia: { h: 0.7, mat: 'stone_lime', tint: '#cfc8ba' },
         bays: [
           { u0: 0.3, u1: 4.0, kind: 'window', h: 3.4, glazing: { bulkhead: 0.7, transom: 0.5, mullions: 1, frame: 'alu_white' }, door: null, gate: { kind: 'none' }, interior: 'empty' },
           { u0: 4.1, u1: 8.3, kind: 'store', name: 'Sneakers & Jewelers', h: 3.4, glazing: { bulkhead: 0.3, transom: 0.4, mullions: 2, frame: 'alu_black' }, door: { u: 0.5, w: 1.0, recess: 0.4 }, gate: { kind: 'rolldown', box: true, color: '#8e9396' }, interior: { kind: 'shop_clothing', lit: 0.6 },
             sign: { kind: 'panel', text: 'SNEAKERS & JEWELERS', font: 'Cinzel-700', fg: '#d8b25a', bg: '#16201a', u0: 4.1, u1: 8.3, y: 3.45, h: 0.78 } },
+          // both shops' glass 3.3-3.4 m, the S&J board 3.45-4.23, the letters 4.3-5.0 m)
           { u0: 8.4, u1: 14.9, kind: 'store', name: 'McDonald\'s', h: 3.3, glazing: { bulkhead: 0.3, transom: 0.4, mullions: 3, frame: 'alu_black' }, door: { u: 0.3, w: 1.0, recess: 0.6 }, interior: { kind: 'fastfood', lit: 0.8 },
             sign: { kind: 'channel', text: 'McDonald\'s', font: 'Inter-700', fg: '#ffffff', bg: '#4a2e22', u0: 9.0, u1: 14.2, y: 4.3, h: 0.72, lit: 'face' },
             awning: { kind: 'none' } },   // the red band is drawn by bid3:w148 (the kit's awning hangs from the fascia top, over the letters)
@@ -242,7 +243,7 @@ export default [
     }],
     roof: { kind: 'flat', parapet: { h: 0.4, coping: 'metal' }, membrane: 'white',
       items: [{ k: 'hvac', at: [0.4, 0.5], n: 3 }, { k: 'bulkhead', at: [0.2, 0.7], w: 3.5, d: 3, h: 2.8 }, { k: 'sign', at: [0.9, 0.2], sign: { kind: 'lightbox', text: 'M', font: 'Inter-900', fg: '#ffc72c', bg: '#da291c', u0: 12.5, u1: 14.5, y: 0.4, h: 2.0 } }] },
-    refs: [],
+    refs: ['mosaic refs/mos/south_04_u154.jpg (south-u 175-191)', '', ''],
     notes: '1972, four storeys: a blue-glass curtain wall 5.4-18.1 m with light grey mullions every ~1.67 m and a transom ' +
       'each ~3.2 m floor, a narrower-gridded glass corner strip at the west end, grey metal panel returns; the ground floor ' +
       'Sneakers & Jewelers (east) and McDonald\'s (west, the golden arches on the fascia\'s west end).',
@@ -253,7 +254,7 @@ export default [
     // the whole lot between 148 W and 132 W (22.9 m; the compiled footprint was 15.0 m of it), through to 124th Street
     ring: [[1977.3, -2760.8], [1957.1, -2772.0], [1987.1, -2826.1], [2007.1, -2815.0]],
     wall: { mat: 'concrete_precast', tint: '#3a3b3e', dirt: 0.15 },
-    refs: [],
+    refs: ['', '', '', ''],
     notes: 'Adjaye Associates with Cooper Robertson, opened November 2025. Charcoal precast (a fine granular face) in stacked ' +
       'boxes with deep frames; bronze doors under a bronze fascia lettered STUDIO MUSEUM IN HARLEM; the tall glazed box over ' +
       'the west end; loggias in the top boxes; the vertical STUDIO MUSEUM blade at the east end. Measured in bid3:studio. ' +
@@ -302,13 +303,13 @@ export default [
       cornice: { kind: 'none' },
     }],
     roof: { kind: 'flat', parapet: { h: 1.1, coping: 'terracotta' }, membrane: 'white', items: [{ k: 'tank', at: [0.085, 0.84], r: 1.9, h: 3.2, legs: 2.4 }, { k: 'tank', at: [0.915, 0.84], r: 1.9, h: 3.2, legs: 2.4 }, { k: 'bulkhead', at: [0.5, 0.5], w: 8.0, d: 6.0, h: 3.2 }, { k: 'bulkhead', at: [0.3, 0.35], w: 4.0, d: 3.0, h: 3.0 }, { k: 'hvac', at: [0.6, 0.72], n: 4 }, { k: 'hvac', at: [0.25, 0.8], n: 3 }] },
-    refs: [],
+    refs: ['', '', '', '', ''],
     notes: 'Koch & Co. department store (1893). Six buff-brick piers 5.69 m apart (centres u 1.25 ... 29.70 from the east end), banded in grey ' +
       'terracotta, five bays. Floors 2-3: two 1.75 m windows a bay (a mullion and a transom bar) under a dark louvred panel, a carved frieze ' +
       'at 10.0-11.07 with roundels on the piers, Corinthian capitals at 13.55-14.5, a belt cornice 15.0-15.93; floor 4: three round-headed ' +
       'windows a bay; a stone string course and balustrade 18.4-19.4; the arcade: a giant arch a bay (opening 4.26 m, crown 22.18, the ring 0.62 ' +
       'wide) over two posts and a lintel, carved spandrels with shields; the modillion cornice 23.0-23.7; the attic: three windows a bay under a ' +
-      'band, pier caps to 26.2; plain brick parapet to 28.1 (the earlier 29.4 was a mosaic error). ' +
+      '' +
       'Shops (2026-08): Fino (a grey banner), Snipes (white letters on a corrugated grey fascia), Homeboy (blue board) between black granite piers.',
   },
   {
@@ -321,7 +322,6 @@ export default [
         h: 7.05,
         bays: [
           { u0: 1.1, u1: 6.1, kind: 'store', name: 'Raising Cane\'s', h: 3.3, glazing: { bulkhead: 0.6, transom: 0.75, mullions: 3, frame: 'alu_black', kick: 'brick_red' }, door: null, gate: { kind: 'none' }, interior: { kind: 'fastfood', tone: '#1e1f22', lit: 1.5 },
-            // the vertical red CANE'S blade on the cladding at the east end
             blade: { kind: 'blade', text: 'CANE\'S', font: 'Oswald-700', fg: '#ffffff', bg: '#c8102e', u0: 1.15, w: 0.6, y: 5.0, h: 1.6 } },   // (c124east: four lights under a transom bar)
           { u0: 6.3, u1: 10.5, kind: 'store', name: 'Raising Cane\'s (the tower bay)', h: 3.0, glazing: { bulkhead: 0.1, transom: 0, mullions: 1, frame: 'alu_black' }, door: { u: 0.5, w: 1.8, kind: 'double', recess: 0.15, tint: '#c8102e' }, interior: { kind: 'fastfood', lit: 0.8 },
             gate: { kind: 'none' },
@@ -330,6 +330,7 @@ export default [
             gate: { kind: 'none' }, interior: 'empty' },
           { u0: 24.6, u1: 30.7, kind: 'store', name: 'Panda Express', h: 3.1, glazing: { bulkhead: 0.4, transom: 0, mullions: 3, frame: 'alu_black' }, door: { u: 0.8, w: 1.0, recess: 0.3 }, interior: { kind: 'fastfood', lit: 0.8 },
             sign: { kind: 'channel', text: 'PANDA', font: 'Oswald-700', fg: '#d52b1e', bg: null, u0: 27.4, u1: 30.6, y: 4.45, h: 1.25 },
+            // out from the wall and read edge-on as a post: drawn flat by bid3:shut124)
           },
         ],
       },
@@ -337,7 +338,7 @@ export default [
       cornice: { kind: 'band', h: 0.3, proj: 0.04, mat: 'panel_alu', tint: '#26282a' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.08, coping: 'metal' }, membrane: 'black', items: [{ k: 'hvac', at: [0.3, 0.5], n: 3 }, { k: 'hvac', at: [0.75, 0.5], n: 2 }] },   // (b3b s124: no parapet shows over the black box)
-    refs: [],
+    refs: ['mosaic refs/mos/south_02_u74.jpg, south_03_u114.jpg (south-u 91-122)', '', ''],
     notes: 'One storey, 7.7 m to the top of the black fascia wall. East to west (2026-08): Raising Cane\'s (south-u 92.3-101.9: ' +
       'a grey tower bay to 8.8 m with the Cane\'s oval, a brick bulkhead, red double doors, silver corrugated cladding over ' +
       'a wood-slat fascia), a vacant store under a black box with three grey roll gates (101.9-115.7), Panda Express ' +
@@ -346,8 +347,6 @@ export default [
   },
   {
     id: 'w125-120', addr: '120 W 125th St', name: 'the former Fino shoe store (moved to 136 W 125th)', bin: '1057834',
-    // (AR34 batch 3) heights: the compiled roof is 6.49 m (heightM);
-    // height the gates' top reads 3.4-3.55 m and
     // the fascia's top 6.1-6.2 m (the 2.6-2.7 m fascia over the MOVED sheet's scale agrees); the w2 spec's 4.55 / 7.2 were read with the lens at 2.46 m
     at: [2059.81, -2768.21], comp: '4_-6:328', h: 6.3, status: 'measured', custom: { fn: 'bid3:shut120', with: 'kit' },
     wall: { mat: 'stucco', tint: '#bdb5a6', dirt: 0.45 },
@@ -361,10 +360,10 @@ export default [
         ],
       },
       floors: [],
-      cornice: { kind: 'band', h: 0.1, proj: 0.04, mat: 'plain', tint: '#3a3936' },   // a dark metal cap on the fascia
+      cornice: { kind: 'band', h: 0.1, proj: 0.04, mat: 'plain', tint: '#3a3936' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.3, coping: 'metal' }, membrane: 'black', items: [] },
-    refs: [],
+    refs: ['mosaic refs/mos/south_02_u74.jpg (south-u 76-92)', '', ''],
     notes: 'One storey under a beige fascia to 6.2 m (a dark metal cap), the MENS WEAR / script F / SHOES letters still on it, graffiti-covered ' +
       'roll gates, a red "MOVED" sign (2026-08).',
   },
@@ -382,19 +381,19 @@ export default [
           { u0: 12.0, u1: 16.5, kind: 'store', name: 'Victoria\'s Secret', h: 5.2, glazing: { bulkhead: 0.1, transom: 0.8, mullions: 3, frame: 'alu_clear' }, door: null, interior: { kind: 'shop_clothing', lit: 0.6 } },
           { u0: 16.6, u1: 22.4, kind: 'store', name: 'Victoria\'s Secret (entrance)', h: 5.2, glazing: { bulkhead: 0.1, transom: 0.8, mullions: 3, frame: 'alu_clear' }, door: { u: 0.5, w: 1.6, kind: 'double', recess: 0.5 }, interior: { kind: 'shop_clothing', lit: 0.6 },
             sign: { kind: 'channel', text: 'VICTORIA\'S SECRET', font: 'LibreBaskerville-400', fg: '#26344f', bg: null, u0: 16.9, u1: 22.1, y: 4.2, h: 0.4 },
+            // drew a deep sloped awning at 5.6 m and the letters hidden behind it)
             awning: { kind: 'none' } },   // the flat canopy is drawn by bid3:w117 (bid3Shops.js)
           { u0: 22.6, u1: 30.2, kind: 'store', name: 'Victoria\'s Secret', h: 5.2, glazing: { bulkhead: 0.1, transom: 0.8, mullions: 5, frame: 'alu_clear' }, door: null, interior: { kind: 'shop_clothing', lit: 0.6 } },
         ],
       },
+      // the kit's 0.95 m grey spandrel drew a grey band between two pink ones on b3d)
       curtain: { mullion: 1.95, transom: 'floor', frame: 'alu_clear', glass: 'glass_clear', spandrel: 'alu_clear', spandrelH: 0.14, firstSpandrel: false, y1: 11.0 },   // floors 2-3 (the drapes); the glass above is bid3:w117's
       floors: [{ n: 1, h: 5.5, win: 'C' }, { n: 4, h: 4.2, win: 'C' }],
       windows: { C: { kind: 'ribbon', w: 1.9, h: 4.0, sill: 0.1, frame: 'alu_clear' } },
       cornice: { kind: 'band', h: 0.4, proj: 0.05, mat: 'panel_alu', tint: '#aeb3b6' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.5, coping: 'metal' }, membrane: 'white', items: [{ k: 'hvac', at: [0.5, 0.4], n: 4 }, { k: 'hvac', at: [0.3, 0.7], n: 5 }, { k: 'bulkhead', at: [0.7, 0.5], w: 5, d: 4, h: 3.2 }, { k: 'bulkhead', at: [0.15, 0.3], w: 4, d: 3, h: 3.0 }] },
-    refs: [],
-    // AR34 evidence: rectified (24 px/m): the glass front to 27.6-28 m, the shops (Bath & Body Works 0.4-11.8, Victoria's Secret 12.0-30.2), drapes over floors 2-3
-    // at 3.7-11.0 m; the 14-storey part (48.8 m compiled) is NOT drawn.
+    refs: ['mosaic refs/mos/south_01_u34.jpg (south-u 46-76)', '', ''],
     notes: '2017. On 125th Street a curved glass curtain wall (silver mullions ~1.95 m apart) to 28.2 m, pink drapes behind ' +
       'the glass of the lower two floors (Victoria\'s Secret), a flat canopy over revolving doors, the name in serif capitals ' +
       'over it; the 14-storey part (48.8 m compiled) is set back on 124th Street (drawn here at the frontage height: the ' +
@@ -431,7 +430,6 @@ export default [
       bands: [{ at: 11.0, h: 0.4, proj: 0.05, mat: 'panel_grey', tint: '#5a5f65' }],
       cornice: { kind: 'band', h: 0.45, proj: 0.08, mat: 'panel_grey', tint: '#6d7277' },
     }, {
-      // the Lenox Avenue wall
       edge: 'corner',
       // the grocery's glass wall is bid3:w100's (opaque pale-teal panes under a louvre band); the kit draws the entrance only
       base: {
@@ -451,7 +449,7 @@ export default [
       cornice: { kind: 'band', h: 0.45, proj: 0.08, mat: 'panel_grey', tint: '#4a4f55' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'metal' }, membrane: 'white', items: [{ k: 'hvac', at: [0.2, 0.3], n: 5 }, { k: 'hvac', at: [0.55, 0.35], n: 6 }, { k: 'hvac', at: [0.8, 0.28], n: 4 }, { k: 'hvac', at: [0.35, 0.62], n: 5 }, { k: 'hvac', at: [0.7, 0.62], n: 5 }, { k: 'bulkhead', at: [0.5, 0.78], w: 6, d: 4, h: 3.5 }, { k: 'bulkhead', at: [0.12, 0.85], w: 4, d: 3.5, h: 3.2 }, { k: 'bulkhead', at: [0.9, 0.8], w: 4, d: 3, h: 3.0 }, { k: 'skylight', at: [0.4, 0.45], w: 5, d: 3 }] },
-    refs: [],
+    refs: ['', '', '', '', ''],
     notes: '2013-17 retail block, five storeys to 29.5 m. A glazed corner strip at Lenox (u 0.85-4.25); floors 2-3 glass bands (white mullions ~1.1 m, ' +
       'louvre strips at the head of each) with the tenants\' banners on floor 3 (FURNITURE DELIVERY IN 3 DAYS OR LESS on orange, Raymour & ' +
       'Flanigan on navy); floors 4-5 a rain-screen mosaic of grey panels (bid3:w100) with 1.85 x 2.5 m windows every 3.75 m from u 7.4; the glass tower at u 40.8-46.3 ' +

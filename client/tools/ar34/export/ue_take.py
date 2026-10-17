@@ -82,6 +82,8 @@ def in_engine():
 
     # ---- master materials (once per project)
     if not cfg.get('nomat'):
+        try: T['board_master'] = ue_masters.board_refresh()   # TSQADS: M_bx_board and MPC_bx when missing or stale (own marker)
+        except Exception as e: T['board_master'] = {'error': f'{type(e).__name__}: {e}'}
         t = time.time(); T['masters'] = ue_masters.ensure(); T['masters_s'] = round(time.time() - t, 1)
 
     # ---- a fresh level and import (the level is built from the USD every time; nothing is edited in a saved level).
@@ -195,6 +197,12 @@ def in_engine():
         if cam.get_actor_label() == 'BX_Camera': T['camera_keys'] = ue_light.key_camera(ls, cam_b, side)
         if cfg.get('cine'): T['cine_focus'] = ue_light.key_focus(ls, cam, side, cfg)   # R4-CINE
     T['moving_tracks'] = ue_light.check_moving_tracks(root_seq, side) if root_seq is not None else None
+    # TSQADS: the Times Square boards' cell tables and the web's sim time on MPC_bx.SimT (ue_mat.board_take)
+    try: T['boards'] = ue_mat.board_take(side, dest, cfg, ls)
+    except Exception as e: T['boards'] = {'error': f'{type(e).__name__}: {e}'}; unreal.log_error('[bxue] boards failed: ' + traceback.format_exc())
+    # R9-PREROLL (UE track, 2026-10-08): the take's traffic, trains and lens already moving through the warm-up
+    try: T['preroll'] = preroll(unreal, ls, root_seq, cfg)
+    except Exception as e: T['preroll'] = {'error': f'{type(e).__name__}: {e}'}; unreal.log_error('[bxue] preroll failed: ' + traceback.format_exc())
     eal.save_loaded_asset(ls)
     T['seq_s'] = round(time.time() - t_seq, 1)
     # (saving waits for the meshes' Nanite and distance-field builds the import started)
@@ -227,6 +235,74 @@ def sub_sequences(unreal, seq):
     return out
 
 
+# R9-PREROLL (UE track, 2026-10-08): Movie Render Queue warms up with real frames only from camera-cut data left of the
+# rendered range; a take rendered from frame 0 had none, so MRQ fell back to holding the sequence through the warm-up and
+# jumping it at the capture (the lost-GPU frame, docs/notes/ar34-ue.md, Crash hunt). Here the camera cut starts PREROLL
+# frames (the take's warm-up count) before the first rendered frame, the importer's sequences and their sections reach back
+# as far (each sequence's playback start with its section's, so inner time stays outer time), and every transform channel
+# (the vehicles, the trains, the walkers' roots, the lens) extrapolates linearly before its first key, so the warm-up
+# frames drive the traffic and the camera into the shot; visibility and the other channels hold their first value. The
+# walkers' skeletal animation sections stay where they are (their clips are timed from the section's start).
+def preroll(unreal, ls, root_seq, cfg):
+    P = int(os.environ.get('BXUE_PREROLL') or cfg.get('warmup', 48))
+    if P <= 0: return {'preroll': 0}
+    f0 = min([int(r[0]) for r in cfg.get('ranges') or [[0, 0]]] or [0])
+    start = f0 - P
+    E = min(start, 0)
+    lin = unreal.RichCurveExtrapolation.RCCE_LINEAR
+    out = {'preroll': P, 'cut_start': start, 'sequences': 0, 'sections': 0, 'linear_channels': 0, 'skipped': 0}
+    seqs = sub_sequences(unreal, root_seq) if root_seq is not None else []
+    for s in seqs:
+        try:
+            if s.get_playback_start() > E: s.set_playback_start(E)
+            out['sequences'] += 1
+        except Exception: pass
+    def extend(sec, to):
+        try:
+            if sec.has_start_frame() and sec.get_start_frame() > to: sec.set_start_frame(to)
+            out['sections'] += 1
+        except Exception: out['skipped'] += 1
+    def tracks_of(s):
+        for t in s.get_tracks(): yield t
+        for b in s.get_bindings():
+            for t in b.get_tracks(): yield t
+    for s in [ls] + seqs:
+        for t in tracks_of(s):
+            if isinstance(t, unreal.MovieSceneCameraCutTrack):
+                for sec in t.get_sections(): extend(sec, start)
+            elif isinstance(t, unreal.MovieSceneSubTrack):
+                for sec in t.get_sections(): extend(sec, E)
+            elif isinstance(t, unreal.MovieSceneSkeletalAnimationTrack):
+                out['skipped'] += 1
+                # (R9-WALKPRE: the walkers' clips carry ue_prep's frames before 0; where the section clips them (a start
+                # offset into the clip), its start moves back over them and the offset shrinks, the clip's timing kept)
+                for sec in t.get_sections():
+                    try:
+                        st_ = sec.get_start_frame() if sec.has_start_frame() else None
+                        out['skel_start_min'] = min(out.get('skel_start_min', 10 ** 9), st_) if st_ is not None else out.get('skel_start_min')
+                        prm = sec.get_editor_property('params')
+                        off = prm.get_editor_property('start_frame_offset').value
+                        if st_ is None or off <= 0 or st_ <= E: continue
+                        tr = s.get_tick_resolution(); dr = s.get_display_rate()
+                        tpf = (tr.numerator / tr.denominator) / (dr.numerator / dr.denominator)
+                        mv = int(min(st_ - E, off // tpf))
+                        if mv <= 0: continue
+                        prm.set_editor_property('start_frame_offset', unreal.FrameNumber(int(off - mv * tpf)))
+                        sec.set_editor_property('params', prm); sec.set_start_frame(st_ - mv)
+                        out['skel_extended'] = out.get('skel_extended', 0) + 1
+                    except Exception as e_:
+                        out['skel_err'] = f'{type(e_).__name__}: {e_}'[:160]
+            else:
+                for sec in t.get_sections():
+                    extend(sec, E)
+                    if isinstance(t, unreal.MovieScene3DTransformTrack):
+                        for ch in sec.get_all_channels():
+                            try: ch.set_pre_infinity_extrapolation(lin); out['linear_channels'] += 1
+                            except Exception: pass
+    return out
+# R9-PREROLL end
+
+
 def mrq_manifest(unreal, cfg, side, level, seq_path, name, ranges):
     """the queue of the take's render jobs as a manifest the -game process reads (-MoviePipelineConfig=<Saved-relative path>).
     One job per contiguous frame range (MRQ renders ranges)."""
@@ -256,6 +332,12 @@ def mrq_manifest(unreal, cfg, side, level, seq_path, name, ranges):
             dp = c.find_or_add_setting_by_class(unreal.MoviePipelineDeferredPass_Unlit)
         # the data pass (M_bx_data: region and depth, 32-bit) beside the frame; PNG for the frame (JPEG q95 made from it,
         # like the web takes), EXR for the data
+        # ==== R1C (lane C, 2026-10-11): the path-traced preset (tools/ue/render_take_pt.json, cfg pathtrace): Movie Render Queue's
+        # path tracer in place of the deferred pass; its samples a pixel are the anti-aliasing setting's spatial samples
+        if cfg.get('pathtrace'):
+            c.remove_setting(dp)
+            dp = c.find_or_add_setting_by_class(unreal.MoviePipelineDeferredPass_PathTracer)
+        # ==== R1C end
         data = unreal.MoviePipelinePostProcessPass()
         for k, v in (('enabled', True), ('name', 'Data'), ('material', unreal.load_asset('/Game/Bx/M_bx_data')), ('high_precision_output', True)):
             data.set_editor_property(k, v)
@@ -266,11 +348,25 @@ def mrq_manifest(unreal, cfg, side, level, seq_path, name, ranges):
         sp(aa, 'spatial_sample_count', int(cfg.get('spatial', 1)))
         sp(aa, 'temporal_sample_count', int((cfg.get('cine') or {}).get('temporal') or cfg.get('temporal', 1)))   # R4-CINE: the preset's samples
         sp(aa, 'override_anti_aliasing', True)
-        sp(aa, 'anti_aliasing_method', unreal.AntiAliasingMethod.AAM_TSR)
+        # UE14 (UE track, 2026-10-09): BXUE_AA=none renders each sample without temporal reconstruction (the frame's AA from
+        # --spatial samples, the shutter's blur from the temporal ones), a test against TSR's smear of thin alpha-cut leaves
+        # (GB43: or the settings' aa 'none', with their spatial samples: a supersampled frame, no TSR smear between samples)
+        sp(aa, 'anti_aliasing_method', unreal.AntiAliasingMethod.AAM_NONE if os.environ.get('BXUE_AA') == 'none' or cfg.get('aa') == 'none' else unreal.AntiAliasingMethod.AAM_TSR)
+        # UE14 end
+        # ==== R1C (lane C, 2026-10-11): the path tracer's samples a pixel, no temporal reconstruction
+        if cfg.get('pathtrace'):
+            sp(aa, 'spatial_sample_count', int(cfg['pathtrace'].get('spp', 128)))
+            sp(aa, 'anti_aliasing_method', unreal.AntiAliasingMethod.AAM_NONE)
+        # ==== R1C end
         sp(aa, 'render_warm_up_frames', True)
         sp(aa, 'engine_warm_up_count', int(cfg.get('warmup', 48)))
         sp(aa, 'render_warm_up_count', int(cfg.get('warmup', 48)))
-        sp(aa, 'use_camera_cut_for_warm_up', False)
+        # R9-HANG (UE track, 2026-10-08): real warm-up frames, the sequence played up to the shot. Movie Render Queue's other
+        # way (the sequence held through the warm-up, then jumped to the shot with an emulated first-frame motion blur) lost
+        # the GPU at the capture's first frame (kernel Xid 109 at engine frame 54) in takes with the trees' wind or the
+        # night's light set: t3Fountain 14/14, t8BusGlide 5/5 and the trailer's scBowGolden; with real warm-up frames they
+        # render (docs/notes/ar34-ue.md, Crash hunt). BXUE_CUTWARMUP=0 brings the held warm-up back, for tests
+        sp(aa, 'use_camera_cut_for_warm_up', os.environ.get('BXUE_CUTWARMUP', '1') != '0')
         cam = c.find_or_add_setting_by_class(unreal.MoviePipelineCameraSetting)
         sp(cam, 'shutter_timing', unreal.MoviePipelineShutterTiming.FRAME_CENTER if cfg.get('cine') else unreal.MoviePipelineShutterTiming.FRAME_CLOSE)   # R4-CINE
         go = c.find_or_add_setting_by_class(unreal.MoviePipelineGameOverrideSetting)
@@ -376,6 +472,76 @@ def run(cmd, logf, env=None, timeout=None, tag=None):
     return code, round(time.time() - t, 1)
 
 
+# R9-HANG (UE track, 2026-10-08): the watchdog's safe profile, what a take changes when it runs again after its render lost
+# the GPU (ue_take --safe): see docs/notes/ar34-ue.md, Crash hunt
+SAFE_PROFILE = {'warmup': 8, 'treewind': 0.0, 'cvars': {'r.Nanite.Tessellation': 0}, 'env': {'BXUE_CUTWARMUP': '1', 'BXUE_EMITSH': '0', 'BXUE_HLGI': '0', 'BXUE_FACNANITE': '0'}}   # (MESH11: no tessellation either, and the facade bake as before: not Nanite, the parallax recess)
+LOST_SIGNS = ('VK_ERROR_DEVICE_LOST', 'TerminateOnGPUCrash', 'GPU crash detected', 'DXGI_ERROR_DEVICE_REMOVED', 'DXGI_ERROR_DEVICE_HUNG')
+
+
+def lost_device(logf, t0, pid=None):
+    """the last render's GPU loss, from its log section (the engine's lost-device error and the engine frame it came at) and
+    the kernel's Xid records since t0 for the render's process pid (when journalctl may be read); None when the GPU was not
+    lost."""
+    try:
+        lines = open(logf, errors='replace').read().split('\n')
+    except OSError:
+        return None
+    # (the last run's section: from its header, '### <time>' then '### <command>'; run() closes it with '### exit ...')
+    hs = [i for i, l in enumerate(lines) if l.startswith('### ') and not l.startswith('### exit')]
+    txt = '\n'.join(lines[hs[-1]:] if hs else lines)
+    sign = next((s for s in LOST_SIGNS if s in txt), None)
+    xid = []
+    try:
+        since = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(t0))
+        out = subprocess.run(['journalctl', '-k', '--since', since, '--no-pager'], capture_output=True, text=True, timeout=20).stdout
+        xid = [l.split('NVRM: ', 1)[-1][:160] for l in out.splitlines() if 'Xid' in l and (pid is None or f'pid={pid},' in l)]
+    except Exception:
+        pass
+    if not sign and not xid: return None
+    m = None
+    if sign:
+        i = txt.find(sign); j = txt.rfind('\n', 0, i)
+        m = re.search(r'\]\[\s*(\d+)\]', txt[max(0, j - 200):i])
+    return {'signature': sign or 'kernel Xid', 'engine_frame': int(m.group(1)) if m else None, 'xid': xid[:4]}
+
+
+def apply_safe(cfg, log):
+    """--safe: SAFE_PROFILE into the take's settings (the warm-up, the trees' wind, the environment its UE processes
+    inherit), recorded in the take's stats with the first attempt's loss (BXUE_RETRY_INFO)."""
+    if 'warmup' in SAFE_PROFILE: cfg['warmup'] = int(SAFE_PROFILE['warmup'])
+    if 'treewind' in SAFE_PROFILE: cfg['treewind'] = SAFE_PROFILE['treewind']
+    for k, v in (SAFE_PROFILE.get('cvars') or {}).items(): cfg.setdefault('cvars', {})[k] = float(v)
+    os.environ.update({k: str(v) for k, v in (SAFE_PROFILE.get('env') or {}).items()})
+    log['safe_profile'] = SAFE_PROFILE
+    try: log['retry_of'] = json.loads(os.environ.get('BXUE_RETRY_INFO') or 'null')
+    except Exception: log['retry_of'] = None
+    print('TAKE_SAFE ' + json.dumps({'profile': SAFE_PROFILE, 'retry_of': log['retry_of']}), flush=True)
+
+
+GPU_LOCKS = os.environ.get('BXUE_GPU_LOCKS', '/data0/projectnyc_aux/tmp/ue_gpu_locks')
+
+
+def gpu_lock(gpu, log):
+    """the render's GPU, held exclusively (flock) until this process ends or execs: the physical GPU named by DRI_PRIME,
+    else UE's adapter index (adapter 0 without DRI_PRIME is PCI 61 on this machine); a take on a busy GPU waits."""
+    import fcntl
+    dp = os.environ.get('DRI_PRIME', '')
+    key = dp if dp.startswith('pci-') else {'0': 'pci-0000_61_00_0'}.get(str(gpu), f'adapter-{gpu}')
+    os.makedirs(GPU_LOCKS, exist_ok=True)
+    f = open(os.path.join(GPU_LOCKS, f'{key}.lock'), 'a+')
+    t = time.time()
+    try:
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        f.seek(0); held = f.read().strip()[:120]
+        print(f'[ue_take] GPU {key} is busy ({held or "another engine"}); waiting for it', flush=True)
+        fcntl.flock(f, fcntl.LOCK_EX)
+    f.seek(0); f.truncate(); f.write(f'pid {os.getpid()} {time.ctime()} {log.get("shot")}'); f.flush()
+    log['gpu'] = key; log['gpu_wait_s'] = round(time.time() - t, 1)
+    return f
+# R9-HANG end
+
+
 def main():
     import argparse, signal
     signal.signal(signal.SIGTERM, _stop); signal.signal(signal.SIGINT, _stop)
@@ -385,6 +551,9 @@ def main():
     ap.add_argument('--res', default='2560x1440'); ap.add_argument('--gpu', default='0')
     ap.add_argument('--overwrite', action='store_true'); ap.add_argument('--noimport', action='store_true')
     ap.add_argument('--norender', action='store_true'); ap.add_argument('--noprep', action='store_true')
+    # (R9-HANG: 48 real warm-up frames. With 8, t8BusGlide rendered 3 of 3 (with 48 it lost the GPU at the capture's first
+    # frame in 4 of 8 runs, the watchdog recovering each), but Nanite's streaming is not done after 8 frames: frame 0 shows
+    # the trees at their coarse levels (large flat leaf polygons). --warmup 8 for a heavy night take whose cut drops frame 0)
     ap.add_argument('--warmup', default='48'); ap.add_argument('--spatial', default='1'); ap.add_argument('--temporal', default='1')
     ap.add_argument('--mblur', default='0.5'); ap.add_argument('--ev', default=None)
     ap.add_argument('--nort', action='store_true', help='no hardware ray tracing (software Lumen, MegaLights off)')
@@ -406,6 +575,7 @@ def main():
     # R4-PEDS: the take's walkers (usd_peds.py's UsdSkel layer, <shot>_peds.usda) by default when the USD dir has them
     ap.add_argument('--nopeds', action='store_true')
     ap.add_argument('--reimport', action='store_true', help='R4-CACHE: import the stage again even when its fingerprint matches')
+    ap.add_argument('--safe', action='store_true', help='R9-HANG: render with SAFE_PROFILE (the watchdog\'s retry after a lost GPU)')
     a = ap.parse_args()
     usd = os.path.abspath(a.usd)
     shot = os.path.splitext(os.path.basename(usd))[0].replace('_peds', '')
@@ -428,6 +598,9 @@ def main():
         if code != 0 or not os.path.exists(side_p): print('[ue_take] prep failed', code); sys.exit(2)
     side = json.load(open(side_p))
     # one run of a shot at a time: its assets (/Game/Takes/<shot>) are deleted and rebuilt by every import
+    # (R9-TEX test aid: BXUE_TAKENAME, the take's UE name (its assets, map, lock, manifests) for a test take of a shot another
+    # track renders; the prep and the harvest keep the shot's own name)
+    if os.environ.get('BXUE_TAKENAME'): shot = log['shot'] = os.environ['BXUE_TAKENAME']
     import fcntl
     lockf = open(os.path.join(os.path.dirname(PROJECT), 'Saved', f'take_{shot}.lock'), 'w')
     try: fcntl.flock(lockf, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -448,9 +621,22 @@ def main():
     # them, the sun's shadow maps keep their shadows), the trees' wind not evaluated for ray tracing (Lumen sees the crowns
     # at rest). With async compute alone off a plain golden take still hung (22:18, RayTracingGeometry among the active
     # passes at the hang before it)
+    # R9-HANG (UE track, 2026-10-08): the walkers skin in the skin cache again (a compute pass per frame into a position
+    # buffer every draw reads), still out of ray tracing. With vertex-shader skinning (the skin cache off, R5) a park take
+    # rendered from frame 0 lost the GPU at its first captured frames in 2 of 4 runs, the device fault an invalid read; with
+    # the skin cache 5 of 5 rendered, the frames the same to within 0.3 grey levels (docs/notes/ar34-ue.md, Crash hunt)
     if not os.environ.get('BXUE_RTDYN'):
-        cvars.update({'r.RayTracing.Geometry.SkeletalMeshes': 0, 'r.SkinCache.Mode': 0, 'r.RayTracing.Geometry.StaticMeshes.WPO': 0,
+        cvars.update({'r.RayTracing.Geometry.SkeletalMeshes': 0, 'r.SkinCache.Mode': 1, 'r.RayTracing.Geometry.StaticMeshes.WPO': 0,
                       'r.RayTracing.Geometry.InstancedStaticMeshes.EvaluateWPO': 0, 'r.RayTracing.Geometry.NaniteProxies.WPO': 0})
+    # MESH11 (UE track, 2026-10-08): room for the displacement's patches. Tessellation splits each displaced triangle
+    # into patches; at the default 2097152 a street take with the facades' inset ran out and whole triangles of the
+    # ground and the walls dropped from the frame (the night sky through the road); four times that renders whole
+    cvars.update({'r.Nanite.MaxCandidatePatches': 8388608, 'r.Nanite.MaxVisiblePatches': 8388608})
+    # and the shadow maps draw the surfaces undisplaced: with tessellation in the virtual shadow maps the facade bake (when
+    # Nanite, BXUE_FACNANITE) dropped out of the sun's shadow and Bryant Park's allee stood in low sun the web keeps in
+    # shade; without it the bake shades the park as before (the relief's own sun shadow is the price, a centimetre or two)
+    cvars.update({'r.Shadow.Virtual.Nanite.AllowTessellationDirectional': 0, 'r.Shadow.Virtual.Nanite.AllowTessellationLocal': 0})
+    # MESH11 end
     for kv in a.cvar:
         k, v = kv.split('='); cvars[k] = float(v)
     cfg = {'shot': shot, 'side': side_p, 'res': a.res, 'ranges': ranges_of(todo) or [[lo, lo]], 'rawdir': rawdir,
@@ -459,6 +645,7 @@ def main():
            'peds': a.peds, 'import': not a.noimport, 'import_json': os.path.join(work, 'import.json'),
            'nolights': a.nolights, 'nomat': a.nomat, 'cvars': cvars, 'unlit': a.unlit, 'light': a.light, 'raylight': a.raylight, 'fgq': float(a.fgq)}
     cfg['treewind'] = a.treewind   # TREEUE: the trees' wind (ue_trees.py; 0 freezes it)
+    if a.safe: apply_safe(cfg, log)   # R9-HANG
     if a.cine:   # R4-CINE: the preset, and the subject's distance per frame from the shot's own depth
         cfg['cine'] = {'temporal': int(a.cinetemporal), 'fstop': float(a.fstop), 'grain': float(a.grain), 'fog': float(a.fog), 'focus': {}}
         # (R5-HANG: async compute, the walkers in ray tracing, the skin cache and the wind in ray tracing are off in every
@@ -519,14 +706,39 @@ def main():
     if a.norender: json.dump(log, open(os.path.join(work, 'take_ue.json'), 'w'), indent=1); return
 
     # 3. render
+    # R9-HANG (UE track, 2026-10-08): one engine per GPU. Two renders on one GPU make the driver switch between their
+    # contexts, and a long frame that cannot be preempted loses the device (Xid 109: three takes at once on GPU 0); a take
+    # waits here for the GPU's lock (outside the repo, shared by every copy of this file) and holds it while it renders
+    gl = gpu_lock(a.gpu, log)
     shutil.rmtree(rawdir, ignore_errors=True); os.makedirs(rawdir, exist_ok=True)
     W, H = a.res.split('x')
     t_r = time.time()
     code, secs = run([editor, PROJECT, 'MoviePipelineEntryMap', '-game', f"-MoviePipelineConfig={manifest}",
                       '-RenderOffscreen', '-Unattended', '-NoSplash', '-NoLoadingScreen', '-nosound', '-windowed', f'-resx={W}', f'-resy={H}',
-                      f'-graphicsadapter={a.gpu}', '-log', '-stdout', '-FullStdOutLogOutput', '-NoTextureStreaming'] + rt,
+                      f'-graphicsadapter={a.gpu}', '-log', '-stdout', '-FullStdOutLogOutput', '-NoTextureStreaming'] + rt
+                     + os.environ.get('BXUE_RENDER_ARGS', '').split(),   # (R9-HANG: a test aid, extra engine arguments)
                      os.path.join(work, 'render.log'), env=ue_env(), timeout=int(a.timeout), tag='render')
     log['render_s'] = secs; log['render_exit'] = code
+    # R9-HANG (UE track, 2026-10-08): the lost-device watchdog. A render that lost the GPU (the engine's VK_ERROR_DEVICE_LOST
+    # or its GPU-crash exit in render.log, a kernel Xid during the run) is said so in the take's stats and on its own line,
+    # and run once more, whole, with SAFE_PROFILE (--safe); a safe run that fails again exits non-zero
+    lost = lost_device(os.path.join(work, 'render.log'), t_r, getattr(CHILD.get('p'), 'pid', None)) if code != 0 else None
+    if lost:
+        log['device_lost'] = lost
+        print('TAKE_DEVICE_LOST ' + json.dumps(lost), flush=True)
+        if not a.safe and not os.environ.get('BXUE_NOWATCHDOG'):
+            info = {'first': lost, 'profile': SAFE_PROFILE, 'render_s': secs}
+            print('[ue_take] the render lost the GPU; running the take once more with the safe profile ' + json.dumps(SAFE_PROFILE), flush=True)
+            json.dump(log, open(os.path.join(work, 'take_ue_device_lost.json'), 'w'), indent=1)
+            try: fcntl.flock(lockf, fcntl.LOCK_UN); lockf.close()
+            except Exception: pass
+            try: fcntl.flock(gl, fcntl.LOCK_UN); gl.close()
+            except Exception: pass
+            sys.stdout.flush(); sys.stderr.flush()
+            # (the safe run imports again, its warm-up and wind are the import's: never --noimport)
+            os.execve(sys.executable, [sys.executable, os.path.abspath(__file__)] + [x for x in sys.argv[1:] if x != '--noimport'] + ['--safe'],
+                      dict(os.environ, BXUE_RETRY_INFO=json.dumps(info)))
+    # R9-HANG end
     # the frames: ue_frames.py turns the raw passes into the take's frame_%05d.jpg (JPEG q95 from the PNG), _ue/regions/
     # (the data pass's regions, 8-bit) and _depth/ (depth_%04d.png and cams.json, as blender_take.py writes them for
     # bx_leafcheck.py); per-frame seconds from the files' times (the first includes the map load, shader compiles, warm-up)

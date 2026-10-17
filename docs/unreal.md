@@ -6,6 +6,9 @@ Queue. A 108 frame take renders in about 5 minutes including the import (0.13 to
 8.5 s a frame in Cycles), and the cinematic preset adds temporal accumulation, depth of field and a film look. How the two renderers share the export is
 described in [One city, three renderers](architecture.md).
 
+The whole city can also be built into Unreal once, so that a shot needs only its take and its render: see
+[The whole city](#the-whole-city). Those tools are published as they run on the machine they were developed on.
+
 This guide installs the engine, prepares the project and the material sets, renders `t7ArchSoffit` (the shot of the
 Cycles guide), gives the measured times and lists the known limits. The commands are written for a Linux shell.
 
@@ -75,7 +78,7 @@ export BXTREES_ASSETS=$PWD/.cache/hf/Blender/bxtrees2
 The tree set comes from the dataset, as in the Cycles guide:
 
 ```bash
-hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.3.1 --include "Blender/bxtrees2/*" --local-dir .cache/hf
+hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.4.0 --include "Blender/bxtrees2/*" --local-dir .cache/hf
 ```
 
 ## Fetch the CC0 material sets
@@ -175,6 +178,57 @@ keeps both. For comparison, the physical light Cycles takes of the same shots ne
 | Walkers and wind outside ray tracing | The walkers' skinned meshes are left out of the ray tracing scene and the trees' wind is not evaluated for ray tracing: Lumen lights and reflects the scene without the walkers (the sun's shadow maps still cast their shadows) and sees the crowns at rest. Both changes, with async compute off, stopped a GPU hang during takes. `BXUE_RTDYN=1` restores them, for tests. |
 | Sign lights | At night the lit signs and shop interiors light their surroundings as rect lights. One shot lost the GPU device three times with them and was rendered with `BXUE_EMITK=0`, which turns them off. |
 | Linux only | See [Get Unreal Engine 5.8](#get-unreal-engine-58). |
+
+## The whole city
+
+`tools/ue/` builds every cell of the compiled city into the Unreal project once and renders shots from that build. The
+city is cut into 128 m cells, 56,512 over the 3,532 tiles of the five-borough compile and 307 more where the bridges
+land outside it. The client bakes each cell headless (`tools/cells/bake.mjs --kitrec`): the parts of the dressed
+buildings and of the tower kit become rows of a table of kit instances (part, transform, tint, texture offset and the
+heights the masters read), and what is left (ground, roads, terrain, the tile massing) becomes the cell's own meshes.
+A building is drawn by one cell only, the one under its centre. Every material record carries a key of its content,
+and each key is one material instance of a shared library (`tools/ue/matlib.py`), bound once. The cells' own meshes
+are merged by material into one package per 1 km block (`tools/ue/block_merge.py`), and a C++ actor
+(`tools/ue/plugins/ValdradaCells`) spawns a cell's kit instances from its table when its level loads. The far city is
+a quadtree of chunks from 1 km to 8 km, with each 8 km square's water, the landmarks and the bridges in 1 km pieces,
+prepared and imported once.
+
+```bash
+UE_V2=1 UE_CITY_DIR=<cache>/city_v2 UE_BAKE_NAME=cityv2 python3 tools/ue/city_build.py run --pages 6
+```
+
+`run` bakes the cells on the GPUs in the background and builds each block as its cells are baked, then the far library.
+Every step is keyed by its content, so a run after an edit of the generator redoes only the cells and blocks the edit
+changed; a material or master change rebinds the library instead. The stages can also be run one at a time (`cells`,
+`bake`, `build`, `far`).
+
+A shot is then a cut of that build: its near cells rounded out to whole 1 km blocks and, over the rest, the far chunks
+its frames ask for. Nothing is built for it but its take (the actors, the light and the sequence, from the shot in
+`tools/ad/shots.json`):
+
+```bash
+UE_CITY=1 UE_KITCELLS=1 UE_CITY_DIR=<cache>/city_v2 bash tools/ue/render_take.sh lfAerial125 --preset cine2f
+UE_CITY=1 UE_KITCELLS=1 UE_CITY_DIR=<cache>/city_v2 bash tools/ue/render_take.sh lfAerial125 --preset cine2f --frames 600-2025 --gpu-pci 41
+```
+
+**Frame ranges.** `--frames a-b` renders frames a to b-1 as a job of its own, with its own lock, its world cut from the
+cells of its own frames, so the ranges of one long shot render in parallel on several GPUs; each range writes its
+frames under `f<a>-<b>/` in the output root. The presets are in `tools/ue/render_take*.json`: `cine2f` renders
+2560 × 1440 with 8 spatial samples a frame, ray-traced sun shadows, a 1 GB Nanite streaming pool and the aerial
+perspective at full strength from 6 km.
+
+**Measured.** On the development machine (128 hardware threads, three RTX 6000 Ada GPUs, Unreal Engine 5.8.3) the
+first build of the five boroughs took 11 h 20 min: the 56,819 cells were baked in 7 h 41 min on the three GPUs while
+the blocks were built, which left 56,582 cells with content in 981 block packages, and the far library holds 1,958
+packages. Eighteen renders with `cine2f` on 2026-10-16 cut worlds of 1,952 to 5,600 cells and 398 to 1,344 far
+packages; the take took 100 to 2,287 s to build, the first frame 303 to 1,560 s (the engine's start, the world's load
+and the warm-up), and then a median of 1.30 to 2.90 s a frame. The 115 s aerial `lfAerial125` (3,450 frames) was
+rendered as the ranges 0-600, 600-2025 and 2025-3450.
+
+**Limits.** These scripts were written for the development machine and have only run there: their defaults name its
+folders (`/data0/projectnyc_aux/...`, 46 files), and the cell cache, the Unreal caches and the project's imported
+packages took 522 GB, 419 GB and 284 GB there, earlier builds included. The city's Unreal build is not distributed;
+the dataset holds the compiled tiles it is made from.
 
 ## Credits in films
 

@@ -1,5 +1,4 @@
 // AR34 BID4: compiled footprints (docs/notes/ar33-frontage/bid4.json: `ring`, and the street wall's ends `a`, `b`; u runs from b to a) of the lots whose real street wall differs
-// bid4_help.js refit moves the wall.
 export default {
   'w125-72': { a: [2202.65, -2705.8], b: [2217.23, -2697.73], ring: [[2217.23, -2697.73], [2202.7, -2671.35], [2187.94, -2679.1], [2190.57, -2683.87], [2202.65, -2705.8]] },
   'w125-70': { a: [2217.23, -2697.73], b: [2222.71, -2694.71], ring: [[2222.71, -2694.71], [2209.51, -2670.75], [2204.03, -2673.78], [2217.23, -2697.73]] },

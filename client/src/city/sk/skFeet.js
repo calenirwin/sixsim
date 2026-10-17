@@ -1,21 +1,22 @@
 // AR34 sk: the Riverside Drive viaduct's feet at the 125th Street / Twelfth Avenue junction put on the walk, as the
 // on the street, with two crosswalks intersecting below it"). Pure (no three, no DOM); called from skFix.js before anything
 // samples or draws the tile's ground; `?skfeet=0` (or `?skfix=0`) keeps the compiled ground.
+//
 // What the compiled tiles had (node probe of public/tiles 2026-10-02; tower and column feet from vk/rsd.js's frame and
 // vk/vkData.js's stations, pedestal 1.95 m along the line x 2.4 m across):
-// - the arch's NW tower (u 140, l -9.15) stood in the asphalt 5.5 m south-west of the NW corner's tip, and two compiled
-// crossings met under it: the Twelfth Avenue crossing along the bent (NW tower to NE tower) and a diagonal one from the
-// west corner's tip to (916.6, -3889), whose bars ran 1.3-3.6 m south of the tower and over the other crossing's end;
-// - the SW, SE and NE towers straddled their corners' kerbs (half the pedestal on the road);
-// - the columns at u 83.8 and 159.5 (both lines) stood in the ends of the wide Twelfth Avenue crossings (the end bars 0.5-0.9 m
-// from the column's centre).
+//  - the arch's NW tower (u 140, l -9.15) stood in the asphalt 5.5 m south-west of the NW corner's tip, and two compiled
+//    crossings met under it: the Twelfth Avenue crossing along the bent (NW tower to NE tower) and a diagonal one from the
+//    west corner's tip to (916.6, -3889), whose bars ran 1.3-3.6 m south of the tower and over the other crossing's end;
+//  - the SW, SE and NE towers straddled their corners' kerbs (half the pedestal on the road);
+//  - the columns at u 83.8 and 159.5 (both lines) stood in the ends of the wide Twelfth Avenue crossings (the end bars 0.5-0.9 m
+//    from the column's centre).
+// h270): the NW tower stands on the NW corner's walk, the kerb wrapping round its base about 1 m out, a planted strip at its
 // foot; the SW tower stands on the SW corner behind the end of the Twelfth Avenue crossing; no crossing runs past the camera
 // (the diagonal crossing would pass 2-3 m south of it: plain asphalt with lane dashes and a stop line in h090 and h180); the
 // crossing of W 125th west of the junction runs from the west corner to Dinosaur's corner (h270, kept).
 // So: a walk (the compiled sidewalk's height, flagged and kerbed by the kit like any compiled walk) round each foot with the
 // kerb ~0.9 m (towers) / 0.6 m (columns) clear of the pedestal, joined to the corner's walk (the NW tower: the corner's tip
 // carried to the tower); the compiled walk under it cut out (no double flags); paint under it dropped (whole bars; long lines
-// clipped); the old kerb faces inside it dropped; new kerb faces where it borders the road;
 // show dropped (DROP_X); the north bent's doubled zebra made single and moved north of the towers (NBENT).
 import { Field, ROAD } from './skField.js';
 import { clipHalf, fanUp } from './skGeom.js';
@@ -39,7 +40,6 @@ const DROP_X = [
   // the diagonal one from the west corner's tip past the NW tower (8I93 2023-09 h090 / h180: plain asphalt 2-3 m south of
   // the lens, lane dashes and a stop line, no bars)
   { a: [898.5, -3878.4], b: [916.8, -3889.3], hw: 2.6, ang: 58, len: 3.07 },
-  // the one over the NNW road at the NW corner, (888.4, -3893.8) to (905.0, -3905.3): RmsEF5 2023-09 stands on its
   // line with the corner's kerb 5 m to the left and plain asphalt round the lens; 8I93 h000 sees the corner's planted beds
   // and plain asphalt there (the compiled road runs ~14 m too far east here: LEAD.md, the NW corner)
   { a: [888.0, -3893.5], b: [905.4, -3905.6], hw: 2.0, ang: 56, len: 7.63 },
@@ -47,7 +47,6 @@ const DROP_X = [
 const BOX = [870, -3915, 960, -3815];   // the junction (world x0, z0, x1, z1)
 // the Twelfth Avenue crossing at the north bent: compiled as two overlapping zebras along the bent line between the NW and NE
 // towers (bars 4.85 m at u 141.2 and 4.69 m at u 142.3, 0.4 m apart across: a doubled, crossed-looking hatch) with a stop line
-// either side (6.49 m at u 145.2 and 138.4).
 // edge ~20 m from the lens on the axis (u ~144.8-147.1 on the ALT 2.9 lens): north of the towers, the towers on the corners'
 // walks beside it. So the second zebra goes, and the first with its stop lines moves north by DU (its west end then meets
 // the NW corner's kerb and is trimmed there)

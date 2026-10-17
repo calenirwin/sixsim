@@ -32,17 +32,17 @@ let _M = null;
 export function mvvMats() {
   if (_M) return _M;
   _M = {
-    // the IRT's dark green, a slightly bluer repaint in patches
+    // specular cut further, the sky light under the deck to 0.7, fewer droppings on the chords' backs, the paint cyan)
     steel: steelMat('irt', { paint: 0x294a4c, paint2: 0x27464a, rust: 0x6c4632, rustD: 0x45301f, rustAmt: 0.3, rough: 0.7, metal: 0.04, spec: 0.32, amb: 0.7, guano: 0.3 }),
     steelS: steelMat('irtS', { paint: 0x294a4c, paint2: 0x27464a, rust: 0x6c4632, rustD: 0x45301f, rustAmt: 0.3, rough: 0.7, metal: 0.04, spec: 0.32, amb: 0.7, guano: 0.3, noShadow: true }),
-    // the floor system under the deck: the deck and the station overhead hide most of the sky. The round-1 and b4r0-b4r2 readings of the twin (53-83, then 61-68) were raised by a sun
     // glint's bloom from one station window (gone since b4r4: the glass is dull now); without it amb 0.18 / dir 0.4 read
     // 8-11 (b4r4) and amb 0.6 / dir 0.8 16-20 (b4r5): the floor system takes the whole sky and sun again (amb 1)
+    // the paint greyed toward blue and the street's bounce on its undersides, dn)
     steelU: steelMat('irtU', { paint: 0x33485a, paint2: 0x30455a, rust: 0x6c4632, rustD: 0x45301f, rustAmt: 0.35, rough: 0.74, metal: 0.04, amb: 1.0, spec: 0.32, guano: 0.3, dn: 1.2 }),
     steelUS: steelMat('irtUS', { paint: 0x33485a, paint2: 0x30455a, rust: 0x6c4632, rustD: 0x45301f, rustAmt: 0.35, rough: 0.74, metal: 0.04, amb: 1.0, spec: 0.32, guano: 0.3, dn: 1.2, noShadow: true }),
     conc: otherMat('concrete'),
     granite: otherMat('granite'),
-    // the arch's shoe pedestals: sooted dark grey stone, splashed and stained
+    // dark truncated pyramid ~65,62,58 where the twin's pale concrete read ~180)
     ped: steelMat('irtPed', { paint: 0x57544e, paint2: 0x4f4c47, rust: 0x5a4a3a, rustD: 0x3a3028, rustAmt: 0.25, rough: 0.9, metal: 0.0, rivets: false, amb: 0.8, spec: 0.3, chalk: 0.12, guano: 0.15 }),
     // the ties and walkway planks, creosoted and sooted, seen from the street through the floor system (dim like it)
     timber: steelMat('irtTie', { paint: 0x342c25, paint2: 0x2e2722, rust: 0x3a2e24, rustD: 0x2a221c, rustAmt: 0.1, rough: 0.9, metal: 0.0, rivets: false, amb: 0.2, spec: 0.3, guano: 0.15 }), rail: otherMat('rail'), railTop: otherMat('railTop'),
@@ -104,7 +104,7 @@ export function archBuild(group, gy) {
         path(g, st, q.map((s) => chordPt(s, side, l, side * (CH / 2 + 0.007))), q.map((s) => nW(s)), bw + 0.02, 0.014, { rv: side > 0 ? [null, null, RIV.edges(0.03, 0.1), null] : [RIV.edges(0.03, 0.1), null, null, null], seed: 5 });
       }
     }
-    // the heels: both chords close on the pin between two heel plates over the last 1.5 m, riveted all over
+    // down apart, the lattice web between them, into a solid heel at the pin), riveted all over
     for (const end of [0, 1]) {
       const hl = 1.5, sa = end ? Ltot - hl : 0, sb = end ? Ltot : hl, K = 3;
       for (const sx of [-1, 1]) {
@@ -137,14 +137,13 @@ export function archBuild(group, gy) {
       { const cc = P(u + dir * 0.25, l, 0), c2 = P(u + dir * 0.1, l, 0);
         frustum(g, M.ped, cc, DN, 2.5, 3.2, 1.7, 2.5, gy + 0.06, yB - 0.18);
         frustum(g, M.ped, c2, DN, 1.6, 2.1, 1.5, 2.0, yB - 0.18, yB); }
-      // steel bollards in front of the pedestal
       for (const k of [-1, 0, 1]) {
         const bp = P(u + dir * 1.9, l + k * 0.95, gy), bq = [bp[0], gy + 0.95, bp[2]];
         g.cyl(M.rail, bp, bq, 0.075, 10);
         g.cyl(M.rail, [bp[0], gy + 0.9, bp[2]], [bp[0], gy + 0.99, bp[2]], 0.09, 10);
       }
     }
-    // the web: laced posts square to the chords, double-angle diagonals, gusset plates on both chords at every
+    // toward the crown): laced posts square to the chords, double-angle diagonals, gusset plates on both chords at every
     // joint (the smaller at mid-panel)
     const joints = [];
     for (let k = 1; k < MV.panels; k++) { joints.push([sJ[k], 1, k]); if (k < MV.panels - 1) joints.push([(sJ[k] + sJ[k + 1]) / 2, 0, k]); }
@@ -171,7 +170,6 @@ export function archBuild(group, gy) {
       for (const fu of [-1, 1]) angle(g, st, add(p0, mul(T, 0.2)), sub(p1, mul(T, 0.25)), DN, 0.13, 0.09, 0.012, { fs: 1, fu, off: [-0.065, fu * 0.008], seed: 37 });
     }
     // one diagonal in every bay between two verticals, from the top chord at the outer vertical down to the bottom chord
-    // at the inner one, all falling toward the crown on both halves
     { const vs = joints.map((j) => j[0]).sort((a, b) => a - b), half = Ltot / 2;
       for (let i = 0; i + 1 < vs.length; i++) {
         const sa = vs[i], sb = vs[i + 1], south = (sa + sb) / 2 < half;
@@ -303,7 +301,6 @@ export function bentBuild(g, M, b, gy, partner) {
     // the laced column (two 15 in channels), its cap under the girder
     laced(g, st, P(u, l, yPier + 0.05), P(u, l, yX), DN, 0.5, 0.42, { seed: 220 + (l > 0 ? 1 : 0), pitch: 0.46, double: true });
     g.rect(st, P(u, l, yX - 0.06), P(u, l, yX), DA, 0.75, 0.75);
-    // a conduit up the outer face with its clamps and a junction box
     if (Math.abs(u) < 150) {
       const sg = Math.sign(l), lc = l + sg * 0.31, uc = u + 0.14;
       g.cyl(M.steelS, P(uc, lc, yPier + 0.05), P(uc, lc, yX - 0.3), 0.032, 6, { caps: false });
@@ -380,7 +377,6 @@ export function deckBuild(g, M, ua, ub) {
   }
   // the walkways between the tracks and along the edges (plank walks on the tie ends)
   for (const l of [-1.84, 1.87, -5.1, 5.15]) g.rect(tim, P(ua, l, LV.TIE_T + 0.03), P(ub, l, LV.TIE_T + 0.03), UP, 0.62, 0.05, { caps: false });
-  // see a dark brown underside there where the open tie gaps showed the sky (b4r4 cMvJoint)
   { const a = Math.max(ua, MV.plat.u0), b = Math.min(ub, MV.plat.u1);
     if (b - a > 0.5) g.rect(tim, P(a, 0, LV.TIE_B - 0.03), P(b, 0, LV.TIE_B - 0.03), UP, 2 * MV.plat.l0 - 0.1, 0.03, { caps: false, rv: [] }); }
 }

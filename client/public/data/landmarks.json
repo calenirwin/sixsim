@@ -1,0 +1,1968 @@
+{
+ "v": 1,
+ "built": "2026-10-12T05:01:12.809Z",
+ "file": "lod16/landmarks_l6.bin",
+ "levels": [
+  "L6"
+ ],
+ "limitTris": 2000,
+ "note": "Landmark registry, first list. L6 silhouettes from our own builders (city/landmarks.js, city/bridgeKit.js), simplified with meshoptimizer; keyed by landmark id (shared/landmarkSpec.js) or feature. bin: the footprint BIN, to be filled from the records module.",
+ "landmarks": [
+  {
+   "key": "empireState",
+   "name": "Empire State Building",
+   "kind": "tower",
+   "lmId": 20,
+   "mode": "replace",
+   "tile": "-3_7",
+   "bin": null,
+   "priority": 1,
+   "night": {
+    "crown": "floodlit tiers, colour programme",
+    "mast": "red beacon"
+   },
+   "center": [
+    -1227.4,
+    192.5,
+    3846.8
+   ],
+   "radius": 214,
+   "top": 381.5,
+   "l6": {
+    "origin": [
+     -1227.42,
+     3,
+     3846.76
+    ],
+    "v0": 0,
+    "nv": 2916,
+    "i0": 0,
+    "ni": 2916,
+    "tris": 972,
+    "from": 972,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "chrysler",
+   "name": "Chrysler Building",
+   "kind": "tower",
+   "lmId": 21,
+   "mode": "replace",
+   "tile": "-1_6",
+   "bin": null,
+   "priority": 1,
+   "night": {
+    "crown": "chevron lights"
+   },
+   "center": [
+    -349.5,
+    147.8,
+    3498.1
+   ],
+   "radius": 155.9,
+   "top": 292.2,
+   "l6": {
+    "origin": [
+     -349.49,
+     3,
+     3498.1
+    ],
+    "v0": 2916,
+    "nv": 6000,
+    "i0": 2916,
+    "ni": 6000,
+    "tris": 2000,
+    "from": 3168,
+    "how": "simplify",
+    "err": 0.0009
+   }
+  },
+  {
+   "key": "oneWTC",
+   "name": "One World Trade Center",
+   "kind": "tower",
+   "lmId": 22,
+   "mode": "replace",
+   "tile": "-7_15",
+   "bin": null,
+   "priority": 1,
+   "night": {
+    "spire": "white beacon"
+   },
+   "center": [
+    -3537.8,
+    218.2,
+    7789.3
+   ],
+   "radius": 222.8,
+   "top": 432.8,
+   "l6": {
+    "origin": [
+     -3537.75,
+     3,
+     7789.33
+    ],
+    "v0": 8916,
+    "nv": 240,
+    "i0": 8916,
+    "ni": 240,
+    "tris": 80,
+    "from": 80,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "thirtyRock",
+   "name": "30 Rockefeller Plaza",
+   "kind": "tower",
+   "lmId": 23,
+   "mode": "replace",
+   "tile": "-2_5",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -712.9,
+    131.1,
+    2660.2
+   ],
+   "radius": 167.1,
+   "top": 258.6,
+   "l6": {
+    "origin": [
+     -712.91,
+     3,
+     2660.24
+    ],
+    "v0": 9156,
+    "nv": 864,
+    "i0": 9156,
+    "ni": 864,
+    "tris": 288,
+    "from": 288,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "metLife",
+   "name": "MetLife Building",
+   "kind": "tower",
+   "lmId": 25,
+   "mode": "replace",
+   "tile": "-1_6",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -413.4,
+    74.9,
+    3189.6
+   ],
+   "radius": 106.9,
+   "top": 146.3,
+   "l6": {
+    "origin": [
+     -413.35,
+     3,
+     3189.55
+    ],
+    "v0": 10020,
+    "nv": 288,
+    "i0": 10020,
+    "ni": 288,
+    "tris": 96,
+    "from": 96,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "woolworth",
+   "name": "Woolworth Building",
+   "kind": "tower",
+   "lmId": 26,
+   "mode": "replace",
+   "tile": "-7_15",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -3130.4,
+    122.4,
+    7850.2
+   ],
+   "radius": 128.9,
+   "top": 241.3,
+   "l6": {
+    "origin": [
+     -3130.39,
+     3,
+     7850.15
+    ],
+    "v0": 10308,
+    "nv": 408,
+    "i0": 10308,
+    "ni": 408,
+    "tris": 136,
+    "from": 136,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "oneVanderbilt",
+   "name": "One Vanderbilt",
+   "kind": "tower",
+   "lmId": 27,
+   "mode": "replace",
+   "tile": "-2_6",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -619.5,
+    219.2,
+    3348.1
+   ],
+   "radius": 223.3,
+   "top": 434.8,
+   "l6": {
+    "origin": [
+     -619.51,
+     3,
+     3348.05
+    ],
+    "v0": 10716,
+    "nv": 516,
+    "i0": 10716,
+    "ni": 516,
+    "tris": 172,
+    "from": 172,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "p432park",
+   "name": "432 Park Avenue",
+   "kind": "tower",
+   "lmId": 28,
+   "mode": "replace",
+   "tile": "-1_4",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -39.2,
+    215.8,
+    2396.7
+   ],
+   "radius": 214.3,
+   "top": 428.1,
+   "l6": {
+    "origin": [
+     -39.18,
+     3,
+     2396.73
+    ],
+    "v0": 11232,
+    "nv": 252,
+    "i0": 11232,
+    "ni": 252,
+    "tris": 84,
+    "from": 84,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "cpTower",
+   "name": "Central Park Tower",
+   "kind": "tower",
+   "lmId": 29,
+   "mode": "replace",
+   "tile": "-2_3",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -831.2,
+    239.7,
+    1847.6
+   ],
+   "radius": 247.1,
+   "top": 476,
+   "l6": {
+    "origin": [
+     -831.18,
+     3,
+     1847.61
+    ],
+    "v0": 11484,
+    "nv": 180,
+    "i0": 11484,
+    "ni": 180,
+    "tris": 60,
+    "from": 60,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "steinway",
+   "name": "111 West 57th (Steinway)",
+   "kind": "tower",
+   "lmId": 30,
+   "mode": "replace",
+   "tile": "-2_3",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -539.7,
+    220.1,
+    2019.1
+   ],
+   "radius": 222.9,
+   "top": 438.9,
+   "l6": {
+    "origin": [
+     -539.72,
+     1,
+     2019.06
+    ],
+    "v0": 11664,
+    "nv": 3078,
+    "i0": 11664,
+    "ni": 3078,
+    "tris": 1026,
+    "from": 1026,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "one57",
+   "name": "One57",
+   "kind": "tower",
+   "lmId": 60,
+   "mode": "replace",
+   "tile": "-2_3",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -652.1,
+    158.7,
+    1951.5
+   ],
+   "radius": 161.6,
+   "top": 314,
+   "l6": {
+    "origin": [
+     -652.12,
+     3,
+     1951.47
+    ],
+    "v0": 14742,
+    "nv": 396,
+    "i0": 14742,
+    "ni": 396,
+    "tris": 132,
+    "from": 132,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "hearst",
+   "name": "Hearst Tower",
+   "kind": "tower",
+   "lmId": 31,
+   "mode": "replace",
+   "tile": "-3_3",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -1047.1,
+    90.5,
+    1837.1
+   ],
+   "radius": 104.4,
+   "top": 177.6,
+   "l6": {
+    "origin": [
+     -1047.14,
+     3,
+     1837.11
+    ],
+    "v0": 15138,
+    "nv": 4104,
+    "i0": 15138,
+    "ni": 4104,
+    "tris": 1368,
+    "from": 1368,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "citigroup",
+   "name": "Citigroup Center",
+   "kind": "tower",
+   "lmId": 32,
+   "mode": "replace",
+   "tile": "0_5",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    104,
+    142.4,
+    2749.6
+   ],
+   "radius": 149.6,
+   "top": 281.2,
+   "l6": {
+    "origin": [
+     104,
+     3,
+     2749.56
+    ],
+    "v0": 19242,
+    "nv": 240,
+    "i0": 19242,
+    "ni": 240,
+    "tris": 80,
+    "from": 80,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "p30hudson",
+   "name": "30 Hudson Yards",
+   "kind": "tower",
+   "lmId": 59,
+   "mode": "replace",
+   "tile": "-5_6",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -2512.8,
+    196.3,
+    3284.3
+   ],
+   "radius": 238.3,
+   "top": 389.1,
+   "l6": {
+    "origin": [
+     -2512.83,
+     3,
+     3284.3
+    ],
+    "v0": 19482,
+    "nv": 228,
+    "i0": 19482,
+    "ni": 228,
+    "tris": 76,
+    "from": 76,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "boaTower",
+   "name": "Bank of America Tower",
+   "kind": "tower",
+   "lmId": 58,
+   "mode": "replace",
+   "tile": "-3_5",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -1138.9,
+    138.8,
+    3059.9
+   ],
+   "radius": 163.9,
+   "top": 274.1,
+   "l6": {
+    "origin": [
+     -1138.87,
+     3,
+     3059.9
+    ],
+    "v0": 19710,
+    "nv": 204,
+    "i0": 19710,
+    "ni": 204,
+    "tris": 68,
+    "from": 68,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "p56leonard",
+   "name": "56 Leonard",
+   "kind": "building",
+   "lmId": 41,
+   "mode": "replace",
+   "tile": "-6_14",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -2835.1,
+    8.9,
+    7254.7
+   ],
+   "radius": 21.1,
+   "top": 14.3,
+   "l6": {
+    "origin": [
+     -2835.13,
+     3,
+     7254.67
+    ],
+    "v0": 19914,
+    "nv": 1152,
+    "i0": 19914,
+    "ni": 1152,
+    "tris": 384,
+    "from": 384,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "p8spruce",
+   "name": "8 Spruce Street",
+   "kind": "tower",
+   "lmId": 42,
+   "mode": "replace",
+   "tile": "-6_15",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -2897.6,
+    134.7,
+    8024.3
+   ],
+   "radius": 142.8,
+   "top": 265.9,
+   "l6": {
+    "origin": [
+     -2897.57,
+     3,
+     8024.34
+    ],
+    "v0": 21066,
+    "nv": 1512,
+    "i0": 21066,
+    "ni": 1512,
+    "tris": 504,
+    "from": 504,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "p40wall",
+   "name": "40 Wall Street",
+   "kind": "building",
+   "lmId": 51,
+   "mode": "replace",
+   "tile": "-7_16",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -3161.8,
+    14.5,
+    8454.9
+   ],
+   "radius": 27.3,
+   "top": 25.5,
+   "l6": {
+    "origin": [
+     -3161.79,
+     3,
+     8454.9
+    ],
+    "v0": 22578,
+    "nv": 216,
+    "i0": 22578,
+    "ni": 216,
+    "tris": 72,
+    "from": 72,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "p70pine",
+   "name": "70 Pine Street",
+   "kind": "tower",
+   "lmId": 52,
+   "mode": "replace",
+   "tile": "-7_16",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -3078.8,
+    128.1,
+    8515.5
+   ],
+   "radius": 138,
+   "top": 252.8,
+   "l6": {
+    "origin": [
+     -3078.76,
+     3,
+     8515.53
+    ],
+    "v0": 22794,
+    "nv": 264,
+    "i0": 22794,
+    "ni": 264,
+    "tris": 88,
+    "from": 88,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "municipalBldg",
+   "name": "Municipal Building",
+   "kind": "tower",
+   "lmId": 40,
+   "mode": "replace",
+   "tile": "-6_15",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    -2734.4,
+    85.4,
+    7794.3
+   ],
+   "radius": 118.3,
+   "top": 167.4,
+   "l6": {
+    "origin": [
+     -2734.35,
+     3,
+     7794.33
+    ],
+    "v0": 23058,
+    "nv": 4116,
+    "i0": 23058,
+    "ni": 4116,
+    "tris": 1372,
+    "from": 1372,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "unSecretariat",
+   "name": "UN Secretariat",
+   "kind": "tower",
+   "lmId": 33,
+   "mode": "replace",
+   "tile": "0_7",
+   "bin": null,
+   "priority": 1,
+   "night": null,
+   "center": [
+    261.2,
+    82.4,
+    3797.6
+   ],
+   "radius": 94,
+   "top": 161.2,
+   "l6": {
+    "origin": [
+     261.22,
+     3,
+     3797.64
+    ],
+    "v0": 27174,
+    "nv": 144,
+    "i0": 27174,
+    "ni": 144,
+    "tris": 48,
+    "from": 48,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "seagram",
+   "name": "Seagram Building",
+   "kind": "tower",
+   "lmId": 54,
+   "mode": "replace",
+   "tile": "-1_5",
+   "bin": null,
+   "priority": 2,
+   "night": null,
+   "center": [
+    -67.8,
+    84.4,
+    2745.4
+   ],
+   "radius": 99.5,
+   "top": 165.4,
+   "l6": {
+    "origin": [
+     -67.81,
+     3,
+     2745.39
+    ],
+    "v0": 27318,
+    "nv": 1116,
+    "i0": 27318,
+    "ni": 1116,
+    "tris": 372,
+    "from": 372,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "oneTimesSquare",
+   "name": "One Times Square",
+   "kind": "tower",
+   "lmId": 57,
+   "mode": "replace",
+   "tile": "-3_5",
+   "bin": null,
+   "priority": 2,
+   "night": null,
+   "center": [
+    -1289.3,
+    55.2,
+    2986.9
+   ],
+   "radius": 54.6,
+   "top": 106.8,
+   "l6": {
+    "origin": [
+     -1289.32,
+     3,
+     2986.94
+    ],
+    "v0": 28434,
+    "nv": 672,
+    "i0": 28434,
+    "ni": 672,
+    "tris": 224,
+    "from": 224,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "flatiron",
+   "name": "Flatiron Building",
+   "kind": "building",
+   "lmId": 24,
+   "mode": "replace",
+   "tile": "-4_9",
+   "bin": null,
+   "priority": 2,
+   "night": null,
+   "center": [
+    -1558.6,
+    49.3,
+    4671.4
+   ],
+   "radius": 60,
+   "top": 95,
+   "l6": {
+    "origin": [
+     -1558.6,
+     3,
+     4671.43
+    ],
+    "v0": 29106,
+    "nv": 3744,
+    "i0": 29106,
+    "ni": 3744,
+    "tris": 1248,
+    "from": 1248,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "grandCentral",
+   "name": "Grand Central Terminal",
+   "kind": "building",
+   "lmId": 34,
+   "mode": "replace",
+   "tile": "-1_6",
+   "bin": null,
+   "priority": 2,
+   "night": null,
+   "center": [
+    -509,
+    23.9,
+    3375.4
+   ],
+   "radius": 82,
+   "top": 44.3,
+   "l6": {
+    "origin": [
+     -509.03,
+     3,
+     3375.42
+    ],
+    "v0": 32850,
+    "nv": 1176,
+    "i0": 32850,
+    "ni": 1176,
+    "tris": 392,
+    "from": 392,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "nypl",
+   "name": "NY Public Library",
+   "kind": "building",
+   "lmId": 35,
+   "mode": "replace",
+   "tile": "-2_6",
+   "bin": null,
+   "priority": 2,
+   "night": null,
+   "center": [
+    -926.5,
+    23,
+    3322.5
+   ],
+   "radius": 105.6,
+   "top": 42.6,
+   "l6": {
+    "origin": [
+     -926.53,
+     3,
+     3322.53
+    ],
+    "v0": 34026,
+    "nv": 5835,
+    "i0": 34026,
+    "ni": 5835,
+    "tris": 1945,
+    "from": 32370,
+    "how": "simplify",
+    "err": 0.00403
+   }
+  },
+  {
+   "key": "stPatricks",
+   "name": "St. Patrick's Cathedral",
+   "kind": "building",
+   "lmId": 36,
+   "mode": "replace",
+   "tile": "-1_5",
+   "bin": null,
+   "priority": 2,
+   "night": null,
+   "center": [
+    -413.4,
+    24.5,
+    2735
+   ],
+   "radius": 71.5,
+   "top": 45.5,
+   "l6": {
+    "origin": [
+     -413.43,
+     3,
+     2734.97
+    ],
+    "v0": 39861,
+    "nv": 876,
+    "i0": 39861,
+    "ni": 876,
+    "tris": 292,
+    "from": 292,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "stJohnDivine",
+   "name": "Cathedral of St. John the Divine",
+   "kind": "building",
+   "lmId": 6,
+   "mode": "replace",
+   "tile": "1_-5",
+   "bin": null,
+   "priority": 2,
+   "night": null,
+   "center": [
+    808,
+    24.8,
+    -2298.5
+   ],
+   "radius": 114,
+   "top": 46.1,
+   "l6": {
+    "origin": [
+     807.96,
+     3,
+     -2298.53
+    ],
+    "v0": 40737,
+    "nv": 792,
+    "i0": 40737,
+    "ni": 792,
+    "tris": 264,
+    "from": 264,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "riversideChurch",
+   "name": "Riverside Church",
+   "kind": "building",
+   "lmId": 4,
+   "mode": "replace",
+   "tile": "1_-7",
+   "bin": null,
+   "priority": 2,
+   "night": null,
+   "center": [
+    630.4,
+    41.2,
+    -3078.7
+   ],
+   "radius": 53.7,
+   "top": 78.9,
+   "l6": {
+    "origin": [
+     630.41,
+     3,
+     -3078.67
+    ],
+    "v0": 41529,
+    "nv": 480,
+    "i0": 41529,
+    "ni": 480,
+    "tris": 160,
+    "from": 160,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "lowLibrary",
+   "name": "Low Memorial Library",
+   "kind": "building",
+   "lmId": 1,
+   "mode": "replace",
+   "tile": "1_-6",
+   "bin": null,
+   "priority": 2,
+   "night": null,
+   "center": [
+    789.3,
+    29.8,
+    -2788.3
+   ],
+   "radius": 57.8,
+   "top": 51,
+   "l6": {
+    "origin": [
+     789.26,
+     8,
+     -2788.27
+    ],
+    "v0": 42009,
+    "nv": 6000,
+    "i0": 42009,
+    "ni": 6000,
+    "tris": 2000,
+    "from": 27784,
+    "how": "simplify",
+    "err": 0.00743
+   }
+  },
+  {
+   "key": "grantsTomb",
+   "name": "General Grant National Memorial",
+   "kind": "building",
+   "lmId": 5,
+   "mode": "replace",
+   "tile": "1_-7",
+   "bin": null,
+   "priority": 2,
+   "night": null,
+   "center": [
+    686.8,
+    27,
+    -3374.2
+   ],
+   "radius": 33.9,
+   "top": 50.5,
+   "l6": {
+    "origin": [
+     686.79,
+     3,
+     -3374.19
+    ],
+    "v0": 48009,
+    "nv": 2940,
+    "i0": 48009,
+    "ni": 2940,
+    "tris": 980,
+    "from": 980,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "apolloTheater",
+   "name": "Apollo Theater",
+   "kind": "building",
+   "lmId": 8,
+   "mode": "decorate",
+   "tile": "3_-6",
+   "bin": null,
+   "priority": 2,
+   "night": {
+    "marquee": "lit marquee and blade sign"
+   },
+   "center": [
+    1798.5,
+    13,
+    -3000.2
+   ],
+   "radius": 46.6,
+   "top": 23.6,
+   "l6": {
+    "origin": [
+     1798.52,
+     2,
+     -3000.23
+    ],
+    "v0": 50949,
+    "nv": 258,
+    "i0": 50949,
+    "ni": 258,
+    "tris": 86,
+    "from": 86,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "statueOfLiberty",
+   "name": "Statue of Liberty, pedestal and Fort Wood",
+   "kind": "monument",
+   "lmId": 67,
+   "mode": "replace",
+   "tile": "-13_20",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "liberty",
+   "night": {
+    "statue": "floodlit",
+    "torch": "gilded flame lit"
+   },
+   "center": [
+    -6181.4,
+    46,
+    10430.9
+   ],
+   "radius": 81.7,
+   "top": 90,
+   "l6": {
+    "origin": [
+     -6181.44,
+     2,
+     10430.87
+    ],
+    "v0": 51207,
+    "nv": 5994,
+    "i0": 51207,
+    "ni": 5994,
+    "tris": 1998,
+    "from": 3000,
+    "how": "simplify",
+    "err": 0.00173
+   }
+  },
+  {
+   "key": "rfk",
+   "name": "ROBERT F KENNEDY BRG",
+   "kind": "bridge",
+   "feature": "bridge:rfk",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": {
+    "cables": "necklace lamps",
+    "towers": "lanterns"
+   },
+   "center": [
+    3889.8,
+    54.2,
+    426.4
+   ],
+   "radius": 909,
+   "top": 106.2,
+   "l6": {
+    "origin": [
+     3889.78,
+     2,
+     426.41
+    ],
+    "v0": 57201,
+    "nv": 11994,
+    "i0": 57201,
+    "ni": 11994,
+    "tris": 3998,
+    "from": 34564,
+    "how": "simplify",
+    "err": 0.00057
+   }
+  },
+  {
+   "key": "manhattanBr",
+   "name": "MANHATTAN BRG",
+   "kind": "bridge",
+   "feature": "bridge:manhattanBr",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": {
+    "cables": "necklace lamps"
+   },
+   "center": [
+    -1650.5,
+    51.7,
+    8409.5
+   ],
+   "radius": 995.6,
+   "top": 106.4,
+   "l6": {
+    "origin": [
+     -1650.47,
+     -3,
+     8409.48
+    ],
+    "v0": 69195,
+    "nv": 8424,
+    "i0": 69195,
+    "ni": 8424,
+    "tris": 2808,
+    "from": 81052,
+    "how": "simplify",
+    "err": 0.00057
+   }
+  },
+  {
+   "key": "williamsburg",
+   "name": "WILLIAMSBURG BRG",
+   "kind": "bridge",
+   "feature": "bridge:williamsburg",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": {
+    "cables": "necklace lamps"
+   },
+   "center": [
+    -160.5,
+    49.6,
+    7693.1
+   ],
+   "radius": 1163,
+   "top": 102.2,
+   "l6": {
+    "origin": [
+     -160.45,
+     -3,
+     7693.14
+    ],
+    "v0": 77619,
+    "nv": 6081,
+    "i0": 77619,
+    "ni": 6081,
+    "tris": 2027,
+    "from": 83000,
+    "how": "simplify",
+    "err": 0.0005
+   }
+  },
+  {
+   "key": "henryHudson",
+   "name": "HENRY HUDSON BRG",
+   "kind": "bridge",
+   "feature": "bridge:henryHudson",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    4157.8,
+    24.7,
+    -10542.8
+   ],
+   "radius": 318.2,
+   "top": 53.1,
+   "l6": {
+    "origin": [
+     4157.77,
+     -4,
+     -10542.77
+    ],
+    "v0": 83700,
+    "nv": 11997,
+    "i0": 83700,
+    "ni": 11997,
+    "tris": 3999,
+    "from": 6148,
+    "how": "simplify",
+    "err": 0.00033
+   }
+  },
+  {
+   "key": "br145",
+   "name": "145 ST BRIDGE",
+   "kind": "bridge",
+   "feature": "bridge:br145",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    3258.2,
+    14.2,
+    -4045.7
+   ],
+   "radius": 168.8,
+   "top": 31.4,
+   "l6": {
+    "origin": [
+     3258.22,
+     -3,
+     -4045.72
+    ],
+    "v0": 95697,
+    "nv": 11997,
+    "i0": 95697,
+    "ni": 11997,
+    "tris": 3999,
+    "from": 4263,
+    "how": "simplify",
+    "err": 0
+   }
+  },
+  {
+   "key": "queensboro",
+   "name": "ED KOCH QUEENSBORO BRG",
+   "kind": "bridge",
+   "feature": "bridge:queensboro",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": {
+    "cables": "necklace lamps"
+   },
+   "center": [
+    1613.6,
+    48.7,
+    3035.2
+   ],
+   "radius": 1097.3,
+   "top": 95.2,
+   "l6": {
+    "origin": [
+     1613.58,
+     2,
+     3035.19
+    ],
+    "v0": 107694,
+    "nv": 9129,
+    "i0": 107694,
+    "ni": 9129,
+    "tris": 3043,
+    "from": 52044,
+    "how": "sloppy",
+    "err": 0.00489
+   }
+  },
+  {
+   "key": "hamiltonBr",
+   "name": "ALEXANDER HAMILTON BRG",
+   "kind": "bridge",
+   "feature": "bridge:hamiltonBr",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    3665.2,
+    18.6,
+    -6914.4
+   ],
+   "radius": 258.5,
+   "top": 36.5,
+   "l6": {
+    "origin": [
+     3665.24,
+     0,
+     -6914.36
+    ],
+    "v0": 116823,
+    "nv": 12000,
+    "i0": 116823,
+    "ni": 12000,
+    "tris": 4000,
+    "from": 4780,
+    "how": "simplify",
+    "err": 0.00003
+   }
+  },
+  {
+   "key": "gwb",
+   "name": "GEORGE WASHINGTON BRG",
+   "kind": "bridge",
+   "feature": "bridge:gwb",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": {
+    "cables": "necklace lamps",
+    "towers": "floodlit"
+   },
+   "center": [
+    1569.5,
+    60,
+    -7617.3
+   ],
+   "radius": 841.7,
+   "top": 186,
+   "l6": {
+    "origin": [
+     1569.49,
+     -66,
+     -7617.34
+    ],
+    "v0": 128823,
+    "nv": 11985,
+    "i0": 128823,
+    "ni": 11985,
+    "tris": 3995,
+    "from": 70904,
+    "how": "simplify",
+    "err": 0.00061
+   }
+  },
+  {
+   "key": "brooklyn",
+   "name": "BROOKLYN BRG",
+   "kind": "bridge",
+   "feature": "bridge:brooklyn",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": {
+    "cables": "necklace lamps"
+   },
+   "center": [
+    -2195.4,
+    41.5,
+    8595.6
+   ],
+   "radius": 1037,
+   "top": 85.9,
+   "l6": {
+    "origin": [
+     -2195.39,
+     -3,
+     8595.56
+    ],
+    "v0": 140808,
+    "nv": 11934,
+    "i0": 140808,
+    "ni": 11934,
+    "tris": 3978,
+    "from": 89426,
+    "how": "simplify",
+    "err": 0.00069
+   }
+  },
+  {
+   "key": "washingtonBr",
+   "name": "WASHINGTON BRG",
+   "kind": "bridge",
+   "feature": "bridge:washingtonBr",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    3690.2,
+    23.5,
+    -7040.3
+   ],
+   "radius": 359.6,
+   "top": 46,
+   "l6": {
+    "origin": [
+     3690.17,
+     1,
+     -7040.25
+    ],
+    "v0": 152742,
+    "nv": 11997,
+    "i0": 152742,
+    "ni": 11997,
+    "tris": 3999,
+    "from": 13136,
+    "how": "simplify",
+    "err": 0.00077
+   }
+  },
+  {
+   "key": "madisonAv",
+   "name": "MADISON AVE BRIDGE",
+   "kind": "bridge",
+   "feature": "bridge:madisonAv",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    3156.7,
+    15.5,
+    -3365.5
+   ],
+   "radius": 254.9,
+   "top": 33.9,
+   "l6": {
+    "origin": [
+     3156.74,
+     -3,
+     -3365.49
+    ],
+    "v0": 164739,
+    "nv": 11988,
+    "i0": 164739,
+    "ni": 11988,
+    "tris": 3996,
+    "from": 11931,
+    "how": "simplify",
+    "err": 0.00095
+   }
+  },
+  {
+   "key": "thirdAv",
+   "name": "3 AVE BRIDGE",
+   "kind": "bridge",
+   "feature": "bridge:thirdAv",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    3313.7,
+    14.4,
+    -2773
+   ],
+   "radius": 260.1,
+   "top": 31.9,
+   "l6": {
+    "origin": [
+     3313.65,
+     -3,
+     -2773.02
+    ],
+    "v0": 176727,
+    "nv": 11997,
+    "i0": 176727,
+    "ni": 11997,
+    "tris": 3999,
+    "from": 6208,
+    "how": "simplify",
+    "err": 0.00029
+   }
+  },
+  {
+   "key": "universityHts",
+   "name": "UNIVERSITY HEIGHTS BRG",
+   "kind": "bridge",
+   "feature": "bridge:universityHts",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    4712.9,
+    13.4,
+    -8872.7
+   ],
+   "radius": 180.7,
+   "top": 29.9,
+   "l6": {
+    "origin": [
+     4712.9,
+     -3,
+     -8872.73
+    ],
+    "v0": 188724,
+    "nv": 11997,
+    "i0": 188724,
+    "ni": 11997,
+    "tris": 3999,
+    "from": 4471,
+    "how": "simplify",
+    "err": 0.00002
+   }
+  },
+  {
+   "key": "macombs",
+   "name": "MACOMBS DAM BRG",
+   "kind": "bridge",
+   "feature": "bridge:macombs",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    3340.7,
+    17.7,
+    -5036.1
+   ],
+   "radius": 288,
+   "top": 38.4,
+   "l6": {
+    "origin": [
+     3340.75,
+     -3,
+     -5036.05
+    ],
+    "v0": 200721,
+    "nv": 11997,
+    "i0": 200721,
+    "ni": 11997,
+    "tris": 3999,
+    "from": 6859,
+    "how": "simplify",
+    "err": 0.0006
+   }
+  },
+  {
+   "key": "rooseveltBr",
+   "name": "ROOSEVELT IS BRG",
+   "kind": "bridge",
+   "feature": "bridge:rooseveltBr",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    2242.3,
+    23.5,
+    2239.1
+   ],
+   "radius": 215.3,
+   "top": 50.1,
+   "l6": {
+    "origin": [
+     2242.25,
+     -3,
+     2239.14
+    ],
+    "v0": 212718,
+    "nv": 12000,
+    "i0": 212718,
+    "ni": 12000,
+    "tris": 4000,
+    "from": 4746,
+    "how": "simplify",
+    "err": 0.00007
+   }
+  },
+  {
+   "key": "broadwayBr",
+   "name": "BROADWAY BRG",
+   "kind": "bridge",
+   "feature": "bridge:broadwayBr",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    5059.8,
+    30,
+    -10065.1
+   ],
+   "radius": 85.1,
+   "top": 63.1,
+   "l6": {
+    "origin": [
+     5059.78,
+     -3,
+     -10065.06
+    ],
+    "v0": 224718,
+    "nv": 6840,
+    "i0": 224718,
+    "ni": 6840,
+    "tris": 2280,
+    "from": 2280,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "willis",
+   "name": "WILLIS AVE BRIDGE",
+   "kind": "bridge",
+   "feature": "bridge:willis",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    3673.4,
+    16.2,
+    -2389.3
+   ],
+   "radius": 413.5,
+   "top": 35.4,
+   "l6": {
+    "origin": [
+     3673.39,
+     -3,
+     -2389.32
+    ],
+    "v0": 231558,
+    "nv": 11892,
+    "i0": 231558,
+    "ni": 11892,
+    "tris": 3964,
+    "from": 9124,
+    "how": "simplify",
+    "err": 0.00059
+   }
+  },
+  {
+   "key": "wardsFoot",
+   "name": "E 103 STREET FOOTBRIDGE",
+   "kind": "bridge",
+   "feature": "bridge:wardsFoot",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    2853.6,
+    20.6,
+    -323.1
+   ],
+   "radius": 193.7,
+   "top": 45.1,
+   "l6": {
+    "origin": [
+     2853.59,
+     -4,
+     -323.07
+    ],
+    "v0": 243450,
+    "nv": 12000,
+    "i0": 243450,
+    "ni": 12000,
+    "tris": 4000,
+    "from": 5628,
+    "how": "simplify",
+    "err": 0.00071
+   }
+  },
+  {
+   "key": "highBr",
+   "name": "HIGH BRG",
+   "kind": "bridge",
+   "feature": "bridge:highBr",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    3537.7,
+    17.3,
+    -6572.2
+   ],
+   "radius": 209.8,
+   "top": 37.5,
+   "l6": {
+    "origin": [
+     3537.67,
+     -3,
+     -6572.19
+    ],
+    "v0": 255450,
+    "nv": 6816,
+    "i0": 255450,
+    "ni": 6816,
+    "tris": 2272,
+    "from": 2272,
+    "how": "none",
+    "err": 0
+   }
+  },
+  {
+   "key": "hellgate",
+   "name": "CONRAIL-AMTRAK",
+   "kind": "bridge",
+   "feature": "bridge:hellgate",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": {
+    "towers": "floodlit"
+   },
+   "center": [
+    4606.7,
+    41.3,
+    -351.6
+   ],
+   "radius": 2252.9,
+   "top": 83.2,
+   "l6": {
+    "origin": [
+     4606.7,
+     -1,
+     -351.55
+    ],
+    "v0": 262266,
+    "nv": 11997,
+    "i0": 262266,
+    "ni": 11997,
+    "tris": 3999,
+    "from": 57616,
+    "how": "simplify",
+    "err": 0.00034
+   }
+  },
+  {
+   "key": "throgs",
+   "name": "THROGS NECK BRG",
+   "kind": "bridge",
+   "feature": "bridge:throgs",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": {
+    "cables": "necklace lamps"
+   },
+   "center": [
+    14926.9,
+    52.6,
+    -2111.8
+   ],
+   "radius": 1551.1,
+   "top": 109.2,
+   "l6": {
+    "origin": [
+     14926.86,
+     -4,
+     -2111.85
+    ],
+    "v0": 274263,
+    "nv": 7566,
+    "i0": 274263,
+    "ni": 7566,
+    "tris": 2522,
+    "from": 43376,
+    "how": "simplify",
+    "err": 0.00046
+   }
+  },
+  {
+   "key": "whitestone",
+   "name": "WHITESTONE BRG",
+   "kind": "bridge",
+   "feature": "bridge:whitestone",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": {
+    "cables": "necklace lamps"
+   },
+   "center": [
+    11815.3,
+    57.3,
+    -2326.7
+   ],
+   "radius": 1046.2,
+   "top": 118.7,
+   "l6": {
+    "origin": [
+     11815.31,
+     -4,
+     -2326.68
+    ],
+    "v0": 281829,
+    "nv": 11859,
+    "i0": 281829,
+    "ni": 11859,
+    "tris": 3953,
+    "from": 34752,
+    "how": "simplify",
+    "err": 0.00046
+   }
+  },
+  {
+   "key": "verrazzano",
+   "name": "VERRAZZANO BRG",
+   "kind": "bridge",
+   "feature": "bridge:verrazzano",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": {
+    "cables": "necklace lamps"
+   },
+   "center": [
+    -6245.6,
+    104.5,
+    19645.4
+   ],
+   "radius": 1162.4,
+   "top": 213,
+   "l6": {
+    "origin": [
+     -6245.56,
+     -4,
+     19645.45
+    ],
+    "v0": 293688,
+    "nv": 11493,
+    "i0": 293688,
+    "ni": 11493,
+    "tris": 3831,
+    "from": 88168,
+    "how": "simplify",
+    "err": 0.0004
+   }
+  },
+  {
+   "key": "outerbridge",
+   "name": "OUTERBRIDGE XING",
+   "kind": "bridge",
+   "feature": "bridge:outerbridge",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    -23626.3,
+    34.4,
+    28659.2
+   ],
+   "radius": 1504.9,
+   "top": 71.8,
+   "l6": {
+    "origin": [
+     -23626.34,
+     -3,
+     28659.24
+    ],
+    "v0": 305181,
+    "nv": 11976,
+    "i0": 305181,
+    "ni": 11976,
+    "tris": 3992,
+    "from": 33342,
+    "how": "simplify",
+    "err": 0.00042
+   }
+  },
+  {
+   "key": "bayonne",
+   "name": "BAYONNE BRG",
+   "kind": "bridge",
+   "feature": "bridge:bayonne",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    -14335.6,
+    46.3,
+    15627.6
+   ],
+   "radius": 1086.5,
+   "top": 99.8,
+   "l6": {
+    "origin": [
+     -14335.55,
+     -8,
+     15627.56
+    ],
+    "v0": 317157,
+    "nv": 12000,
+    "i0": 317157,
+    "ni": 12000,
+    "tris": 4000,
+    "from": 15680,
+    "how": "simplify",
+    "err": 0.0004
+   }
+  },
+  {
+   "key": "goethals",
+   "name": "GOETHALS BRG",
+   "kind": "bridge",
+   "feature": "bridge:goethals",
+   "bin": null,
+   "priority": 1,
+   "drawnBy": "bridgeKit",
+   "night": null,
+   "center": [
+    -19002.8,
+    40,
+    16392.6
+   ],
+   "radius": 1142.4,
+   "top": 83,
+   "l6": {
+    "origin": [
+     -19002.79,
+     -3,
+     16392.63
+    ],
+    "v0": 329157,
+    "nv": 11787,
+    "i0": 329157,
+    "ni": 11787,
+    "tris": 3929,
+    "from": 42808,
+    "how": "simplify",
+    "err": 0.0005
+   }
+  }
+ ]
+}

@@ -1,6 +1,5 @@
 // AR33 sk: wear on the compiled markings. The crosswalk bars and stop lines (tile.S.paintW, drawn by the ground shader 24 mm
 // over the asphalt) are pristine white; on 125th Street they are worn through to the asphalt in the wheel paths, cracked and
-// chipped at the ends. Each bar gets a few
 // irregular blotches of asphalt over it, clipped to the bar, most of them on the bars a wheel path crosses. Placed by rule
 // (hashes), not traced from a photograph. Pure (no three): docs/notes/ar33-street.md.
 import { hash2, clipHalf } from './skGeom.js';
@@ -36,7 +35,7 @@ export function paintPieces(tile, ox, oz, sec = 'paintW', inZone = null) {
   return out;
 }
 
-// bars: pieces 0.3-0.75 m wide and 2-10 m long
+// bars: pieces 0.3-0.75 m wide and 2-10 m long (crosswalk bars 0.46 x 4.6 / 7.6 m and stop lines 0.61 m wide on the compiled
 export function buildWear(pieces, getBuf, seed = 11) {
   let n = 0;
   for (const p of pieces) {
@@ -84,8 +83,6 @@ export function buildWear(pieces, getBuf, seed = 11) {
 // crosswalk's width), bar width and pitch across the street, kerb to kerb; the stop lines `stop` m before each edge, 0.61 m
 // wide, across the approach half (traffic keeps right: eastbound on the south half stops on the west side).
 export const MARKS = [
-  // the State Office Building's mid-block crossing between Adam Clayton Powell and Lenox:
-  // 14 bars at 0.927 m pitch, bars 66 px = 9.4 m long, stop lines 4.6 m out;
   // its centre 11 px (1.6 m) WNW of the shot's centre (40.808375 N, 73.946894 W read off the shot, taken as its centre);
   // The compiled ground has the bus lanes running through and no crosswalk here.
   { kind: 'xwalk', x: 2047.0, z: -2808.2, ux: 0.8740, uz: 0.4859, len: 9.4, barW: 0.46, pitch: 0.927, stop: 4.6, bars: 14, padW: 9.4 },
@@ -172,7 +169,6 @@ export function buildMarks(field, tile, ox, oz, getBuf, inTile, padsOut = null) 
 const buf_fan = (buf, ids) => buf.fan(ids);
 
 // ---- the crosswalks' ends: where the compiled bars of a crossing meet a sidewalk. Every crossing on 125th Street ends at a
-// ramp with a detectable warning surface, but the
 // compiled ground has pads at only some of them (warn / warnIron). Returns the spots that have none within 2.5 m: { x, z, y,
 // w, d, ux, uz, kind } in the shape of skBuild.padCentres (the pad's long side along the kerb, just behind the kerb top).
 export function crossingEnds(pieces, field, have) {

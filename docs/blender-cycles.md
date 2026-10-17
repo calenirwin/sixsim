@@ -19,7 +19,7 @@ share the export.
 
 | Item | Requirement |
 |---|---|
-| Source checkout | the client installed with its tiles, models and textures: option B of the [quick start](quickstart.md), including Playwright's Chromium (`npx playwright install chromium`) |
+| Source checkout | the client installed with its tiles, models and textures: option B of the [quick start](quickstart.md), including Playwright's Chromium (`npx playwright install chromium`), and the packages of the asset tools, which the harvest uses to write its textures: `(cd tools/assets && npm install)` |
 | Blender | 4.5 LTS (tested with 4.5.14) |
 | Python | 3.8 or later and [uv](https://docs.astral.sh/uv/), which fetches the USD library for the writer |
 | GPU | an NVIDIA RTX GPU for OptiX; a 2560 × 1440 frame needed 12 to 17 GB of GPU memory and up to 31 GB of RAM. Other GPUs and CPUs work with `--cpu`, much more slowly |
@@ -66,7 +66,7 @@ small ornamentals and ginkgo) in up to three sizes (young, mature, large) with u
 branches to the twigs, leaves cut from CC0 scans and 62K to 1.37M triangles a tree. With the window rooms the download is 220 files, about 2.2 GB:
 
 ```bash
-hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.3.1 \
+hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.4.0 \
     --include "Blender/bxtrees2/*" --include "Blender/bxwin/*" --local-dir .cache/hf
 export BXTREES_ASSETS=$PWD/.cache/hf/Blender/bxtrees2
 export BXTREES2_TEX=$BXTREES_ASSETS/tex

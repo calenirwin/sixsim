@@ -48,12 +48,11 @@ export function mvvArchSkip(x, z) {
 export const COLUMBIA = [
   { name: 'Henry R. Kravis Hall', osm: 1025959314, c: [984.2, -3905.6], area: 2360, h: 38.4, floors: 11, fins: 1.5,
     ring: [[952.8, -3890.0], [989.3, -3870.7], [1016.2, -3921.3], [979.7, -3940.5]] },
-  // AR34 w2 s2: lot162_23 and forum26nw (lS4mMvx 2026-08) show Geffen Hall as continuous light
   // grey slab bands (~0.7 m) with glass between and fine mullions, no vertical fins (the 3 m fin grid read as a box of
   // windows): `band` / `bandD` the bands' height and depth, `mullion` a fine pitch in place of `fins`. The bands' kinks and
   // the offset floors are not drawn (not measured). The height: lot162_23's top row (70 of 900, 26 deg up through the pair's
   // lens) at the ring's nearest corner (111 m) is ~56 m over the street, the bands' rows 45-55 px apart (~5 m there), each
-  // ~1.2 m tall: `hReal` 51 m in 10 floors over the compiled 28.2 m;
+  // ~1.2 m tall: `hReal` 51 m in 10 floors over the compiled 28.2 m (a construction-time height, as Kravis Hall's 38.4 m
   { name: 'David Geffen Hall', osm: 1025959316, c: [1091.3, -3847.1], area: 2583, h: 28.2, hReal: 51.0, floors: 10, fins: 3.0, band: 1.15, bandD: 0.6, mullion: 1.5, blinds: 0.06,
     ring: [[1086.3, -3883.7], [1125.1, -3862.0], [1096.8, -3811.0], [1058.4, -3831.4]] },
   { name: 'The Forum', osm: 664903766, c: [1066.9, -3700.5], area: 1608, h: 18.3, floors: 3, fins: 3.0,
@@ -62,21 +61,18 @@ export const COLUMBIA = [
 // the Cotton Club, 656 W 125th St (OSM way 271923842, 6.4 m): its W 125th St front runs (916.8, -3844.0) -> (931.3, -3822.7)
 export const COTTON = { a: [916.8, -3844.0], b: [931.3, -3822.7], c: [920.0, -3832.5] };
 
-// shows it: green painted plywood at the back of the
 // sidewalk, 2.74 m (the gate run 3.26 m), two diamond viewing panels, white concrete barriers with orange stripes in
 // front. The line: the surface probe (client/shots/ar34/west/b3_off/log.txt `eval:` line: the sidewalk ends 11-12 m
 // out on the view's h45 ray, then no surface) along the corridor (unit (0.567, 0.824), ar33-corridor.json); heights and
-// extents rows and columns at that line (t from o along d, metres): fence -5..16, gate 0.6-8.5, barriers
 // -9..16, diamonds at -0.7 and 9.3 (1.39 m up). `?w33fence=0`: left out.
-// barriers unbroken from the viaduct end to past t 111: its base projects onto this line within a few
-// pixels at t 90-110 through that pair's lens; a second, taller gate run at t 96.5-101, diamonds at 104.5 and 110.5 there; the others every ~11 m between (not measured); the east end at t 116
+// 'E5' plate), diamonds at 104.5 and 110.5 there; the others every ~11 m between (not measured); the east end at t 116
 export const FENCE23 = {
   on: !(Q && Q.get('w33fence') === '0'), o: [938.8, -3867.05], d: [0.567, 0.824], n: [-0.824, 0.567],
   t0: -5, t1: 116, b0: -9, b1: 117, gates: [[0.6, 8.5], [96.5, 101.0]], h: 2.74, hg: 3.26,
   diamonds: [-0.7, 9.3, 20.5, 31.5, 42.5, 53.5, 64.5, 75.5, 86.5, 104.5, 110.5], dy: 1.39,
 };
 // AR34 w2 s3 (FILM's t7ArchCrane review, 2026-10-02): the plaza under the Riverside Drive viaduct between Twelfth Avenue and
-// the viaduct's roadway has a diagonal band of grey granite setts across its light paving; the compiled tile 1_-8 has no section there (terrain only,
+// w33_dino_se_DP0wlPav 2022-03, w33_a12_22b_xHR4YEJ7 2022-03); the compiled tile 1_-8 has no section there (terrain only,
 // 0.28 m under the plaza's paving at 3.52: a sunken strip). Rows [z, x0, x1] of the terrain-only cells (0.25 m samples of
 // the tile's sections, every second row kept), widened 0.3 m so the fill runs under the paving round it; the fill is laid
 // at the paving's height (y). `?w33setts=0` leaves it out.

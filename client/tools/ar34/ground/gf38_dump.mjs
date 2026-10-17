@@ -10,18 +10,23 @@ const { parseTile, buildingsOf, roadsOf } = await import(B + '/src/world/tiledat
 const A = await import(B + '/src/city/areas.js');
 const C = await import(B + '/src/city/centralPark.js');
 const ST = await import(B + '/src/city/stations/subEnt38.js');
+const { tileContentKey } = await import(B + '/src/shared/overlay.js');
 await A.areasReady;
 const out = process.argv[2]; let keys = process.argv.slice(3);
-const man = JSON.parse(fs.readFileSync(B + '/public/tiles/manifest.json', 'utf8'));
+// OV39: TILES_DIR dumps another compiled set (a staging compile; compile.mjs bakes a set's own overlays this way)
+const TD = process.env.TILES_DIR ? path.resolve(process.env.TILES_DIR) : B + '/public/tiles';
+fs.mkdirSync(out, { recursive: true });
+const man = JSON.parse(fs.readFileSync(TD + '/manifest.json', 'utf8'));
 if (!keys.length) for (let tx = 0; tx <= 8; tx++) for (let tz = -10; tz <= -2; tz++) if (man.tiles[`${tx}_${tz}`]) keys.push(`${tx}_${tz}`);
 for (const key of keys) {
-  const buf = fs.readFileSync(B + '/public/tiles/' + man.tiles[key].f);
+  const buf = fs.readFileSync(TD + '/' + man.tiles[key].f);
   const tile = parseTile(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+  const ckey = tileContentKey(tile);   // OV39: before any pass below changes the sections
   const [ox, oz] = tile.header.origin;
   if (C.cpTileHit(ox, oz)) C.cpApply(tile, ox, oz);
   if (A.areaTileHit(ox, oz)) A.areaApply(tile, ox, oz);
   ST.st38GapFill(tile);
-  const parts = [], hdr = { key, ox, oz, res: tile.header.res, kinds: {}, holes: tile.st38Holes || [] };
+  const parts = [], hdr = { key, ckey, ox, oz, res: tile.header.res, kinds: {}, holes: tile.st38Holes || [] };
   let off = 0;
   const push = (name, arr) => { const f = Float32Array.from(arr); hdr.kinds[name] = [off, f.length]; parts.push(f); off += f.length; };
   for (const [name, a] of Object.entries(tile.S)) {

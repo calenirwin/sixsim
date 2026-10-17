@@ -72,6 +72,11 @@ for Traffic Control Devices (Series C) glyph outlines, extracted from the offici
 - **Alma Mater photogrammetry scan** by M. K. Turkcan (<https://doi.org/10.5281/zenodo.10312053>), **CC BY 4.0**:
   `client/public/models/landmarks/alma_mater.glb`, the statue on the Low Library steps (Daniel Chester French,
   1903), cut to the bronze, its throne and the stone die and simplified by `tools/assets/alma_mater.mjs`.
+- **"Statue Of Liberty Bronze Model"** by jerryfisher (Sketchfab, obtained via Objaverse 1.0), **CC BY 4.0**, a
+  photogrammetry scan of a 19th-century bronze model of the statue: `client/public/models/landmarks/liberty_statue_l0.glb`
+  to `_l3.glb`, scaled and fitted to the Historic American Engineering Record's drawings (HAER NY-138, 44.93 m from the
+  statue's base to the flame), the scan's base removed, retextured and decimated by `tools/assets/liberty_bake.py` and
+  `tools/assets/liberty_statue.mjs`; the changes are listed in `NOTICE_liberty.md` beside the models.
 - **100STYLE** locomotion dataset: I. Mason, S. Starke and T. Komura, *Real-Time Style Modelling of Human Locomotion
   via Feature-Wise Transformations and Local Motion Phases*, 2022, Zenodo record 8127870. **CC BY 4.0.** Sixteen
   styles (walk and idle) and four further walks are retargeted onto the pedestrian skeleton

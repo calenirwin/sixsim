@@ -23,6 +23,11 @@ import * as THREE from 'three';
 import { ENV, applyLightTrim, applyCityAO, applyStoneDetail, applySkyGlass } from '../world/materials.js';
 import { BP_TREES_DM } from './bryantParkData.js';
 import { COLLIDERS } from './colliders.js';
+import { lampSpots } from '../world/life.js';   // BPL9: the park's lamps light the walks (world/cityLamps.js)
+
+// BPL9 (UE track, 2026-10-08): the park's own lamp posts join the city's lamps (their light on the walks at dusk and night,
+// and the harvest's lamp list for the renderers); `?bpl9=0` leaves them as glowing globes only
+const BPL9 = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('bpl9') === '0');
 
 // Walker obstacles (the lead's sim/peds.js reads the 'kit31' key, like the campus kit's): every solid piece a walker
 // should go round, as boxes collected in the park frame on the first build and registered once per page (the tile's own
@@ -714,6 +719,175 @@ function fountainLobes(B, y0) {
     Mm.add(tpl('lobeWater', () => new THREE.CircleGeometry(1, 20).rotateX(-Math.PI / 2)), { u, y: y0 + 0.33, v, sx: 0.76, sz: 0.76 }, K(0x2e3a37));
   }
 }
+// LOOK14 (owner 2026-10-09: "the small circular parts are protruding into the main fountain. Please make sure the quality
+// matches the real fountain"): the Josephine Shaw Lowell fountain (Charles A. Platt, 1912) to the photographs and the
+// orthoimagery. The basin: 32 ft across, its rim a circle with four CONCAVE notches on the park's diagonals; the coping
+// wraps round each notch (bulging into the pool there, meeting the circle in a sharp outside corner) and stands on a broad
+// low base step; a white stone urn planter stands in each notch on the step (OSM's "four small round basins"). The
+// pedestal in the pool: a square plinth with corner ears and concave sides, a lower die with flared concave faces and
+// S-scroll consoles with masks on the diagonals, a cornice, an upper die with small corner scrolls and garland swags, a
+// fluted round collar, and the 13 ft bowl (a quarter-ellipse underside, a thick rounded lip) about 3 m over the plaza.
+// Geometry here (the fountain's local frame: y 0 the plaza, +z along u, +x along v, so the diagonals are the park's);
+// materials and water in city/campus.js lowellFountain(); bryantPark.js places it. `?lk14=0` restores the campus tazza
+// and the cylinders.
+export const LK14 = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('lk14') === '0');
+export const LOWELL = {
+  Ro: 5.3, w: 0.5, dN: 5.6, rho: 0.7,          // the coping's outer face, its width, the notches' centres and radius
+  step: 0.35, stepH: 0.1, rimH: 0.48, wl: 0.3,  // the base step's projection and height, the coping's top, the water
+  lipR: 2.0, lipY: 3.055, bowlY: 3.035, bowlR: 1.9, plinth: 1.78, landR: 2.25,
+};
+// the basin's outline at offset t (outward, m) from the coping's outer face: the circle Ro + t less the four notch discs
+// of radius rho - t centred dN out on the diagonals, as [x, z] by increasing polar angle; the corner points are doubled
+// (a notch arc's end and the circle arc's start) so a sweep keeps them sharp
+export function lowellRing(t, nArc = 36, nNotch = 16) {
+  const L = LOWELL, A = L.Ro + t, Bn = L.rho - t, d = L.dN, out = [];
+  const al = Math.acos(Math.max(-1, Math.min(1, (A * A + d * d - Bn * Bn) / (2 * A * d))));
+  const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+  for (let k = 0; k < 4; k++) {
+    const th = Math.PI / 4 + (k * Math.PI) / 2, cx = d * Math.cos(th), cz = d * Math.sin(th);
+    const f1 = Math.atan2(A * Math.sin(th - al) - cz, A * Math.cos(th - al) - cx), f2 = Math.atan2(A * Math.sin(th + al) - cz, A * Math.cos(th + al) - cx);
+    const fm = th + Math.PI, sweep = wrap(fm - f1) + wrap(f2 - fm);
+    for (let i = 0; i <= nNotch; i++) { const f = f1 + (sweep * i) / nNotch; out.push([cx + Bn * Math.cos(f), cz + Bn * Math.sin(f)]); }
+    const a0 = th + al, a1 = th + Math.PI / 2 - al;
+    for (let i = 0; i <= nArc; i++) { const a = a0 + ((a1 - a0) * i) / nArc; out.push([A * Math.cos(a), A * Math.sin(a)]); }
+  }
+  return out;
+}
+// rings of [x, y, z] (same length, ordered by increasing polar angle, bottom to top / outside in) -> a mesh facing out
+function lkSweep(rings, uvs = 1.5) {
+  const n = rings[0].length, m = rings.length, P = new Float32Array(n * m * 3), UV = new Float32Array(n * m * 2), I = [];
+  const su = [0]; for (let i = 1; i < n; i++) su.push(su[i - 1] + Math.hypot(rings[0][i][0] - rings[0][i - 1][0], rings[0][i][2] - rings[0][i - 1][2]));
+  let sv = 0;
+  for (let j = 0; j < m; j++) {
+    if (j) { const a = rings[j][0], b = rings[j - 1][0]; sv += Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]); }
+    for (let i = 0; i < n; i++) { const k = j * n + i, p = rings[j][i]; P.set(p, k * 3); UV[k * 2] = su[i] / uvs; UV[k * 2 + 1] = sv / uvs; }
+  }
+  for (let j = 0; j + 1 < m; j++) for (let i = 0; i + 1 < n; i++) {
+    const a = j * n + i, b = a + 1, c = a + n + 1, d = a + n;
+    I.push(a, c, b, a, d, c);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.BufferAttribute(UV, 2)); g.setIndex(I);
+  g.computeVertexNormals();
+  return g;
+}
+// a square loft with chamfered corners: profile [[half-width, y], ...] bottom to top; each of the eight faces its own strip
+function lkSqLoft(prof, ch) {
+  const rings = prof.map(([h, y]) => {
+    const c = Math.min(ch, h * 0.45), q = [[h, -h + c], [h, h - c], [h - c, h], [-h + c, h], [-h, h - c], [-h, -h + c], [-h + c, -h], [h - c, -h]], r = [];
+    for (let k = 0; k < 8; k++) { const p0 = q[k], p1 = q[(k + 1) % 8]; r.push([p0[0], y, p0[1]], [p1[0], y, p1[1]]); }
+    return r;
+  });
+  return lkSweep(rings, 1.2);
+}
+// a flat top at y over [[x, z], ...] (holes optional), facing up
+function lkFlat(pts, y, holes = []) {
+  const dedup = (a) => { const b = a.filter((p, i) => i === 0 || Math.hypot(p[0] - a[i - 1][0], p[1] - a[i - 1][1]) > 1e-5); if (b.length > 2 && Math.hypot(b[0][0] - b[b.length - 1][0], b[0][1] - b[b.length - 1][1]) < 1e-5) b.pop(); return b; };
+  const S = new THREE.Shape(dedup(pts).map(([x, z]) => new THREE.Vector2(x, -z)));
+  for (const h of holes) S.holes.push(new THREE.Path(dedup(h).map(([x, z]) => new THREE.Vector2(x, -z))));
+  return new THREE.ShapeGeometry(S, 1).rotateX(-Math.PI / 2).translate(0, y, 0);
+}
+// a console: its side silhouette [[s, y], ...] (s out along the diagonal at angle phi from the attachment at distance r0),
+// extruded th thick across it, with volute eyes [[s, y, r], ...] and a mask boss [s, y, r]
+function lkConsole(sil, th, phi, r0, eyes, mask) {
+  const S = new THREE.Shape(sil.map(([s, y]) => new THREE.Vector2(s, y)));
+  const parts = [new THREE.ExtrudeGeometry(S, { depth: th - 0.04, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelOffset: -0.02, bevelSegments: 2, curveSegments: 6 }).translate(0, 0, -(th - 0.04) / 2)];
+  for (const [s, y, r] of eyes) parts.push(new THREE.CylinderGeometry(r, r, th + 0.05, 18, 1).rotateX(Math.PI / 2).translate(s, y, 0));
+  if (mask) parts.push(new THREE.SphereGeometry(mask[2], 12, 8).scale(0.75, 1.15, 1).translate(mask[0], mask[1], 0));
+  const c = Math.cos(phi), s_ = Math.sin(phi);
+  const M4 = new THREE.Matrix4().makeBasis(new THREE.Vector3(c, 0, s_), new THREE.Vector3(0, 1, 0), new THREE.Vector3(-s_, 0, c)).setPosition(r0 * c, 0, r0 * s_);
+  return parts.map((g) => g.applyMatrix4(M4));
+}
+// concatenate geometries (position, normal, uv) into one non-indexed geometry
+function lkMerge(gs) {
+  const ng = gs.map((g) => { const h = g.index ? g.toNonIndexed() : g; if (!h.attributes.normal) h.computeVertexNormals(); return h; });
+  let n = 0; for (const g of ng) n += g.attributes.position.count;
+  const P = new Float32Array(n * 3), N = new Float32Array(n * 3), U = new Float32Array(n * 2);
+  let o = 0;
+  for (const g of ng) {
+    const c = g.attributes.position.count;
+    P.set(g.attributes.position.array.subarray(0, c * 3), o * 3); N.set(g.attributes.normal.array.subarray(0, c * 3), o * 3);
+    if (g.attributes.uv) U.set(g.attributes.uv.array.subarray(0, c * 2), o * 2);
+    o += c;
+  }
+  const m = new THREE.BufferGeometry();
+  m.setAttribute('position', new THREE.BufferAttribute(P, 3)); m.setAttribute('normal', new THREE.BufferAttribute(N, 3)); m.setAttribute('uv', new THREE.BufferAttribute(U, 2));
+  return m;
+}
+// the stone, in two merged geometries: `dry` the basin (the step, the coping round the notches), `wet` the pedestal and
+// the bowl (polished, wetted by the overflow)
+export function lowellStone() {
+  const L = LOWELL, wl = L.wl, dry = [], wet = [];
+  // the base step: a flat ring from the coping's foot out to Ro + step, its outer edge eased
+  const ro = L.Ro + L.step;
+  dry.push(new THREE.LatheGeometry([[ro, 0], [ro, L.stepH - 0.018], [ro - 0.018, L.stepH]].map(([r, y]) => new THREE.Vector2(r, y)), 160));
+  const outer = []; for (let i = 0; i < 160; i++) { const a = (i / 160) * Math.PI * 2; outer.push([(ro - 0.018) * Math.cos(a), (ro - 0.018) * Math.sin(a)]); }
+  dry.push(lkFlat(outer, L.stepH, [lowellRing(0)]));
+  // the coping, swept round the notched outline: the outer face on the step, a bold rounded nosing, the broad top, the
+  // inner arris, the inner face down under the water (doubled points crease the face's foot and the top's edges)
+  const prof = [[0, L.stepH], [0, L.stepH], [0, 0.31], [0.022, 0.325], [0.042, 0.35], [0.05, 0.385], [0.044, 0.42], [0.022, 0.45], [-0.02, 0.47],
+    [-0.09, L.rimH], [-0.40, L.rimH], [-0.46, L.rimH - 0.006], [-0.49, L.rimH - 0.025], [-0.5, L.rimH - 0.05], [-0.5, wl - 0.15]];
+  dry.push(lkSweep(prof.map(([t, y]) => lowellRing(t).map(([x, z]) => [x, y, z]))));
+  // the plinth in the pool: a square with corner ears and concave sides between them
+  const P = L.plinth, e = 0.5, rec = 0.22, y0 = wl - 0.35, y1 = 0.5;
+  const sh = new THREE.Shape();
+  const sp = (x, z) => new THREE.Vector2(x, -z);
+  sh.moveTo(...sp(P, -P).toArray());
+  sh.lineTo(...sp(P, -P + e).toArray()); sh.quadraticCurveTo(...sp(P - 2 * rec, 0).toArray(), ...sp(P, P - e).toArray()); sh.lineTo(...sp(P, P).toArray());
+  sh.lineTo(...sp(P - e, P).toArray()); sh.quadraticCurveTo(...sp(0, P - 2 * rec).toArray(), ...sp(-P + e, P).toArray()); sh.lineTo(...sp(-P, P).toArray());
+  sh.lineTo(...sp(-P, P - e).toArray()); sh.quadraticCurveTo(...sp(-P + 2 * rec, 0).toArray(), ...sp(-P, -P + e).toArray()); sh.lineTo(...sp(-P, -P).toArray());
+  sh.lineTo(...sp(-P + e, -P).toArray()); sh.quadraticCurveTo(...sp(0, -P + 2 * rec).toArray(), ...sp(P - e, -P).toArray()); sh.lineTo(...sp(P, -P).toArray());
+  const bt = 0.03;
+  wet.push(new THREE.ExtrudeGeometry(sh, { depth: y1 - y0 - 2 * bt, bevelEnabled: true, bevelThickness: bt, bevelSize: bt, bevelOffset: -bt, bevelSegments: 2, curveSegments: 10 }).rotateX(-Math.PI / 2).translate(0, y0 + bt, 0));
+  // the lower die: flared concave faces up to a plain band, then the cornice
+  wet.push(lkSqLoft([[1.4, 0.5], [1.4, 0.55], [1.32, 0.58], [1.22, 0.63], [1.14, 0.7], [1.09, 0.78], [1.07, 0.88], [1.07, 1.18], [1.07, 1.18], [1.1, 1.2], [1.1, 1.24]], 0.2));
+  wet.push(lkSqLoft([[1.1, 1.24], [1.18, 1.25], [1.24, 1.28], [1.28, 1.31], [1.3, 1.34], [1.3, 1.37], [1.3, 1.37], [0.6, 1.37]], 0.1));
+  // the die's panels: a moulded frame on each face
+  for (let k = 0; k < 4; k++) {
+    const M4 = new THREE.Matrix4().makeRotationY((k * Math.PI) / 2);
+    for (const [w, h, yy, off] of [[1.3, 0.045, 0.9, 0], [1.3, 0.045, 1.14, 0], [0.045, 0.24, 1.02, 0.63], [0.045, 0.24, 1.02, -0.63]]) wet.push(new THREE.BoxGeometry(0.04, h, w).translate(1.08, yy, off).applyMatrix4(M4));
+  }
+  // the upper die with its base and top mouldings and the slab under the collar
+  wet.push(lkSqLoft([[0.74, 1.37], [0.74, 1.4], [0.68, 1.42], [0.65, 1.44], [0.65, 1.66], [0.65, 1.66], [0.69, 1.68], [0.73, 1.71], [0.77, 1.72], [0.77, 1.76], [0.77, 1.76], [0.5, 1.76]], 0.1));
+  // garland swags on the upper die's faces
+  for (let k = 0; k < 4; k++) {
+    const g = new THREE.TorusGeometry(0.24, 0.03, 6, 18, Math.PI).rotateZ(Math.PI).scale(1, 0.45, 1).translate(0, 1.62, 0).rotateY(Math.PI / 2).translate(0.665, 0, 0);
+    wet.push(g.applyMatrix4(new THREE.Matrix4().makeRotationY((k * Math.PI) / 2)));
+  }
+  // the consoles on the diagonals: the big S-scrolls with masks on the lower die, the small scrolls on the upper die
+  for (let k = 0; k < 4; k++) {
+    const phi = Math.PI / 4 + (k * Math.PI) / 2;
+    // (LOOK14b, the Lead 22:35: the plinth's bare corners read as dark blocks at the curtain's foot; in the photographs the
+    // big volutes sit out on those corners and the upper scrolls reach the cornice's corners)
+    wet.push(...lkConsole([[-0.15, 0.5], [0.92, 0.5], [0.98, 0.58], [0.98, 0.7], [0.92, 0.79], [0.78, 0.82], [0.6, 0.85], [0.42, 0.9], [0.28, 1.0], [0.2, 1.1], [0.2, 1.17], [0.24, 1.2], [0.24, 1.24], [-0.15, 1.24]],
+      0.42, phi, 1.36, [[0.82, 0.66, 0.15], [0.19, 1.16, 0.07]], [0.33, 0.95, 0.12]));
+    wet.push(...lkConsole([[-0.12, 1.37], [0.66, 1.37], [0.72, 1.42], [0.72, 1.5], [0.66, 1.55], [0.54, 1.57], [0.38, 1.6], [0.24, 1.65], [0.16, 1.7], [-0.12, 1.72]],
+      0.3, phi, 0.82, [[0.6, 1.46, 0.09]], [0.3, 1.6, 0.075]));
+  }
+  // the fluted collar (24 flutes on its flaring middle), the band and torus under the bowl
+  const col = new THREE.LatheGeometry([[0.5, 1.76], [0.52, 1.79], [0.5, 1.82], [0.51, 1.9], [0.53, 1.98], [0.57, 2.06], [0.62, 2.13], [0.66, 2.17], [0.7, 2.19],
+    [0.7, 2.23], [0.66, 2.25], [0.62, 2.26], [0.62, 2.31]].map(([r, y]) => new THREE.Vector2(r, y)), 96);
+  const cp = col.attributes.position;
+  for (let i = 0; i < cp.count; i++) {
+    const y = cp.getY(i); if (y < 1.83 || y > 2.17) continue;
+    const x = cp.getX(i), z = cp.getZ(i), a = Math.atan2(z, x), f = 1 - 0.04 * Math.pow(0.5 + 0.5 * Math.cos(24 * a), 2) * Math.sin((Math.PI * (y - 1.83)) / 0.34);
+    cp.setX(i, x * f); cp.setZ(i, z * f);
+  }
+  col.computeVertexNormals();
+  wet.push(col);
+  // the bowl: a quarter-ellipse underside from the band to the lip, the thick rounded lip, the shallow inside
+  const bowl = [];
+  for (let i = 0; i <= 14; i++) { const s = (i / 14) * (Math.PI / 2); bowl.push([0.62 + 1.38 * Math.sin(s), 3.0 - 0.69 * Math.cos(s)]); }
+  bowl.push([2.012, 3.02], [2.006, 3.04], [1.99, 3.052], [1.965, L.lipY], [1.935, 3.05], [1.915, 3.035], [1.9, 3.015], [1.84, 2.985], [1.6, 2.955], [1.2, 2.935], [0.6, 2.925], [0, 2.92]);
+  wet.push(new THREE.LatheGeometry(bowl.map(([r, y]) => new THREE.Vector2(r, y)), 112));
+  return { dry: lkMerge(dry), wet: lkMerge(wet) };
+}
+// the four urn planters standing in the rim's notches on the base step (white stone, a boxwood cone)
+function lowellPlanters(B, y0) {
+  const L = LOWELL, F = FOUNT31, r = L.dN / Math.SQRT2;
+  for (const [su, sv] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) urnPlanter(B, F[0] + su * r, F[1] + sv * r, y0 + L.stepH, 0.92);
+}
+// LOOK14 end
 // the Upper Terrace's raised decks, their faces, the broad stair, the north flight, the steps up to the memorial court
 // and the cafe's deck, the balustrade round the drops
 function terrace(B) {
@@ -1263,8 +1437,13 @@ export function bp31Build(group, y, F) {
   const r = rng(4417);
   const first = !_collDone;
   if (first) COLL = [];
-  collRound(FOUNT31[0], FOUNT31[1], 5.2, FPLAZA.h, 2.3);
-  for (const [u, v] of [[33.4, 67.0], [25.9, 66.2], [25.6, 74.5], [32.9, 74.9]]) coll(u, v, 0.95, 0.95, FPLAZA.h, 0.5);
+  // LOOK14: the Lowell basin with its base step (Ro + step = 5.65 m); its urn planters register their own boxes
+  if (LK14) collRound(FOUNT31[0], FOUNT31[1], LOWELL.Ro + LOWELL.step + 0.05, FPLAZA.h, 3.1);
+  else {
+    collRound(FOUNT31[0], FOUNT31[1], 5.2, FPLAZA.h, 2.3);
+    for (const [u, v] of [[33.4, 67.0], [25.9, 66.2], [25.6, 74.5], [32.9, 74.9]]) coll(u, v, 0.95, 0.95, FPLAZA.h, 0.5);
+  }
+  // LOOK14 end
   for (const h of [RESTROOM31, HOUSE40]) coll((h.u0 + h.u1) / 2, (h.v0 + h.v1) / 2, (h.u1 - h.u0) / 2 + 0.1, (h.v1 - h.v0) / 2 + 0.1, 0, 4.4);
   for (const p of PING31) coll(p.u, p.v, 1.42, 0.82, 0, 0.8);
   // the beds: ivy under the planes, the seasonal beds along the walls, the lawn's borders
@@ -1278,7 +1457,7 @@ export function bp31Build(group, y, F) {
   for (const [u0, u1, v0, v1] of PANELS) { for (const vv of [v0, v1]) B.S.box(u1 - u0, 0.1, 0.16, COL.coping, { u: (u0 + u1) / 2, v: vv }); for (const uu of [u0, u1]) B.S.box(0.16, 0.1, v1 - v0, COL.coping, { u: uu, v: (v0 + v1) / 2 }); }
   // the fountain's plaza and basins, the terrace, the memorial, the Grill, the cafe's pavilions
   fountainPlaza(B);
-  fountainLobes(B, FPLAZA.h);
+  if (LK14) lowellPlanters(B, FPLAZA.h); else fountainLobes(B, FPLAZA.h);   // LOOK14
   terrace(B);
   memorial31(B);
   grill31(B);
@@ -1313,6 +1492,10 @@ export function bp31Build(group, y, F) {
   for (const u of [58.6, 68.2]) { urnPlanter(B, u, 5.0, 0, 0.9); urnPlanter(B, u, 135.8, 0, 0.9); }
   // lamps, bins
   for (const [u, v] of lampSpots31()) lampPost(B, u, v, levelAt(u, v));
+  // BPL9: each post's light, the acorn globe's fixture (world/night11.js FIXTURES[3], a symmetric warm 3000 K head), 4.0 m up
+  if (BPL9) for (const [u, v] of lampSpots31()) {
+    lampSpots.push([F.SW[0] + F.U[0] * u + F.V[0] * v, y + levelAt(u, v), F.SW[1] + F.U[1] * u + F.V[1] * v, 3, 4.0, null]);
+  }
   for (const [u, v] of binSpots31()) slatBin(B, u, v, levelAt(u, v));
   // the umbrellas over the plan's tables
   const P = bp31Plan();

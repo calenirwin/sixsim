@@ -444,7 +444,7 @@ export class HeroFacades {
                   ? (!loft && !wlBrickK && wlHash(cvIk + 1667, (k % 64) + (m % 64) * 64 + 1) * 0.45
                       + wlHash(cvIk + 1789, (k >> 1) + (m % 64) * 64 + 1) * 0.55 < 0.27)
                   : (!loft && ((k * 73 + m * 31 + i * 7) % 100) < 8);
-                if (acOn) {
+                if (acOn && !HSKIP.has('ac')) {   // SOLID12: heroskip=ac (the harvest's): the export instances the shader's own units (usd_facdetail.py)
                   const acW = WL11 ? 0.26 + 0.07 * wlHash(cvIk + 1861, (k % 64) + (m % 64) * 64 + 1) : 0.32;
                   const acC = WL11
                     ? (a + b) / 2 + (wlHash(cvIk + 1907, (k % 64) + (m % 64) * 64 + 1) < 0.5 ? -1 : 1) * ((b - a) * 0.5 - acW - 0.02)

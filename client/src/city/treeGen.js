@@ -35,8 +35,8 @@ export const TREE_GEN_VERSION = 9;   // 2: TC26 aSun + aClu; 3: TR34 leaves at t
 // by their seeds; Central Park's cpFloraKit forms carry none of these) shade their twig clumps a quarter less (`cluK`: the
 // clump direction blended toward the crown-volume normal; 0.5 in the first try, w2r2b, flattened the lit side), so the
 // crown reads as a mass of small leaflets, not a pile of lit puffs (the lead's review of the segments' sheets, 2026-10-01
-// 23:53); the honeylocust's open crown passes more sky to its inside and underside; and its trunk and limbs are darker
-// The street leaf colours themselves
+// 23:53); the honeylocust's open crown passes more sky to its inside and underside (`aoExt` 0.38, the default 0.55: the
+// whose honeylocust bark is near-black grey-brown). The street leaf colours themselves
 // are atlas cells the crown shader swaps in outside Central Park (treeAtlas.js STREET_CELLS, trees.js TR35).
 const TR35_FORM = {
   202: { cluK: 0.75, aoExt: 0.38, barkK: 0.55 },   // honeylocust (H, and its young sub-form)
@@ -838,11 +838,11 @@ export const TREE36_VERSION = 16;   // 16: crown gaps (TR39: `gap`), the plane's
 // form: TREE_FORMS fields overridden for the TR36 build only (the trees25 fallback keeps the kit's); wk: crown width factor.
 // gap (TR39): [strength, noise cell (m), threshold]: crown gaps, a value noise over the crown sampled at each unit's twig clump;
 // the clumps under the threshold are left out of the LOD0 picks (strength 1: entirely), and n0 is capped at the units outside.
-// v2: the leaf area was there (~250 m2 a mature H against trees25's ~145) but units every
 // 5-7.5 cm along few shoots overlapped each other, so the crowns read thin; and the 125th Street honeylocusts (N2330fdb_sq,
 // N219w_sq) are broad, rounded and low where the H vase is narrow at its base: twice the shoots, units 12-18 cm apart,
 // a round habit 15 % wider with a lower crown base.
 export const TR36_FORMS = {
+  // units, further apart and only on the outer two thirds of each twig, the outer shell preferred, lighter extinction)
   // (TR39: the budget gathered in clumps with open gaps between them, `gap`; the units 20 % smaller and closer along their twigs,
   // 6,600 of them (the leaf area 8 % under TR38's), a finer texture in denser clumps; the shell preference 0.8 -> 0.6 (units
   // along the whole twig, not its tip alone), the extinction aoK 0.55 -> 0.5 (the clumps hold their cards closer together); a twig
@@ -933,7 +933,6 @@ export function buildTree36(F, H, W, seed, opts36) {
       units.push({ p, d: norm3([d[0], d[1] + 0.25, d[2]]), w: w0 * k, h: h0 * k, size: Math.sqrt(w0 * h0) * k, cell, outer: clamp(env.frac(p[0], p[1], p[2]), 0, 1.1), clump: sh.clump, opacity: covOf(cell), phase: rnd(), si });
     }
   }
-  // ---- TR39 (session 4): crown gaps.
   // (crown38.py: 33-35 % sky in the s313 / s317 crown boxes against the twin's 19-20 %), where the TR36 budget spread evenly
   // through the shell. `gap`: [strength, noise cell (m), threshold]: a two-octave value noise over the crown weights the LOD0
   // picks (pickCards), so the budget gathers in clumps and the low part of the field goes open; the twigs of the shoots left
@@ -974,6 +973,7 @@ export function buildTree36(F, H, W, seed, opts36) {
   }
   // ---- crown AO / sun visibility from the LOD0 leaf density
   const D = makeDensity(cards0, env);
+  // (the extinction per unit of leaf area as trees25's, scaled by aoK: TR36 hangs ~1.7x the card area of trees25, mostly as
   const ext = (T35?.aoExt ?? F.aoExt ?? 0.55) * (S36.aoK ?? 1);
   const aoOf = (x, y, z) => skyVis(D, x, y, z, ext);
   for (const c of cards0) {

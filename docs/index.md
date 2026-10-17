@@ -11,7 +11,7 @@ hide:
 
 <p class="lead">Valdrada is a city-scale digital twin of New York City
 compiled from public municipal records. It
-renders Manhattan, the Bronx, Brooklyn and Queens in real time, simulates traffic and pedestrians on the city's own
+renders the five boroughs in real time, simulates traffic and pedestrians on the city's own
 street network, and returns pixel-exact ground truth through a Python API modelled on CARLA.</p>
 
 [Quick start](quickstart.md){ .md-button .md-button--primary }
@@ -52,11 +52,12 @@ scene state as the image, so they need no annotation. The Python package writes 
 ## The whole city, streamed
 
 <figure markdown="span">
-  ![Every building of the four boroughs shaded by height, with the tile grid and the streaming radii around a camera in Harlem](assets/figures/coverage.jpg)
+  ![Every building of the five boroughs shaded by height, with the tile grid and the streaming radii around a camera in Harlem](assets/figures/coverage.jpg)
 </figure>
 
-The compiled city holds every building of the four boroughs. The client keeps full detail around the camera and draws
-coarser far-field tiles beyond it, so any street of the four boroughs can be rendered on a laptop GPU.
+The compiled city holds every building of the five boroughs, 1,085,937 in 3,532 tiles of 512 m. The client keeps full
+detail around the camera and draws coarser far-field tiles beyond it, so any street of the city can be rendered on a
+laptop GPU.
 
 ## Areas modelled in detail
 
@@ -68,7 +69,10 @@ station, the Park Avenue Viaduct and the bridge approaches at the Harlem River a
 dimensions, with the 1 train and Metro-North running on them. In Central Park, the relief comes from USGS 3DEP and the
 water bodies, paths and landmarks from OpenStreetMap; tree crowns are segmented by watershed on a vegetation index from
 NAIP near-infrared imagery, and the resulting 16,951 trees are assigned to 33 species groups fitted to the park's
-published composition.
+published composition. Towers over 45 m are rebuilt near the camera by a tower kit on the facade shader's grid, among
+them 111 West 57th with its ten setbacks and fluted piers. The Metropolitan Museum of Art, the American Museum of
+Natural History with the Rose Center and the Gilder Center, and the Guggenheim are modelled whole on their footprints,
+and the Statue of Liberty is a scan fitted to the Historic American Engineering Record's drawings (HAER NY-138).
 
 ## Offline rendering
 
@@ -79,7 +83,10 @@ frames in Cycles with the web client's materials rebuilt as node groups, baked f
 film-detail street trees and physical light; `ue_take.py` renders the same USD with Unreal's Lumen and Movie Render
 Queue, with master materials per family, CC0 layered materials, Nanite foliage and a cinematic preset.
 [One city, three renderers](architecture.md) describes the design, and the guides for
-[Blender Cycles](blender-cycles.md) and [Unreal Engine 5](unreal.md) take one shot through each renderer.
+[Blender Cycles](blender-cycles.md) and [Unreal Engine 5](unreal.md) take one shot through each renderer. For Unreal the
+whole city can also be built once, every 128 m cell as a table of kit instances and its own meshes in 1 km block
+packages over a shared material library, so that a shot is a cut of that build and needs only its take and its render
+([The whole city](unreal.md#the-whole-city)).
 
 ## Architecture
 
@@ -109,7 +116,7 @@ Valdrada, the compiled city or imagery rendered with it, please cite Valdrada it
   author  = {Turkcan, Mehmet Kerem},
   title   = {{Valdrada}: a real-data, real-time digital twin of New York City},
   year    = {2026},
-  version = {0.3.1},
+  version = {0.4.0},
   url     = {https://github.com/mkturkcan/valdrada}
 }
 ```

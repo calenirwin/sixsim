@@ -5,12 +5,18 @@ import { FAR_UNIFORMS, NEAR_MASK_N } from './materials.js';
 import { TILE, MACRO } from '../shared/geo.js';
 import { buildMacroCrowns } from './towers.js';
 import { NO_TOWER_FX } from './materials.js';
+import { FW14, fw14Uv } from './materials.js';   // FW14: the far city's window grid
+import { lf39Load, lf39Macro } from './lotfix39.js';   // LF39 (LOTFIX): far LoD boxes of the buildings our export lacks
 
 // LITE15: ?near= narrows the near-detail radius for the light showcase build (default 1000 m)
 const NEAR_R = Math.max(300, Number(new URLSearchParams(location.search).get('near')) || 1000);      // near-detail radius (m)
 const UNLOAD_R = NEAR_R + 320;    // hysteresis
-const MACRO_R = Math.max(2000, Number(new URLSearchParams(location.search).get('macro')) || 13000);   // LITE15: ?macro=    // far-LoD visibility radius (fog hides beyond)
+const MACRO_R = Math.max(2000, Number(new URLSearchParams(location.search).get('macro')) || 13000);    // far-LoD visibility radius (fog hides beyond); LITE15: ?macro=
 const FETCH_CONC = 5;
+// ==== R1B lod16 (client/src/lod/, docs/notes/arch-r1-b.md): ?lod16=1 replaces the far boxes and the draw-distance fog with
+// the persistent tier, the landmark registry and the LOD streaming manager
+const LOD16 = typeof location !== 'undefined' && new URLSearchParams(location.search).get('lod16') === '1';
+// ==== /R1B
 
 export class Streamer {
   constructor(scene, ctx) {
@@ -40,6 +46,18 @@ export class Streamer {
     this.base = base;
     this.manifest = await (await fetch(`${base}/manifest.json`)).json();
     this.bridges = await (await fetch(`${base}/bridges.json`)).json();
+    // ==== R1A cells (client/src/cells/, docs/specs/cell-package.md): ?cells=1 draws the baked cells from their packages
+    if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('cells') === '1') {
+      try { const { CellLoader } = await import('../cells/cellLoader.js'); this.cells = await new CellLoader(this).init(); }
+      catch (e) { console.warn('[cells] loader unavailable, the live city is drawn', e); this.cells = null; }
+    }
+    // ==== /R1A
+    // ==== R1B lod16
+    if (LOD16) {
+      try { const { LodManager } = await import('../lod/manager.js'); this.lod16 = await new LodManager(this.scene, this.ctx, this).init(); }
+      catch (e) { console.warn('[lod16] manager unavailable, far boxes kept', e); this.lod16 = null; }
+    }
+    // ==== /R1B
     return this;
   }
   // A late subscriber is REPLAYED every tile that is already in (film, 2026-09-23): the walker graph subscribes only after
@@ -96,6 +114,7 @@ export class Streamer {
   }
   update(px, pz) {
     if (!this.manifest) return;
+    if (this.cells) this.cells.tick();   // ==== R1A cells: sweeps what joined the scene inside the baked cells
     this.px = px; this.pz = pz;
     FAR_UNIFORMS.playerXZ.value.set(px, pz);
     const frz = this.hold === 'freeze', keep = frz || this.hold === 'grow';
@@ -143,6 +162,14 @@ export class Streamer {
       }
     }
     this._updateNearMask(px, pz);
+    // ==== R1B lod16: no far boxes; the LOD manager draws the persistent tier, the landmarks and the refined chunks
+    if (this.lod16) {
+      this.lod16.update(px, pz);
+      this._px = px; this._pz = pz;
+      this.stats.near = this.tiles.size; this.stats.macro = 0; this.stats.pending = this.fetching + this.queue.length;
+      return;
+    }
+    // ==== /R1B
     // ---- macros (all, nearest first, budget 1 concurrent)
     let macroLoading = 0;
     for (const m of this.macros.values()) if (m.state === 'loading') macroLoading++;
@@ -173,14 +200,16 @@ export class Streamer {
     const tex = FAR_UNIFORMS.nearMask.value, d = tex.image.data;
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
       const t = this.tiles.get(`${ox + i}_${oz + j}`);
-      d[j * N + i] = t && t.state === 'ready' ? 255 : 0;
+      d[j * N + i] = (t && t.state === 'ready') || (this.cells && this.cells.tileDrawn(`${ox + i}_${oz + j}`)) ? 255 : 0;   // ==== R1A cells: a tile whose baked cells are drawn
     }
     FAR_UNIFORMS.nearMaskO.value.set(ox, oz);
     tex.needsUpdate = true;
   }
   idle() {
     if (!this.manifest || this.fetching || this.queue.length || (this.outstanding ?? 1) !== 0) return false;
+    if (this.cells && !this.cells.ready()) return false;   // ==== R1A cells: the packages of the ready tiles are in
     if (this.hold === 'freeze') return true;
+    if (this.lod16) return this.lod16.idle();   // ==== R1B lod16: the persistent tier and the wanted chunks, not the macros
     for (const key of Object.keys(this.manifest.macros)) {
       const [mx, mz] = key.split('_').map(Number);
       const d = Math.hypot(mx * MACRO + MACRO / 2 - (this._px ?? 0), mz * MACRO + MACRO / 2 - (this._pz ?? 0));
@@ -203,6 +232,7 @@ export class Streamer {
       const data = await assembleTile(key, buf, this.ctx);
       const rec = this.tiles.get(key);
       if (!rec) { data.dispose(this.scene, this.ctx.instancer); return; } // unloaded while queued
+      if (this.cells) { try { this.cells.onTile(key, data); } catch (e) { console.warn('[cells] tile', key, e); } }   // ==== R1A cells
       this.scene.add(data.group);
       rec.state = 'ready';
       rec.data = data;
@@ -229,9 +259,20 @@ export class Streamer {
         if (s.name === 'col') col = new Uint8Array(buf, base + s.offset, s.length);
         if (s.name === 'terr') terr = new Float32Array(buf, base + s.offset, s.length);
       }
+      // LF39 (LOTFIX, world/lotfix39.js; `?lf39=0` none): the far LoD boxes of the buildings our footprint export lacks
+      // (53 W 53rd St on the skyline from Central Park), in the compiler's own format, before the crowns are rebuilt
+      try {
+        const add = lf39Macro(key, await lf39Load());
+        if (add && pos && col) {
+          const p2 = new Int16Array(pos.length + add.pos.length); p2.set(pos); p2.set(add.pos, pos.length);
+          const c2 = new Uint8Array(col.length + add.col.length); c2.set(col); c2.set(add.col, col.length);
+          pos = p2; col = c2;
+        }
+      } catch (e) { console.warn('[lf39] macro', e); }
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       g.setAttribute('color', new THREE.BufferAttribute(col, 4, true));
+      if (FW14) g.setAttribute('uv', new THREE.BufferAttribute(fw14Uv(pos, header.origin), 2));   // FW14 (world/materials.js): the far window grid
       const mesh = new THREE.Mesh(g, this.ctx.farMat);
       mesh.position.set(header.origin[0], 0, header.origin[1]);
       g.computeBoundingSphere();

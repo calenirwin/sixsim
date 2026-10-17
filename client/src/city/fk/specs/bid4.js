@@ -1,5 +1,4 @@
 // AR33 building specs, segment bid4: Lenox Avenue to Fifth Avenue (schema: docs/notes/ar33-spec.md; inventory: docs/notes/ar33-frontage/bid4.json).
-// Owner: the BID4 worker (docs/notes/ar33-bid4.md).
 // u runs left to right as seen from the street: eastward on the north side (Lenox to Fifth), westward on the south side.
 // The Lenox corners are here; the north side is in bid4_north.js, the south side in bid4_south.js.
 
@@ -40,14 +39,14 @@ const LENOX = [
         bays: { widths: [4.9, 5.8, 5.9, 6.9, 2.3] },
         floors: [{ n: 2, h: 3.9, win: 'A', open: [[0.0, 2.2], [2.6, 4.7], [5.8, 8.0], [8.5, 10.6], [11.7, 14.1], [14.5, 16.8], [17.9, 20.7], [21.2, 24.1]].map(([a, b]) => [a, b, 'A']) }],
         windows: { A: win(2.3, 2.6, 0.7, { kind: 'casement', lights: '2/2', frame: 'alu_bronze', reveal: 0.26,
-          lintel: { kind: 'flat', mat: 'brick_red', tint: '#7a4535', h: 0.16, ext: 0.1, proj: 0.03 }, sillStone: { mat: 'cast_stone', tint: '#cbbfa8', h: 0.11, proj: 0.07 }, ac: 0.06, blinds: 0.5, lit: 0.3 }) },   // a thin dark header course
+          lintel: { kind: 'flat', mat: 'brick_red', tint: '#7a4535', h: 0.16, ext: 0.1, proj: 0.03 }, sillStone: { mat: 'cast_stone', tint: '#cbbfa8', h: 0.11, proj: 0.07 }, ac: 0.06, blinds: 0.5, lit: 0.3 }) },
         bands: [
           { at: 'base', h: 0.7, proj: 0.07, mat: 'brick_buff', tint: '#cdb88c' },
           { at: 8.2, h: 1.3, proj: 0.03, mat: 'brick_tan', tint: '#bfa879' },
           { at: 8.2, h: 0.12, proj: 0.06, mat: 'brick_red', tint: '#8f5a43' },
           { at: 9.38, h: 0.12, proj: 0.06, mat: 'brick_red', tint: '#8f5a43' },
         ],
-        cornice: { kind: 'parapet', h: 0.25, tint: '#c4ad80' },   // no projecting cornice: a flat brick parapet with a stone coping
+        cornice: { kind: 'parapet', h: 0.25, tint: '#c4ad80' },
       },
       {
         edge: 'corner',
@@ -69,7 +68,7 @@ const LENOX = [
         windows: { A: win(2.0, 2.6, 0.7, { kind: 'casement', lights: '2/2', frame: 'alu_bronze', reveal: 0.16,
           lintel: { kind: 'flat', mat: 'brick_red', tint: '#8a4a36', h: 0.3 }, sillStone: { mat: 'cast_stone', tint: '#cbbfa8', h: 0.09, proj: 0.04 } }) },
         bands: [{ at: 'base', h: 0.7, proj: 0.07, mat: 'brick_buff', tint: '#cdb88c' }, { at: 8.2, h: 1.3, proj: 0.03, mat: 'brick_tan', tint: '#bfa879' }],
-        cornice: { kind: 'parapet', h: 0.25, tint: '#c4ad80' },   // no projecting cornice: a flat brick parapet with a stone coping
+        cornice: { kind: 'parapet', h: 0.25, tint: '#c4ad80' },
       },
     ],
     roof: { kind: 'flat', parapet: { h: 0.75, coping: 'cast_stone' }, membrane: 'gravel',
@@ -86,7 +85,6 @@ const LENOX = [
     faces: [
       {
         edge: 'front',
-        // MEASURED (2026-08, shots/ar34/bid4/elev/lenox-290.jpg), u from the east end: five window columns (centres 3.45, 7.65, 11.85, 16.1, 20.35;
         // 3.0 m wide, 4.2 m pitch), second-floor sills 5.6 m under stone hoods with a cartouche (8.55-9.5 m), third-floor windows 9.7-14.0 m with segmental heads, cream stone caps on the
         // white-tile piers at 5.0-5.9 m, white glazed tile to 5.2 m: a bus shelter and shop (u 0-4.6), CityMD (5.7-13.4), Golden Ice Jewelry (14.5-19.9), two small units to the corner.
         base: {
@@ -110,7 +108,6 @@ const LENOX = [
         bays: { widths: [1.35, 4.2, 4.2, 4.2, 4.3, 4.2, 2.15] },
         floors: [{ n: 1, h: 4.1, win: 'A', bays: [1, 2, 3, 4, 5] }, { n: 1, h: 5.4, win: 'B', bays: [1, 2, 3, 4, 5] }],
         windows: {
-          // b3r1: 2nd-floor frames two lights across and three high, the 3rd floor's two across and four high under a flat segmental head,
           // clear dark glass (the sheers read as pale folds): lights '3/3' -> '2/4' / '4/4', rise 0.85 -> 0.35, sheer 0 (both faces)
           A: win(3.0, 2.8, 0.4, { frame: 'alu_black', reveal: 0.3, lights: '2/4', sheer: 0,
             lintel: { kind: 'hood', mat: 'stone_lime', tint: LIME, h: 0.5, ext: 0.28 }, sillStone: { mat: 'stone_lime', tint: LIME, h: 0.18, proj: 0.1 }, ac: 0, blinds: 0.4 }),

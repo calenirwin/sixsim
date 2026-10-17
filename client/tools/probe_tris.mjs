@@ -4,7 +4,7 @@ import fs from 'node:fs';
 const [,, tdir, xs, zs, rs, sec] = process.argv; const X = +xs, Z = +zs, R = +(rs || 12);
 const man = JSON.parse(fs.readFileSync(tdir + '/manifest.json', 'utf8')); const TILE = man.tile || man.tileSize || 512;
 const ent = man.tiles[`${Math.floor(X / TILE)}_${Math.floor(Z / TILE)}`];
-const buf = fs.readFileSync(tdir + '/' + ent.f).buffer; const dv = new DataView(buf); const hLen = dv.getUint32(4, true);
+const buf = ((b) => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength))(fs.readFileSync(tdir + '/' + ent.f)); const dv = new DataView(buf); const hLen = dv.getUint32(4, true);
 const header = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, hLen))); const base = 8 + hLen + ((4 - ((8 + hLen) % 4)) % 4);
 const s = header.sections.find(q => q.name === (sec || 'asphalt')); const a = new Float32Array(buf, base + s.offset, s.length); const [ox, oz] = header.origin;
 let n = 0;

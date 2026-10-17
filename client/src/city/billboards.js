@@ -738,6 +738,10 @@ export function spillTick(scene, camera) {
     L.intensity = L.userData.I;
   });
 }
+// TW (towers lane, the overlap gate's rule for anything laid on a wall, as the dresser's overlays): a frame's bars stand
+// back to the wall, so their back faces lay in the plane of the building's wall (a dressed brick wall and a board's bottom
+// bar 1 mm apart over 15 m2 in cell -12_21); every bar stands 2 mm out along the wall's normal instead
+const FRAME_LIFT = 0.002;
 let _frameMat = null;
 // TF32 (owner 2026-09-29: "not enough details"; docs/notes/tsq-graphics.md TF32, references r12 and r15): 4 Times
 // Square's seven-storey cylindrical screen, the one Times Square shape every photograph of 43rd St has and ours did not
@@ -762,7 +766,7 @@ function frameMesh(fr) {
     for (let q = 0; q < nb; q++) {
       const lx = bp[q * 3] * w, ly = bp[q * 3 + 1] * h, lz = bp[q * 3 + 2] * d;
       const o = (j * nb + q) * 3;
-      P[o] = cx + ux * lx + nx * lz; P[o + 1] = cy + ly; P[o + 2] = cz + uz * lx + nz * lz;
+      P[o] = cx + ux * lx + nx * (lz + FRAME_LIFT); P[o + 1] = cy + ly; P[o + 2] = cz + uz * lx + nz * (lz + FRAME_LIFT);   // TW: FRAME_LIFT
       const ax = bn[q * 3], ay = bn[q * 3 + 1], az = bn[q * 3 + 2];
       N[o] = ux * ax + nx * az; N[o + 1] = ay; N[o + 2] = uz * ax + nz * az;
     }
@@ -1011,7 +1015,7 @@ export function buildTsqScreens(recs) {
     for (let q = 0; q < nb; q++) {
       const lx = bp[q * 3] * w, ly = bp[q * 3 + 1] * h, lz = bp[q * 3 + 2] * d;   // x along the wall, z outward
       const o = (j * nb + q) * 3;
-      P[o] = cx + ux * lx + nx * lz; P[o + 1] = cy + ly; P[o + 2] = cz + uz * lx + nz * lz;
+      P[o] = cx + ux * lx + nx * (lz + FRAME_LIFT); P[o + 1] = cy + ly; P[o + 2] = cz + uz * lx + nz * (lz + FRAME_LIFT);   // TW: FRAME_LIFT
       const ax = bn[q * 3], ay = bn[q * 3 + 1], az = bn[q * 3 + 2];
       N[o] = ux * ax + nx * az; N[o + 1] = ay; N[o + 2] = uz * ax + nz * az;
     }

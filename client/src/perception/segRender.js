@@ -90,6 +90,7 @@ const CLASS_ROWS = [
   [33, 'building_appurtenance', 120, 70, 0, 1],
   [34, 'roof_structure', 120, 160, 210, 1],
   [35, 'bridge', 20, 170, 120, 0],
+  [36, 'rail_track', 230, 150, 140, 0],   // RL36: the rail layer's bed, sleepers, rails and open-cut walls (Cityscapes colour)
 ];
 export const CLASSES = CLASS_ROWS.map(([id, name, r, g, b, t]) => ({ id, name, rgb: [r, g, b], isthing: !!t }));
 const CID = {};
@@ -125,6 +126,10 @@ const MATID_CLASS = [
   CID.grass,                // 15 campus lawn underlay (TL26: its own section so it loses every depth tie)
   CID.plaza,                // 16 the Times Square plaza pavers (TP28, city/tsqPlaza.js)
   CID.footpath,             // 17 Bryant Park's gravel walks (BP28, city/bryantPark.js)
+  CID.rail_track,           // 18 rail steel (RL36, compile.mjs rail pass)
+  CID.rail_track,           // 19 ballast
+  CID.rail_track,           // 20 the sleeper bed (matId 20 + bearing)
+  CID.rail_track,           // 21 open-cut walls and the street bridges over cuts
 ];
 const CROSSWALK_KEY = 40;   // LUT slot for "matId 3 inside a crossing zone"
 // matId 8 (the far ground carpet) gets its OWN key even though it shares the
@@ -159,6 +164,8 @@ const POOL_EXACT = {
   trashbag: CID.street_furniture, cbox: CID.street_furniture, phone: CID.street_furniture,
   planter: CID.street_furniture, parkingMeter: CID.street_furniture,
 };
+// RS14 (see fallbackClass): ground classes only for meshes at street level
+const RS14 = typeof location === 'undefined' || new URLSearchParams(location.search).get('rs14') !== '0';
 const ROOF_RE = /^(roof|vent|duct|cell|cable|mushroom|upblast|gooseneck|chimney|hatch|guardrail|davit|microwave|dish|dunnage|screenWall|sedum|pergola|sawtooth|mechPenthouse|pipeRun|monopole|coolingTower|solarPanel|waterTower|bulkhead|skylight|antenna)/i;
 const _unknownPools = new Set();
 function classifyPool(name) {
@@ -650,7 +657,7 @@ export function initPerception(engine, refs) {
     if (!L.ready) {
       const d = L.tex.image.data;
       for (let b = 0; b < L.w; b++) {
-        const code = encodeId(bidId(`${tileKey}:${b}`));
+        const code = encodeId(bidId(`${tileKey}:${b >= 4096 && b < 65535 ? b - 4096 : b}`));   // TW: a tower's kit-replaced walls (assemble.js TW_BID) are its own building
         const o = b * 4;
         d[o] = code & 255; d[o + 1] = (code >> 8) & 255; d[o + 2] = (code >> 16) & 255; d[o + 3] = 255;
       }
@@ -1050,6 +1057,24 @@ export function initPerception(engine, refs) {
     const cls = fallbackClass(o);
     return mkMat('UNI', { code: inst ? 0 : rgbCode(cls), side: m.side, map: cut(m), alpha: m.alphaTest });
   }
+  // RS14: how far the mesh's lowest point stands over the terrain under its middle (null where the terrain is not in)
+  function liftAbove(o) {
+    const g = o.geometry;
+    if (!g || !g.attributes || !g.attributes.position || !streamer || !streamer.terrainAt) return null;
+    if (!g.boundingBox) g.computeBoundingBox();
+    const bb = g.boundingBox;
+    if (!bb) return null;
+    o.updateWorldMatrix(true, false);
+    const e = o.matrixWorld.elements;
+    let y0 = 1e9, sx = 0, sz = 0, k = 0;
+    for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) {
+      const wy = e[1] * x + e[5] * y + e[9] * z + e[13];
+      if (wy < y0) y0 = wy;
+      sx += e[0] * x + e[4] * y + e[8] * z + e[12]; sz += e[2] * x + e[6] * y + e[10] * z + e[14]; k++;
+    }
+    const t = streamer.terrainAt(sx / k, sz / k);
+    return t === null || t === undefined ? null : y0 - t;
+  }
   function fallbackClass(o) {
     // a mesh that says what it is (src/city/namedShops.js: a shopfront is building, whatever its merged shape)
     const said = o.userData && o.userData.segClass;
@@ -1061,6 +1086,19 @@ export function initPerception(engine, refs) {
     const n = `${o.name || ''}|${(o.parent && o.parent.name) || ''}|${(o.material && o.material.name) || ''}`;
     if (/sign|text|blade/i.test(n)) return CID.street_sign;
     if (/tree|leaf|foliage|shrub|hedge|grass|lawn/i.test(n)) return CID.vegetation;
+    // ==== RS14 (round 14, owner: on 125th St at Lenox a roof's parapet edge and a skylight frame were labelled sidewalk):
+    // the ground classes below (a walk/plaza/terrace/pave name, or a flat slab) only hold for a mesh that stands at street
+    // level. A mesh whose lowest point is more than 1.5 m over the terrain under it is part of a building (the facade
+    // kit's roof membranes, gravel, copings and skylight frames under fk_cell / fk_custom: flat slabs, so the slab rule
+    // took them), or of a viaduct (the Park Avenue viaduct's ballast and ties). An object NAMED a walk, step, stair, plaza
+    // or ramp keeps its class at any height (an elevated plaza is walked on). `?rs14=0`: the old rules.
+    if (RS14) {
+      const lift = liftAbove(o);
+      if (lift !== null && lift > 1.5 && !/walk|step|stair|plaza|ramp/i.test(o.name || '')) {
+        return /vk[-:]|viaduct|elevated/i.test(n) ? CID.bridge : CID.building;
+      }
+    }
+    // ==== /RS14
     if (/walk|step|stair|plaza|pave|path|terrace|ramp/i.test(n)) return CID.sidewalk;
     if (/wall|rail|fence|gate|lamp|urn|monument|bench|bollard/i.test(n)) return CID.street_furniture;
     const g = o.geometry;
@@ -2009,3 +2047,6 @@ export function initPerception(engine, refs) {
   if (typeof window !== 'undefined') window.__PERC = api;
   return api;
 }
+// ==== R1A (architecture round 1, lane A, cells): the pool class table for the cell baker (client/src/cells/bakeLib.js)
+export { classifyPool as r1aClassifyPool };
+// ==== /R1A

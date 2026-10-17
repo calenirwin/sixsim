@@ -3,7 +3,8 @@
 // cafe seating. The props part (city/pk) keeps the fixed street hardware (lamps, signals, signs, baskets, kiosks, bus
 // stops, racks, docks, hydrants, meters, planters, tree guards, subway entrances). Notes: docs/notes/ar34-life.md.
 // `?lk=0` leaves the part out.
-// PLACEMENT. lkData.js holds every surveyed piece in world metres.
+//
+// PLACEMENT. lkData.js holds every surveyed piece in world metres (baked by client/tools/ar34/life/bake.mjs from
 // BUILD. Per tile, per 96 m cell: every piece's model (lkKit.js) is posed and merged into one mesh per material, a near
 // model and a far one; a cell draws its far model while the camera is more than LOD_R from its box. Only the large
 // pieces (canopies, cloth, the shed's deck and parapet) cast shadows.
@@ -66,6 +67,8 @@ function tick(renderer, scene) {
 }
 
 // ---------------------------------------------------------------- the tile's meshes
+// SPACE r2: in a scene (its parents reach a Scene): the stats list keeps only these
+const inScene = (o) => { let p = o; while (p.parent) p = p.parent; return !!p.isScene; };
 const CELL = 96, LOD_R = 110, SIDEWALK_Y = 3.52;
 const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _p = new THREE.Vector3(), _one = new THREE.Vector3(1, 1, 1), _Y = new THREE.Vector3(0, 1, 0);
 let _bins = null;
@@ -132,6 +135,9 @@ export function build(group, ctx) {
     return out;
   };
   const drive = [];
+  // SPACE r2 (docs/notes/space-r2.md): the stats list below kept every mesh it was ever given, and through mesh.parent every
+  // unloaded tile's group with all its geometry (1.7 GB a tour cycle); it now keeps the meshes still in a scene
+  if (typeof window !== 'undefined' && window.__LK && window.__LK.meshes) window.__LK.meshes = window.__LK.meshes.filter(inScene);
   for (const C of cells.values()) {
     const far = posed(C, 0);
     const keys = new Set(far.keys());
@@ -152,7 +158,7 @@ export function build(group, ctx) {
       mesh.visible = gf !== empty;
       // the stats mark the meshes the view's camera actually drew (frustum culling included)
       mesh.onBeforeRender = (renderer, scene, cam) => { if (cam.isPerspectiveCamera && cam.aspect > 1.2) mesh.userData.lkFrame = renderer.info.render.frame; };
-      drive.push({ mesh, key, gf, box, getNear, empty });
+      drive.push({ mesh, key, gf, box, getNear, empty, C });
       group.add(mesh);
       if (typeof window !== 'undefined') (window.__LK = window.__LK || { tiles: 0, items: 0 }, (window.__LK.meshes = window.__LK.meshes || []).push(mesh));
     }
@@ -190,6 +196,16 @@ export function build(group, ctx) {
     }
   };
   group.add(drv);
+  // SPACE r2: the tile's dispose() (world/assemble.js) disposes the geometry each mesh draws at that moment; the other one of
+  // each near / far pair (and the cells' merged sets) go here
+  drv.userData.onDispose = () => {
+    if (typeof window !== 'undefined' && window.__LK && window.__LK.meshes) { const mine = new Set(drive.map((D) => D.mesh)); window.__LK.meshes = window.__LK.meshes.filter((m) => !mine.has(m)); }
+    const seen = new Set();
+    for (const D of drive) {
+      for (const g of [D.gf, D.empty, ...(D.C.near ? D.C.near.values() : [])]) if (g && !seen.has(g)) { seen.add(g); g.dispose(); }
+    }
+    dg.dispose();
+  };
   if (typeof window !== 'undefined') {
     const W = (window.__LK = window.__LK || { tiles: 0, items: 0 });
     W.tiles++; W.items += list.length;

@@ -368,12 +368,12 @@ function dressing(B, F, o) {
   const { iu0, iu1, iy0, iy1, rv, lit, k } = o;
   const wd = iu1 - iu0, ht = iy1 - iy0;
   // AR34 (BID1 6) a sheer: a full-height light curtain drawn across the whole window a hand behind the pane, softly
-  // folded
   if (o.sheer) {
     // (AR34 w2: one flat panel, the folds soft in the texture; the 10 cm zigzag read as hard grey stripes, s381 w2b1)
     const Sb = S(B, kitMat(lit ? 'int_sheerLit' : 'int_sheer'), true, false);
     const c = o.sheerTone || [0.85, 0.84, 0.8];
     const j = 0.94 + hash(B.seed, k, 12.4) * 0.08;
+    // the kit's interiors are trimmed like every standard material, 0.3 by day, where MATS's paints are calibrated)
     const jb = j * 2.4;
     withColor(Sb, [c[0] * jb, c[1] * jb, c[2] * jb], () => quadW(Sb, F, iu0 + 0.01, iu1 - 0.01, iy0 + 0.01, iy1 - 0.01, -rv - 0.11));
     return;
@@ -420,6 +420,7 @@ function stain(B, F, uc, hw, yTop, len, kind = 'drip') {
 // the glass of a window: the kit's own (each pane carries its reflectance, dirt and clarity in its vertex colour) unless the
 // spec names a glass set (a tinted or tower glass: MATS's)
 function glassOf(T) { return !T.glass || T.glass === 'glass_clear' || T.glass === 'glass_window' ? 'int_winglass' : T.glass; }
+// (AR34 w2: in front of a sheer the pane is clearer, clarity over 1 lowers the glass's own darkening: the sheer hangs at
 function pane(B, Sg, F, u0, u1, y0, y1, w, k, sub, tilt = 0.02) {
   const hs = (n) => hash(B.seed, k, sub, n);
   withColor(Sg, [0.5 + hs(1) * 0.85, 0.35 + hs(2) * 1.15, B.sheerPane ? 1.6 + hs(4) * 0.06 : hs(3) < 0.05 ? 0.5 : 0.92 + hs(4) * 0.12],
@@ -791,7 +792,6 @@ function curtainWall(B, F, C, zu0, zu1, zy0, zy1, floors, wallM, key) {
 
 // ================================================================== the storefront
 const STORE_DEF = { glazing: { bulkhead: 0.45, transom: 0.6, mullions: 2, frame: 'alu_clear' }, door: { u: 0.5, w: 1.0, kind: 'glass', recess: 1.2 } };
-// a frame set: clear anodised aluminium reads mid grey (its own tint read as white bars), the
 // others keep their sets' tints; `tint` (or a { mat, tint } object) as given
 // AR34 (BID4 1): dark anodised / painted frames ('alu_black', 'alu_dark', a dark tint on any alu set) are a painted finish,
 // not a mirror: as a metal set they took the blue sky into every black frame ("navy" by day); a smooth dark paint instead
@@ -1947,6 +1947,7 @@ function fireEscape(B, F, FE, bays, floors) {
     const y = fl.y0 + 0.02;
     // the platform: a grating of flat bars on edge (6 mm x 32 mm, every 40 mm; open from below, as the real ones are), the
     // angle frame round it, the rails
+    // (AR34 w2 b1: the bars run out from the wall, so from the sidewalk one looks along the slots and sees the wall through
     for (let u = u0 + 0.06; u < u1 - 0.05; u += 0.04) box(Si, F, u, u + 0.006, y - 0.032, y, 0.05, d - 0.05, 0, SK.NW | SK.PW);
     box(Si, F, u0, u1, y - 0.05, y, 0.0, 0.05, 0.003);
     for (const uu of [u0, u1 - 0.05]) box(Si, F, uu, uu + 0.05, y - 0.05, y, 0.0, d, 0.003);
@@ -2030,6 +2031,7 @@ function placeSign(B, F, sg, o) {
   // Frame.matrix is absolute: the sign's wall-local object goes into a holder placed in world space
   const g = new THREE.Group();
   g.name = fade > 0 ? 'fk_ghost' : 'fk_sign';
+  if (!(fade > 0)) g.userData.keepArrays = true;   // SPACE r2 (world/cpuFree.js, ?lowmem=1): the tile's sign merge reads it later
   g.matrixAutoUpdate = false;
   g.matrix.copy(F.matrix(u0, y, o.z || 0));
   g.add(obj);
@@ -2403,15 +2405,22 @@ export async function buildTileAsync(group, ctx, list, opt = {}) {
   out.longest = Math.round(Math.max(longest, performance.now() - tf));
   return out;
 }
+const NEAR_SKIPPED = { n: 0 };   // (window.__FKNEAR: the near-level parts left out)
+if (typeof window !== 'undefined') window.__FKNEAR = NEAR_SKIPPED;
 function finishTile(group, cells, built, errors) {
   let tris = 0;
   queueMicrotask(() => mergeTileSigns(group));
+  // SPACE r2 (game/showcase.js, ?lowmem=1): the light showcase's cameras never come within LOD_D of some cells (the tour's
+  // paths and the places' discs): their near level would never show, so it is not built
+  const reach = typeof globalThis !== 'undefined' ? globalThis.__SPACE_REACH : null;
   for (const cell of cells.values()) {
     const root = new THREE.Group();
     root.name = 'fk_cell';
     root.position.set(cell.org[0], 0, cell.org[1]);
     const near = new THREE.Group();
+    const farOnly = !!reach && !reach(cell.org[0], cell.org[1], LOD_D + 40);
     for (const lv of [0, 1]) {
+      if (lv === 1 && farOnly) { NEAR_SKIPPED.n += cell.lv[1].size; continue; }
       for (const e of cell.lv[lv].values()) {
         const geo = e.S.build();
         if (!geo) continue;

@@ -17,6 +17,8 @@
 import * as THREE from 'three';
 import { project, unproject, LAT0, LON0 } from '../shared/geo.js';
 import { signalState, walkTimeLeft } from '../sim/signals.js';
+// CONTROL (docs/notes/ar34-control.md): the play mode's bodies, follow camera and take recorder for API heroes
+import { CarBody, WalkerBody, FollowCam, TakeRecorder, makeProbe } from '../game/control.js';
 
 export const API_VERSION = '0.1.0';
 const D2R = Math.PI / 180, R2D = 180 / Math.PI;
@@ -69,6 +71,13 @@ export function initApi(ctx) {
   actors.set(1, spectator);
   if (traffic) traffic.apiCount = 0;
   if (peds) peds.apiCount = 0;
+  // CONTROL: a vehicle or walker spawned with role_name 'hero' (or physics 'arcade') moves with the play mode's bodies:
+  // arcade car dynamics with kerb / building / furniture / car collisions, a walker that collides; spectator.follow puts
+  // the view on one with the play mode's cameras; world.start_take / stop_take record a run as a take (tools/ad/takes.mjs)
+  const PP = makeProbe({ streamer, traffic, peds });
+  const follow = { id: 0, mode: 'chase', cam: null };
+  let takeRec = null;
+  const heroAttr = (attrs) => attrs.role_name === 'hero' || attrs.physics === 'arcade';
 
   // ---------------------------------------------------------------- blueprints
   const vehicleKinds = traffic ? Object.keys(traffic.pools || {}) : [];
@@ -262,6 +271,7 @@ export function initApi(ctx) {
     };
     traffic._placeCar(car, p3.x, y + 0.002, p3.z, h, 1 / 30);
     snapCarToLane(car, p3.x, p3.z, h, 12);
+    if (heroAttr(attrs)) { a.body = new CarBody(PP, { car, x: p3.x, z: p3.z, h }); a.body.y = y; }
     actors.set(id, a);
     return a;
   }
@@ -297,6 +307,7 @@ export function initApi(ctx) {
       st: { x: p3.x, y, z: p3.z, yaw: T.rotation.yaw || 0, speed: 0, maxSpeed: speed },
       route: null,
     };
+    if (heroAttr(attrs)) a.body = new WalkerBody(PP, { ped, x: p3.x, z: p3.z, h: yawToH(a.st.yaw) });
     actors.set(id, a);
     placeWalker(a, 0);
     return a;
@@ -354,6 +365,12 @@ export function initApi(ctx) {
   // manual vehicle: a kinematic bicycle model on the road surface. steer > 0 turns RIGHT (like CARLA).
   function stepVehicle(a, dt) {
     const c = a.control, s = a.st, car = a.car;
+    if (a.body && s.targetV === null) {
+      const b = a.body;
+      b.step(c, dt); b.place(dt);
+      s.x = b.x; s.y = b.y; s.z = b.z; s.h = b.h; s.v = b.v;
+      return;
+    }
     const [, , len] = vehDims(car.kind);
     const wheelbase = Math.max(2.2, len * 0.6);
     if (s.targetV !== null) s.v = s.targetV;
@@ -418,6 +435,15 @@ export function initApi(ctx) {
     }
     const c = a.control;
     const dl = Math.hypot(c.direction.x || 0, c.direction.y || 0);
+    if (a.body) {
+      // CONTROL: the hero walker collides (buildings, furniture, cars); ENU direction -> three (x, -y)
+      const b = a.body, sp = a.route || dl > 1e-6 ? clamp(num(c.speed, 0), 0, 6) : 0;
+      if (dt > 0) b.step({ dx: dl > 1e-6 ? c.direction.x : 0, dz: dl > 1e-6 ? -c.direction.y : 0, speed: sp }, dt);
+      b.place();
+      s.x = b.x; s.y = b.y; s.z = b.z; s.yaw = wrap180(hToYaw(b.h)); s.speed = b.v;
+      p.yaw = b.h;
+      return;
+    }
     const speed = a.route || dl > 1e-6 ? clamp(num(c.speed, 0), 0, 12) : 0;
     s.speed = speed;
     if (dl > 1e-6 && dt > 0) {
@@ -508,6 +534,29 @@ export function initApi(ctx) {
     activeView = key;
   }
 
+  // ---------------------------------------------------------------- CONTROL: follow camera, takes
+  // a body-like view of any vehicle / walker actor (the hero's own body, else its sim pose) for the camera and the recorder
+  function takeBody(a) {
+    if (a.body) return a.body;
+    const T = actorTransform(a), p3 = toThree(T.location), v = Math.hypot(velocityOf(a).x, velocityOf(a).y);
+    const kind = a.kind === 'vehicle' ? a.car.kind : null;
+    const hh = kind ? traffic.carHalf({ kind }) : [0.3, 0.3];
+    return { x: p3.x, y: p3.y, z: p3.z, h: yawToH(T.rotation.yaw), v, hw: hh[0], hl: hh[1], ht: (traffic.vehDims?.[kind] || [0, 1.5])[1], car: a.car, kind, hidden: false,
+      pose() { return [this.x, this.y, this.z, this.h, this.v, 0]; } };
+  }
+  function followStep(dt) {
+    const a = actors.get(follow.id);
+    if (!follow.cam) follow.cam = new FollowCam(engine, PP);
+    const F = follow.cam, b = takeBody(a);
+    F.auto = true;
+    if (a.kind === 'vehicle') { F.mode = follow.mode === 'bonnet' ? 'bonnet' : 'chase'; F.car(b, dt); }
+    else { F.mode = follow.mode === 'first' ? 'first' : 'third'; F.walker(b, dt); if (a.body) a.body.place(); }
+    // the camera the follow wrote -> the spectator's API transform (camQuat's inverse)
+    const c = engine.camera, e = new THREE.Euler().setFromQuaternion(c.quaternion, 'YXZ');
+    spectator.loc = fromThree(c.position);
+    spectator.rot = { pitch: +(e.x * R2D).toFixed(4), yaw: +(Math.atan2(Math.cos(e.y), -Math.sin(e.y)) * R2D).toFixed(4), roll: +(-e.z * R2D).toFixed(4) };
+  }
+
   // ---------------------------------------------------------------- frame hooks (main.js onFrame)
   // Between ticks in synchronous mode nothing moves. world.apply_settings(idle_nap_ms=N) lets the loop nap N ms between
   // idle frames (core/engine.js idleNap): the window, the tile stream and the dresser keep going at a few fps and the
@@ -529,9 +578,12 @@ export function initApi(ctx) {
       if (X) { const si = surfInfo(a.st.x, a.st.z); if (!si || !FOOTWAY.test(si.kind || '')) X.push(a.st.x, a.st.z); }
     }
     if (any) peds.mesh.instanceMatrix.needsUpdate = true;
+    // CONTROL: the spectator rides the play mode's follow camera on its actor (after the bodies moved this frame)
+    if (follow.id && dt > 0 && actors.has(follow.id)) followStep(dt);
     // attached cameras follow their parent AFTER the sims moved it this frame; in a tick's own frame too, so what that
     // frame renders is already the primary camera's post-step view
     if (!busy || stepWait) updateCamera();
+    if (takeRec && dt > 0 && actors.has(takeRec.id)) takeRec.rec.sample(dt, takeBody(actors.get(takeRec.id)));
     if (stepWait && dt > 0) { const r = stepWait; stepWait = null; r(); }
   }
 
@@ -1015,12 +1067,14 @@ export function initApi(ctx) {
         const p3 = toThree({ ...actorTransform(a).location, ...(T.location || {}) });
         const yaw = T.rotation?.yaw ?? actorTransform(a).rotation.yaw;
         Object.assign(a.st, { x: p3.x, z: p3.z, y: groundAt(p3.x, p3.z, p3.y), h: yawToH(yaw) });
+        if (a.body) a.body.teleport(a.st.x, a.st.z, a.st.h);
         traffic._placeCar(a.car, a.st.x, a.st.y + 0.002, a.st.z, a.st.h, 1 / 30);
         if (!a.car.manual) { a.car.manual = true; snapCarToLane(a.car, a.st.x, a.st.z, a.st.h); a.car.manual = false; }
         else snapCarToLane(a.car, a.st.x, a.st.z, a.st.h, 8);
       } else if (a.kind === 'walker') {
         const p3 = toThree({ ...actorTransform(a).location, ...(T.location || {}) });
         Object.assign(a.st, { x: p3.x, z: p3.z, yaw: T.rotation?.yaw ?? a.st.yaw });
+        if (a.body) a.body.teleport(p3.x, p3.z, yawToH(a.st.yaw));
         if (!a.ped.manual) { a.ped.manual = true; }
         placeWalker(a, 0);
         peds.mesh.instanceMatrix.needsUpdate = true;
@@ -1045,6 +1099,30 @@ export function initApi(ctx) {
       return { ...c };
     },
     'vehicle.get_control': (p) => ({ ...actorOf(p.id, 'vehicle').control }),
+    // CONTROL: the view follows an actor with the play mode's cameras (chase / bonnet for a vehicle, third / first person
+    // for a walker); id 0 stops following (the spectator stays where the follow left it)
+    'spectator.follow': (p) => {
+      const id = p.id | 0;
+      if (id) { const a = actorOf(id); need(a.kind === 'vehicle' || a.kind === 'walker', 'wrong_actor_type', 'only a vehicle or a walker can be followed'); }
+      follow.id = id; follow.mode = String(p.mode || (id && actors.get(id).kind === 'walker' ? 'third' : 'chase'));
+      if (follow.cam) { follow.cam.head = null; follow.cam.yaw = 0; }
+      if (id) { const a = actors.get(id), b = takeBody(a); if (!follow.cam) follow.cam = new FollowCam(engine, PP); follow.cam.yaw = b.h + Math.PI; follow.cam.head = b.h; followStep(1 / 30); if (!busy) updateCamera(); }
+      return { following: id, mode: follow.mode };
+    },
+    // CONTROL: record the run of an actor (and the view) as a take: per tick the camera and the actor's pose, resampled
+    // to 30 fps; stop_take returns it (tools/ad/takes.mjs reads the same JSON for record.mjs and the export's harvest)
+    'world.start_take': (p) => {
+      const a = actorOf(p.id);
+      need(a.kind === 'vehicle' || a.kind === 'walker', 'wrong_actor_type', 'a take records a vehicle or a walker');
+      takeRec = { id: a.id, rec: new TakeRecorder(engine, { name: String(p.name || 'api_take'), mode: a.kind === 'vehicle' ? 'drive' : 'walk', kind: a.kind === 'vehicle' ? a.car.kind : undefined, time: sky.mode }) };
+      return { recording: a.id };
+    },
+    'world.stop_take': () => {
+      need(takeRec, 'no_take', 'no take is being recorded');
+      const T = takeRec.rec.finish({ source: 'api' });
+      takeRec = null;
+      return T || { frames: 0 };
+    },
     // the nearest road user in this car's path — CARLA's sensor.other.obstacle as a query: every walker and vehicle in
     // the city (ambient or API) inside a corridor `width` wide ahead of the front bumper, up to `max_distance`
     'vehicle.get_obstacle_ahead': (p) => {
@@ -1088,6 +1166,7 @@ export function initApi(ctx) {
         const p3 = toThree(tr.location);
         car.manual = true; car.turn = null; car.next = null;
         Object.assign(a.st, { x: p3.x, y: groundAt(p3.x, p3.z, p3.y), z: p3.z, h: yawToH(tr.rotation.yaw), v: car.v || 0, targetV: null });
+        if (a.body) { a.body.teleport(a.st.x, a.st.z, a.st.h); a.body.v = a.st.v; }
         a.control = { throttle: 0, steer: 0, brake: 0, hand_brake: false, reverse: false };
       }
       return { autopilot: !car.manual, route: car.routePlan || null };

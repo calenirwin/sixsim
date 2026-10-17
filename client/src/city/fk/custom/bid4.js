@@ -1,7 +1,6 @@
 // AR33 custom builders and sign marks, segment bid4: Lenox Avenue to Fifth Avenue. Specs name them as 'bid4:<fn>' (docs/notes/ar33-spec.md).
 // Owner: the BID4 worker (docs/notes/ar33-bid4.md).
 // Sign marks are drawers fn(ctx2d, w, h) that paint a mark into a transparent canvas (fk/signKit.js, `logo`); every mark
-// here is drawn from scratch to read like the shop's real sign.
 
 import * as THREE from 'three';
 import { kitMat } from '../kitMats.js';
@@ -374,7 +373,7 @@ export function raised1(group, ctx, spec, frame) {
   const u0 = Math.max(0, L - 10.7), y1 = y0 + 4.2;
   kit.box(wall, u0, L, y0, y1, -7.0, 0.0, { c: 0.02 });
   kit.box(cap, u0 - 0.05, L + 0.02, y1 - 0.05, y1 + 0.12, -7.05, 0.1, { c: 0.01 });
-  kit.sign({ kind: 'channel', text: 'Offices Coworking', font: 'Montserrat-600', fg: '#f4f4f2', bg: null, u0: u0 + 0.4, u1: u0 + 6.2, y: y0 + 0.8, h: 0.9, depth: 0.08, lit: 'face' }, { z: 0.02 });   // SIGNS 19:05: acrylic faces read white
+  kit.sign({ kind: 'channel', text: 'Offices Coworking', font: 'Montserrat-600', fg: '#f4f4f2', bg: null, u0: u0 + 0.4, u1: u0 + 6.2, y: y0 + 0.8, h: 0.9, depth: 0.08, lit: 'face' }, { z: 0.02 });
   kit.sign({ kind: 'channel', text: 'Regus', font: 'Montserrat-800', fg: '#1b2c3a', bg: null, u0: u0 + 6.6, u1: u0 + 9.8, y: y0 + 0.75, h: 1.0, depth: 0.08, lit: 'none' }, { z: 0.02 });
   kit.sign({ kind: 'channel', text: 'PLS', font: 'Archivo-900', fg: '#42b649', bg: null, u0: u0 + 3.6, u1: u0 + 5.8, y: y0 + 2.0, h: 0.95, depth: 0.08, lit: 'face' }, { z: 0.02 });
   kit.sign({ kind: 'channel', text: 'HAIR', font: 'Archivo-900', fg: '#c8302c', bg: '#f1ede6', u0: u0 + 2.6, u1: u0 + 4.6, y: y0 + 3.0, h: 0.8, depth: 0.08, lit: 'face' }, { z: 0.02 });
@@ -464,7 +463,6 @@ export function billboard(group, ctx, spec, frame) {
   }
 }
 
-// 300 Lenox: the billboard and the brick ornament of the top: pilasters between the window
 // pairs, carried 0.32 m over the parapet to gabled caps (peak 0.64 m over it) with a stone coping and a dark-brick keyhole on each cap; dark-brick panels with ears on
 // the parapet between them (0.36-1.05 m under its top); a dark-brick diamond over every window in the spandrel band (8.85 m); dark header lines down the pilasters' edges
 export function lenox300(group, ctx, spec, frame) {
@@ -510,7 +508,7 @@ export function lenox300(group, ctx, spec, frame) {
   }
 }
 
-// 35 W 124th (the school's 125th Street face): the three pole banners on brackets, each hung between two steel arms 1.35 m out from the wall with ball finials, the cloth square to the wall
+// red at 23.4, from 7.9 to 14.9 m), each hung between two steel arms 1.35 m out from the wall with ball finials, the cloth square to the wall
 export function school(group, ctx, spec, frame) {
   const kit = frame.kit;
   const steel = kit.mat('plain', { tint: '#2b2c2e', rough: 0.45, metal: 0.4 });
@@ -524,10 +522,9 @@ export function school(group, ctx, spec, frame) {
     }
     kit.box(cloth[col], u - 0.008, u + 0.008, y0, y1, 0.3, 1.28, { c: 0.002 });
   }
-  // batch 2: the academy's round-fronted entrance: a segmental glass bay 1.0 m proud of the base, dark
   // bronze mullions about 0.45 m apart along the arc over a kick plate, a curved fascia over it (4.9-5.45 m) and its flat top
   const bronze = kit.mat('plain', { tint: '#2f2b27', rough: 0.4, metal: 0.5 });
-  const glass = kit.mat('plain', { tint: '#56636a', rough: 0.05, env: 0.85 });   // b2r7: '#2a3236' read as a black wall;
+  const glass = kit.mat('plain', { tint: '#56636a', rough: 0.05, env: 0.85 });
   const u0 = 25.6, u1 = 30.4, sag = 1.0, yK = 0.3, yT = 4.9, yF = 5.45, N = 12;
   const c = (u0 + u1) / 2, half = (u1 - u0) / 2, R = (half * half + sag * sag) / (2 * sag), wc = sag - R, a0 = Math.asin(half / R);
   const ang = (k) => -a0 + (2 * a0 * k) / N;
@@ -546,11 +543,11 @@ export function school(group, ctx, spec, frame) {
 }
 
 // the swoosh as a solid piece in the u-y plane over [u0, u1] x [y0, y1], its face at w (+0.05 thick): a strip of quads between the outer and the inner edge
-// the swoosh's face: white acrylic with a little day glow, as the sign kit's lit faces
+// white 196, the band's grey: it read as a faint grey mark)
 let _swM = null;
 const swooshMat = () => _swM || (_swM = applyLightTrim(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0, emissive: 0xffffff, emissiveIntensity: 0.3 })));
 function swooshGeo(kit, u0, u1, y0, y1, w) {
-  const m = swooshMat(), N = 18, W = u1 - u0, H = y1 - y0;   // b2r3 '#f1f2f2', b2r4 white with env 0.5 read as grey as the band; b3r1 plain white (rough 0.6) read 196 233
+  const m = swooshMat(), N = 18, W = u1 - u0, H = y1 - y0;
   const bz = (p, t) => { const a = 1 - t; return [a * a * a * p[0][0] + 3 * a * a * t * p[1][0] + 3 * a * t * t * p[2][0] + t * t * t * p[3][0], a * a * a * p[0][1] + 3 * a * a * t * p[1][1] + 3 * a * t * t * p[2][1] + t * t * t * p[3][1]]; };
   const outer = [[0.12, 1.0], [-0.12, 0.1], [0.2, -0.45], [1.0, 0.97]], inner = [[0.12, 1.0], [0.14, 0.62], [0.3, 0.42], [1.0, 0.97]];
   const P = (c, t, d) => { const [x, y] = bz(c, t); return [u0 + x * W, y0 + y * H, w + d]; };
@@ -564,7 +561,6 @@ function swooshGeo(kit, u0, u1, y0, y1, w) {
     kit.poly(m, [P(inner, t1, 0), P(inner, t0, 0), P(inner, t0, 0.05), P(inner, t1, 0.05)], [-iy / il, iu / il, 0], { near: true });
   }
   for (const [uu, yy] of [[0.2, 0.2], [0.55, 0.45], [0.85, 0.8]]) kit.box(m, u0 + uu * W - 0.02, u0 + uu * W + 0.02, y0 + yy * H - 0.02, y0 + yy * H + 0.02, w - 0.06, w, { c: 0.004, near: true });
-  // its shadow on the band: the same strip 4 cm lower and 3 cm along, 1 cm off the band
   const sh = kit.mat('plain', { tint: '#6c6e70', rough: 0.8 });
   const Q = (c, t) => { const p = P(c, t, 0); return [p[0] + 0.03, p[1] - 0.04, w - 0.05]; };
   for (let i = 0; i < N; i++) kit.poly(sh, [Q(outer, i / N), Q(outer, (i + 1) / N), Q(inner, (i + 1) / N), Q(inner, i / N)], [0, 0, 1], { near: true });
@@ -575,10 +571,8 @@ export function glassdeck(group, ctx, spec, frame) {
   glasswall(group, ctx, spec, frame);
   const kit = frame.kit, L = frame.L, y = frame.h;
   // the louvre band over the shops (3.9-5.0 m, elevation 2024-08): eight dark blades on the fascia (which stands 0.14 m proud), a dark gap behind them
-  // b3r2: the band median (116,114,112), top 10 % (201,198,196) (151,147,140) / (244,241,239): lighter blades and gap
   const blade = kit.mat('plain', { tint: '#e6e7e5', rough: 0.4, metal: 0.1 }), gap = kit.mat('plain', { tint: '#5d5f62', rough: 0.9 });
   kit.box(gap, 0.1, L - 0.1, 3.95, 5.0, 0.14, 0.145, { c: 0.002, near: true });
-  // batch 2: nine rounded blades at 0.115 m, was eight flat ones at 0.13
   for (let k = 0; k < 9; k++) kit.box(blade, 0.1, L - 0.1, 3.97 + k * 0.115, 4.035 + k * 0.115, 0.145, 0.205, { c: 0.02, near: true });
   // the swoosh (elevation u 17.8-20.0, y 5.0-5.85): a white piece 0.05 m thick on stand-offs 0.06 m off the silver band (which stands 0.14 m proud), drawn as geometry
   // (the painted mark read as a thin faint arc in b2r1): its outer edge and inner edge as two curves from the hooked tail to the point
@@ -596,7 +590,6 @@ export function glassdeck(group, ctx, spec, frame) {
   }
 }
 
-// 44 W 125th: what the kit does not draw of the front. The pressed-metal bay of the 2nd floor (posts between its
 // three windows, its sill and head panels, AC units in the outer upper lights), the heavy bracketed cornice over it (8.65-9.75 m), the carved terracotta (caps on the 3rd-floor piers,
 // panels under the outer 4th-floor windows), the arched tympana with keystones over the 4th-floor windows, and the entrance's gate (its box and the curtain down to 3.3 m)
 function carved(kit, m, mL, u0, u1, y0, y1) {
@@ -635,8 +628,8 @@ function tympanum(kit, field, rim, a, b, yb) {
 }
 export function w44(group, ctx, spec, frame) {
   const kit = frame.kit, L = frame.L;
-  const iron = kit.mat('wood_painted', { tint: '#4d3e30', dirt: 0.3 });   // '#3a2e29' rendered (29,26,28) in b2r1, '#563d2d' (50,31,24) in b2r3
-  const tc = kit.mat('terracotta_cream', { tint: '#553a32', dirt: 0.6 });   // carved blocks (69,35,31) (b2r2 '#6c3a2d', b2r3 '#5e3328' read bright red)
+  const iron = kit.mat('wood_painted', { tint: '#4d3e30', dirt: 0.3 });
+  const tc = kit.mat('terracotta_cream', { tint: '#553a32', dirt: 0.6 });
   const tcL = kit.mat('terracotta_cream', { tint: '#6a4a40', dirt: 0.55 });
   const unit = kit.mat('plain', { tint: '#d3d3cd', rough: 0.55 });
   const slot = kit.mat('plain', { tint: '#4b4d4d', rough: 0.7 });
@@ -656,7 +649,6 @@ export function w44(group, ctx, spec, frame) {
   kit.cornice({ kind: 'bracketed', h: 1.1, proj: 0.45, mat: 'wood_painted', tint: '#4d3e30', brackets: 7 }, -0.02, L + 0.02, 9.75);
   // carved caps on the 3rd-floor piers, carved panels under the outer 4th-floor windows
   for (const [a, b] of [[0.04, 0.92], [1.86, 2.8], [3.72, 4.64], [5.56, 6.46]]) carved(kit, tc, tcL, a, b, 11.42, 11.78);
-  // the grooves between the banded courses of the 3rd-floor piers read dark: a dark strip in each 0.07 m gap (the bands are in the spec)
   const groove = kit.mat('plain', { tint: '#3a2b26', rough: 0.9 });
   for (const [a, b] of [[0, 0.95], [1.85, 2.81], [3.71, 4.65], [5.55, 6.5]]) for (let y = 9.95; y < 11.4; y += 0.24) kit.box(groove, a, b, y, y + 0.07, 0.0, 0.006, { c: 0.001, near: true });
   for (const [a, b] of [[0.94, 1.98], [4.7, 5.74]]) carved(kit, tc, tcL, a, b, 12.28, 12.86);
@@ -671,7 +663,6 @@ export function w44(group, ctx, spec, frame) {
   kit.box(blue, 0.03, 0.5, 5.5, 8.15, 0.0, 0.36, { c: 0.01 });
   kit.sign({ kind: 'panel', text: '', fg: '#ffffff', bg: '#1d55d6', logo: 'bid4:yogaV', logoAt: 'fill', u0: 0.05, u1: 0.48, y: 5.6, h: 2.45, depth: 0.03, lit: 'face', push: false }, { z: 0.362 });   // (depth >= 0.02: the face quad sits at depth - 0.006, in front of the back skin)   // (b2r3: `lines` of one letter each drew a dot)
   for (const u of [0.36, 1.24]) kit.box(steel, u - 0.035, u + 0.035, 0.0, 4.75, 0.0, 0.08, { c: 0.004, near: true });
-  // the black marker tags on the curtain's top slats and the box, invented
   kit.sign({ kind: 'painted', text: '', fg: '#111111', bg: null, logo: 'bid4:tags44', logoAt: 'fill', u0: 0.4, u1: 1.2, y: 4.15, h: 0.55, lit: 'none' }, { z: 0.052 });
 }
 
@@ -687,9 +678,7 @@ export function tags44(ctx, w, h) {
   g.restore();
 }
 
-// Lady Love's window: hats on shelves, crowns and brims in felt and straw colours
 export function hats(ctx, w, h) {
-  // b3r2: nine shelf rows of light hats read as a sparse shop shelf;
   // straw, overlapping, no shelf lines showing: thirteen staggered rows, heavy overlap, a jitter in height, dark tones weighted
   const g = cl(ctx);
   g.fillStyle = '#1b1817'; g.fillRect(0, 0, w, h);
@@ -779,7 +768,6 @@ export function yogaV(ctx, w, h) {
   g.restore();
 }
 
-// Mushtari's hanging banner: black cloth, three small white lines at the top, the name in white lowercase down
 // the banner, a small paint-can mark at the foot (drawn from scratch)
 export function mushtariBanner(ctx, w, h) {
   const g = cl(ctx);

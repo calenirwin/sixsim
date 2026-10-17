@@ -6,10 +6,50 @@ export class CityColliders {
   constructor() {
     this.grid = new Map(); // "cx_cz" -> { prisms: [], boxes: [] }
     this.byTile = new Map(); // tileKey -> arrays for cleanup
+    this.sigs = new Map();   // SPACE r2: tileKey -> the signatures of the prisms it holds (see addPrism)
+    // SPACE r2 (game/control.js): low barriers a walker does not cross (a street tree's guard, the Mall's hoop fence) and
+    // that nothing else sees (the drone, the cameras' pull-in and the ground probes keep to the prisms): oriented boxes
+    this.barriers = new Map();       // "cx_cz" -> [barrier]
+    this.barrierByTile = new Map();  // tileKey -> [barrier]
+  }
+  // b: { x, z, hw, hd, rotY } (rotY as three's rotation.y: the box's local x runs along (cos, -sin))
+  addBarrier(tileKey, b) {
+    const c = Math.cos(b.rotY || 0), s = Math.sin(b.rotY || 0), r = Math.hypot(b.hw, b.hd) + 0.5;   // (+ a walker's reach: barrierAt looks in one cell)
+    const B = { x: b.x, z: b.z, ux: c, uz: -s, hw: b.hw, hd: b.hd, cells: null };
+    let reg = this.barrierByTile.get(tileKey);
+    if (!reg) this.barrierByTile.set(tileKey, (reg = []));
+    reg.push(B);
+    const c0x = Math.floor((b.x - r) / CELL), c1x = Math.floor((b.x + r) / CELL), c0z = Math.floor((b.z - r) / CELL), c1z = Math.floor((b.z + r) / CELL);
+    for (let cz = c0z; cz <= c1z; cz++) for (let cx = c0x; cx <= c1x; cx++) {
+      const k = `${cx}_${cz}`;
+      let g = this.barriers.get(k);
+      if (!g) this.barriers.set(k, (g = []));
+      g.push(B);
+    }
+    B.cells = [c0x, c0z, c1x, c1z];
+  }
+  // does a circle of radius r at (x, z) reach a barrier?
+  barrierAt(x, z, r) {
+    const g = this.barriers.get(this._cell(x, z));
+    if (!g) return false;
+    for (const B of g) {
+      const dx = x - B.x, dz = z - B.z, a = dx * B.ux + dz * B.uz, b = -dx * B.uz + dz * B.ux;
+      if (Math.hypot(Math.max(Math.abs(a) - B.hw, 0), Math.max(Math.abs(b) - B.hd, 0)) < r) return true;
+    }
+    return false;
   }
   _cell(x, z) { return `${Math.floor(x / CELL)}_${Math.floor(z / CELL)}`; }
   addPrism(tileKey, prism) {
     // prism: {pts: Float32Array [x,z,...] world, minX,minZ,maxX,maxZ, y0, y1}
+    // SPACE r2 (docs/notes/space-r2.md): parts that register under a fixed key (kit31, ar32c, campus) at every build of a tile
+    // added the same prisms again at every visit, thousands more a tour cycle in the grid (memory, and every resolve and
+    // raycast walked them); an identical prism under the same key is kept once
+    const P = prism.pts, f2 = (v) => Math.round(v * 100);
+    const sig = `${f2(prism.minX)},${f2(prism.minZ)},${f2(prism.maxX)},${f2(prism.maxZ)},${f2(prism.y0)},${f2(prism.y1)},${P.length},${f2(P[0])},${f2(P[1])},${prism.deck ? 1 : 0}`;
+    let sigs = this.sigs.get(tileKey);
+    if (!sigs) this.sigs.set(tileKey, (sigs = new Set()));
+    if (sigs.has(sig)) return;
+    sigs.add(sig);
     let reg = this.byTile.get(tileKey);
     if (!reg) this.byTile.set(tileKey, (reg = []));
     reg.push(prism);
@@ -37,8 +77,7 @@ export class CityColliders {
     this.addPrism(tileKey, { pts, minX, minZ, maxX, maxZ, y0: box.y - box.hh, y1: box.y + box.hh, deck: box.deck });
   }
   removeTile(tileKey) {
-    const reg = this.byTile.get(tileKey);
-    if (!reg) return;
+    const reg = this.byTile.get(tileKey) || [];
     for (const prism of reg) {
       const [c0x, c0z, c1x, c1z] = prism.cells;
       for (let cz = c0z; cz <= c1z; cz++) for (let cx = c0x; cx <= c1x; cx++) {
@@ -47,6 +86,18 @@ export class CityColliders {
       }
     }
     this.byTile.delete(tileKey);
+    this.sigs.delete(tileKey);
+    const bar = this.barrierByTile.get(tileKey);
+    if (bar) {
+      for (const B of bar) {
+        const [c0x, c0z, c1x, c1z] = B.cells;
+        for (let cz = c0z; cz <= c1z; cz++) for (let cx = c0x; cx <= c1x; cx++) {
+          const g = this.barriers.get(`${cx}_${cz}`);
+          if (g) { const i = g.indexOf(B); if (i >= 0) g.splice(i, 1); if (!g.length) this.barriers.delete(`${cx}_${cz}`); }
+        }
+      }
+      this.barrierByTile.delete(tileKey);
+    }
   }
   _pointIn2D(x, z, pts) {
     let inside = false;

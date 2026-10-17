@@ -1,5 +1,4 @@
 // AR33 building specs, segment east: Fifth Avenue to the river (schema: docs/notes/ar33-spec.md; inventory: docs/notes/ar33-frontage/east.json).
-// Owner: the EAST worker (docs/notes/ar33-east.md). References under client/shots/ar33/east/refs: b<idx>_s / b<idx>_o are
 // u runs LEFT TO RIGHT AS YOU FACE THE BUILDING FROM THE STREET: u = 0 is the WEST end on the north side of 125th, the EAST end on the south side.
 
 // ------------------------------------------------------------------ helpers (local to this file)
@@ -49,10 +48,10 @@ function tenement(o) {
 // painters (custom/east.js MU_PANELS) invent every face, figure and letter in the panel's kind, palette and density. The hoarding stands
 // ~1.8 m out on the sidewalk, not on the lot line: its foot sits lower in b63_s than Popeyes' and both b64_s and b65_s showed every panel
 // ~13 % narrower in the twin's plates at the lot line (b3r1); `inset: -1.8` with returns to the lot line at both ends. Out there it runs
-// on 0.8 m past the lot in front of Popeyes' east pier: `ext1: 0.8`, the run 35.96 m (the last two panels +0.4 m each).
+// showed a gap and the return): `ext1: 0.8`, the run 35.96 m (the last two panels +0.4 m each).
 const LEX_SW_RUN = [['pinkleaf', 2.22], ['greentags', 4.88], ['doodles', 4.35], ['woman', 3.05], ['leafy', 2.45], ['collage', 3.75], ['serpent', 2.55],
   ['elder', 2.51], ['door', 1.86], ['faces', 2.66], ['trees', 2.61], ['crowd', 3.07]];
-// the yard fence of the Lexington-Third site, from the gate (the left end seen from the street)
+// over a red field, a signed street scene), from the gate (the left end seen from the street)
 const YARD_RUN = [['woman', 3.1], ['elder', 2.6], ['boombox', 3.4], ['faces', 2.8], ['collage', 4.2], ['pinkleaf', 2.3], ['crowd', 3.6], ['serpent', 2.7],
   ['figure', 3.0], ['leafy', 2.5], ['doodles', 4.4], ['trees', 2.8], ['greentags', 5.0], ['door', 1.9], ['faces', 2.6], ['collage', 3.1]];
 
@@ -123,7 +122,7 @@ export default [
       cornice: { kind: 'bracketed', h: 1.75, proj: 1.0, mat: 'stone_lime', tint: '#b09f82', brackets: 16 },
     }],
     roof: { kind: 'flat', parapet: { h: 0.9, coping: 'stone_lime' }, membrane: 'gravel', items: [{ k: 'bulkhead', at: [0.55, 0.45], w: 4.2, d: 3.0, h: 3.0 }] },
-    refs: [],
+    refs: ['east/refs/b17_s.jpg', 'east/refs/b17_o.jpg', 'east/refs/b17_mEhi.jpg'],
     notes: 'Bay count (9) and floor heights estimated from b17_o; LED "HALAL" ticker signs over the ground floor are not drawn. Unknown: the Park Avenue face above the viaduct, the roof.',
   },
 
@@ -146,7 +145,7 @@ export default [
       cornice: { kind: 'bracketed', h: 1.5, proj: 0.75, mat: 'metal_painted', tint: '#2c2926', brackets: 6 },
     }],
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'metal' }, membrane: 'black' },
-    refs: [], notes: 'Cream terracotta front between two taller neighbours; dark pedimented sheet-metal cornice (pediment not modelled).',
+    refs: ['east/refs/b18_s.jpg'], notes: 'Cream terracotta front between two taller neighbours; dark pedimented sheet-metal cornice (pediment not modelled).',
   },
   {
     id: 'e125-109', addr: '109 E 125th St', name: null, bin: null,
@@ -162,7 +161,7 @@ export default [
       cornice: { kind: 'bracketed', h: 1.2, proj: 0.55, mat: 'metal_painted', tint: '#6b5140', brackets: 5 },
     }],
     roof: { kind: 'flat', parapet: { h: 0.5, coping: 'metal' }, membrane: 'black' },
-    refs: [], notes: 'Red brick 4-storey tenement front between the QN deli and the 24/7 Quick market; 3 bays.',
+    refs: ['east/refs/b19_s.jpg'], notes: 'Red brick 4-storey tenement front between the QN deli and the 24/7 Quick market; 3 bays.',
   },
   {
     id: 'e125-111', addr: '111-113 E 125th St', name: '24/7 Quick Snacks & Mini Market', bin: null,
@@ -206,7 +205,7 @@ export default [
       fireEscape: { bays: [5, 6, 7], floors: [1, 4], kind: 'balcony', drop: true },
     }],
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'metal' }, membrane: 'black' },
-    refs: [], notes: 'The green ironwork is drawn as painted-steel piers and bands (round arches are flat-headed in the kit).',
+    refs: ['east/refs/b20_s.jpg', 'east/refs/b21_s.jpg'], notes: 'The green ironwork is drawn as painted-steel piers and bands (round arches are flat-headed in the kit).',
   },
   {
     id: 'e125-115', addr: '115 E 125th St', name: 'breakfast and sandwich shop', bin: null,
@@ -229,7 +228,7 @@ export default [
       cornice: { kind: 'band', h: 0.5, proj: 0.25, mat: 'stucco', tint: '#b99c6c' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.5, coping: 'metal' }, membrane: 'black' },
-    refs: [], notes: 'Two-storey stucco front with tan-painted quoined window frames above a dark polished stone base; roll-down gates.',
+    refs: ['east/refs/b22_s.jpg'], notes: 'Two-storey stucco front with tan-painted quoined window frames above a dark polished stone base; roll-down gates.',
   },
 
   // ------------------------------------------------------------------ Lexington Avenue, north-west and north-east corners
@@ -237,7 +236,6 @@ export default [
     id: 'e125-127', addr: '127 E 125th St', name: 'Olgam Life plasma center, delis', bin: null,
     at: [2836.61, -2405.95], comp: '5_-5:104', h: 14.3, status: 'draft',
     // b23 (2001): three storeys of silver aluminium panel with a red-painted band on the second floor and ribbons of grey glass
-    // (AR34 w2 b3) the panels read white in b3r3: tint down; the second floor's windows framed in red
     wall: { mat: 'panel_alu', tint: '#8f9497', dirt: 0.4 },
     faces: [{
       edge: 'front',
@@ -281,11 +279,13 @@ export default [
       bays: { n: 6, margin: [0.7, 0.7] },
       floors: [{ n: 2, h: 4.0, win: 'R' }],
       windows: { R: { w: 3.6, h: 2.05, sill: 0.95, kind: 'ribbon', mullions: 1, frame: 'alu_clear', glass: 'glass_grey', reveal: 0.1, lintel: null, sillStone: null, ac: 0, blinds: 0.6, lit: 0.3 } },
+      // (AR34 w2 b3 session 3: the front's reds, these bands, the main face's plain bands and the ribbon frames, read (132,27,22)
+      // saturation difference the day's auto-exposure does not make): #c2231d / #c3261f -> #e04a44)
       bands: [{ at: 4.6, h: 1.0, proj: 0.05, mat: 'metal_painted', tint: '#e04a44' }, { at: 7.45, h: 0.85, proj: 0.05, mat: 'metal_painted', tint: '#e04a44' }],
       cornice: { kind: 'band', h: 0.75, proj: 0.25, mat: 'panel_alu', tint: '#9aa0a3' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.85, coping: 'metal' }, membrane: 'white', items: [{ k: 'hvac', at: [0.5, 0.5], n: 3 }] },
-    refs: [], notes: 'Three-storey 2001 block: silver panels, red painted bands at the second floor, grey ribbon glazing. The Olgam Life purple sign panel over the west end is not drawn yet.',
+    refs: ['east/refs/b23_s.jpg', 'east/refs/b23_o.jpg'], notes: 'Three-storey 2001 block: silver panels, red painted bands at the second floor, grey ribbon glazing. The Olgam Life purple sign panel over the west end is not drawn yet.',
   },
   {
     id: 'e125-145', addr: '145 E 125th St', name: '125th Street Community Health Center', bin: null,
@@ -343,7 +343,7 @@ export default [
       cornice: { kind: 'dentil', h: 1.4, proj: 0.8, mat: 'brick_buff', tint: '#a98c66' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'metal' }, membrane: 'black', items: [{ k: 'bulkhead', at: [0.5, 0.55], w: 3.2, d: 2.6, h: 2.6 }] },
-    refs: [], notes: 'Red tiled west half of the ground floor is approximated by terracotta kick plates; the semicircular fanlight arch over the entrance and the carved name band are not modelled. The 4/5/6 subway entrance at the corner belongs to PROPS.',
+    refs: ['east/refs/b24_s.jpg', 'east/refs/b24_o.jpg'], notes: 'Red tiled west half of the ground floor is approximated by terracotta kick plates; the semicircular fanlight arch over the entrance and the carved name band are not modelled. The 4/5/6 subway entrance at the corner belongs to PROPS.',
   },
 
   // ------------------------------------------------------------------ south side, Park to Lexington
@@ -351,7 +351,6 @@ export default [
     id: 'e125-118', addr: '118 E 125th St', name: 'NMRNC nursing and rehabilitation', bin: null,
     at: [2761.18, -2365.3], comp: '5_-5:176', h: 37.25, status: 'draft',
     // b61 (1995): ten storeys of buff brick over a cream-tile base, brown awnings, a round-arch canopy at the entrance
-    // (AR34 w2 b3) tint measured on b62_s: real h30 s.43 v.74, twin (b3r1, #c7a274) h30 s.48 v.65
     wall: { mat: 'brick_buff', tint: '#d6b385', dirt: 0.4 },
     faces: [{
       edge: [2759.08, -2396.67, 2785.63, -2381.98],
@@ -371,12 +370,11 @@ export default [
       cornice: { kind: 'band', h: 0.5, proj: 0.2, mat: 'brick_buff', tint: '#c0996b' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.9, coping: 'stone_lime' }, membrane: 'gravel', items: [{ k: 'bulkhead', at: [0.4, 0.5], w: 4.0, d: 3.0, h: 3.0 }] },
-    refs: [], notes: 'Buff-brick nursing home with a cream-tile base and brown awnings; the stepped upper floors are not modelled (the ring is the compiled one).',
+    refs: ['east/refs/b61_s.jpg', 'east/refs/b61_o.jpg'], notes: 'Buff-brick nursing home with a cream-tile base and brown awnings; the stepped upper floors are not modelled (the ring is the compiled one).',
   },
   {
     id: 'e125-120', addr: '120 E 125th St', name: 'former Harlem Free Library / Romanesque front', bin: null,
     at: [2781.65, -2366.61], comp: '5_-5:178', h: 13.2, status: 'draft',
-    // b62_s: a red-painted cast-iron shopfront between
     // rock-faced brownstone piers (to ~5.8 m, its frieze at 4.4-5.0), two storeys of orange-red brick with three windows each and a narrow
     // stair window at the west (east? the left as seen) edge, a brownstone entablature over the third storey at ~12.6-13.2 m, then a brick
     // gable to ~18.0 m (the finial to 18.9) with an arched window in it (not drawn: the kit's gable parapet has no openings). The AR33
@@ -406,7 +404,7 @@ export default [
       parapet: { kind: 'gable', u0: 0.15, u1: 7.72, rise: 4.8, coping: 'brownstone', copingTint: '#6e5a4e' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'stone_lime' }, membrane: 'black' },
-    refs: [], notes: 'Romanesque front re-measured on the levelled b62_s: 13.2 m to the gable foot, the gable to ~18 m; the gable window and finial are not drawn.',
+    refs: ['east/refs/b62_s.jpg', 'east/refs/b62_o.jpg'], notes: 'Romanesque front re-measured on the levelled b62_s: 13.2 m to the gable foot, the gable to ~18 m; the gable window and finial are not drawn.',
   },
   {
     id: 'e125-122', addr: '122 E 125th St', name: 'Popeyes', bin: null,
@@ -414,7 +412,7 @@ export default [
     // b63_s / b64_s (2026-08): two storeys of dark brown-red brick under a front wall to ~10.3 m (the compiled 8.93 m is the roof behind it).
     // Heights over the sidewalk measured on the LEVELLED b63_s through its ALT 2.3 camera (EAST 2026-10-02 02:45; the sidewalk taken 0.28 m
     // over the terrain datum, the compiled baseY): the lower awning 3.42-4.09 m, the lower wordmark 4.36-5.04, the upper glass 5.17-7.60,
-    // the upper awning's foot 7.67, the pill 8.27-8.70, the upper wordmark 8.76-9.47. Red standing-seam awnings over the shop (the kit's) and over the upper glass (custom east:popeyes);
+    // read ~0.3 m high: b3r9 showed every feature ~25 px high). Red standing-seam awnings over the shop (the kit's) and over the upper glass (custom east:popeyes);
     // the white channel wordmarks on the brick and the red LOUISIANA KITCHEN pill with its white line (SIGNS' values, ar34-req/EAST.md
     // 00:51-01:18, the heights re-measured); a round blade sign at the east corner and promotion posters in the windows (custom, invented).
     wall: { mat: 'brick_red', tint: '#564139', dirt: 0.45 },
@@ -423,7 +421,7 @@ export default [
     posters: [{ u: 1.8, y: 1.45, w: 0.87, h: 1.2 }, { u: 2.77, y: 1.45, w: 0.87, h: 1.2 }, { u: 5.7, y: 1.45, w: 0.87, h: 1.2 }, { u: 6.64, y: 1.45, w: 0.85, h: 1.2 },
       { u: 4.9, y: 5.45, w: 0.85, h: 1.1, upper: true }],
     roundel: { u: 0.18, y: 5.4, d: 1.05, proj: 0.25 },
-    // the east side wall over the lot: grey concrete block
+    // h36 s.10 v.78 under an overcast sky; #c4bdb2 rendered near white in the sun (b3r9/b64_s_day.jpg): a third darker)
     sideWall: { mat: 'concrete_precast', tint: '#9c978d' },
     faces: [{
       edge: 'front',
@@ -442,7 +440,7 @@ export default [
       cornice: { kind: 'parapet' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.7, coping: 'metal' }, membrane: 'black' },
-    refs: [], notes: 'Popeyes: both wordmarks are white channel letters on the brick (SIGNS); the upper awning, the posters and the corner roundel are east:popeyes.',
+    refs: ['east/refs/b63_s.jpg', 'east/refs/b64_s.jpg'], notes: 'Popeyes: both wordmarks are white channel letters on the brick (SIGNS); the upper awning, the posters and the corner roundel are east:popeyes.',
   },
 
   // ------------------------------------------------------------------ Lexington to Third, north side
@@ -476,7 +474,7 @@ export default [
       cornice: { kind: 'band', h: 0.9, proj: 0.3, mat: 'panel_alu', tint: '#b2b7ba' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'metal' }, membrane: 'gravel', items: [{ k: 'hvac', at: [0.15, 0.5], n: 2 }, { k: 'hvac', at: [0.9, 0.5], n: 2 }] },
-    refs: [], notes: 'Podium only is spec\'d; the 36 m dark tower is a custom box on its east half (window rhythm estimated). The sidewalk planters are PROPS\'s.',
+    refs: ['east/refs/b25_s.jpg', 'east/refs/b25_o.jpg'], notes: 'Podium only is spec\'d; the 36 m dark tower is a custom box on its east half (window rhythm estimated). The sidewalk planters are PROPS\'s.',
   },
   {
     id: 'e125-2306', addr: '2306 Third Ave (175 E 125th St)', name: 'The Salvation Army Manhattan Citadel', bin: null,
@@ -501,7 +499,7 @@ export default [
     // (AR34 w2 b3, QA 03:17) the footprint is a C open on the west at mid-depth: [0.4, 0.5] fell in the gap ('does not fit inside the
     // footprint, left out' in QA's w2r2 pages); the bulkhead now on the front bar (its position is not measured)
     roof: { kind: 'flat', parapet: { h: 0.8, coping: 'stone_lime' }, membrane: 'gravel', items: [{ k: 'bulkhead', at: [0.75, 0.15], w: 5.0, d: 3.5, h: 3.4 }] },
-    refs: [], notes: 'Front is the 26.5 m edge; the 11.3 m inner wall and the Third Avenue face are plain. The curtain wall over the east bays (floors 2-3) is drawn as bronze-framed casements for now.',
+    refs: ['east/refs/b26_s.jpg', 'east/refs/b26_o.jpg'], notes: 'Front is the 26.5 m edge; the 11.3 m inner wall and the Third Avenue face are plain. The curtain wall over the east bays (floors 2-3) is drawn as bronze-framed casements for now.',
   },
   {
     id: 'e125-201', addr: '201 E 125th St (Third Ave corner)', name: 'Food Bazaar, Teriyaki Madness, Phenix Salon Suites', bin: null,
@@ -529,33 +527,31 @@ export default [
       cornice: { kind: 'band', h: 1.0, proj: 0.3, mat: 'metal_painted', tint: '#3a3430' },
     }],
     roof: { kind: 'flat', parapet: { h: 1.0, coping: 'metal' }, membrane: 'gravel', items: [{ k: 'bulkhead', at: [0.35, 0.5], w: 6.0, d: 4.0, h: 4.0 }, { k: 'hvac', at: [0.75, 0.5], n: 3 }] },
-    refs: [], notes: 'Six-storey podium with a glazed retail floor, then the tower; the real tower is narrower than the compiled ring (setbacks above floor 7 not modelled).',
+    refs: ['east/refs/b27_s.jpg', 'east/refs/b27_o.jpg'], notes: 'Six-storey podium with a glazed retail floor, then the tower; the real tower is narrower than the compiled ring (setbacks above floor 7 not modelled).',
   },
 
   // ------------------------------------------------------------------ Lexington to Second, south side
   {
     id: 'e125-lot-lexSW', addr: 'Lexington Ave SW corner lot (construction site)', name: 'vacant lot behind a hoarding', bin: null,
     at: [2803.18, -2355.08], comp: '5_-5:185', h: 2.7, status: 'draft', custom: 'east:hoarding', site: { kind: 'hoarding', h: 2.7, inset: -1.8, returns: 'u1', ext1: 0.8, murals: { plan: LEX_SW_RUN, off: 11.1 } },
-    refs: [], notes: 'The compiled 5-storey tenement no longer stands (2026-08: painted plywood hoarding, the backs of 124th Street behind). Murals invented in the real panels\' kinds, order and palette (LEX_SW_RUN).',
+    refs: ['east/refs/b63_s.jpg', 'east/refs/b64_s.jpg'], notes: 'The compiled 5-storey tenement no longer stands (2026-08: painted plywood hoarding, the backs of 124th Street behind). Murals invented in the real panels\' kinds, order and palette (LEX_SW_RUN).',
   },
   {
     id: 'e125-lot-lexSW2', addr: 'Lexington Ave SW corner lot (east part)', name: 'vacant lot behind a hoarding', bin: null,
     at: [2817.97, -2344.38], comp: '5_-5:188', h: 2.7, status: 'draft', custom: 'east:hoarding', site: { kind: 'hoarding', h: 2.7, inset: -1.8, returns: 'u0', murals: { plan: LEX_SW_RUN, off: 0 }, barricades: [[2.85, 4.95]] },
-    refs: [], notes: 'Same site as the lot west of it: the pink leaf panel at the corner, the green tagged sheet with a steel barrier before it, the doodle wall.',
+    refs: ['east/refs/b65_s.jpg'], notes: 'Same site as the lot west of it: the pink leaf panel at the corner, the green tagged sheet with a steel barrier before it, the doodle wall.',
   },
   {
     id: 'e125-lot-parkSW', addr: 'Park Ave SW corner lot (construction site)', name: 'mesh fence', bin: null,
     at: [2694.77, -2408.14], comp: '5_-5:126', h: 2.4, status: 'draft', custom: 'east:hoarding', site: { kind: 'mesh', h: 2.4, inset: 0.3 },
-    refs: [], notes: 'Black mesh fence and a crane in 2026-08 (BLASTING ZONE sign); the crane is not drawn.',
+    refs: ['east/refs/sPkSW_mEhi.jpg'], notes: 'Black mesh fence and a crane in 2026-08 (BLASTING ZONE sign); the crane is not drawn.',
   },
   {
     id: 'e125-2282', addr: '2282 Third Ave', name: 'building under scaffold', bin: null,
     at: [2922.83, -2246.22], comp: '5_-5:112', h: 8.45, status: 'draft',
     // (AR34 w2 b3 sessions 2-3, QA Q02 / Q59) this spec also hosts the block under construction on 125th, Lexington to Third, its shed,
     // bridge, yard and plant (no compiled footprint; fk/custom/east.js siteBlock). The frame: s along 125th from o (east), t south of it.
-    // MEASURED: the screen's top 32.9 m over the road; the shed's kerb-side posts and plank
-    // hoarding 1.3 m in from the kerb, the deck ~3.4 m and its railing 1.07 m over the road; the bridge's deck ~5.9-6.15 m, its railing to
-    // ~7.3 m (e2676); the west face, the gate and the bridge's ends from e2676 / 2694 / e2658; the Third Avenue face's south end from Zv58vM 2784 (t ~48 +-5 m: put at 2282 Third's north
+    // client/shots/ar34/east/elev/site_*, rows -> distances at the 2026-08 lens); the bridge's deck ~5.9-6.15 m, its railing to
     // wall, t 43.3); the 125th wing's depth (d1) from e2658 (~19-22 m). NOT MEASURED: the Third Avenue wing's width (wing[0]), the storey
     // heights (ten storeys between the base and the roof), the bridge's depth, the plant's sizes. The south building line (lot) and the
     // kerb are the compiled ground's; Third Avenue's building line (e) and kerb (outE + 1.3) too.
@@ -571,7 +567,7 @@ export default [
       windows: { A: win({ w: 2.0, h: 1.7, sill: 1.0, kind: 'fixed', frame: 'alu_black', reveal: 0.12, lintel: lintelOf('flat', '#8f8474', 0.2, 'concrete_precast'), sillStone: null, ac: 0 }) },
       cornice: { kind: 'band', h: 0.5, proj: 0.2, mat: 'concrete_precast', tint: '#9a9488' } }],
     roof: { kind: 'flat', parapet: { h: 0.45, coping: 'metal' }, membrane: 'black' },
-    refs: [], notes: 'Scaffold and the green sidewalk shed are not drawn yet (custom item). The building behind is 1973, brick.',
+    refs: ['east/refs/b66_s.jpg'], notes: 'Scaffold and the green sidewalk shed are not drawn yet (custom item). The building behind is 1973, brick.',
   },
   {
     id: 'e125-2293', addr: '2293 Third Ave', name: 'Hassy Juice & Deli, Burger King', bin: null,
@@ -595,7 +591,7 @@ export default [
       cornice: { kind: 'band', h: 0.6, proj: 0.2, mat: 'brick_red', tint: '#7e5a49' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.8, coping: 'metal' }, membrane: 'gravel', items: [{ k: 'bulkhead', at: [0.5, 0.5], w: 4.0, d: 3.0, h: 3.0 }] },
-    refs: [], notes: 'The tan brick wings (outer bays) are the same red here; the bus shelter at the curb is PROPS\'s.',
+    refs: ['east/refs/b67_s.jpg', 'east/refs/b67_o.jpg'], notes: 'The tan brick wings (outer bays) are the same red here; the bus shelter at the curb is PROPS\'s.',
   },
   {
     id: 'e125-216', addr: '214-216 E 125th St', name: 'white-panel residential building', bin: null,
@@ -620,12 +616,12 @@ export default [
       cornice: { kind: 'band', h: 0.7, proj: 0.25, mat: 'metal_painted', tint: '#3a3c3f' },
     }],
     roof: { kind: 'flat', parapet: { h: 1.0, coping: 'metal' }, membrane: 'white', items: [{ k: 'bulkhead', at: [0.3, 0.5], w: 4.0, d: 3.0, h: 3.0 }] },
-    refs: [], notes: 'Compiled as two footprints (b68 7.8 m, b69 15.5 m); one ring here. The real tower steps (taller at the west end).',
+    refs: ['east/refs/b69_s.jpg'], notes: 'Compiled as two footprints (b68 7.8 m, b69 15.5 m); one ring here. The real tower steps (taller at the west end).',
   },
   tenement({
     id: 'e125-218', addr: '218 E 125th St', name: 'nail salon', at: [3042.53, -2230.26], comp: '5_-5:90', h: 15.0, n: 3, w: 7.96, baseH: 4.6,
     tint: '#7f5d4d', trim: '#7d3c30', trimMat: 'brownstone', cornTint: '#6a3a2e', fe: [1], bays: 3, lintel: 'hood',
-    shopName: 'Nail Spa', signBg: '#d0428f', refs: [], notes: 'Narrow red-brick tenement with a pink shopfront.',
+    shopName: 'Nail Spa', signBg: '#d0428f', refs: ['east/refs/b70_s.jpg'], notes: 'Narrow red-brick tenement with a pink shopfront.',
   }),
   {
     id: 'e125-220', addr: '220 E 125th St', name: 'loft building with arched windows (Energy)', bin: null,
@@ -650,7 +646,7 @@ export default [
       cornice: { kind: 'modillion', h: 1.6, proj: 0.9, mat: 'brownstone', tint: '#8a4a3c' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'stone_lime' }, membrane: 'black' },
-    refs: [], notes: 'Ochre loft building between the library and a red-brick tenement: brownstone-red pilasters at the base, large arches on floors 2-3 (double arches per bay not modelled).',
+    refs: ['east/refs/b71_s.jpg'], notes: 'Ochre loft building between the library and a red-brick tenement: brownstone-red pilasters at the base, large arches on floors 2-3 (double arches per bay not modelled).',
   },
   {
     id: 'e125-226', addr: '226 E 125th St', name: 'Harlem Library (NYPL, 1904, individual landmark)', bin: null,
@@ -675,7 +671,7 @@ export default [
       cornice: { kind: 'dentil', h: 1.5, proj: 0.85, mat: 'stone_lime', tint: '#cbc1ac' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'stone_lime' }, membrane: 'black' },
-    refs: [], notes: 'NYPL 125th Street branch. Access ramp with railings at the ground (not drawn).',
+    refs: ['east/refs/b72_s.jpg'], notes: 'NYPL 125th Street branch. Access ramp with railings at the ground (not drawn).',
   },
   {
     id: 'e125-scientology', addr: '228-236 E 125th St', name: 'Church of Scientology Harlem Community Center', bin: null,
@@ -703,7 +699,7 @@ export default [
       ],
     }],
     roof: { kind: 'flat', parapet: { h: 0.8, coping: 'stone_lime' }, membrane: 'gravel', items: [{ k: 'bulkhead', at: [0.5, 0.5], w: 4.0, d: 3.0, h: 3.0 }] },
-    refs: [], notes: 'Compiled as three 7.6 m tenement footprints (3-4 floors); the real building is one ~22 m block (estimated 5 floors). Sign panels are plaque boxes until the sign kit letters them.',
+    refs: ['east/refs/b73_s.jpg', 'east/refs/b75_s.jpg'], notes: 'Compiled as three 7.6 m tenement footprints (3-4 floors); the real building is one ~22 m block (estimated 5 floors). Sign panels are plaque boxes until the sign kit letters them.',
   },
   {
     id: 'e125-246', addr: '246 E 125th St', name: 'Harlem Gourmet Market, Healthy Hair Beauty Salon', bin: null,
@@ -727,19 +723,19 @@ export default [
       cornice: { kind: 'dentil', h: 0.7, proj: 0.3, mat: 'brick_buff', tint: '#bcae96' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.5, coping: 'metal' }, membrane: 'black' },
-    refs: [], notes: 'Two-storey weathered brick front with a patterned brick frieze; five shops (two vacant) along 29 m.',
+    refs: ['east/refs/b76_s.jpg', 'east/refs/b75_s.jpg'], notes: 'Two-storey weathered brick front with a patterned brick frieze; five shops (two vacant) along 29 m.',
   },
   tenement({
     id: 'e125-254', addr: '254 E 125th St', name: 'Melcover Wine & Spirit', at: [3119.34, -2182.49], comp: '6_-5:1', h: 17.27, n: 4, w: 9.28, baseH: 4.2,
-    tint: '#8b6552', trim: '#5e3a30', trimMat: 'brownstone', fe: [1], bays: 3, door: 1.6, shopName: 'Melcover Wine & Spirit', signBg: '#f0c419', signFg: '#2a1a0c', refs: [],
+    tint: '#8b6552', trim: '#5e3a30', trimMat: 'brownstone', fe: [1], bays: 3, door: 1.6, shopName: 'Melcover Wine & Spirit', signBg: '#f0c419', signFg: '#2a1a0c', refs: ['east/refs/b79_s.jpg'],
   }),
   tenement({
     id: 'e125-256', addr: '256 E 125th St', name: 'Pizza', at: [3127.36, -2178.51], comp: '6_-5:29', h: 17.82, n: 4, w: 8.17, baseH: 4.2,
-    tint: '#886252', trim: '#5e3a30', trimMat: 'brownstone', fe: [1], bays: 3, shopName: 'PIZZA', signBg: '#f3efe4', signFg: '#b2311f', refs: [],
+    tint: '#886252', trim: '#5e3a30', trimMat: 'brownstone', fe: [1], bays: 3, shopName: 'PIZZA', signBg: '#f3efe4', signFg: '#b2311f', refs: ['east/refs/b79_s.jpg'],
   }),
   tenement({
     id: 'e125-258', addr: '258 E 125th St', name: null, at: [3134.46, -2174.5], comp: '6_-5:6', h: 17.72, n: 4, w: 8.35, baseH: 4.4,
-    tint: '#8b6654', trim: '#5e3a30', trimMat: 'brownstone', fe: [1], bays: 3, shopName: 'shop', refs: [],
+    tint: '#8b6654', trim: '#5e3a30', trimMat: 'brownstone', fe: [1], bays: 3, shopName: 'shop', refs: ['east/refs/b79_s.jpg'],
   }),
   {
     id: 'e125-260', addr: '260 E 125th St (Second Ave corner)', name: 'Fresh Food Inc', bin: null,
@@ -769,7 +765,7 @@ export default [
       cornice: { kind: 'bracketed', h: 1.3, proj: 0.6, mat: 'metal_painted', tint: '#6a4a3a', brackets: 8 },
     }],
     roof: { kind: 'flat', parapet: { h: 0.5, coping: 'metal' }, membrane: 'black' },
-    refs: [], notes: 'Corner tenement at Second Avenue: cream stone banding and hooded, white-framed windows; deli at the ground floor.',
+    refs: ['east/refs/b79_s.jpg'], notes: 'Corner tenement at Second Avenue: cream stone banding and hooded, white-framed windows; deli at the ground floor.',
   },
 
   // ------------------------------------------------------------------ Park Avenue, north-west corner
@@ -837,8 +833,8 @@ export default [
       cornice: { kind: 'bracketed', h: 0.8, proj: 0.8, mat: 'plain', tint: '#4a4845', brackets: 10 },
     }],
     roof: { kind: 'flat', parapet: { h: 0.1, coping: 'metal' }, membrane: 'black' },
-    refs: [],
-    notes: 'The landmark at the Park Avenue NW corner, measured (see the comment). The Park Avenue face (rock-faced to the ' +
+    refs: ['east/refs/b15_s.jpg', 'east/refs/b15_o.jpg', 'ar34/east/elev/n_81e_DQf2.jpg'],
+    notes: '' +
       'second-floor sill, arched windows) is still a draft read off b15_o. Unknown: the rear and west walls (plain).',
   },
 
@@ -851,11 +847,7 @@ export default [
     // 22.8 m: shops under a stone band (5.0-5.5 m), three tall second-storey windows (5.85-10.1 m) at u_orig 7.6-10.2 / 11.2-13.4 /
     // 14.4-16.5, a second band at 11.0-11.6 m, blank brick panels between frame piers to the top beam (20.8-22.8 m), a dark louvre screen
     // at u_orig 17.85-23.35 from 5.1 to 21.0 m, the open corner loggia (custom). The tower over u_orig 5.2-23.6 (flush with the front):
-    // 67.1 and 68.0 m over the lens, the lens 2.15 m over the road: the roof 69.7 m; a raised block
-    // on the roof (its east corner ~6.6 m behind the south-east corner) to 78.3 m, not drawn (its extent is not measured).
-    // agrees by proportion (~46 m of tower over the 22.8 m podium); its twenty storeys include the podium's.
-    // The estimate before (82.8 m, twenty storeys over the podium) was 13 m too tall.
-    // (The AR33 draft: 30 m, a window grid.)
+    // position error, not applied.) (The AR33 draft: 30 m, a window grid.)
     ring: [[2482.48, -2585.07], [2465.77, -2594.32], [2468.86, -2599.92], [2463.26, -2603.03], [2489.43, -2650.5], [2511.74, -2638.16]],
     custom: { fn: 'east:twoEast', with: 'kit' },
     tower: { u0: -1.2, u1: 17.2, w0: 0.0, w1: -48.0, h: 69.7, floors: 16, tint: '#a8806f',
@@ -880,19 +872,17 @@ export default [
       cornice: { kind: 'band', h: 2.0, proj: 0.1, mat: 'brick_red', tint: '#b08a79' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.4, coping: 'metal' }, membrane: 'gravel' },
-    refs: [],
-    notes: 'Measured podium; the tower\'s height measured (see the comment), its depth estimated. The Fifth Avenue face, the tower\'s orange balconies on its east face and the solar array on its roof are not drawn.',
+    refs: ['east/refs/b00_s.jpg', 'ar34/east/elev/n_2e_yrk0.jpg', ''],
+    notes: '',
   },
   tenement({
     id: 'e125-11', addr: '11 E 125th St', name: null, at: [2488.42, -2591.99], comp: '4_-6:396', h: 12.84, n: 3, w: 5.06, baseH: 4.2,
-    mat: 'brick_painted', tint: '#e6e3dc', trim: '#d4cfc4', trimMat: 'stucco', cornTint: '#2a2928', fe: [0], bays: 2, door: 1.4, shopName: 'shop', refs: [],
+    mat: 'brick_painted', tint: '#e6e3dc', trim: '#d4cfc4', trimMat: 'stucco', cornTint: '#2a2928', fe: [0], bays: 2, door: 1.4, shopName: 'shop', refs: ['east/refs/b02_s.jpg'],
     notes: 'b02_s (2026-08): white-painted walk-up, a black bracketed sheet-metal cornice, a fire escape on the west bay (the AR33 draft drew it in brown brick).',
   }),
   {
     id: 'e125-13', addr: '13 E 125th St', name: 'white cast-iron front with caducei', bin: null,
     at: [2497.06, -2592.97], comp: '4_-6:52', h: 12.69, status: 'draft',
-    // b02: a smooth white-painted front: the second floor a row of five sashes
-    // with low iron railings, gilded caducei on brackets at both ends;
     // the third floor 2 + 3 + 2 sashes in a moulded frame; a plain moulded cornice and a panelled parapet. (The AR33 draft: block-jointed
     // terracotta, three windows a floor, a modillion cornice.)
     wall: { mat: 'stucco', tint: '#ebe8e0', dirt: 0.4 },
@@ -922,13 +912,12 @@ export default [
       cornice: { kind: 'band', h: 0.55, proj: 0.35, mat: 'stucco', tint: '#e8e5dd' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.9, coping: 'stone_lime' }, membrane: 'black', items: [{ k: 'bulkhead', at: [0.15, 0.6], w: 1.6, d: 1.2, h: 1.8 }] },
-    refs: [], notes: 'The caducei are gilded plaques (no relief); the iron railings of the second floor are a grille item.',
+    refs: ['east/refs/b02_s.jpg'], notes: 'The caducei are gilded plaques (no relief); the iron railings of the second floor are a grille item.',
   },
   {
     id: 'e125-17', addr: '17 E 125th St', name: 'furniture and art gallery (gate down)', bin: null,
     at: [2505.09, -2588.53], comp: '4_-6:97', h: 5.3, status: 'draft',
     custom: { fn: 'east:wingsGate', with: 'kit' }, gateMural: { u0: 0.45, u1: 8.75, h: 3.4 },
-    // b01_s / b03_s (2026-08) (not rectified): the roll-down gate is down across the front and painted (a sunset over a
     // brick wall, white wings in the middle: fk/custom/east.js wingsGate, invented in that palette), a cream sign band with brown letters
     // over it, and a sign board along the parapet in three panels (gallery and home decor, a laundromat 'coming soon' panel, cabinets and
     // counter tops). The AR33 draft drew an open laundromat.
@@ -942,7 +931,7 @@ export default [
         { k: 'sign', sign: { kind: 'panel', lines: ['CABINETS', 'COUNTER TOPS'], font: 'Inter-700', fg: '#151515', bg: '#f4f2ec', u0: 6.2, u1: 8.7, y: 3.95, h: 1.15, fill: 0.75 } },
       ] }],
     roof: { kind: 'flat', parapet: { h: 0.3, coping: 'metal' }, membrane: 'black' },
-    refs: [], notes: 'Draft; the sign texts are the shop\'s own words, the layout of the board is invented.',
+    refs: ['east/refs/b01_s.jpg', 'east/refs/b03_s.jpg'], notes: '',
   },
   {
     id: 'e125-35', addr: '35 E 125th St', name: 'Geoffrey Canada Community Center, Harlem Children\'s Zone Promise Academy', bin: null,
@@ -967,7 +956,6 @@ export default [
         { kind: 'entrance', u0: 38.4, u1: 48.2, door: { kind: 'double', w: 1.8, recess: 1.6, h: 2.8, transom: 0.9, frame: 'alu_clear' } },
       ] },
       floors: [{ n: 3, h: 3.55, win: 'none' }],
-      // (AR34 w2 b3) vision glass again now MATS fixed its shards (ar34-req/EAST.md 03:19 / 03:26).
       // (median, refs_lv/b04_s.jpg x 290-810, y 110-340); glass_blue read (88,100,109) in plate s2r1, glass_vision_blue (131,153,153) in
       // MATS's: glass_vision_grey's lower transmission (0.42) with a blue tint a little less green than glass_vision_blue's ('#a6c0ce')
       curtain: { u0: 0.0, u1: 37.5, y0: 6.45, y1: 17.1, mullion: 1.55, transom: 'floor', frame: 'alu_clear', glass: 'glass_vision_grey', glassTint: '#a6bcce', spandrel: 'glass_grey', spandrelH: 0.55, lit: 0.4, blinds: 0.8 },
@@ -997,9 +985,9 @@ export default [
       levels: [{ u0: 12.0, u1: 41.75, d0: 1.6, d1: 24.0, h: 1.9, mat: 'panel_grey', tint: '#9aa3a8', membrane: 'white', coping: 'metal' }],
       items: [{ k: 'bulkhead', at: [0.63, 0.06], w: 2.75, d: 2.6, h: 5.3 }, { k: 'hvac', at: [0.25, 0.6], n: 3 }],
     },
-    refs: [],
+    refs: ['east/refs/b04_s.jpg', 'east/refs/b04_o.jpg', 'ar34/east/elev/n_35e_sY9H.jpg'],
     notes: 'Measured (see the comment). The children\'s photo banners in the poster bays are plain colour panels with the words (no photographs). ' +
-      'The rear and the penthouse depth are not measured.',
+      '',
   },
   {
     id: 'e125-51', addr: '51 E 125th St', name: 'Manhattan Medical Arts & Dental Specialists, Island Juice & Grill', bin: null,
@@ -1024,25 +1012,25 @@ export default [
       cornice: { kind: 'band', h: 0.9, proj: 0.3, mat: 'concrete_precast', tint: '#85806f' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'metal' }, membrane: 'black' },
-    refs: [], notes: 'White cement-board panels between taupe piers; window posters are not drawn.',
+    refs: ['east/refs/b05_s.jpg'], notes: 'White cement-board panels between taupe piers; window posters are not drawn.',
   },
   tenement({
     id: 'e125-57', addr: '57 E 125th St', name: 'Dunkin\' Donuts, Baskin-Robbins', at: [2620.2, -2521.64], comp: '5_-5:124', h: 12.46, n: 3, w: 5.81, baseH: 4.4,
-    mat: 'brick_tan', tint: '#c7a672', trim: '#9b8161', trimMat: 'concrete_precast', cornTint: '#7a6248', fe: null, bays: 2, door: 0.6, shopName: 'DUNKIN\' BASKIN', signBg: '#e96b1f', signFg: '#ffffff', refs: [],
+    mat: 'brick_tan', tint: '#c7a672', trim: '#9b8161', trimMat: 'concrete_precast', cornTint: '#7a6248', fe: null, bays: 2, door: 0.6, shopName: 'DUNKIN\' BASKIN', signBg: '#e96b1f', signFg: '#ffffff', refs: ['east/refs/b06_s.jpg'],
     cornice: 'parapet', cornH: 0.6,
   }),
   tenement({
     id: 'e125-59', addr: '59 E 125th St', name: null, at: [2626.62, -2521.19], comp: '5_-5:32', h: 8.63, n: 1, w: 5.67, baseH: 4.4,
-    mat: 'brick_tan', tint: '#b09a7e', trim: '#8a7a66', trimMat: 'concrete_precast', cornTint: '#6b5d4c', fe: null, bays: 2, door: 0.8, shopName: 'shop', refs: [],
+    mat: 'brick_tan', tint: '#b09a7e', trim: '#8a7a66', trimMat: 'concrete_precast', cornTint: '#6b5d4c', fe: null, bays: 2, door: 0.8, shopName: 'shop', refs: ['east/refs/b06_s.jpg'],
     cornice: 'parapet', cornH: 0.6,
   }),
   tenement({
     id: 'e125-61', addr: '61 E 125th St', name: 'Accra Restaurant Express', at: [2631.57, -2519.12], comp: '5_-5:41', h: 16.24, n: 4, w: 5.14, baseH: 4.3,
-    mat: 'stucco', tint: '#e2d6b6', trim: '#a8603e', trimMat: 'terracotta_cream', cornTint: '#9a5a38', fe: [0], bays: 2, door: 1.2, shopName: 'ACCRA RESTAURANT EXPRESS', signBg: '#2a1c14', signFg: '#e7c14a', lintel: 'hood', refs: [],
+    mat: 'stucco', tint: '#e2d6b6', trim: '#a8603e', trimMat: 'terracotta_cream', cornTint: '#9a5a38', fe: [0], bays: 2, door: 1.2, shopName: 'ACCRA RESTAURANT EXPRESS', signBg: '#2a1c14', signFg: '#e7c14a', lintel: 'hood', refs: ['east/refs/b09_s.jpg'],
   }),
   tenement({
     id: 'e125-63', addr: '63 E 125th St', name: 'Uptown Wine & Liquor', at: [2638.16, -2515.42], comp: '5_-5:3', h: 16.1, n: 4, w: 9.98, baseH: 4.3,
-    mat: 'stucco', tint: '#e2d6b6', trim: '#a8603e', trimMat: 'terracotta_cream', cornTint: '#9a5a38', fe: [1, 2], bays: 3, door: 1.3, shopName: 'UPTOWN WINE & LIQUOR', signBg: '#14130f', signFg: '#e8c25a', lintel: 'hood', refs: [],
+    mat: 'stucco', tint: '#e2d6b6', trim: '#a8603e', trimMat: 'terracotta_cream', cornTint: '#9a5a38', fe: [1, 2], bays: 3, door: 1.3, shopName: 'UPTOWN WINE & LIQUOR', signBg: '#14130f', signFg: '#e8c25a', lintel: 'hood', refs: ['east/refs/b09_s.jpg'],
   }),
   {
     id: 'e125-65', addr: '65 E 125th St', name: 'The Universal Church, Direct Print', bin: null,
@@ -1061,7 +1049,7 @@ export default [
       cornice: { kind: 'parapet' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'metal' }, membrane: 'black' },
-    refs: [], notes: 'White-painted brick, a four-pane metal window band on the second floor, a wheelchair ramp with white railing in front (not drawn).',
+    refs: ['east/refs/b10_s.jpg'], notes: 'White-painted brick, a four-pane metal window band on the second floor, a wheelchair ramp with white railing in front (not drawn).',
   },
   {
     id: 'e125-69', addr: '69 E 125th St', name: 'Second Avenue Subway Community Information Center', bin: null,
@@ -1070,8 +1058,6 @@ export default [
     // the grey-tan long-brick front runs u 0.2-15.1, over compiled lot 190 AND the empty strip east of it (no compiled building there: the
     // twin showed a gap), so this ring spans both. Base: a black-framed storefront to 3.2 m under a black signband (3.2-3.8 m), brick from
     // 4.1 m; floors every 2.86 m (window rows 4.4-6.4, 7.2-9.2, 10.1-12.1 m), staggered openings of mixed widths, alternating by floor
-    // (patterns A/B/C below are rows 1/2/3 as measured; the upper floors repeat them).
-    // (2024-10); 33.5 m is 4.1 + 10 x 2.86 + parapet, not measured directly. The orange-panel east part
     // (compiled lot 191) is 'e125-69b'.
     ring: [[2656.9, -2522.17], [2670.18, -2514.72], [2655.54, -2488.57], [2642.26, -2496.02], [2656.08, -2520.72]],
     wall: { mat: 'brick_tan', tint: '#a39886', dirt: 0.3, bond: 'running' },
@@ -1102,7 +1088,7 @@ export default [
       cornice: { kind: 'parapet' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.8, coping: 'metal' }, membrane: 'white', clutter: 0.8, items: [{ k: 'bulkhead', at: [0.5, 0.45], w: 4.0, d: 3.5, h: 3.0 }] },
-    refs: [],
+    refs: ['east/refs/b11_s.jpg', 'east/refs/b12_s.jpg', 'ar34/east/elev/n_madpark_nuHH.jpg', ''],
     notes: 'Measured front, estimated height (see the comment). The KSR leasing posters are vinyl panels (invented text layout).',
   },
   {
@@ -1123,15 +1109,15 @@ export default [
       cornice: { kind: 'parapet' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'metal' }, membrane: 'white', clutter: 0.6 },
-    refs: [], notes: 'Draft: cladding colour from b12_s, height estimated.',
+    refs: ['east/refs/b12_s.jpg', 'east/refs/b13_s.jpg'], notes: 'Draft: cladding colour from b12_s, height estimated.',
   },
   tenement({
     id: 'e125-77', addr: '77 E 125th St', name: 'newsstand, bookshop', at: [2675.37, -2502.39], comp: '5_-5:30', h: 14.55, n: 3, w: 6.68, baseH: 4.4,
-    mat: 'stucco', tint: '#ece6d6', trim: '#6d4a3c', trimMat: 'brownstone', cornTint: '#5e4438', fe: [0], bays: 2, door: 1.5, shopName: 'BOOKS', signBg: '#23402f', signFg: '#eae6d6', lintel: 'hood', refs: [],
+    mat: 'stucco', tint: '#ece6d6', trim: '#6d4a3c', trimMat: 'brownstone', cornTint: '#5e4438', fe: [0], bays: 2, door: 1.5, shopName: 'BOOKS', signBg: '#23402f', signFg: '#eae6d6', lintel: 'hood', refs: ['east/refs/b14_s.jpg'],
   }),
   tenement({
     id: 'e125-79', addr: '79 E 125th St', name: 'Kebab, shuttered shop', at: [2679.06, -2494.21], comp: '5_-5:66', h: 18.17, n: 4, w: 8.51, baseH: 4.4,
-    mat: 'stucco', tint: '#eadfc6', trim: '#6d4a3c', trimMat: 'brownstone', cornTint: '#4f6a52', fe: [1], bays: 3, door: 1.6, shopName: 'shop', lintel: 'hood', refs: [],
+    mat: 'stucco', tint: '#eadfc6', trim: '#6d4a3c', trimMat: 'brownstone', cornTint: '#4f6a52', fe: [1], bays: 3, door: 1.6, shopName: 'shop', lintel: 'hood', refs: ['east/refs/b14_s.jpg', 'east/refs/b13_s.jpg'],
     gate: { kind: 'rolldown', box: true, color: '#b3362f', down: 0.97, graffiti: { density: 0.95, style: 'piece', seed: 79 } },
     // (AR34 w2 b3) the west 3.6 m of the closed gate carry a figure (b13_s / b14_s: a man in white on red), the kit's lettered piece the rest
     custom: { fn: 'east:gateArt', with: 'kit' }, gateArt: [{ u0: 0.37, u1: 3.97, y0: 0.16, y1: 3.2, plan: [['figure', 3.6]] }],
@@ -1167,11 +1153,11 @@ export default [
       cornice: { kind: 'bracketed', h: 1.4, proj: 0.7, mat: 'metal_painted', tint: '#4d6e5f', brackets: 14 },
     }],
     roof: { kind: 'flat', parapet: { h: 0.5, coping: 'metal' }, membrane: 'black' },
-    refs: [], notes: 'Two compiled footprints of 12 m, one building of 24 m. The base is drawn as a rock-faced brownstone (rustication 8.6 m = two floors); arched windows on floor 2.',
+    refs: ['east/refs/b45_s.jpg', 'east/refs/b46_s.jpg'], notes: 'Two compiled footprints of 12 m, one building of 24 m. The base is drawn as a rock-faced brownstone (rustication 8.6 m = two floors); arched windows on floor 2.',
   },
   tenement({
     id: 'e125-10', addr: '10 E 125th St', name: null, at: [2481.43, -2530.46], comp: '4_-5:256', h: 19.0, n: 5, w: 6.35, baseH: 4.4,
-    mat: 'brick_red', tint: '#946c58', trim: '#b9a488', trimMat: 'stone_lime', cornTint: '#5e4a3c', fe: [0], bays: 2, door: 1.6, shopName: 'shop', refs: [],
+    mat: 'brick_red', tint: '#946c58', trim: '#b9a488', trimMat: 'stone_lime', cornTint: '#5e4a3c', fe: [0], bays: 2, door: 1.6, shopName: 'shop', refs: ['east/refs/b47_s.jpg'],
   }),
   {
     id: 'e125-14', addr: '14 E 125th St', name: 'B\'Krowned Beauty Bar', bin: null,
@@ -1191,27 +1177,27 @@ export default [
       cornice: { kind: 'bracketed', h: 1.4, proj: 0.7, mat: 'stone_lime', tint: '#d6cdb8', brackets: 4 },
     }],
     roof: { kind: 'flat', parapet: { h: 0.6, coping: 'stone_lime' }, membrane: 'black' },
-    refs: [], notes: 'The compiled footprint has a canted corner; the 2-storey bay window and the arched door next to it are approximated by plain windows.',
+    refs: ['east/refs/b48_s.jpg'], notes: 'The compiled footprint has a canted corner; the 2-storey bay window and the arched door next to it are approximated by plain windows.',
   },
   tenement({
     id: 'e125-16', addr: '16 E 125th St', name: 'Deli', at: [2503.29, -2529.3], comp: '4_-5:52', h: 13.45, n: 3, w: 6.1, baseH: 4.4,
-    mat: 'brick_red', tint: '#815c4b', trim: '#b9a488', trimMat: 'stone_lime', cornTint: '#4c6f5c', fe: null, bays: 2, door: 1.3, shopName: 'DELI GRILL', signBg: '#2e9a3c', signFg: '#ffffff', refs: [],
+    mat: 'brick_red', tint: '#815c4b', trim: '#b9a488', trimMat: 'stone_lime', cornTint: '#4c6f5c', fe: null, bays: 2, door: 1.3, shopName: 'DELI GRILL', signBg: '#2e9a3c', signFg: '#ffffff', refs: ['east/refs/b48_s.jpg'],
   }),
   tenement({
     id: 'e125-18', addr: '18 E 125th St', name: null, at: [2507.94, -2524.88], comp: '4_-5:156', h: 13.48, n: 3, w: 6.2, baseH: 4.4,
-    mat: 'brownstone', tint: '#6a4a3c', trim: '#7a5a4a', trimMat: 'brownstone', cornTint: '#4c3a30', fe: null, bays: 2, door: 1.4, shopName: 'shop', refs: [],
+    mat: 'brownstone', tint: '#6a4a3c', trim: '#7a5a4a', trimMat: 'brownstone', cornTint: '#4c3a30', fe: null, bays: 2, door: 1.4, shopName: 'shop', refs: ['east/refs/b52_s.jpg'],
   }),
   tenement({
     id: 'e125-20', addr: '20 E 125th St', name: null, at: [2514.53, -2524.18], comp: '4_-5:5', h: 13.25, n: 3, w: 6.14, baseH: 4.4,
-    mat: 'brownstone', tint: '#6e4c3e', trim: '#7d5c4c', trimMat: 'brownstone', cornTint: '#4c3a30', fe: null, bays: 3, door: 1.4, shopName: 'shop', refs: [],
+    mat: 'brownstone', tint: '#6e4c3e', trim: '#7d5c4c', trimMat: 'brownstone', cornTint: '#4c3a30', fe: null, bays: 3, door: 1.4, shopName: 'shop', refs: ['east/refs/b52_s.jpg'],
   }),
   tenement({
     id: 'e125-22', addr: '22 E 125th St', name: 'Harlem Bubble Tea', at: [2519.81, -2521.27], comp: '4_-5:58', h: 13.31, n: 3, w: 5.96, baseH: 4.4,
-    mat: 'brownstone', tint: '#66483b', trim: '#77574a', trimMat: 'brownstone', cornTint: '#2f5a4a', fe: null, bays: 2, door: 1.2, shopName: 'HARLEM BUBBLE TEA', signBg: '#2a1c14', signFg: '#f0a43a', refs: [],
+    mat: 'brownstone', tint: '#66483b', trim: '#77574a', trimMat: 'brownstone', cornTint: '#2f5a4a', fe: null, bays: 2, door: 1.2, shopName: 'HARLEM BUBBLE TEA', signBg: '#2a1c14', signFg: '#f0a43a', refs: ['east/refs/b52_s.jpg'],
   }),
   tenement({
     id: 'e125-24', addr: '24 E 125th St', name: 'Understand Medicare Now', at: [2524.88, -2517.43], comp: '4_-5:255', h: 13.52, n: 3, w: 6.59, baseH: 4.4,
-    mat: 'brick_red', tint: '#95715d', trim: '#e7dfce', trimMat: 'stone_lime', cornTint: '#3d4a43', fe: [1], bays: 3, door: 1.4, shopName: 'UNDERSTAND MEDICARE NOW', signBg: '#151515', signFg: '#ffffff', lintel: 'hood', refs: [],
+    mat: 'brick_red', tint: '#95715d', trim: '#e7dfce', trimMat: 'stone_lime', cornTint: '#3d4a43', fe: [1], bays: 3, door: 1.4, shopName: 'UNDERSTAND MEDICARE NOW', signBg: '#151515', signFg: '#ffffff', lintel: 'hood', refs: ['east/refs/b52_s.jpg'],
   }),
   {
     id: 'e125-26', addr: '26 E 125th St', name: 'retail space for rent', bin: null,
@@ -1233,7 +1219,7 @@ export default [
       cornice: { kind: 'modillion', h: 1.6, proj: 0.8, mat: 'metal_painted', tint: '#4b4038' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.5, coping: 'metal' }, membrane: 'black' },
-    refs: [], notes: 'Loft building with a dark plate-glass ground floor; the round arched tops of the second-floor windows are simplified to rectangles.',
+    refs: ['east/refs/b54_s.jpg'], notes: 'Loft building with a dark plate-glass ground floor; the round arched tops of the second-floor windows are simplified to rectangles.',
   },
   {
     id: 'e125-28', addr: '28 E 125th St (Madison Ave SE corner)', name: 'HD Wireless, UPS Store, N3xtflix & Grill', bin: null,
@@ -1268,18 +1254,18 @@ export default [
       cornice: { kind: 'bracketed', h: 1.5, proj: 0.7, mat: 'metal_painted', tint: '#6a4a3a', brackets: 8 },
     }],
     roof: { kind: 'flat', parapet: { h: 0.5, coping: 'metal' }, membrane: 'black' },
-    refs: [], notes: 'The golden terracotta ornament on the spandrels and the arched hoods are not modelled (keystone lintels instead).',
+    refs: ['east/refs/b55_s.jpg'], notes: 'The golden terracotta ornament on the spandrels and the arched hoods are not modelled (keystone lintels instead).',
   },
 
 
   // ------------------------------------------------------------------ Madison Avenue, south-east corner (54-58 E 125th)
   tenement({
     id: 'e125-56', addr: '1943 Madison Ave (corner sliver)', name: null, at: [2575.88, -2489.11], comp: '5_-5:142', h: 13.08, n: 3, w: 3.61, baseH: 4.4,
-    mat: 'brick_tan', tint: '#9a8468', trim: '#7d6a55', trimMat: 'brownstone', cornTint: '#554638', fe: null, bays: 1, door: 1.2, ww: 0.95, shopName: 'shop', refs: [],
+    mat: 'brick_tan', tint: '#9a8468', trim: '#7d6a55', trimMat: 'brownstone', cornTint: '#554638', fe: null, bays: 1, door: 1.2, ww: 0.95, shopName: 'shop', refs: ['east/refs/b56_s.jpg'],
   }),
   tenement({
     id: 'e125-58', addr: '1943 Madison Ave', name: 'Beauty supply', at: [2580.59, -2485.99], comp: '5_-5:92', h: 13.07, n: 3, w: 6.09, baseH: 4.4,
-    mat: 'brick_tan', tint: '#a78e70', trim: '#7d6a55', trimMat: 'brownstone', cornTint: '#554638', fe: null, bays: 2, door: 1.4, shopName: 'BEAUTY SUPPLY', signBg: '#f2efe8', signFg: '#c2232a', refs: [],
+    mat: 'brick_tan', tint: '#a78e70', trim: '#7d6a55', trimMat: 'brownstone', cornTint: '#554638', fe: null, bays: 2, door: 1.4, shopName: 'BEAUTY SUPPLY', signBg: '#f2efe8', signFg: '#c2232a', refs: ['east/refs/b57_s.jpg'],
   }),
   {
     id: 'e125-54', addr: '54 E 125th St', name: 'Okis Soul Food Restaurant', bin: null,
@@ -1307,20 +1293,20 @@ export default [
       parapet: { kind: 'segmental', u0: 4.5, u1: 10.6, rise: 1.3, coping: 'brownstone', copingTint: '#a0866c' },
     }],
     roof: { kind: 'flat', parapet: { h: 1.6, coping: 'stone_lime' }, membrane: 'black' },
-    refs: [], notes: 'The segmental pediment above the cornice and the gilded ornaments are not drawn; the two side bays are blind brick.',
+    refs: ['east/refs/b58_s.jpg'], notes: 'The segmental pediment above the cornice and the gilded ornaments are not drawn; the two side bays are blind brick.',
   },
 
   // ------------------------------------------------------------------ Second Avenue, north-east corner: the BP station
   {
     id: 'e125-bp', addr: '2449 Second Ave (BP gas station)', name: 'BP', bin: null,
     at: [3158.73, -2220.23], comp: '6_-5:35', also: [[3154.86, -2242.17]], h: 4.5, status: 'draft', custom: 'east:gasStation',
-    refs: [], notes: 'Flat-roofed canopy on two steel columns (green and white BP band), two pump islands, a kiosk and a garage bay behind. Canopy size estimated.',
+    refs: ['east/refs/b29_s.jpg', 'east/refs/b29_o.jpg'], notes: 'Flat-roofed canopy on two steel columns (green and white BP band), two pump islands, a kiosk and a garage bay behind. Canopy size estimated.',
   },
 
   // ------------------------------------------------------------------ First Avenue, south side: the lots behind green-tarp chain-link fences (b81-b84 are compiled as 1-storey sheds)
   ...[['a', [3229.08, -2090.26], '6_-5:37'], ['b', [3238.66, -2085.18], '6_-5:14'], ['c', [3246.69, -2084.98], '6_-5:38'], ['d', [3251.2, -2078.17], '6_-5:30']].map(([k, at, comp]) => ({
     id: `e125-lot-1st-${k}`, addr: '2435 First Ave (vacant lot)', name: 'fenced lot', bin: null, at, comp, h: 2.6, status: 'draft',
     custom: 'east:hoarding', site: { kind: 'tarp', h: 2.6, inset: 0.35 },
-    refs: [], notes: '2026-08: chain-link fence with a green windscreen tarp on precast barriers; the compiled 1975 sheds no longer stand.',
+    refs: ['east/refs/b82_s.jpg'], notes: '2026-08: chain-link fence with a green windscreen tarp on precast barriers; the compiled 1975 sheds no longer stand.',
   })),
 ];

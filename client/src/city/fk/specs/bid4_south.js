@@ -1,5 +1,4 @@
 // AR33 BID4 specs, south side of 125th Street from 72 W to 2018 Fifth Avenue, u WESTWARD (from each building's east end).
-// Owner: the BID4 worker (docs/notes/ar33-bid4.md). References:
 import { shop, fascia, win, widths, cols, refit } from './bid4_help.js';
 
 // AR34 w2r1 tinted the dark 'wood_painted' trims (tints under ~#4a4a4a) warm (x 1.30, 0.68, 0.49 in linear light) because they rendered navy in shade (44 W's cornice
@@ -9,7 +8,6 @@ const CREAM = '#c2c3b6';
 
 export default [
   // ------------------------------------------------------------------ 72 W 125th: Chipotle, Armed Forces Career Center (2000)
-  // MEASURED: one storey of storefronts to 4.2 m under a red-brown brick wall that rises to 7.1 m; Chipotle's red plate (u 5.5-9.4, y 5.3-6.1) and the
   // Armed Forces Career Center letters (u 11.6-16.2, y 4.7-5.9) sit on the brick band; narrow door at the west end of the first unit, glass units east of it.
   {
     id: 'w125-72', addr: '72 W 125th St', name: 'Chipotle, Armed Forces Career Center', bin: '1053485',
@@ -61,7 +59,6 @@ export default [
       windows: { A: win(1.15, 1.7, 0.5, { frame: 'alu_black', reveal: 0.2, lintel: { kind: 'flat', mat: 'brownstone', tint: '#8a6654', h: 0.26, ext: 0.1 }, sillStone: { mat: 'brownstone', tint: '#8a6654', h: 0.12, proj: 0.06 }, ac: 0.3, blinds: 0.6 }) },
       bands: [{ at: 'floor:2', h: 0.3, proj: 0.1, mat: 'brownstone', tint: '#8a6654' }, { at: 11.57, h: 0.45, kind: 'pressed', proj: 0.05, mat: 'wood_painted', tint: '#3a2f2b' }],
       cornice: { kind: 'bracketed', h: 1.4, proj: 0.55, mat: 'wood_painted', tint: '#3a2f2b', brackets: 6 },
-      // the triangular pediment over the middle of the cornice
       parapet: { kind: 'gable', u0: 1.7, u1: 4.7, rise: 0.8, coping: 'wood_painted', copingTint: '#42261c' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.4, coping: 'metal_painted' }, membrane: 'gravel' },
@@ -113,16 +110,15 @@ export default [
       cornice: { kind: 'parapet' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.4, coping: 'granite_grey' }, membrane: 'white', items: [{ k: 'hvac', at: [0.5, 0.5], n: 2 }] },
-    notes: 'Black granite front to 7.0 m (strip_S6; compiled 4.71): grey graffiti-marked roll-down gate under the orange realty sign, the hot chicken shop under a 3 m black box sign. Sign text: first word hidden by a tree.',
+    notes: '',
   },
   // ------------------------------------------------------------------ 56 W 125th: condominium tower (2019), 17 floors
-  // MEASURED (2026-08, shots/ar34/bid4/elev/w125-56.jpg): modules of 2.53 m (a 1.25 m casement, a 0.5 m light-grey panel on its right,
   // dark rain-screen frames between), floors of 3.0 m from 7.4 m up (a short first row at 5.6-7.2 m), an orange-copper fascia over the shops at 4.1-5.1 m, the east wing (u > 22) in
   // white and grey panels with orange strips from about 16.5 m. Shops: lobby (60 West 125), Brasserie Steak House, Steak House, Teriyaki One, Buffalo Wild Wings GO, Just Salad.
   {
     id: 'w125-56', addr: '56 W 125th St', name: 'The 56 West 125th Street Condominium', bin: '1053478',
     at: [2251.97, -2661.22], comp: '4_-6:279', h: 54.1, status: 'measured',
-    wall: { mat: 'concrete_board', tint: '#b4b8ba', dirt: 0.3 },   // the sides and the rear: light grey panels
+    wall: { mat: 'concrete_board', tint: '#b4b8ba', dirt: 0.3 },
     custom: { fn: 'bid4:w56', with: 'kit' },
     faces: [{
       edge: 'front',
@@ -164,7 +160,6 @@ export default [
       'east wing with orange strips (bid4:w56). Wall material concrete_board (matte): panel_grey is glossy and mirrors the sky navy at grazing angles. The tower steps back at the top (not modelled).',
   },
   // ------------------------------------------------------------------ 52 W 125th (cream, black surrounds)
-  // MEASURED: lot refitted to its real street wall (u 1.3-6.2 from the compiled east end); four storeys to a dark frieze and cornice at 14.0-15.3 m; two windows
   // a floor (glass 0.4-1.4 and 2.4-3.3 from the east edge, black cast-iron-look surrounds 0.3 m wide), the 2nd floor a wide shop window with a For Sale banner (4.9-6.9 m), the blue AMERICAN SALADS & DELI awning.
   {
     id: 'w125-52', addr: '52 W 125th St', name: 'American Salads & Deli', bin: '1053476',
@@ -188,7 +183,7 @@ export default [
       windows: {
         S2: { sill: 0.2, h: 1.7, kind: 'fixed', mullions: 2, frame: 'alu_black', reveal: 0.2, lintel: null, sillStone: null, blinds: 0.3, lit: 0.5, ac: 0 },
         A: win(0.95, 2.1, 0.1, { frame: 'alu_black', reveal: 0.2, lintel: { kind: 'hood', mat: 'wood_painted', tint: '#2c252b', h: 0.34, ext: 0.1 }, sillStone: { mat: 'wood_painted', tint: '#2c252b', h: 0.12, proj: 0.08 },
-          surround: { mat: 'wood_painted', tint: '#2e262c', w: 0.25, proj: 0.07 }, ac: 0.35, blinds: 0.55 }),   // the twin's read navy-grey (36,38,41) / (45,54,62)
+          surround: { mat: 'wood_painted', tint: '#2e262c', w: 0.25, proj: 0.07 }, ac: 0.35, blinds: 0.55 }),
       },
       bands: [{ at: 14.0, h: 1.3, proj: 0.2, mat: 'wood_painted', tint: '#3a2a27' }],
       cornice: { kind: 'band', h: 0.5, proj: 0.3, mat: 'wood_painted', tint: '#3a2a27' },
@@ -209,7 +204,6 @@ export default [
       base: {
         h: 4.9,
         bays: [shop(0.3, 4.8, { name: 'Steak House II', h: 3.6, glazing: { bulkhead: 0.3, transom: 0.0, mullions: 2, frame: 'alu_black' }, door: { u: 0.5, w: 1.0, kind: 'glass', recess: 0.5 }, interior: 'restaurant', gate: { kind: 'none' },
-          // b3r1: the name in big red letters across a black fascia, the B.B.Q / seafood line small (the twin's two equal lines read small on grey)
           sign: { kind: 'panel', text: 'STEAK HOUSE II', font: 'Anton', fg: '#e0262b', bg: '#1b1b1d', u0: 0.0, u1: 5.1, y: 3.7, h: 1.2, depth: 0.12,
             sub: { text: 'B.B.Q & GRILL   SEAFOOD', size: 0.2, font: 'Anton', fg: '#f2f2f2' } } })],
       },
@@ -228,8 +222,8 @@ export default [
       cornice: { kind: 'band', h: 0.5, proj: 0.3, mat: 'wood_painted', tint: '#3a2a27' },
     }],
     roof: { kind: 'flat', parapet: { h: 0.3, coping: 'metal_painted' }, membrane: 'gravel' },
-    notes: 'Cream-painted brick with dark-green window surrounds, xBandz and Steak House II signs. 15.4 m to the top of the cornice (compiled 12.82). ' +
-      'Batch 2: the surrounds\' green measured (55,63,61), b2r1 twin (26,49,43) with the untinted #2f4c3c; now #4b5a4c (x ratio^0.7).',
+    notes: '' +
+      '',
   },
   // ------------------------------------------------------------------ 48 W 125th (brown, Posh salon)
   // MEASURED: refit u 0.8-5.6; two windows a floor (glass 0.9-1.9 and 3.2-4.2 from the east edge; 3rd-floor sill 7.6, 4th 10.8), 2nd-floor window ribbon 5.0-6.6 m with the Envy Nails sign, the 48W blade,
@@ -299,13 +293,11 @@ export default [
     notes: 'Brown brick with a three-part canted oriel (strip rowS1); 15.2 m (compiled 12.91). The oriel here replaces the flat windows of the first pass.',
   },
   // ------------------------------------------------------------------ 44 W 125th (ornate red brick and terracotta, Lady Love, Yoga)
-  // MEASURED: the pink-jambed entrance (u 0.4-1.2) under a
   // grey gate box (4.74-5.2 m) whose curtain is down to 3.3 m; Lady Love (u 1.6-5.6) under a navy box awning (3.94-5.64 m) with gold serif letters, the window filled with hats; a light-grey
   // pier with posters (5.6-6.5); the 2nd floor a pressed-metal bay (5.7-8.65 m): three windows (u 0.6-2.2, 2.36-3.94, 4.1-5.7; glass 5.84-8.4, transom bar 7.7) in dark frames and posts,
   // AC units in the outer upper lights, red cast-iron pilasters at both ends (u 0-0.6, 5.7-6.5) with capitals; a heavy bracketed cornice 8.65-9.75 m; the 3rd floor (9.75-12.25)
   // banded brick piers with carved terracotta caps (11.45-11.75) and a sill course (11.95-12.25); carved panels under the outer 4th-floor windows (12.25-12.85), windows 12.94-14.84
   // under carved arched tympana (to 15.85), the frieze with the 1898 plaque (u 2.6-4.2, 16.05-16.75) and the top cornice from 17.1 m; the blue YOGA box sign (5.5-8.15 m) at the east end.
-  // Colours (shade): wall (90,66,63), banded piers (92,54,47), carved blocks (69,35,31), pilasters (103,70,63), cornice and posts (46,36,31), pink jambs (127,73,84).
   {
     id: 'w125-44', addr: '44 W 125th St', name: 'Lady Love, Yoga', bin: '1053474',
     at: [2288.35, -2641.77], comp: '4_-6:95', h: 18.3, status: 'measured',
@@ -324,7 +316,7 @@ export default [
             blade: { kind: 'blade', text: '', fg: '#ffffff', bg: '#1d55d6', logo: 'bid4:yogaV', logoAt: 'fill', u0: 0.0, w: 0.36, h: 2.65, y: 5.5, depth: 0.06 } },
           shop(1.6, 5.6, { name: 'Lady Love', h: 3.9, glazing: { bulkhead: 0.25, transom: 0.0, mullions: 2, frame: 'alu_clear' }, door: { u: 0.25, w: 0.9, kind: 'glass', recess: 0.3 }, interior: 'shop_clothing', gate: { kind: 'none' },
             awning: { kind: 'dome', color: '#575a5f', proj: 0.55, drop: 1.15, top: 5.64, text: 'Lady Love', font: 'LibreBaskerville-700', fg: '#fad59c', fill: 0.42, tracking: 0.05,
-              sub: { text: '44W.', size: 0.12, font: 'LibreBaskerville-700' } } }),   // b2r2: Cinzel set it in capitals;
+              sub: { text: '44W.', size: 0.12, font: 'LibreBaskerville-700' } } }),
         ],
       },
       bays: { n: 3, margin: [0.5, 0.5] },
@@ -334,13 +326,13 @@ export default [
         { n: 1, h: 6.05, win: 'A4', open: [[1.04, 1.9, 'A4'], [2.9, 3.74, 'A4'], [4.76, 5.56, 'A4']] },     // 12.25-18.3
       ],
       windows: {
-        G: { sill: 0.14, h: 2.56, kind: 'fixed', mullions: 0, transom: 0.7, frame: 'wood_painted', frameTint: '#4a3a33', frameW: 0.08, reveal: 0.1, lintel: null, sillStone: null, blinds: 0.1, sheer: 0, lit: 0.4, ac: 0 },   // b2r2: sheers read white;
+        G: { sill: 0.14, h: 2.56, kind: 'fixed', mullions: 0, transom: 0.7, frame: 'wood_painted', frameTint: '#4a3a33', frameW: 0.08, reveal: 0.1, lintel: null, sillStone: null, blinds: 0.1, sheer: 0, lit: 0.4, ac: 0 },
         A3: win(0.8, 1.75, 0.0, { frame: 'wood_painted', frameTint: '#4a3a33', reveal: 0.18, lintel: null, sillStone: null, ac: 0, blinds: 0.5 }),
         A4: win(0.84, 1.9, 0.69, { frame: 'wood_painted', frameTint: '#4a3a33', reveal: 0.18, lintel: null, sillStone: null, ac: 0, blinds: 0.3, sheer: 0.5 }),
       },
       bands: [
         // the banded brick of the 3rd-floor piers, seven courses 0.17 m high over 0.07 m grooves (9.78-11.39 m), redder than the wall
-        ...[9.78, 10.02, 10.26, 10.5, 10.74, 10.98, 11.22].flatMap((y) => [[0, 0.95], [1.85, 2.81], [3.71, 4.65], [5.55, 6.5]].map(([u0, u1]) => ({ at: y, u0, u1, h: 0.17, proj: 0.04, mat: 'brick_red', tint: '#866c62' }))),   // b2r2 '#895240' read orange;
+        ...[9.78, 10.02, 10.26, 10.5, 10.74, 10.98, 11.22].flatMap((y) => [[0, 0.95], [1.85, 2.81], [3.71, 4.65], [5.55, 6.5]].map(([u0, u1]) => ({ at: y, u0, u1, h: 0.17, proj: 0.04, mat: 'brick_red', tint: '#866c62' }))),
         { at: 11.95, h: 0.3, proj: 0.1, mat: 'cast_stone', tint: '#8e7a6a' },   // the 4th floor's sill course
         { at: 16.82, h: 0.28, kind: 'pressed', proj: 0.05, mat: 'wood_painted', tint: '#4d3e30' },   // the pressed frieze under the top cornice
       ],
@@ -350,20 +342,18 @@ export default [
       ],
       // the red cast-iron pilasters at the ends of the 2nd-floor bay
       piers: { mat: 'wood_painted', tint: '#81685d', w: 0.6, proj: 0.1, at: [0.3, { u: 6.1, w: 0.8 }], from: 5.7, to: 8.65, flute: 3, capital: true, base: false },   // b2r2: metal_painted with chips read as green camouflage
-      cornice: { kind: 'bracketed', h: 1.2, proj: 0.6, mat: 'wood_painted', tint: '#4d3e30', brackets: 6 },   // (46,36,31); '#3a2e29' rendered (29,26,28) in b2r1
+      cornice: { kind: 'bracketed', h: 1.2, proj: 0.6, mat: 'wood_painted', tint: '#4d3e30', brackets: 6 },
     }],
     roof: { kind: 'flat', parapet: { h: 0.4, coping: 'metal_painted' }, membrane: 'gravel' },
     notes: 'Ornate red brick and terracotta tenement (elev/w125-44.jpg): 18.3 m, the pressed-metal 2nd-floor bay with its cornice, banded 3rd-floor piers, carved panels and arched tympana (custom bid4:w44), the YOGA box sign, the pink entrance under a half-down gate, Lady Love\'s hats.',
   },
   // ------------------------------------------------------------------ 35 W 124th: the school building's 125th St face (Harlem Village Academies; Cohen's Fashion Optical, Cap USA, Simply Smiles Dental)
-  // MEASURED: 26.0 m high (compiled 11.5), five storeys of buff brick: a 6.3 m limestone base (shops to 4.9 m under signs to 5.9-6.4 m, a belt course 6.3-7.1 m),
   // a floor of three big steel-framed windows (u 1.75-5.8, 9.5-14.8, 17.4-22.9; 7.45-14.3 m), two rows of twelve small windows in four groups of three (glass 16.1-17.9 and 20.4-22.6 m),
   // a stone-banded parapet 23.2-26.0 m with pilasters; the round-fronted HVA entrance (u 25.4-30.6) under the red crest banner.
   {
     id: 'w125-school', addr: '35 W 124th St (125th St face)', name: 'Harlem Village Academies; Cohen\'s Fashion Optical, Cap USA, Simply Smiles Dental', bin: '1053473',
     at: [2301.56, -2620.94], comp: '4_-6:383', h: 26.0, status: 'measured',
     // batch 2: the compiled ring with its west side moved 0.9 m west, onto 44 W's refit east wall: 44 W's refit (u 0.9-7.4) had opened a 0.9 m slot between the two in
-    // which 44 W's side wall showed with windows (w2r1h s_w125-44);
     ring: [[2315.32, -2618.38], [2311.14, -2610.8], [2299.91, -2617.02], [2284.95, -2589.87], [2272.93, -2596.52], [2287.8, -2623.5], [2282.67, -2626.35], [2297.36, -2653.03], [2325.75, -2637.32]],
     custom: { fn: 'bid4:school', with: 'kit' },   // the three pole banners (custom/bid4.js)
     wall: { mat: 'brick_buff', tint: '#d8c6ad', dirt: 0.35, bond: 'running' },   // w2r1a calib: real #969085, twin #918d80
@@ -411,14 +401,12 @@ export default [
       'the street lamps on the corner are not modelled.',
   },
   // ------------------------------------------------------------------ 28 W 125th: red-brick tenement (European Wax Center, Makuu Trading)
-  // MEASURED: five storeys, 19.6 m to the top of a beige stucco parapet (brick to 17.4 m); six windows a floor at 2.2 m pitch (glass 0.85 x 1.7,
   // centres 1.4, 3.65, 5.95, 8.1, 10.3, 12.55; glass 5.1-6.9, 8.2-10.0, 11.6-13.3, 14.8-16.5 m) in cream stone surrounds with hoods, cream bands at every floor line, two zigzag fire escapes; shops:
   // European Wax Center (u 0.7-5.9), a recessed door (6.5-8.2), Makuu Trading / Harlem General Store (8.7-13.7).
   {
     id: 'w125-28', addr: '28 W 125th St', name: 'European Wax Center, Makuu Trading / Harlem General Store', bin: '1053472',
     at: [2324.04, -2622.17], comp: '4_-6:246', h: 19.6, status: 'measured',
     // batch 2: MATS's sooted set (darker joints, redder faces); b2r10 with '#ad8d88': brick pixels (R>G+8, R-B>20, upper floors of s_w125-28) twin (146,118,104),
-    // a hue-measured step ('#987d81', b2r11) read purple (its faces fell outside that filter): the b2r10 tint darkened x0.86 instead
     wall: { mat: 'brick_red_sooted', tint: '#957975', dirt: 0.5, bond: 'running' },
     faces: [{
       edge: 'front',
@@ -462,7 +450,6 @@ export default [
   {
     id: 'w125-24', addr: '24 W 125th St', name: 'Custom EZ, 99 cent Department Store', bin: '1053471',
     at: [2335.57, -2615.55], comp: '4_-6:167', h: 19.6, status: 'measured',
-    // batch 2: sooted set (as 28 W); the hue step ('#a78091', b2r11)
     // read purple: the b2r10 tint darkened x0.74 instead
     wall: { mat: 'brick_red_sooted', tint: '#9e7f7f', dirt: 0.5, bond: 'running' },
     faces: [{
@@ -502,7 +489,6 @@ export default [
     notes: 'Twin of 28 W (strip_S2b): 19.6 m (compiled 18.66), six windows a floor, cream hoods and bands, fire escape across the middle, Custom EZ and the 99c store at street level.',
   },
   // ------------------------------------------------------------------ 20 W 125th: brown tenement with a dark cornice, H&R Block
-  // MEASURED: lot refitted to its real wall (u 1.0-5.9 from the compiled east end); 14.3 m to the top of a dark cornice; a wide 2nd-floor window with an OFFICE SPACE FOR RENT banner
   // (4.2-5.9 m), two windows on each of the 3rd and 4th floors; H&R Block's black sign (2.5-3.4 m) with the green square over a gated shop.
   {
     id: 'w125-20', addr: '20 W 125th St', name: 'H&R Block', bin: '1053470',
@@ -539,7 +525,7 @@ export default [
     id: 'w125-18', addr: '18 W 125th St', name: 'Cap USA', bin: '1053490',
     at: [2349.91, -2608.8], comp: '4_-6:173', h: 19.0, status: 'measured',
     ring: refit('w125-18', 0.3, 6.6),
-    wall: { mat: 'brick_painted', tint: '#c4c4c2', dirt: 0.5 },   // w2r1a calib: real #8b9396, twin #8f999c;
+    wall: { mat: 'brick_painted', tint: '#c4c4c2', dirt: 0.5 },
     faces: [{
       edge: 'front',
       base: {
@@ -601,7 +587,6 @@ export default [
     notes: 'Red brick, brownstone hoods and frieze, carved terracotta panel, verdigris cornice at 16.6-19.0 m (strip_S2a), four windows a floor.',
   },
   // ------------------------------------------------------------------ 8-14 W 125th: the buff loft with arched top windows (Harlem Furniture, Valentina's Pharmacy)
-  // MEASURED: 19.8 m (compiled 16.6); four window columns (centres 3.5, 8.25, 13.25, 18.15, glass 3.8-4.1 m wide) on three floors at 3.55 m
   // from 5.1 m (glass 6.7-9.1, 10.2-12.5 and the arched 13.8-15.9 m), brick piers 1.0 m between them, a verdigris bracketed cornice 16.6-19.8 m with consoles over the piers, a blue awning (5.4-6.5 m) over the
   // HARLEM FURNITURE sign (u 5.3-12.3, 4.2-5.8 m) and Valentina's Pharmacy (blue) at the west end.
   {

@@ -9,7 +9,10 @@ from . import sensor_data
 
 
 class VehicleControl:
-    """throttle, brake in [0, 1]; steer in [-1, 1] (positive turns right, up to 35 degrees at the wheels)."""
+    """throttle, brake in [0, 1]; steer in [-1, 1] (positive turns right, up to 35 degrees at the wheels).
+    A vehicle spawned with role_name 'hero' (or physics 'arcade') drives with the play mode's dynamics: the steering
+    lock falls with speed (34 degrees standing, about 5 at 30 m/s), the tyres' grip caps the yaw rate, and kerbs,
+    buildings, street furniture, parked and moving cars and pedestrians stop it."""
     __slots__ = ("throttle", "steer", "brake", "hand_brake", "reverse")
 
     def __init__(self, throttle: float = 0.0, steer: float = 0.0, brake: float = 0.0, hand_brake: bool = False, reverse: bool = False):
@@ -24,7 +27,8 @@ class VehicleControl:
 
 
 class WalkerControl:
-    """direction: a world-frame vector (only x, y matter); speed in m/s."""
+    """direction: a world-frame vector (only x, y matter); speed in m/s. A walker spawned with role_name 'hero' (or
+    physics 'arcade') collides with buildings, street furniture and cars, and steps up kerbs."""
     __slots__ = ("direction", "speed", "jump")
 
     def __init__(self, direction: Vector3D = None, speed: float = 1.3, jump: bool = False):
@@ -176,6 +180,15 @@ class Sensor(Actor):
 
 class Spectator(Actor):
     """The viewpoint of the server window, and the centre the world streams around (tiles load near it)."""
+
+    def follow(self, actor: Actor, mode: Optional[str] = None) -> dict:
+        """Ride the play mode's follow camera on a vehicle ('chase' or 'bonnet') or a walker ('third' or 'first').
+        The view, the streaming centre and any camera attached to the spectator move with it every tick."""
+        return self._world._call("spectator.follow", id=actor.id, mode=mode)
+
+    def unfollow(self) -> dict:
+        """Stop following; the spectator stays where the camera was."""
+        return self._world._call("spectator.follow", id=0)
 
 
 def make_actor(world, desc: dict) -> Actor:

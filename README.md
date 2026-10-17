@@ -10,15 +10,15 @@ streetscape studies in which every modelled element can be traced to a public re
 
 | | |
 |---|---|
-| Coverage | Manhattan, the Bronx, Brooklyn and Queens |
+| Coverage | All five boroughs: Manhattan, the Bronx, Brooklyn, Queens and Staten Island, 1,085,937 buildings in 3,532 tiles of 512 m and 261 far tiles of 2,048 m |
 | Buildings | Every footprint of NYC Building Footprints, gap-filled from OpenStreetMap and joined to PLUTO (use, class, floors, year) and to facade-inspection filings (wall material); facade typologies with procedural architectural detail; landmarks with dedicated models |
 | Streets | NYC Street Centerline (CSCL): widths, lane counts, direction, speed limits and grade separation become the carriageway, kerbs, sidewalks, markings and a routable lane graph |
 | Street furniture | Street trees, hydrants, bus shelters, LinkNYC kiosks, bicycle racks and subway entrances placed from their records; signals at junctions derived from the street network; lamps, signage and street furniture generated along the kerbs |
-| Areas modelled in detail | 125th Street from Twelfth Avenue to the Harlem River: facades, storefront signs, street furniture and street life, the Riverside Drive and Manhattan Valley viaducts, the Park Avenue Viaduct, the 1 train's 125th Street station and the bridge approaches at the Harlem River. Central Park: relief, water bodies, 16,951 trees in 33 species groups, bridges, Bethesda Terrace, Belvedere Castle and the other landmarks. Hunters Point's waterfront, Times Square, Bryant Park and Columbia's Morningside campus |
+| Areas modelled in detail | 125th Street from Twelfth Avenue to the Harlem River: facades, storefront signs, street furniture and street life, the Riverside Drive and Manhattan Valley viaducts, the Park Avenue Viaduct, the 1 train's 125th Street station and the bridge approaches at the Harlem River. Central Park: relief, water bodies, 16,951 trees in 33 species groups, bridges, Bethesda Terrace, Belvedere Castle and the other landmarks. Hunters Point's waterfront, Times Square, Bryant Park and Columbia's Morningside campus. Midtown's towers rebuilt near the camera by a tower kit, among them 111 West 57th and 53 West 53rd. The Metropolitan Museum of Art, the American Museum of Natural History with the Rose Center and the Gilder Center, and the Guggenheim on their footprints. The Statue of Liberty on Liberty Island |
 | Streaming | Binary tiles streamed around the camera at full detail, with coarser far-field tiles beyond |
 | Simulation | IDM car following on the lane graph with signal phases and turn planning; pedestrians on the sidewalk graph with signal-aware crossings; vehicles of the NYC fleet: taxis, private cars, MTA buses on their routes, school buses, police, postal, sanitation and delivery vehicles, vans, box trucks and emergency vehicles; the 1 train on the Manhattan Valley viaduct and Metro-North on the Park Avenue tracks |
 | Sensors | RGB; semantic segmentation (Cityscapes-compatible classes); instance segmentation with visible and amodal boxes, occlusion ratios and 3D poses; metric depth |
-| Interfaces | Interactive browser client; simulation server with a TCP API and a Python client (synchronous stepping, actor control, sensors, map queries); export of a recorded take to OpenUSD, rendered offline in Blender Cycles and Unreal Engine 5 |
+| Interfaces | Interactive browser client; simulation server with a TCP API and a Python client (synchronous stepping, actor control, sensors, map queries); export of a recorded take to OpenUSD, rendered offline in Blender Cycles and Unreal Engine 5; the whole city built into Unreal Engine 5 once, for shots that need only their take and their render |
 
 Links:
 
@@ -42,12 +42,16 @@ take of a camera path is exported to OpenUSD, and Blender Cycles and Unreal Engi
 geometry, traffic, trees and light, each with its own materials for the families it supports. The documentation
 describes the design ([One city, three renderers](https://mkturkcan.github.io/valdrada/architecture/)) and takes
 one shot through each offline renderer ([Blender Cycles](https://mkturkcan.github.io/valdrada/blender-cycles/),
-[Unreal Engine 5](https://mkturkcan.github.io/valdrada/unreal/)).
+[Unreal Engine 5](https://mkturkcan.github.io/valdrada/unreal/)). For Unreal, the whole city can also be built once:
+every 128 m cell is baked by the client into a table of kit instances and its own meshes, imported by 1 km block over a
+shared material library, and a shot is a cut of that build
+([The whole city](https://mkturkcan.github.io/valdrada/unreal/#the-whole-city)).
 
 ## Quick start
 
-**Binary release (Windows x64).** Download `Valdrada-<version>-win64.zip` from Releases (the server with the
-compiled city), extract it, start the server and run an example:
+**Binary release (Windows x64).** Download `Valdrada-<version>-win64.zip` and `Valdrada-<version>-win64-tiles.zip`
+from Releases (the server, and the compiled city's tiles), extract both into the same folder, start the server and run
+an example:
 
 ```
 StartServer.bat
@@ -60,7 +64,7 @@ python PythonAPI/examples/intersection_120_amsterdam.py
 ```
 npm install && (cd client && npm install)
 # binary banks (tiles, models, textures): download, or compile the tiles (BUILDING.md)
-hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.3.1 \
+hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.4.0 \
     --include "Content/tiles/*" --include "Content/models/*" --include "Content/textures/*" --local-dir .cache/hf
 mv .cache/hf/Content/tiles .cache/hf/Content/models .cache/hf/Content/textures client/public/
 cd client && npm run dev        # http://127.0.0.1:5219
@@ -107,7 +111,7 @@ one script per step in [PythonAPI/examples/tutorials/](PythonAPI/examples/tutori
 
 ## Coverage
 
-![Every building of the four boroughs shaded by height, with the tile grid and the streaming radii around a camera in Harlem](docs/assets/figures/coverage.jpg)
+![Every building of the five boroughs shaded by height, with the tile grid and the streaming radii around a camera in Harlem](docs/assets/figures/coverage.jpg)
 
 ## Architecture and repository layout
 
@@ -118,13 +122,17 @@ client/            renderer, simulation and perception client (three.js, Vite)
   src/                  engine, streaming, materials, traffic, pedestrians, perception, API bridge
   tools/pipeline/       city compiler: NYC Open Data -> binary tiles
   tools/ar34/export/    take export to OpenUSD; the Blender Cycles and Unreal Engine 5 renderers
+  src/lod/              the persistent skyline tier (?lod16=1)
   tools/                asset builders (vehicles, trees, vegetation, materials, Central Park), tile probes and audits
   public/               LUTs, fonts, data; tiles, models and textures are downloaded (BUILDING.md)
 src/                    building-generator library shared with the client (@nyc alias); index.html is its demo
+core/                   the simulation core shared by the client and the headless tools: streaming, fleet, takes
 server/                 simulation server (Electron): TCP API, content serving, release builder
 PythonAPI/              `valdrada` Python client, examples
 space/                  the Hugging Face Space: static server for the dataset's Content/
 tools/                  figures, web packaging, headless rendering, film recorder and render QA, perception export, asset build scripts
+  ue/                   the whole city in Unreal Engine 5: the city build, the material library, the cell actor plugin, render_take
+  cells/ lod/ core/     the cell baker and export, the far levels and backdrop, the take and actor tools
 docs/                   documentation site, API reference, wire protocol, rendering techniques, building typologies
 ```
 
@@ -143,8 +151,8 @@ the architecture diagram is a draw.io file in `docs/assets/figures/src/`.
   may be used under any terms with the attribution "© OpenStreetMap contributors".
 - **Vehicle, prop and pedestrian models:** CC BY 4.0, from the CARLA Simulator; the Rocketbox pedestrian set
   (`models/peds24/rb27/`) is MIT, from the Microsoft Rocketbox Avatar Library. The NYC buses, service and delivery
-  vehicles and the street trees are original models (CC BY 4.0); two vehicle bodies and the Angel of the Waters derive
-  from CC BY 4.0 scans and models credited in ACKNOWLEDGEMENTS.md.
+  vehicles and the street trees are original models (CC BY 4.0); two vehicle bodies, the Angel of the Waters and the
+  Statue of Liberty derive from CC BY 4.0 scans and models credited in ACKNOWLEDGEMENTS.md.
 - **Textures and skies:** CC0, from Poly Haven and ambientCG. **Typefaces:** SIL OFL 1.1 and Apache 2.0.
 
 The photoreal pedestrians contain components created with Epic Games' MetaHuman. The MetaHuman licence does not allow
@@ -165,7 +173,7 @@ rendered with it, please cite Valdrada itself:
   author  = {Turkcan, Mehmet Kerem},
   title   = {{Valdrada}: a real-data, real-time digital twin of New York City},
   year    = {2026},
-  version = {0.3.1},
+  version = {0.4.0},
   url     = {https://github.com/mkturkcan/valdrada}
 }
 ```

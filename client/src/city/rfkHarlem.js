@@ -1,17 +1,18 @@
 // BRIDGES (AR34): the RFK (Triborough) Bridge's Harlem River crossing and its Manhattan approach ramps, with the Harlem River
-// Drive's viaduct round 125th-129th St. Called by city/w125e.js (its apply and build hooks); flag `?rfk34=0` (the AR32
+// Drive's viaduct round 125th-129th St. Called by city/w125e.js (its apply() and build() hooks); flag `?rfk34=0` (the AR32
 // pieces of w125e.js come back). Notes: docs/notes/ar34-bridges.md.
+//
 // THE RAMPS (city/rfkData.js, written by client/tools/ar34/bridges/rfk_data.mjs from the CSCL centrelines): each elevated
 // roadway a smoothed alignment (curvature continuous) with a solved profile (vertical curves, the crossings' clearances), drawn
 // as a deck: asphalt with its lane lines, a 0.25 m slab, steel plate girders, New Jersey safety-shape parapets (0.81 m), light
 // poles, scuppers; concrete piers about every 27 m where the ground under is not a street; where the deck is under 3 m over
 // the ground it stands on fill between retaining walls. The compiled tiles' own raised decks for the same roadways (flat at the
-// compiler's level constants, straight ramps between CSCL nodes: the kinks) are cut out in apply, and their traffic lines
+// compiler's level constants, straight ramps between CSCL nodes: the kinks) are cut out in apply(), and their traffic lines
 // lifted onto the new profile.
+//
 // THE LIFT BRIDGE (Allston Dana, chief engineer; opened 11 July 1936; Wikipedia, "Robert F. Kennedy Bridge"): a 310 ft (94.5 m)
 // vertical-lift span, 92 ft (28 m) wide, six lanes and two sidewalks, 55 ft (16.8 m) over mean high water closed (135 ft open);
 // a side span of 195 ft (59.4 m) each side between the lift span and the approach viaducts, 700 ft (213 m) in all; towers
-// 210 ft (64 m) over mean high water. Form from photographs: each tower four
 // lattice shafts (square built-up columns braced with X panels), a counterweight bay between the shafts on each side, closed at
 // the top by an arch; across the roadway an arched portal truss at the top; the machinery house over it with raised end blocks
 // and round ports; each tower on four concrete pier blocks behind a timber fender at the waterline. The lift span a through
@@ -217,7 +218,7 @@ function shoreApply(tile, ox, oz) {
 // ---- the ramps ----------------------------------------------------------------------------------------------------------
 // stretches built as an embankment between concrete retaining walls instead of a girder deck on bents: [chain name, from, to]
 // (m along the chain). The exit to 125th St and Second Avenue comes down between walls, north of 125th St from near First
-// Avenue
+// gantry over it, no openings under it)
 const FILL = [['RFK BRDG ET 125 STREET 2 AVE', 205, 360]];
 const onFill = (c, sv) => FILL.some(([n, a, b]) => n === c.n && sv >= a && sv <= b);
 // per station: the centre, the unit tangent and left normal, the banked height of a lateral offset
@@ -345,7 +346,7 @@ function rampsBuild(B, ctx) {
         f = q; break;
       }
       if (!f) continue;
-      // a steel bent, as the approach's are: box columns on concrete footings, a cap girder under the
+      // viaduct's grey-green, the caps' ends on curved haunches): box columns on concrete footings, a cap girder under the
       // plate girders, a curved haunch from each column into the cap
       const capT = f.y - 0.25 - 1.4, capB = capT - 1.2;
       const cols = c.w > 11 ? [-hw + 2.2, hw - 2.2] : [0];

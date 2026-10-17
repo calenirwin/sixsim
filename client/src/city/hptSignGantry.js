@@ -171,7 +171,6 @@ export function gantryGeo(G, which) {
     roof.member(circle(0.13, 10), [x, HT - 0.1, 0.0], [x, HT + h, 0.0], null, { smooth: true, caps: true });
     roof.member(circle(0.18, 10), [x, HT + h - 0.06, 0.0], [x, HT + h + 0.05, 0.0], null, { smooth: true, caps: true });
   }
-  // ---- the hoists: two per frame, each a spoked sheave under the girder in the
   // frame's plane and two eyebar chains hanging from its sides nearly to the deck, pinned every 2.4 m, a clevis block at the foot
   {
     const yT = yG0 - 0.05, yW = yT - 1.05, R = 0.78, yLow = D0 + 0.95, RIM = rect(0.1, 0.14), SPOKE = rect(0.06, 0.05);

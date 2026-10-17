@@ -269,6 +269,70 @@ export function fpNear2(pts, x, z) {
   return d;
 }
 
+// UE14 (2026-10-09, the owner: "Central Park: the tree leaves look rather low quality and have a lot of pop-in";
+// docs/notes/ar34-ue13.md). A LOD set's swaps were hard: near -> mid at R1 and mid -> nothing at R2 (the park's ground cover
+// at 36 / 80 m, ferns 40 / 70 m, shrubs 75 / 260 m, the Mall's elms 70 / 400 m, the furniture). They are dithered fades now:
+// inside a band round R1 an instance draws in both forms, each keeping its share of the pixels (TR37's interleaved-gradient
+// dither, city/trees.js), and the mid form dissolves over the last stretch before R2 (a part without a mid form dissolves
+// across R1's band). While recording (FP37) the sets bin by the take's path as before and draw whole. `?fade14=0` restores
+// the hard swaps.
+const FADE14 = !(typeof location !== 'undefined' && /(^|[?&])fade14=(0|trees)(&|$)/.test(location.search));   // (`fade14=trees`: the trees' fades only)
+const FADE14ON = { value: 1 };   // 0 while a take's path holds the bins (FP37)
+const DITH14 = { value: 0 };     // the dither's frame index (TAA integrates it), once a frame
+let dith14 = false;
+const band14 = (R1, R2) => [Math.max(6, 0.15 * R1), Math.max(8, 0.12 * R2)];
+const VAR14 = new Map();
+let id14 = 1 << 24;
+// the material `base` at level 0 (the near form: out across R1's band) or 1 (the mid form: in across it, out before R2). A
+// view of the base (Object.create), so whatever the base changes later (a lamp's glow at night, a season's tint) holds.
+function fadeMat14(base, level, R1, R2) {
+  const key = `${base.uuid}:${level}:${R1}:${R2}`;
+  let m = VAR14.get(key);
+  if (m) return m;
+  if (!dith14 && typeof requestAnimationFrame === 'function') { dith14 = true; const t = () => { DITH14.value = (DITH14.value + 1) % 64; requestAnimationFrame(t); }; requestAnimationFrame(t); }
+  const [b1, b2] = band14(R1, R2);
+  const uR = { value: new THREE.Vector4(R1, b1, R2, b2) };
+  m = Object.create(base);
+  Object.defineProperty(m, 'id', { value: id14++ });
+  m.uuid = THREE.MathUtils.generateUUID();
+  m._listeners = {};
+  m.defines = { ...(base.defines || {}), FADE14: String(level) };
+  m.onBeforeCompile = (sh, r) => {
+    base.onBeforeCompile.call(base, sh, r);
+    if (!sh.vertexShader.includes('#include <begin_vertex>') || !sh.fragmentShader.includes('#include <clipping_planes_fragment>')) return;   // (drawn whole)
+    sh.uniforms.uR14 = uR; sh.uniforms.uOn14 = FADE14ON; sh.uniforms.uDith14 = DITH14;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform vec4 uR14; uniform float uOn14; varying vec2 vFade14;')
+      .replace('#include <begin_vertex>', `{
+  #ifdef USE_INSTANCING
+    vec3 o14 = ( modelMatrix * vec4( instanceMatrix[3].xyz, 1.0 ) ).xyz;
+  #else
+    vec3 o14 = ( modelMatrix * vec4( 0.0, 0.0, 0.0, 1.0 ) ).xyz;
+  #endif
+  float d14 = length( o14.xz - cameraPosition.xz );
+  float f1 = 1.0 - smoothstep( uR14.x - uR14.y, uR14.x + uR14.y, d14 ), f2 = 1.0 - smoothstep( uR14.z - uR14.w, uR14.z, d14 );
+  #if FADE14 == 0
+    vFade14 = uOn14 > 0.5 ? vec2( -1.0, f1 ) : vec2( -1.0, 2.0 );
+  #else
+    vFade14 = uOn14 > 0.5 ? vec2( f1, f2 ) : vec2( -1.0, 2.0 );
+  #endif
+}
+#include <begin_vertex>`);
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uDith14; varying vec2 vFade14;')
+      .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+{
+  float h14 = fract( 52.9829189 * fract( dot( gl_FragCoord.xy + vec2( 3.31, 7.93 ) * uDith14 * 1.618, vec2( 0.06711056, 0.00583715 ) ) ) );
+  if ( h14 < vFade14.x || h14 >= vFade14.y ) discard;
+}`);
+  };
+  m.customProgramCacheKey = () => (base.customProgramCacheKey ? base.customProgramCacheKey() : '') + '|lf14' + level;
+  VAR14.set(key, m);
+  return m;
+}
+if (typeof window !== 'undefined') window.__LODFADE14 = { VAR14, FADE14ON };
+// UE14 end
+
 // ---------------------------------------------------------------- the per-instance LOD set
 // list: [{ x, y, z, yaw, sx, sy, sz, c: [r, g, b] (linear multiplier) }]; parts: [{ near, mid (or null), mat, cast }].
 // Instances within R1 of the lens draw `near`, within R2 `mid`, beyond nothing. Re-binned when the lens has moved 4 m
@@ -300,12 +364,16 @@ export function lodSet(name, list, parts, R1, R2, meshes = null, onFrame = null)
     if (meshes) meshes.add(m);
     return m;
   };
-  const P = parts.map((q, k) => ({ near: mk(q.near, q.mat, q.cast, 'near' + k), mid: q.mid ? mk(q.mid, q.mat, q.castMid ?? q.cast, 'mid' + k) : null }));
+  // UE14: each form in its fade level (see FADE14)
+  const P = parts.map((q, k) => ({ near: mk(q.near, FADE14 ? fadeMat14(q.mat, 0, R1, R2) : q.mat, q.cast, 'near' + k), mid: q.mid ? mk(q.mid, FADE14 ? fadeMat14(q.mat, 1, R1, R2) : q.mat, q.castMid ?? q.cast, 'mid' + k) : null }));
   let lx = 1e12, lz = 1e12, fpV = -1;
   const R1s = R1 * R1, R2s = R2 * R2;
+  // UE14: the bins while fading (4 m more each way: the sets re-bin when the lens has moved 4 m)
+  const [b14a] = band14(R1, R2), N14s = (R1 + b14a + 4) ** 2, M14s = Math.max(0, R1 - b14a - 4) ** 2, F14s = (R2 + 4) ** 2;
+  // UE14 end
   // dist(i): the squared distance that bins instance i (from the lens, or FP37's nearest approach of the take's path)
   const bins = new Int8Array(n).fill(-2);   // FP37 telemetry: each instance's last bin (0 near, 1 mid, -1 none, -2 never binned)
-  const rebinD = (dist) => {
+  const rebinD = (dist, fade = false) => {
     let a = 0, b = 0, changed = 0;
     const E = typeof window !== 'undefined' ? window.__ENGINE : null;
     for (let i = 0; i < n; i++) {
@@ -313,6 +381,13 @@ export function lodSet(name, list, parts, R1, R2, meshes = null, onFrame = null)
       const nb = d < R1s ? 0 : d < R2s ? 1 : -1;
       if (bins[i] !== -2 && bins[i] !== nb && E && E.inView && E.inView(list[i].x, list[i].y + 3, list[i].z, 8)) changed++;
       bins[i] = nb;
+      // UE14: fading, an instance inside R1's band goes to both forms
+      if (fade) {
+        if (d < N14s) { for (const q of P) { q.near.instanceMatrix.array.set(M.subarray(i * 16, i * 16 + 16), a * 16); q.near.instanceColor.array.set(Cc.subarray(i * 3, i * 3 + 3), a * 3); } a++; }
+        if (d >= M14s && d < F14s) { for (const q of P) if (q.mid) { q.mid.instanceMatrix.array.set(M.subarray(i * 16, i * 16 + 16), b * 16); q.mid.instanceColor.array.set(Cc.subarray(i * 3, i * 3 + 3), b * 3); } b++; }
+        continue;
+      }
+      // UE14 end
       if (d < R1s) {
         for (const q of P) { q.near.instanceMatrix.array.set(M.subarray(i * 16, i * 16 + 16), a * 16); q.near.instanceColor.array.set(Cc.subarray(i * 3, i * 3 + 3), a * 3); }
         a++;
@@ -325,9 +400,9 @@ export function lodSet(name, list, parts, R1, R2, meshes = null, onFrame = null)
       q.near.count = a; q.near.instanceMatrix.needsUpdate = true; q.near.instanceColor.needsUpdate = true;
       if (q.mid) { q.mid.count = b; q.mid.instanceMatrix.needsUpdate = true; q.mid.instanceColor.needsUpdate = true; }
     }
-    if (changed && E && E.popEvents) E.popEvents.lod += changed;   // in-view form switches (the recorder's QA fails a take on them)
+    if (changed && !fade && E && E.popEvents) E.popEvents.lod += changed;   // in-view form switches (the recorder's QA fails a take on them; UE14: a fading set's switches are cross-fades, not counted)
   };
-  const rebin = (cx, cz) => rebinD((i) => { const dx = list[i].x - cx, dz = list[i].z - cz; return dx * dx + dz * dz; });
+  const rebin = (cx, cz) => rebinD((i) => { const dx = list[i].x - cx, dz = list[i].z - cz; return dx * dx + dz * dz; }, FADE14);   // UE14: fading
   const rebinPath = (pts) => rebinD((i) => fpNear2(pts, list[i].x, list[i].z));
   // the trigger: an always-drawn empty mesh (its material draws nothing; onBeforeRender runs in every main pass)
   const sg = new THREE.BufferGeometry();
@@ -340,6 +415,7 @@ export function lodSet(name, list, parts, R1, R2, meshes = null, onFrame = null)
     if (!cam.isPerspectiveCamera || (cam.parent && cam.parent.isCubeCamera)) return;
     // FP37 (core/engine.js): while recording, each instance holds the form its nearest approach to the take's path needs
     const fp = filmPath();
+    if (FADE14) FADE14ON.value = fp ? 0 : 1;   // UE14: a take's path draws the forms whole
     if (fp) { if (fp.v !== fpV) { fpV = fp.v; lx = 1e12; rebinPath(fp.pts); } return; }
     fpV = -1;
     const cx = cam.position.x, cz = cam.position.z;

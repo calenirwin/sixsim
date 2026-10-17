@@ -210,6 +210,25 @@ async function waitFree(s, gpu) {
     if (!said) { log(`${s}: waiting for ${MINFREE} MiB free on GPU ${gpu} (${gpuFree(gpu)} MiB now)`); said = true; }
     await new Promise((r) => setTimeout(r, 30000));
   }
+  // R9-HANG (UE track, 2026-10-08): one engine per GPU: a UE take waits while an Unreal render runs on its GPU (two engines on
+  // one GPU lost the device, Xid 109); ue_take.py also holds a lock per GPU while it renders
+  if (UE) {
+    let saidE = false;
+    while (ueOnGpu(gpu) && Date.now() - t0 < 6 * 3600 * 1000) {
+      if (!saidE) { log(`${s}: waiting for the Unreal render on GPU ${gpu} to end (one engine per GPU)`); saidE = true; }
+      await new Promise((r) => setTimeout(r, 20000));
+    }
+  }
+}
+// R9-HANG: whether an UnrealEditor process holds GPU g (nvidia-smi index, PCI order)
+function ueOnGpu(g) {
+  try {
+    const bus = execFileSync('nvidia-smi', ['--query-gpu=index,pci.bus_id', '--format=csv,noheader'], { encoding: 'utf8' }).trim().split('\n')
+      .map((l) => l.split(',').map((x) => x.trim())).find((r) => Number(r[0]) === g)?.[1];
+    if (!bus) return false;
+    const apps = execFileSync('nvidia-smi', ['--query-compute-apps=pid,gpu_bus_id,process_name', '--format=csv,noheader'], { encoding: 'utf8' }).trim().split('\n');
+    return apps.some((l) => { const r = l.split(',').map((x) => x.trim()); return r[1] === bus && /UnrealEditor/.test(r[2] || ''); });
+  } catch { return false; }
 }
 
 // PIPEFIX (2026-10-05): the geometry gate, right after the USD: what the writer knows before any frame is rendered (the
@@ -246,15 +265,20 @@ const ueArgs = (s, outdir, gpu, frames, reuse) => [path.join(here, 'ue_take.py')
 function ueSplit(logf) {   // per frame from ue_take.py's TAKE_FRAME lines (seconds between the frames' files); the stages from TAKE_STATS
   const lines = fs.readFileSync(logf, 'utf8').split('\n');
   let from = 0; lines.forEach((l, i) => { if (l.startsWith('### ') && l.includes('ue_take.py')) from = i; });
-  const tf = {}; let st = null;
+  const tf = {}; let st = null; const lost = []; let safe = null;
   for (const line of lines.slice(from)) {
     if (line.startsWith('TAKE_FRAME ')) { try { const d = JSON.parse(line.slice(11)); tf[d.frame] = d; } catch {} }
     if (line.startsWith('TAKE_STATS ')) { try { st = JSON.parse(line.slice(11)); } catch {} }
+    // R9-HANG (UE track, 2026-10-08): ue_take.py's watchdog: each render that lost the GPU, and the safe profile of the run
+    // that followed it
+    if (line.startsWith('TAKE_DEVICE_LOST ')) { try { lost.push(JSON.parse(line.slice(17))); } catch {} }
+    if (line.startsWith('TAKE_SAFE ')) { try { safe = JSON.parse(line.slice(10)).profile; } catch {} }
   }
   const fr = Object.keys(tf).map(Number).sort((a, b) => a - b);
   const v = fr.slice(1).map((f) => tf[f].secs).sort((a, b) => a - b);
   return { frames: fr.length, first_s: fr.length ? tf[fr[0]].secs : null, total_s: v.length ? v[Math.floor(v.length / 2)] : null,
-    prep_s: st?.prep_s ?? null, import_s: st?.import_s ?? null, render_s: st?.render_s ?? null };
+    prep_s: st?.prep_s ?? null, import_s: st?.import_s ?? null, render_s: st?.render_s ?? null,
+    ...(lost.length ? { device_lost: lost, safe_profile: safe } : {}) };   // (R9-HANG)
 }
 // R3-PHYS: --cycref <dir> (the physical Cycles takes' root): ue_check.py against that take alone (--noweb), like with like
 const CYCREF = opt('cycref', '');
@@ -342,6 +366,8 @@ async function render(s, gpu) {
     const miss = missingFrames(s);
     let sp = null; try { sp = UE ? ueSplit(logf) : frameSplit(logf); } catch {}   // UE: ue_take.py's own lines
     log(`${s}: take exit ${code}, ${miss ? miss.length : '?'} frames missing, ${((Date.now() - t0) / 60000).toFixed(1)} min; per frame ${JSON.stringify(sp)}`);
+    // R9-HANG: the watchdog's summary line: which take lost the GPU, where, and the profile it was rendered again with
+    if (sp?.device_lost) log(`${s}: WATCHDOG: the render lost the GPU (${sp.device_lost.map((d) => `${d.signature}${d.engine_frame != null ? ` at engine frame ${d.engine_frame}` : ''}`).join('; ')}); rendered again with the safe profile ${JSON.stringify(sp.safe_profile)}`);
     if (miss && !miss.length) {
       if (!UE && !has('notemporal') && !(await temporal(s))) { a++; continue; }   // UE: no temporal filter
       fs.writeFileSync(W(s, 'render.ok'), new Date().toString());
@@ -435,8 +461,8 @@ const failing = (s) => {
 // PIPEFIX: a shot stopped by the geometry gate or its preview in this batch (its older take, if any, is not cut)
 const stopped = (s) => { try { const j = JSON.parse(fs.readFileSync(W(s, 'status.json'), 'utf8')); return ['usd-check', 'preview-check'].includes(j.stage) && !!j.error; } catch { return false; } };
 
-// ---- the cuts: each teaser's Cycles cut once all its shots have takes; the variants that take web clips (composites that
-// exist only as web clips) read them from the web clip root
+// ---- the cuts: each teaser's Cycles cut once all its shots have takes; the swipe variants take their swipe clips (real vs
+// twin composites that exist only as web clips) from the web clip root
 async function cuts() {
   const SUF = opt('cutsuffix', '_cyc');
   const list = [];

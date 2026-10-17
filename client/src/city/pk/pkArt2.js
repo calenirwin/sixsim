@@ -1,5 +1,4 @@
 // AR33 PROPS art, part 2 (part pk, docs/notes/ar33-props.md): regulation plates, the MTA bus-stop blades, the subway stair and
-// its name plate, drawn from scratch on canvases.
 import * as THREE from 'three';
 
 const _tex = new Map();

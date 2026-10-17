@@ -14,6 +14,8 @@ import * as THREE from 'three';
 import { project, FURN } from '../shared/geo.js';
 import { applyLightTrim, applyStoneDetail } from '../world/materials.js';
 import { tazzaFountain } from './campus.js';
+import { lowellFountain } from './campus.js';   // LOOK14
+import { LK14, LOWELL, lowellStone, lowellRing } from './bryantParkKit.js';   // LOOK14
 import { mkConvex, tpSplit } from './tsqPlaza.js';
 import { bp31Build, bp31Plan, bp31InGrill, bp31Trees, bp31Ground, chairGeo31, tableGeo31, chairGeoRattan31, tableGeoGrill31, BP31_EXTENT, FOUNT31, FPLAZA, WALK_LINES } from './bryantParkKit.js';
 
@@ -308,7 +310,11 @@ export function bpBuild(group, y) {
     // the Lowell fountain at (29.4, 70.6) (OSM; BP28 had it at u 15), its pool 4.9 m round, on the plaza two steps up, in
     // Charles Platt's pink Stony Creek granite: the campus fountain's opaque parts get a tinted copy of their material
     const [fx, fz] = bpWorld(FOUNT31[0], FOUNT31[1]);
-    const F = tazzaFountain({ x: fx, z: fz, R: 4.9, seed: 4241 });
+    // LOOK14: the Lowell fountain to the real one (bryantParkKit.js lowellStone(), campus.js lowellFountain()), turned
+    // onto the park's axes (local +z along u); `?lk14=0` keeps the campus tazza
+    const F = LK14 ? lowellFountain({ x: fx, z: fz, seed: 4241, stone: lowellStone(), water: lowellRing(-LOWELL.w + 0.015), L: LOWELL }) : tazzaFountain({ x: fx, z: fz, R: 4.9, seed: 4241 });
+    if (LK14) F.group.rotation.y = bpYaw;
+    // LOOK14 end
     F.group.traverse((o) => { if (o.isMesh && o.material && !o.material.transparent && o.material.color && o.material.type === 'MeshStandardMaterial') o.material = pinkOf(o.material); });
     F.group.position.set(fx, y + FPLAZA.h, fz);
     F.group.name = 'bp28:fountain';

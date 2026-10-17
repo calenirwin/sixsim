@@ -1,22 +1,22 @@
 // BUS40 / BUSES — the MTA New York City Transit buses of 125th Street for the traffic sim, built from scratch to published
 // dimensions (sim/fleet24.js format: one GLB per kind, nodes LOD0..LOD2 under a root carrying size / hubs / wheelbase,
 // materials in the runtime classes, per-vertex _WHEEL and _LAMP, KTX2 textures, meshopt geometry).
-// node client/tools/ar34/vehicles/bus40/build_bus40.mjs [all|<kind>...] [--out <dir>]
+//   node client/tools/ar34/vehicles/bus40/build_bus40.mjs [all|<kind> ...] [--out <dir>]
 // Frame: +Z forward, +Y up, origin at the ground centre, left side at +X (right / curb side at -X), metres.
-// mtaxd40 New Flyer Xcelsior XD40 (diesel), the 2016+ MTA blue livery (deep blue body, yellow and light-blue swoosh
-// behind the front door, blue speed lines over the rear arch)
-// mtalfs Nova Bus LFS (diesel), the white MTA livery with the blue band under the windows and across the front
-// mtaxd60 New Flyer Xcelsior XD60 articulated, Select Bus Service livery
-// mtalfsa Nova Bus LFS Articulated, Select Bus Service livery
-// mtalfsal Nova Bus LFS Articulated, the white local livery (the M101 / Bx15 / M125 artics of the 2019-2022 photographs)
+//
+//   mtaxd40   New Flyer Xcelsior XD40 (diesel), the 2016+ MTA blue livery (deep blue body, yellow and light-blue swoosh
+//             behind the front door, blue speed lines over the rear arch)
+//   mtalfs    Nova Bus LFS (diesel), the white MTA livery with the blue band under the windows and across the front
+//   mtaxd60   New Flyer Xcelsior XD60 articulated, Select Bus Service livery
+//   mtalfsal  Nova Bus LFS Articulated, the white local livery (the M101 / Bx15 / M125 artics of the 2019-2022 photographs)
 // An articulated kind is two bodies: LOD<n> holds LOD<n>_front and LOD<n>_joint (the bellows, `_ARTIC` 0..1 from the front
 // body's face to the rear body's), REAR_LOD<n> is the rear body; root extras `turntable` [0, y, z] (the rear body turns
 // about its vertical axis) and `rearLength`. Rear axle hubs are ids 5 / 6.
+//
 // Dimensions (docs/notes/ar34-veh-bus40.md and ar34-veh-bus60.md "Sources"): XD40 41 ft over bumpers, 102 in wide,
 // 10 ft 6 in high (diesel), wheelbase 283.75 in; LFS 40 ft, 102 in, 124 in high (diesel), wheelbase 244 in; XD60 60 ft
 // 10 in, wheelbases 229 / 293 in; LFS Articulated 62 ft, wheelbases 244 / 253 in. Overhang split, window and door layout,
 // lamp positions, the turntable and bellows: read off the reference photographs listed there (not survey data).
-// Liveries, signs and plates are drawn here (SVG -> PNG -> KTX2);
 import fs from 'node:fs';
 import path from 'node:path';
 import * as THREE from 'three';
@@ -69,7 +69,6 @@ const MAKES = {
     hvac: { zr: 0.30, len: 2.85, w: 1.96, h: 0.22 }, ra: 0.6,
     art: { pivotBack: 1.65, bellows: 1.10 },
   },
-  // the Nova Bus LFS Articulated in the SBS livery: the M60 SBS photographed on 125th Street. Nova Bus LFS infobox (en.wikipedia.org, fetched
   // 2026-10-01): 62 ft (18.90 m), 102 in, 124 in high (diesel; 128 in hybrid), wheelbase front-mid 244 in, mid-rear 253 in.
   // The LFS front and rear ends of mtalfs; turntable and bellows estimated as on the XD60 (not from a drawing)
   mtalfsa: {
@@ -1218,7 +1217,7 @@ async function ledRows(routes = ROUTES) {
     // front sign 160 x 24 dots: the route number in tall characters, the destination in two lines beside it
     dotField(0, y0, 1024, y0 + 128, 1024 / 160);
     const w2 = () => 104;
-    // the SBS buses' full-colour boards: route red, '+SELECT BUS' sky blue, the destination amber
+    // colours not readable at that size, not verified): route red, '+SELECT BUS' sky blue, the destination amber
     const sbs = /SELECT/.test(R.dest + R.via);
     const C1 = sbs ? [255, 70, 40] : AMBER, C2 = sbs && /SELECT/.test(R.dest) ? [70, 190, 255] : AMBER;
     await drawText([{ t: R.num, x: 1, y: 21, size: 22, len: 50 }], 0, y0, 1024, y0 + 128, 160, 24, C1);

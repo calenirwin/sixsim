@@ -2,19 +2,19 @@
 // and the pepsi-cola sign area in Hunter's point; these two will have their own teaser"). Each area part is its own
 // module with its own notes (docs/notes/area-<part>.md), gathered here for world/assemble.js and sim/peds.js on the same
 // hook contract as city/centralPark.js (read its comments for each hook):
-// w125w.js W 125th St, the west: Dinosaur Bar-B-Que at 12th Avenue, the Riverside Drive viaduct, Manhattanville,
-// the 1 train's Manhattan Valley viaduct at Broadway, to Amsterdam Avenue
-// w125c.js 125th St, Frederick Douglass to Adam Clayton Powell Boulevard (the Apollo)
-// w125cb.js 125th St, Adam Clayton Powell Boulevard to Lenox Avenue (the Studio Museum, the State Office Building's
-// plaza and the vendors; split out of w125c.js on 2026-09-30)
-// w125e.js E 125th St, the east: Lenox Avenue to the East River (Fifth, Madison, the Park Avenue viaduct and the
-// Metro-North station, Lexington, Third, Second, the RFK Bridge's approaches, First Avenue)
-// hptSign.js Hunters Point, Queens: the Pepsi-Cola sign, the gantries and Gantry Plaza State Park
-// hptShore.js Hunters Point's waterfront: the Center Boulevard towers, Hunters Point South Park, the piers and the ferry
+//   w125w.js   W 125th St, the west: Dinosaur Bar-B-Que at 12th Avenue, the Riverside Drive viaduct, Manhattanville,
+//              the 1 train's Manhattan Valley viaduct at Broadway, to Amsterdam Avenue
+//   w125c.js   125th St, Frederick Douglass to Adam Clayton Powell Boulevard (the Apollo)
+//   w125cb.js  125th St, Adam Clayton Powell Boulevard to Lenox Avenue (the Studio Museum, the State Office Building's
+//              plaza and the vendors; split out of w125c.js on 2026-09-30)
+//   w125e.js   E 125th St, the east: Lenox Avenue to the East River (Fifth, Madison, the Park Avenue viaduct and the
+//              Metro-North station, Lexington, Third, Second, the RFK Bridge's approaches, First Avenue)
+//   hptSign.js Hunters Point, Queens: the Pepsi-Cola sign, the gantries and Gantry Plaza State Park
+//   hptShore.js Hunters Point's waterfront: the Center Boulevard towers, Hunters Point South Park, the piers and the ferry
 // AR33 (2026-09-30, the reference-built pass: docs/notes/ar33.md) adds four parts over both areas:
-// vk/viaducts.js the viaducts: the Manhattan Valley arch and 125th St station, the Riverside Drive viaduct, Park Avenue
-// sk/streetscape.js the street surface: flags, curbs, ramps, markings, asphalt, tree pits, grates, covers
-// pk/props.js street furniture and props
+//   vk/viaducts.js   the viaducts: the Manhattan Valley arch and 125th St station, the Riverside Drive viaduct, Park Avenue
+//   sk/streetscape.js the street surface: flags, curbs, ramps, markings, asphalt, tree pits, grates, covers
+//   pk/props.js      street furniture and props
 // Every hook is optional in a part; a part that throws is logged (`[ar32] part.hook`) and skipped. A part whose MODULE
 // fails to load (a syntax error mid-edit) is logged (`[ar32] part <name> unavailable`) and left out, so one broken file
 // never takes every page down; tile assembly waits for `areasReady` (main.js). A part module may export `ready` (a

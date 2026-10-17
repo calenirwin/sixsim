@@ -1,0 +1,7 @@
+{
+  "_": "Lane B proof views for tools/bshot.mjs --cams (L() form: camera x, z, height over the ground, target x, z, pitch). viaMid: the 125th St viaduct deck (the t7ArchTrack camera's position) turned to Midtown; bethMid: Bethesda Terrace along the Mall to the Central Park South skyline; airS: 700 m over the park, south; bethS: the scTerraceGolden camera's position (heights relative here; record.mjs --shot gives the exact shot frame).",
+  "viaMid": [864.3, -3835.0, 30, -1219, 3854, 0.02],
+  "bethMid": [24, 990, 15, -600, 4500, 0.03],
+  "airS": [0, 0, 700, 0, 3000, -0.22],
+  "bethS": [26.0, 875.7, 5.5, 24.3, 977.7, -0.049]
+}

@@ -162,7 +162,6 @@ export function goods(q, p) {
       }
     } else if (kind === 'tees' || kind === 'wax') {
       for (let x = x0; x < x1 - 0.22; x += 0.27) for (const z of [-0.18, 0.15]) {
-        // heaps of 3 to 10, each fold squared a little
         // differently, the stack leaning as it rises
         const n = 3 + Math.floor(R() * 8), lean = (R() - 0.5) * 0.012;
         for (let k = 0; k < n; k++) {
@@ -237,7 +236,6 @@ export function crate(q, p = {}) {
   return M;
 }
 
-// ---------------------------------------------------------------- the produce stall
 // len along x: a white canopy over a run of tables with tilted crates, a second tier behind, boxes under and behind,
 // the printed valance at the front, sandbags on the legs
 export function produceStall(q, p = {}) {
@@ -647,7 +645,7 @@ export function tent(q, p = {}) {
     if (q) { M.add(frame, rod([x, H - 0.05, z], [x + (i < nb ? 0.5 : -0.5), H - 0.45, z], 0.01, 4)); M.add('tarp', fcell(box(0.22, 0.1, 0.3, x, 0.05, z), FAB.charcoal)); }
   }
   const eave = H + 0.05, peak = H + 0.75, sub = q ? 3 : 1;
-  // p.flat: one long tarp roof falling from the back (+0.35 m) to the front, sagging between the frame bays, instead of the peaked modules
+  // p.flat: one long tarp roof falling from the back (+0.35 m) to the front, sagging between the frame bays (a fruit
   if (p.flat) {
     const nu = q ? Math.max(6, Math.round(W * 3)) : 1, nv = q ? 4 : 1, pos = [], uv = [];
     const V = (iu, iv) => { const u = iu / nu, v = iv / nv, x = -W / 2 - 0.05 + u * (W + 0.1), z = D / 2 + 0.05 - v * (D + 0.1);

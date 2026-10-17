@@ -1,7 +1,7 @@
 // AR34 BID3: canvas painters drawn from scratch (docs/notes/ar33-bid3.md). Nothing here samples a photograph: the letterforms are
-// graffitiShutter(wM, hM, seed, o) a ribbed roll-down shutter, optionally covered in layered graffiti: wallMat (map + normal map)
-// stuccoWall(wM, hM, seed, o) a weathered stucco / EIFS fascia: rain streaks, stains, faded painted sign ghosts
-// paintGraffiti(g, W, H, seed, o) the painter itself (reusable: any canvas, any size; o.density 0..1, o.pxm pixels per metre)
+//   graffitiShutter(wM, hM, seed, o)  a ribbed roll-down shutter, optionally covered in layered graffiti: wallMat (map + normal map)
+//   stuccoWall(wM, hM, seed, o)       a weathered stucco / EIFS fascia: rain streaks, stains, faded painted sign ghosts
+//   paintGraffiti(g, W, H, seed, o)   the painter itself (reusable: any canvas, any size; o.density 0..1, o.pxm pixels per metre)
 // Requests: docs/notes/ar33-kit.md (the kit may adopt paintGraffiti for every segment's gates, hoardings and side walls).
 import * as THREE from 'three';
 import { wallMat, hash, quadMesh } from './bid3Util.js';
@@ -26,8 +26,6 @@ const GLY = [
   [[[.15, .1], [.15, .8], [.4, .92], [.7, .8], [.85, .1]]],                                                          // U
   [[[.15, .1], [.5, .55], [.85, .1]], [[.5, .55], [.5, .92]]],                                                       // Y
 ];
-// palettes (sRGB) h200: the gates stand in the shade of the north-facing front and the
-// paint is sun-faded and dusty
 const FILLS = [
   ['#151515', '#a39a40'],            // black piece, a pale yellow outline
   ['#557038', '#3c1d1a'],            // olive green, a maroon outline
@@ -39,7 +37,6 @@ const FILLS = [
   ['#8f9498', '#1c2a55', 'chrome'],  // silver, navy outline
 ];
 // the older work under the newer: faded tags and throw-ups, half buffed out
-// the order the newer pieces take their colours in
 const PICK = [0, 1, 2, 4, 6, 0, 2, 1, 3, 4];
 const OLD = ['#8a8e90', '#6d4a44', '#4a5a78', '#2a2a2a', '#7d7a5a', '#9a9a96'];
 const shade = (hex, f) => { const v = parseInt(hex.slice(1), 16); const c = [(v >> 16) & 255, (v >> 8) & 255, v & 255].map((x) => Math.max(0, Math.min(255, Math.round(x * f)))); return `rgb(${c[0]},${c[1]},${c[2]})`; };
@@ -168,7 +165,6 @@ function piece(g, x, y, w, h, seed, k, fillSet, o = {}) {
   sprayOn(g, S, bx + ow * 0.8, by + ow, BW, BH, 3 + ow * 0.4, 0.42 * A);
   sprayOn(g, O, bx, by, BW, BH, 2.5 + ow * 0.6, A);
   sprayOn(g, F, bx, by, BW, BH, 1.4, 0.95 * A);
-  // the letters' inner line work on half the pieces: the skeleton
   // sprayed thin in the outline colour, broken in places
   if (R(6) < 0.5) {
     const [In, ig] = scratch(5, BW, BH); ig.fillStyle = line;
@@ -251,7 +247,7 @@ export function paintGraffiti(g, W, H, seed, o = {}) {
     const w = (0.9 + 2.0 * R(i, 1)) * pxm, h = (0.5 + 0.9 * R(i, 2)) * pxm;
     buff(g, R(i, 3) * (W - w), top * 0.7 + R(i, 4) * (H - top * 0.7 - h * 0.7), w, h, ['#3a3633', '#4a4540', '#2a2826', '#57514a'][i % 4], seed * 13 + i, 0.8 + 0.15 * R(i, 5), pxm);
   }
-  // the newer pieces
+  // 1.3-1.8 m tall, in two overlapping rows over the lower 60 % of the gate, a black paint-out behind some of them)
   const nBig = Math.max(2, Math.round((W / pxm) * (0.4 + 0.35 * dens)));
   const cell = W / nBig, band = H - top;
   const order = [...Array(nBig).keys()].sort((a, b) => R(900 + a, 1) - R(900 + b, 1));
@@ -284,7 +280,6 @@ export function paintGraffiti(g, W, H, seed, o = {}) {
   }
   const fg = g.createLinearGradient(0, H * 0.35, 0, H); fg.addColorStop(0, 'rgba(96,90,82,0)'); fg.addColorStop(1, 'rgba(96,90,82,0.24)');
   g.fillStyle = fg; g.fillRect(0, H * 0.35, W, H * 0.65);
-  // a dull warm film
   g.globalCompositeOperation = 'multiply'; g.fillStyle = 'rgb(212,208,202)'; g.fillRect(0, top * 0.8, W, H - top * 0.8);
   g.restore();
 }
@@ -309,13 +304,10 @@ export function graffitiShutter(wM, hM, seed, o = {}) {
     if (hash(k, seed, 31) < 0.28) { g.fillStyle = `rgba(150,154,158,${0.10 + 0.14 * hash(k, seed, 32)})`; const x0 = hash(k, seed, 33) * W * 0.6; g.fillRect(x0, k * perS, W * (0.2 + 0.5 * hash(k, seed, 34)), perS * 0.85); }
   }
   for (let r = 0; r < Math.round(wM * 2.2 * (dens > 0 ? 1 : 0.25)); r++) { const rx = hash(r, seed, 41) * W, ry = H * (0.55 + 0.45 * hash(r, seed, 42)), rr = (0.15 + 0.35 * hash(r, seed, 43)) * pxm; const rg = g.createRadialGradient(rx, ry, 0, rx, ry, rr); rg.addColorStop(0, `rgba(120,64,34,${dens > 0 ? 0.28 : 0.1})`); rg.addColorStop(1, 'rgba(120,64,34,0)'); g.fillStyle = rg; g.fillRect(rx - rr, ry - rr, 2 * rr, 2 * rr); }
-  // vertical dirt runs
   for (let s = 0; s < Math.round(wM * (dens > 0 ? 6 : 1.2)); s++) { g.fillStyle = `rgba(24,20,16,${(dens > 0 ? 1 : 0.5) * (0.06 + 0.12 * hash(s, seed, 2))})`; g.fillRect(hash(s, seed, 3) * W, hash(s, seed, 4) * H * 0.4, 1 + hash(s, seed, 5) * 3, H * (0.2 + 0.6 * hash(s, seed, 6))); }
   if (dens > 0) {
     paintGraffiti(g, W, H, seed, { density: dens, pxm, bandTop: o.bandTop ?? 0.4 });
-    // a film of street dust over all of it
     { const dg = g.createLinearGradient(0, H * 0.2, 0, H); dg.addColorStop(0, 'rgba(92,86,78,0)'); dg.addColorStop(1, 'rgba(92,86,78,0.16)'); g.globalAlpha = 1; g.fillStyle = dg; g.fillRect(0, H * 0.2, W, H * 0.8); }
-    // rust: thin lines along some slat joints and short runs from them
     for (let k = 0; k * perS < H; k++) { if (hash(k, seed, 51) > 0.3) continue; const x0 = hash(k, seed, 52) * W * 0.7, ww = W * (0.1 + 0.4 * hash(k, seed, 53)); g.fillStyle = `rgba(110,62,34,${0.18 + 0.2 * hash(k, seed, 54)})`; g.fillRect(x0, (k + 1) * perS - 1.5, ww, 1.6); for (let q = 0; q < 3; q++) { const rx = x0 + hash(k, q, seed + 55) * ww, rl = perS * (0.5 + 3 * hash(k, q, seed + 56)); const rg2 = g.createLinearGradient(0, (k + 1) * perS, 0, (k + 1) * perS + rl); rg2.addColorStop(0, 'rgba(110,62,34,0.3)'); rg2.addColorStop(1, 'rgba(110,62,34,0)'); g.fillStyle = rg2; g.fillRect(rx, (k + 1) * perS, 1.5, rl); } }
     // weathering over the paint: sooty runs from the top, a dusty bloom along the bottom, faint scuffs
     for (let s2 = 0; s2 < Math.round(wM * 9); s2++) { const gx = hash(s2, seed, 21) * W, gw = 2 + hash(s2, seed, 22) * 9, gl = H * (0.25 + 0.7 * hash(s2, seed, 23)); const gg = g.createLinearGradient(0, 0, 0, gl); gg.addColorStop(0, `rgba(25,22,20,${0.10 + 0.14 * hash(s2, seed, 24)})`); gg.addColorStop(1, 'rgba(25,22,20,0)'); g.fillStyle = gg; g.fillRect(gx, 0, gw, gl); }
@@ -380,7 +372,7 @@ export function stuccoWall(wM, hM, seed, o = {}) {
       g.beginPath(); g.moveTo(xs, ys); g.bezierCurveTo(xs + len * 0.4, ys - len * 0.6, xs + len * 0.7, ys + len * 0.2, xs + len, ys - len * 0.3); g.stroke();
     }
   }
-  if (o.glyphs) {   // black rounded fragments where the old letters still stand
+  if (o.glyphs) {
     g.lineCap = 'round'; g.strokeStyle = 'rgba(14,12,10,0.93)';
     for (const [x, y, r, a0, a1, lw] of o.glyphs) { g.lineWidth = lw * pxm; g.beginPath(); g.arc(x * pxm, y * pxm, r * pxm, a0, a1); g.stroke(); }
   }
@@ -437,7 +429,6 @@ export function woodSlats(wM, hM, seed, o = {}) {
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const g = cv.getContext('2d');
   if (!g || !g.fillRect) return wallMat({ color: new THREE.Color(`rgb(${base[0]},${base[1]},${base[2]})`), roughness: 0.7 });
-  // o.dir 'h': boards running across, else upright
   const hz = o.dir === 'h', span = hz ? H : W;
   for (let b = 0; b * bw < span; b++) {
     const k = 0.82 + 0.3 * hash(b, seed, 1);
@@ -451,7 +442,6 @@ export function woodSlats(wM, hM, seed, o = {}) {
 }
 
 // ------------------------------------------------------------------ black block letters as a decal (a canvas alpha mask)
-// A word in a heavy sans, crisp edges, a very dark satin paint with a
 // hint of gloss. frame: the builder's frame; the quad stands at depth w (out of the wall).
 const _TD = new Map();
 export function textDecal(frame, text, u0, u1, y0, y1, w, o = {}) {
@@ -473,7 +463,7 @@ export function textDecal(frame, text, u0, u1, y0, y1, w, o = {}) {
         if (o.fit) sx = (W * 0.98) / mw;
         else if (mw > W * 0.98) { fs *= (W * 0.98) / mw; g.font = `${o.weight ?? 900} ${fs}px "Arial Black", "Helvetica Neue", Arial, sans-serif`; }
         g.save(); g.translate(W / 2, 0); g.scale(sx, 1);
-        g.lineJoin = 'round'; g.strokeStyle = '#ffffff'; g.lineWidth = H * 0.075; g.strokeText(text, 0, H * 0.54);   // fatter strokes
+        g.lineJoin = 'round'; g.strokeStyle = '#ffffff'; g.lineWidth = H * 0.075; g.strokeText(text, 0, H * 0.54);
         g.fillText(text, 0, H * 0.54);
         g.restore();
         map = new THREE.CanvasTexture(cv); map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 8;
@@ -490,7 +480,6 @@ export function textDecal(frame, text, u0, u1, y0, y1, w, o = {}) {
 }
 
 // ------------------------------------------------------------------ the script capital of the old shoe store's sign (120 W 125th)
-// A pointed-pen capital F drawn from scratch shape: a waved top stroke ending in a curl, the
 // stem falling from it to a hooked foot with a ball terminal, a looped bar at mid height, and the dot right of it. Black raised letters
 // on the fascia: the decal carries the glyph (opaque) and its soft cast shadow (alpha ~0.3) in one alpha map. wM x hM metres.
 let _SF = null;
@@ -537,7 +526,6 @@ export function scriptF(frame, u0, u1, y0, y1, w) {
         map = new THREE.CanvasTexture(cv); map.anisotropy = 8;
       }
     }
-    // a flat black
     _SF = new THREE.MeshBasicMaterial({ color: 0x070707, alphaMap: map, transparent: !!map, depthWrite: false,
       polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
   }

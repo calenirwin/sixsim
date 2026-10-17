@@ -8,7 +8,6 @@
 #    whether the web drew a window in that cell and whether its room is lit (read at the opening's centre), the glass plane
 #    REC behind the wall (0.15 m punched, 0.045 m curtain wall) seen with parallax (the reveal's soffit, jambs and sill
 #    where the ray leaves the opening), the sashes (stiles, meeting rail, loft muntins, WL11's replaced units), the room box
-#    (RW = span x winW, RH, RD = 1.55 / 2.4 x RH + 1.2 m) ray-marched per pixel and textured with CC0 interior HDRIs
 #    (Poly Haven; docs/notes/ar34-bx-win.md lists them), lit by the web's lit share (the bake) with its light colours, day
 #    ambience and glow, side curtains, roller shades (residential, WL11 per-flat presence and crooked hems) and venetians
 #    (office), the dirt film and glass tints, real Fresnel reflection (punched F0 0.075; the curtain-wall families' F0,
@@ -306,7 +305,6 @@ def _shade_group(rooms_img, rooms_gain, opt):
     t = b.mn(tx, b.mn(ty, tz))
     hx = b.add(rx, b.mul(rdx, t)); hy = b.add(ry, b.mul(rdy, t)); hz = b.mul(rdz, t)
     qz = b.clamp(b.div(hz, RD), 0.0, 1.0)
-    # the environment map: the direction from the room's eye (centre, 0.45 of its height) to the hit, yawed per room
     id_ = b.hash12(b.add(roomK, b.mul(cvar, 511.0)), b.mul(cellV, 1.7))
     id2 = b.hash12(b.add(b.mul(cellV, 3.7), b.mul(cvar, 131.0)), b.mul(roomK, 1.3))
     id3 = b.hash12(b.mul(roomK, 7.9), b.add(b.mul(cellV, 5.1), b.mul(cvar, 57.0)))
@@ -491,7 +489,6 @@ def build_kitglass(mat, r, opt):
     gl = b.new('ShaderNodeBsdfGlossy'); gl.inputs['Roughness'].default_value = max(0.0, rough)
     gl.inputs['Color'].default_value = (1.0, 1.0, 1.0, 1.0)
     m1 = b.new('ShaderNodeMixShader')
-    # the web's pane opacity, op x (1 + (1 - kO) x 1.4) + film x 0.14, at 0.55 of it (the rooms behind read dark)
     b.put(m1.inputs['Fac'], b.clamp(b.mul(b.add(b.mul(op, b.add(1.0, b.mul(b.sub(1.0, kO), 1.4))), b.mul(film, 0.14)), 0.55), 0.0, 0.95))
     nt.links.new(tp.outputs['BSDF'], m1.inputs[1]); nt.links.new(df.outputs['BSDF'], m1.inputs[2])
     m2 = b.new('ShaderNodeMixShader')
@@ -533,7 +530,6 @@ def after_import(ctx):
     emit = float(opt('winemit', '1.0'))
     _params(night, emit)
     stats = {'night': night, 'emit': emit, 'facades': 0, 'nodes': 0, 'kitglass': 0, 'nightemit': 0, 'selflit': 0, 'missing': []}
-    # the room atlas and its per-slot gain (the HDRIs' mean linear albedo to the web's 0.62)
     rp = opt('winrooms', ROOMS_DEFAULT)
     rj = os.path.splitext(rp)[0] + '.json'
     rooms_img = _img(rp, 'sRGB')

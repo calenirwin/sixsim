@@ -2,14 +2,15 @@
 // to the references (lamps, signals, signs, litter baskets and compactors, Link kiosks, bus stops and SBS fare machines,
 // racks, docks, hydrants, meters, planters, tree guards, sheds, subway entrances, vendors' carts). `?pk=0` restores the
 // compiled furniture. Owner: the PROPS worker (docs/notes/ar33-props.md).
-// PLACEMENT. pkData.js holds every surveyed piece in world metres, and the stretches the survey covers. Inside a covered stretch
+//
+// PLACEMENT. pkData.js holds every surveyed piece in world metres (baked by client/tools/ar33/props/bake.mjs from
 // the compiled city's furniture of the kinds this part draws is dropped (dropFurniture) and this part's own is built.
 // BUILD. Per tile, per 96 m cell: every piece's model (pkKit.js) is posed and merged into one mesh per material, a near
 // model and a far one; a cell draws its far model while the camera is more than LOD_R from its box.
 // BEHAVIOUR. The lamps join world/cityLamps.js through lampSpots (world/life.js), at their real head height and arm yaw.
 // The signal lenses and pedestrian heads run on the traffic clock (sim/signals.js signalState / walkTimeLeft, the clock
 // window.__TRAFFIC.time that the cars and the walkers use), by the axis each head serves. The benches and the shelters'
-// seats are seats for the crowd (seats).
+// seats are seats for the crowd (seats()).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FURN } from '../../shared/geo.js';
@@ -41,11 +42,10 @@ export const QA36 = !(Q && Q.get('qa36') === '0');
 const QA36_DROP = [['lamp', 2706.66, -2454.64], ['lamp', 2723.97, -2444.92]];
 const qa36Drop = (r) => QA36 && QA36_DROP.some(([k, x, z]) => r[0] === k && Math.abs(r[1] - x) < 0.05 && Math.abs(r[2] - z) < 0.05);
 // FX36 (AR34 fixes, QA round 4, 2026-10-02; `?fx36=0` as before):
-// EAST, PROPS.md 08:34) show one
-// shelter there, its east end ~3.5 m west of the site bridge's west posts, where the west record (len 4.5) stands; the east
-// record's shelter stood under the bridge with the bridge's posts through its roof (pk:shelterFrame): left out
+//   shelter there, its east end ~3.5 m west of the site bridge's west posts, where the west record (len 4.5) stands; the east
+//   record's shelter stood under the bridge with the bridge's posts through its roof (pk:shelterFrame): left out
 // - the two signal masts under the Park Avenue viaduct (s33, s34): the 7.1 m pole and the arm rising to 7.65 m over the foot
-// reached into the girders (vk-parkDark at y 9.43): pole, clamp and arm kept under FX36_TOP (world y)
+//   reached into the girders (vk-parkDark at y 9.43): pole, clamp and arm kept under FX36_TOP (world y)
 export const FX36 = !(Q && Q.get('fx36') === '0');
 const FX36_TOP = 9.2;
 const FX36_DROP = [['shelter', 2890.89, -2329.26]];
@@ -231,7 +231,6 @@ function tick(renderer, scene) {
 
 // CC37 (core/engine.js): a cube probe's face swapped the far model in and left it there. three draws the geometry it listed
 // before the hooks ran, so the face drew the view's model anyway, and the view's next render listed (and the sun's shadow
-// map drew) the far one: the props went coarse for a frame after every update (the fleet's reflection probe every 36
 // recorded frames, and on every stepped frame since RP37). The face's swap is undone after its draw (`?cc37=0` restores).
 function pkHold(mesh) { if (!mesh.userData.pkView) mesh.userData.pkView = mesh.geometry; }
 function pkBack() { const v = this.userData.pkView; if (v) { this.userData.pkView = null; this.geometry = v; } }
@@ -448,6 +447,24 @@ export function build(group, ctx) {
     }
     return out;
   };
+  // SPACE r2 (docs/notes/space-r2.md): this tile's cells leave `_cellsLod` when the tile unloads (world/assemble.js calls the
+  // hook): the per-frame prune in lodUpdate only ran while a prop of 125th Street was drawn, so away from there the list held
+  // every unloaded tile's group and its geometry (1.2 GB a tour cycle); the near and far sets a mesh was not drawing go too
+  const mine = [];
+  const release = new THREE.Object3D();
+  release.name = 'pk:release';
+  release.userData.onDispose = () => {
+    const set = new Set(mine);
+    _cellsLod = _cellsLod.filter((L) => !set.has(L));
+    const geos = new Set();
+    for (const L of mine) {
+      for (const m of L.meshes) if (m.gf) geos.add(m.gf);
+      if (L.C.near) for (const g of L.C.near.values()) geos.add(g);
+    }
+    geos.delete(EMPTY);
+    for (const g of geos) g.dispose();
+  };
+  group.add(release);
   for (const C of cells.values()) {
     // the far models are merged now; the near ones on the first frame the camera is within LOD_R of the cell (they are
     // several times the triangles and most cells are never visited)
@@ -456,7 +473,8 @@ export function build(group, ctx) {
     const flat = FAR_FLAT ? flattenFar(far, C.box) : null;
     const keys = new Set(far.keys());
     for (const it of C.items) { const m = modelFor(it.kind, it.p, 1); if (m) for (const k of Object.keys(m.parts)) keys.add(k); }
-    const L = { box: C.box, near: false, getNear: () => C.near || (C.near = posed(C, 1)), meshes: [], group, seen: false };
+    const L = { box: C.box, near: false, getNear: () => C.near || (C.near = posed(C, 1)), meshes: [], group, seen: false, C };
+    mine.push(L);
     if (flat) {
       // the merged far mesh: drawn while the cell is far, EMPTY while near (its key is in no near model)
       const gf = flat.geo, mesh = new THREE.Mesh(gf, pkFarMat());

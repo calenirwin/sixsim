@@ -11,6 +11,10 @@ import { steamSpots, plumeSpots, lampSpots } from '../world/life.js';
 // N11 — night ambient (docs/notes/night-r11.md 1.4): street-light fixture type
 // per pole, and the Bishop's Crook posts, which registered no light pool at all.
 import { N11, lampKind } from '../world/night11.js';
+// SPACE r2 (docs/notes/space-r2.md): a steam, plume or lamp spot once per place; every claim of a reloaded tile pushed them again,
+// so world/life.js's lists (walked every few seconds) grew for the length of a session
+const _spotSeen = new Set();
+function spotOnce(list, kind, x, z, v) { const k = `${kind}${x.toFixed(1)},${z.toFixed(1)}`; if (_spotSeen.has(k)) return; _spotSeen.add(k); list.push(v); }
 
 // street-bike frame palette (matte/anodised tones; the white-framed glb takes these per instance).
 // The three near-black entries are gone: a black frame on a black-tyred bike at
@@ -283,22 +287,22 @@ export function placeProps(instancer) {
       if (r < 0.1) put('trashbag', -0.5, 0.45, h2(x, z, 6) * 6.28, 0.85);
       if (r > 0.9) put('cbox', 0.7, -0.3, h2(x, z, 7) * 6.28);
       // curb steam grate (NYC signature — consumed by world/life.js)
-      if (r > 0.3 && r < 0.37) steamSpots.push([x + 1.8, y, z + 1.2]);
+      if (r > 0.3 && r < 0.37) spotOnce(steamSpots, 's', x, z, [x + 1.8, y, z + 1.2]);
     } else if (name === 'lampCobra') {
       // ground light pool under the cobra head (arm reaches ~3.4m street-side)
       // N11: + the fixture kind (3000 K / 4000 K LED / sodium) and the luminaire's
       // MOUNTING HEIGHT, which carlights.js had hard-coded at 6.6 m for every lamp
       // against a kit cobrahead that puts its head 9.1 m up.
-      lampSpots.push([x + Math.sin(rotY) * 3.4, y + 0.07, z + Math.cos(rotY) * 3.4, lampKind(x, z, false), 8.2, rotY]);   // CL24: arm yaw for the throw
+      spotOnce(lampSpots, 'c', x, z, [x + Math.sin(rotY) * 3.4, y + 0.07, z + Math.cos(rotY) * 3.4, lampKind(x, z, false), 8.2, rotY]);   // CL24: arm yaw for the throw
     } else if (name === 'lampCrook') {
       // N11: Bishop's Crook — teardrop luminaire 6.6 m up and 1.7 m out, so a much
       // smaller and (mostly) sodium-warmer pool than a cobrahead's.
-      lampSpots.push([x + Math.sin(rotY) * 1.7, y + 0.07, z + Math.cos(rotY) * 1.7, lampKind(x, z, true), 5.9, null]);   // CL24: a teardrop throws round
+      spotOnce(lampSpots, 'k', x, z, [x + Math.sin(rotY) * 1.7, y + 0.07, z + Math.cos(rotY) * 1.7, lampKind(x, z, true), 5.9, null]);   // CL24: a teardrop throws round
     } else if (name === 'ventPipe') {
       // some roof vents breathe: photoreal smoke plumes (world/life.js)
-      if (r < 0.16) plumeSpots.push([x, y + 1.6, z, 0.5 + h2(x, z, 21)]);
+      if (r < 0.16) spotOnce(plumeSpots, 'p', x, z, [x, y + 1.6, z, 0.5 + h2(x, z, 21)]);
     } else if (name === 'bulkhead') {
-      if (r < 0.1) plumeSpots.push([x, y + 2.4, z, 0.8 + h2(x, z, 22)]);
+      if (r < 0.1) spotOnce(plumeSpots, 'b', x, z, [x, y + 2.4, z, 0.8 + h2(x, z, 22)]);
     } else if (name === 'scaffold') {
       // 30% of sidewalk sheds get a work zone: cone run + barrier + sign
       // along the street face (shed local +Z = curb side, X = frontage)

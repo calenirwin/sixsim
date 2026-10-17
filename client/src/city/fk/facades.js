@@ -4,8 +4,10 @@
 // and photogrammetry-grade materials. `?fk=0` restores the compiled buildings. Owner: the KIT worker (docs/notes/ar33-kit.md).
 // Hooks, all optional (the contracts are in city/centralPark.js): apply, skipBuilding, dropFurniture, furniture, build,
 // promenades, seats; `ready` (a promise) holds tile assembly until the specs are in.
+//
 // Flags: `?fk=0` off; `?fk=bid2,bid3` only those segments (A/Bs); `?fktest=1` adds the kit's own test specs
 // (fk/specs/_kit.js); `?fklod=<m>` the near-detail distance (default 120); `?fkdbg=1` logs every match.
+//
 // How a spec finds its building: each spec names a point `at` (and `also` points) inside the compiled footprint it
 // replaces. skipBuilding(cx, cz, h, area) is only handed the centroid, so the match runs in apply(tile, ox, oz), which
 // world/assemble.js calls before the tile's building loop: every compiled ring of the tile that holds a spec point is

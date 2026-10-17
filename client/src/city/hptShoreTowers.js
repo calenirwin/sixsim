@@ -1,5 +1,4 @@
 // AR33 HPT: real balconies on the compiled towers round Gantry Plaza State Park (docs/notes/ar33-hpt.md). The compiled towers are
-// extruded footprints with a shader facade;
 // staggered cantilevered concrete balcony slabs with frameless glass guards over a window wall on a tan brick podium. This adds
 // those slabs to the park-facing edges of the compiled towers: per floor above the podium, 2.6 x 1.5 m slabs (0.22 m thick)
 // every ~7 m along each edge, staggered floor to floor, each with a glass guard across its front and a dark edge strip.

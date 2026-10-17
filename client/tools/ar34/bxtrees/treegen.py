@@ -1,16 +1,16 @@
 # BX-TREES (AR34 BX, 2026-10-02): the street-tree generator of the asset set (numpy only; Blender's Python runs it, so does
 # any Python 3 with numpy).
 #
-# A tree is grown from its species' habit, one level deeper than the web:
-# envelope a surface of revolution R(t, azimuth) per habit (broad, vase, pyramid, oval, round, columnar), lumpy and
-# lopsided per seed; branches are steered along it and stop at it;
-# levels trunk (to a fork, or a leader to the top), scaffold limbs, secondaries, tertiaries and twigs (levels 0-4);
-# leaves only on the twigs and the tertiaries' tips, so the crown's leaf mass sits in clumps on its shell;
-# gaps a two-octave value noise over the crown drops whole tertiaries (sky between the clumps: the web's TR39);
-# radii the pipe model: a branch's radius at a node goes with the twig tips it carries (exponent 2.3), scaled so the
-# trunk's base radius is the species' (trunkR x height), with a root flare;
-# leaves one card per leaf (or per compound leaf / spray, by the species' atlas), the octagon of leaves.json, folded
-# on its midrib and drooping toward its tip, its blade turned toward the sky and outward.
+# A tree is grown from its species' habit (FORMS below; the habits and sizes of the web's TREE_FORMS in
+#   envelope    a surface of revolution R(t, azimuth) per habit (broad, vase, pyramid, oval, round, columnar), lumpy and
+#               lopsided per seed; branches are steered along it and stop at it;
+#   levels      trunk (to a fork, or a leader to the top), scaffold limbs, secondaries, tertiaries and twigs (levels 0-4);
+#               leaves only on the twigs and the tertiaries' tips, so the crown's leaf mass sits in clumps on its shell;
+#   gaps        a two-octave value noise over the crown drops whole tertiaries (sky between the clumps: the web's TR39);
+#   radii       the pipe model: a branch's radius at a node goes with the twig tips it carries (exponent 2.3), scaled so the
+#               trunk's base radius is the species' (trunkR x height), with a root flare;
+#   leaves      one card per leaf (or per compound leaf / spray, by the species' atlas), the octagon of leaves.json, folded
+#               on its midrib and drooping toward its tip, its blade turned toward the sky and outward.
 # Output (Y up, metres, the trunk's base at the origin, normalised to the height and crown width the caller passes, which
 # are the web's pool box at instance scale 1): per LOD a bark mesh and a leaf mesh as numpy arrays.
 import math

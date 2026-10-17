@@ -26,7 +26,7 @@ import os, unreal
 ROOT = '/Game/Bx'
 mel = unreal.MaterialEditingLibrary
 eal = unreal.EditorAssetLibrary
-VERSION = 8          # bump to rebuild these masters
+VERSION = 10         # bump to rebuild these masters (9: UE14 NrmK, the leaf normal's strength; 10: UE14 bark displacement)
 
 WIND = r'''
 // TREEUE wind: world position offset in cm (world space); LP the vertex's local position (cm, z up, pre-offset)
@@ -52,7 +52,7 @@ float4 t4 = Texture2DSample(Tex, TexSampler, UV0);
 // where a leaf is a few pixels: no alpha flicker); the compound leaves' cards keep the cut (NearM huge)
 Mask = lerp(t4.a, 1.0, saturate((Dist - NearM) / max(FadeM, 1.0)));
 float3 n = Texture2DSample(Nrm, NrmSampler, UV0).rgb * 2.0 - 1.0;
-NormalTS = normalize(float3(n.x, -n.y, max(n.z, 0.15)));   // (the atlases' maps are OpenGL; UE's tangent frame is DirectX)
+NormalTS = normalize(float3(n.x * NrmK, -n.y * NrmK, max(n.z, 0.15)));   // (the atlases' maps are OpenGL; UE's tangent frame is DirectX; NrmK the scan's relief, 1 as scanned)
 float3 c = t4.rgb * Tint.xyz;
 // per tree (PerInstanceRandom) and per leaf (UV 1 x) hue and lightness
 float ri = PIR, rl = UV1.x;
@@ -82,14 +82,26 @@ WIND_IN = [('LP', 'lp'), ('PIR', 'pir'), ('T', 'time'), ('NW', 'nw'), ('UV1', 'u
            ('WindSpeed', 's', 1.0), ('TreeH', 's', 10.0), ('Leaf', 's', 1.0)]
 LEAF_IN = [('UV0', 'uv0'), ('UV1', 'uv1'), ('PIR', 'pir'), ('Dist', 'depth'), ('NearM', 's', 1200.0), ('FadeM', 's', 1000.0), ('Tex', 'ts', 'white'), ('Nrm', 'tl', 'flat'), ('Tint', 'v', (1, 1, 1, 0)),
            ('Gain', 's', 1.1), ('Trans', 's', 3.5), ('SssTint', 'v', (2.0, 1.6, 0.35, 0)), ('HueVar', 's', 0.05), ('ValVar', 's', 0.22),
-           ('LeafHue', 's', 0.05), ('LeafVar', 's', 0.24), ('Yellow', 's', 0.012), ('AoIn', 's', 0.8)]
+           ('LeafHue', 's', 0.05), ('LeafVar', 's', 0.24), ('Yellow', 's', 0.012), ('AoIn', 's', 0.8),
+           ('NrmK', 's', 1.0)]   # UE14 (UE track, 2026-10-09): the leaf normal's strength (ue_trees.py BXUE_LEAFNRM)
 MASTERS = {
     'foliage': (FOLIAGE, LEAF_IN, [('Mask', 1), ('NormalTS', 3), ('Sss', 3), ('AO', 1)], {'two_sided': True, 'foliage': True}),
     'foliage_mask': (FOLIAGE, LEAF_IN, [('Mask', 1), ('NormalTS', 3), ('Sss', 3), ('AO', 1)], {'two_sided': True, 'foliage': True, 'masked': True}),
     'bark': (BARK, [('UV0', 'uv0'), ('PIR', 'pir'), ('Tex', 'ts', 'white'), ('Nrm', 'tl', 'flat'), ('RoughT', 'tl', 'white'), ('HasRough', 's', 0.0),
                     ('RoughK', 's', 0.85), ('Tint', 'v', (1, 1, 1, 0)), ('Gain', 's', 1.0), ('ValVar', 's', 0.12), ('NrmK', 's', 1.0)],
-             [('NormalTS', 3), ('Rough', 1)], {'bark': True}),
+             [('NormalTS', 3), ('Rough', 1)], {'bark': True, 'disp': 'bark'}),
 }
+# UE14 (UE track, 2026-10-09): the bark's relief as Nanite tessellation displacement (as MESH11's facades, ue_masters.py): the
+# scan's height map (Disp) on the Displacement pin, height 1 the modelled surface and the furrows going inward up to
+# DISP_CM, faded out below a few pixels of projected relief. Off on an instance until ue_trees.py gives it the height map
+# (HasDisp 1); BXUE_NODISP=1 builds the master without it.
+DISP_CM = 2.5
+BARK_DISP = r'''
+float h = Texture2DSampleLevel(Disp, DispSampler, UV0, 0).r;
+return lerp(1.0, h, saturate(HasDisp));
+'''
+BARK_DISP_IN = [('UV0', 'uv0'), ('Disp', 'tl', 'white'), ('HasDisp', 's', 0.0)]
+# UE14 end
 
 
 def _expr(m, it, x, y):
@@ -180,6 +192,26 @@ def build(name, spec):
     win = [w if w[0] != 'Leaf' else ('Leaf', 's', 0.0 if sett.get('bark') else 1.0) for w in WIND_IN]
     cw = _custom(m, WIND, win, [], -600, 1400)
     mel.connect_material_property(cw, '', MP.MP_WORLD_POSITION_OFFSET)
+    # UE14: the bark's displacement (the pin is reached through Make Material Attributes, which then carries every output)
+    if sett.get('disp') == 'bark' and os.environ.get('BXUE_NODISP') != '1':
+        try:
+            cd = _custom(m, BARK_DISP, BARK_DISP_IN, [], -600, 2400, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+            ma = mel.create_material_expression(m, unreal.MaterialExpressionMakeMaterialAttributes, -250, 300)
+            mel.connect_material_expressions(cu, '', ma, 'BaseColor')
+            for on, pin in (('NormalTS', 'Normal'), ('Rough', 'Roughness')):
+                if on in names: mel.connect_material_expressions(cu, on, ma, pin)
+            mel.connect_material_expressions(cw, '', ma, 'WorldPositionOffset')
+            mel.connect_material_expressions(cd, '', ma, 'Displacement')
+            m.set_editor_property('use_material_attributes', True)
+            mel.connect_material_property(ma, '', MP.MP_MATERIAL_ATTRIBUTES)
+            m.set_editor_property('enable_tessellation', True)
+            ds = unreal.DisplacementScaling(); ds.set_editor_property('magnitude', DISP_CM); ds.set_editor_property('center', 1.0)
+            m.set_editor_property('displacement_scaling', ds)
+            fr = unreal.DisplacementFadeRange(); fr.set_editor_property('start_size_pixels', 6.0); fr.set_editor_property('end_size_pixels', 2.0)
+            m.set_editor_property('enable_displacement_fade', True); m.set_editor_property('displacement_fade_range', fr)
+        except Exception as e:
+            unreal.log_warning(f'[bxue] ue_foliage {name}: displacement: {e}')
+    # UE14 end
     for u in ('MATUSAGE_NANITE', 'MATUSAGE_INSTANCED_STATIC_MESHES', 'MATUSAGE_STATIC_MESH' if hasattr(unreal.MaterialUsage, 'MATUSAGE_STATIC_MESH') else None):
         if not u: continue
         try: mel.set_material_usage(m, getattr(unreal.MaterialUsage, u))

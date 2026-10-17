@@ -10,6 +10,7 @@
 // ENV.night: lit faces glow at their LED / fluorescent / neon colour temperature, unlit ones stay dark.
 // Owner: SIGN (docs/notes/ar33-signs.md).
 import * as THREE from 'three';
+import { dropAfterUpload } from '../../world/cpuFree.js';   // SPACE r2: the light build's memory peak
 import { Font } from 'three/addons/loaders/FontLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { ENV, applyLightTrim as LT } from '../../world/materials.js';
@@ -892,6 +893,7 @@ function atlasFaces(faces, out) {
       t.colorSpace = ch === 1 ? THREE.NoColorSpace : THREE.SRGBColorSpace; if (ch === 1) t.unpackAlignment = 1;
       t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter;
       t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.anisotropy = 16; t.needsUpdate = true;
+      dropAfterUpload(t);   // SPACE r2 (world/cpuFree.js, ?lowmem=1): nothing reads or repaints a page once uploaded
       p.tex = t; p.PH = PH; p.mats = new Map();
       _atlas.pages++; _atlas.bytes += D.length * 1.33; _atlas.pagePx += PW * PH;
     }
@@ -943,6 +945,7 @@ function atlasShades(list, out) {
     g.fillStyle = '#000'; g.fillRect(0, 0, PW, PH);
     for (const it of p.items) g.drawImage(it.t.image, it.x + AT_G, it.y + AT_G);
     const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.NoColorSpace; t.anisotropy = 4;
+    dropAfterUpload(t);   // SPACE r2 (world/cpuFree.js, ?lowmem=1): nothing reads or repaints a page once uploaded
     p.tex = t; p.PH = PH; p.mat = shadeMat(t, '#000000', 0, 0); p.mat.name += 'A';
     _atlas.shadePages++;
   }

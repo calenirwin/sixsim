@@ -24,6 +24,13 @@ const CPFW = !(typeof location !== 'undefined' && new URLSearchParams(location.s
 // streams off the basin's corners and the upper one broken into drops, the bronze rock, the drive over the Arcade in
 // granite setts, the treads nosed over darker risers. `?cp33b=0` restores CP32's build.
 export const CP33B = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('cp33b') === '0');
+// BETHFIX (owner 2026-10-08: "two square corners on the water ... at the edge of the fountain area, floating above the
+// lake"): the lake wall's piers (0.85 m shafts on 1.01 m plinths) sit on a 0.6 m wall, so they stood 0.2-0.33 m proud of
+// its face with the plinths' undersides 0.65 m over the Lake, and at the two corners the wall stopped 0.7 m short of the
+// side walls' outer faces, leaving the end piers hanging over open water. The piers are now carried down into the water
+// as the real ones are (a foot under each plinth, 4 cm inside it, to the wall's depth) and the wall runs on to the side
+// walls' outer faces. `?bethfix=0` restores the old build.
+export const BETHFIX = !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('bethfix') === '0');
 
 export const TH = (16.85 * Math.PI) / 180;
 export const C0 = [31.313, 976.286];          // the fountain's centre, world x, z
@@ -901,6 +908,9 @@ export function buildTerrace(G, L, o) {
   // the lake front: a parapet 0.45 m over the paving, its face down into the water, round the bay; dies on the wall
   // at 22'6 2/3" (the plan)
   const lakeRun = outline.filter((p) => p[0] >= PLAN.lakeA - 0.01);
+  // BETHFIX: the straight runs on to the side walls' outer faces (|b| = sideB + 0.7; the wall 2 cm and its coping 1 cm
+  // short of them, so no face lies in theirs), each still one box (new end points, the outline's own left as they are)
+  if (BETHFIX) { const e = 0.655; lakeRun[0] = [PLAN.lakeA, -PLAN.sideB - e]; lakeRun[lakeRun.length - 1] = [PLAN.lakeA, PLAN.sideB + e]; }
   for (let i = 0; i + 1 < lakeRun.length; i++) {
     const [a0, b0] = lakeRun[i], [a1, b1] = lakeRun[i + 1], seg = Math.hypot(a1 - a0, b1 - b0);
     if (seg < 0.05) continue;
@@ -912,8 +922,11 @@ export function buildTerrace(G, L, o) {
     bag.boxM('sandL', 0.78, 0.12, seg + 0.07, mAt(am, bm, top + 0.06, yaw));
     solid(am - 0.3, am + 0.3, bm - seg / 2, bm + seg / 2, yl, top);
   }
-  for (const b of [-PLAN.sideB, -half, half, PLAN.sideB]) { const t = pier(bag, PLAN.lakeA + 0.3, b, yl, 1.05, 0.85, 'sand', Math.abs(b) < PLAN.sideB - 0.1); if (Math.abs(b) > PLAN.sideB - 0.1) lamp(bag, PLAN.lakeA + 0.3, b, t); }   // lanterns on the lake wall's end piers (the drawing's elevation)
-  for (const b of [-16.6, 16.6]) pier(bag, PLAN.lakeA + 0.3, b, yl, 0.8, 0.7);
+  // BETHFIX: each lake-front pier on a foot from the wall's depth under the water up into its plinth (4 cm inside the
+  // plinth's faces, its top 1 cm into it), so no plinth hangs over the Lake
+  const pierFoot = (b, w) => { if (!BETHFIX) return; const f = w / 2 + 0.04, a = PLAN.lakeA + 0.3; cbox(bag, 'sandD', a - f, a + f, b - f, b + f, L.lake - 1.4, yl - 0.29, 0.04); };
+  for (const b of [-PLAN.sideB, -half, half, PLAN.sideB]) { pierFoot(b, 0.85); const t = pier(bag, PLAN.lakeA + 0.3, b, yl, 1.05, 0.85, 'sand', Math.abs(b) < PLAN.sideB - 0.1); if (Math.abs(b) > PLAN.sideB - 0.1) lamp(bag, PLAN.lakeA + 0.3, b, t); }   // lanterns on the lake wall's end piers (the drawing's elevation)
+  for (const b of [-16.6, 16.6]) { pierFoot(b, 0.7); pier(bag, PLAN.lakeA + 0.3, b, yl, 0.8, 0.7); }
   // the cross balustrades on the south terrace's edge, either side of the curved steps
   for (const sg of [-1, 1]) {
     balustrade(bag, balL, sa + 0.3, sg * (bT + 0.2), sa + 0.3, sg * (PLAN.sideB - 0.1), () => ys, { ends: [true, false], h: 0.95, pierced: true });

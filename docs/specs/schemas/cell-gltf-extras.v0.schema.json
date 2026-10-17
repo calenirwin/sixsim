@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "valdrada.cell/0#extras",
+  "title": "Cell package glTF extras (cell.glb), v0",
+  "description": "The extras of the root node, the child nodes and the materials of a cell package. docs/specs/cell-package.md sections 3 and 4.",
+  "$defs": {
+    "root": {
+      "type": "object",
+      "required": [
+        "schema",
+        "cell",
+        "origin",
+        "size"
+      ],
+      "properties": {
+        "schema": {
+          "const": "valdrada.cell/0"
+        },
+        "cell": {
+          "type": "string"
+        },
+        "origin": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "size": {
+          "const": 128
+        },
+        "level": {
+          "type": "integer",
+          "description": "absent or 0: L0 (declared for chunk packages)"
+        }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": [
+        "kind",
+        "matKey",
+        "class"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "mesh",
+            "pool",
+            "inst"
+          ]
+        },
+        "matKey": {
+          "type": "string"
+        },
+        "class": {
+          "type": "integer",
+          "description": "segmentation class id; -1 per vertex from _matId"
+        },
+        "castShadow": {
+          "type": "boolean"
+        },
+        "receiveShadow": {
+          "type": "boolean"
+        },
+        "renderOrder": {
+          "type": "integer"
+        },
+        "layers": {
+          "type": "integer"
+        },
+        "dress": {
+          "type": "boolean"
+        },
+        "nightOnly": {
+          "type": "boolean"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tris": {
+          "type": "integer"
+        },
+        "pool": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer"
+        },
+        "landmark": {
+          "type": "string",
+          "description": "declared"
+        },
+        "proto": {
+          "type": "string",
+          "description": "the prototype in the shared library: protos/<hash>.glb relative to the cache root"
+        },
+        "protoHash": {
+          "type": "string"
+        },
+        "shadowOnly": {
+          "type": "boolean",
+          "description": "tile facades of buildings the package holds dressed: shadow casters only"
+        }
+      }
+    },
+    "material": {
+      "type": "object",
+      "required": [
+        "key",
+        "three"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^.+#[0-9a-f]{16}(@-?\\d+_-?\\d+)?$"
+        },
+        "three": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "side": {
+              "type": "integer"
+            },
+            "transparent": {
+              "type": "boolean"
+            },
+            "alphaTest": {
+              "type": "number"
+            },
+            "opacity": {
+              "type": "number"
+            },
+            "vertexColors": {
+              "type": "boolean"
+            },
+            "color": {
+              "type": "array"
+            },
+            "emissive": {
+              "type": "array"
+            },
+            "roughness": {
+              "type": "number"
+            },
+            "metalness": {
+              "type": "number"
+            },
+            "textures": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "uri": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "generated": {
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "repeat": {},
+                  "offset": {},
+                  "channel": {
+                    "type": "integer"
+                  },
+                  "colorSpace": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "pattern": "^tex/[0-9a-f]{24}\\.png$",
+                    "description": "the image in the cache's texture store (cellcache/tex), stored as glTF samples it with the package's uvs"
+                  },
+                  "w": {
+                    "type": "integer",
+                    "description": "the source's width (the stored image has it unless capped)"
+                  },
+                  "h": {
+                    "type": "integer",
+                    "description": "the source's height (the stored image has it unless capped)"
+                  },
+                  "capped": {
+                    "type": "boolean",
+                    "description": "the source was larger than the cap (4096 px a side) and was stored at the capped size"
+                  },
+                  "blank": {
+                    "type": "boolean",
+                    "description": "the read came back empty in every try"
+                  },
+                  "opaque": {
+                    "type": "boolean"
+                  },
+                  "wrap": {
+                    "type": "array"
+                  },
+                  "tex": {
+                    "type": "integer",
+                    "description": "the bake session's texture number (not stable between bakes)"
+                  }
+                }
+              }
+            },
+            "userData": {
+              "type": "object"
+            },
+            "uniforms": {
+              "type": "array"
+            },
+            "defines": {
+              "type": "array"
+            },
+            "obc": {
+              "type": "boolean"
+            },
+            "sig": {
+              "type": "string"
+            },
+            "procedural": {
+              "type": "string",
+              "enum": [
+                "aoSkirt",
+                "contactShade"
+              ],
+              "description": "a shader-only material drawn by a standard glTF stand-in (spec section 4)"
+            },
+            "cellTexture": {
+              "type": "boolean",
+              "description": "the map was made for this cell alone (the street-name blades' text, packed per cell in name order): draw it from its file, never a live atlas"
+            },
+            "keys": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 3,
+              "maxItems": 3,
+              "description": "the material key at levels 0, 1 and 2"
+            }
+          }
+        }
+      }
+    }
+  }
+}

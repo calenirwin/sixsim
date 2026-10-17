@@ -351,6 +351,7 @@ def bake(args):
     walk_all = unary_union([walkc, fills['sidewalk'], fills['median'], fills['plaza'], fills['left_walk']])
     road_all = unary_union([road, fills['roadbed'], fills['median_flat'], fills['parking'], fills['carriage'], fills['left_road']])
     stats = {'key': key, 'walk_to_road_m2': stats_moved}
+    if h.get('ckey'): stats['ckey'] = h['ckey']   # OV39: the content key of the compiled tile the dump read
     roadfill = unary_union([fills['roadbed'], fills['median_flat'], fills['parking'], fills['carriage'], fills['left_road']])
     stats['road'] = emit('asphalt', roadfill, yR, 0.003, covered)
     walkfill = unary_union([fills['sidewalk'], fills['median'], fills['plaza'], fills['left_walk']])
@@ -497,17 +498,19 @@ def bake(args):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(); ap.add_argument('--chain', required=True); ap.add_argument('--tiles'); ap.add_argument('--out', default=os.path.join(ROOT, 'public', 'data', 'gf38')); ap.add_argument('-j', type=int, default=24)
+    ap.add_argument('--tiles-dir', default=os.path.join(ROOT, 'public', 'tiles'))   # OV39: the compiled set the dump read (a staging compile)
+    ap.add_argument('--fresh', action='store_true')   # OV39: start a new index (a set's own overlays) instead of merging into the one there
     a = ap.parse_args()
     fns = sorted(glob.glob(os.path.join(a.chain, '*.bin')))
     # the 49 tiles of the 125th Street box (city/areas.js B125; the dump's ring round them is context only)
     want = a.tiles.split(',') if a.tiles else [f'{x}_{z}' for x in range(1, 8) for z in range(-9, -2)]
     fns = [f for f in fns if os.path.basename(f)[:-4] in want]
     with Pool(a.j) as pool: S = pool.map(bake, [(f, a.out) for f in fns])
-    man = json.load(open(os.path.join(ROOT, 'public', 'tiles', 'manifest.json')))
+    man = json.load(open(os.path.join(a.tiles_dir, 'manifest.json')))
     ip = os.path.join(a.out, 'index.json')
-    idx = json.load(open(ip)) if os.path.exists(ip) else {'tiles': {}}
+    idx = json.load(open(ip)) if os.path.exists(ip) and not a.fresh else {'tiles': {}}
     for s in S:
-        idx['tiles'][s['key']] = {'bytes': os.path.getsize(os.path.join(ROOT, 'public', 'tiles', man['tiles'][s['key']]['f'])), **{k: v for k, v in s.items() if k != 'key'}}
+        idx['tiles'][s['key']] = {'bytes': os.path.getsize(os.path.join(a.tiles_dir, man['tiles'][s['key']]['f'])), **{k: v for k, v in s.items() if k != 'key'}}
     idx['source'] = 'NYC Planimetric Database (data.cityofnewyork.us 52n9-sdep, i36f-5ih7, ees7-4ufv, 7cgt-uhhz, ue2e-9jm2), fetched 2026-10-05'
     json.dump(idx, open(ip, 'w'), indent=0)
     for s in S: print(json.dumps(s))

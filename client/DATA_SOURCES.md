@@ -1,7 +1,7 @@
 # Data sources & provenance
 
 Every dataset the pipeline ingests, what we take from it, and where it lands.
-All fetches are cached in `data/raw/` (re-run `npm run fetch -- --boro 1,2,3,4` to refresh;
+All fetches are cached in `data/raw/` (re-run `npm run fetch -- --boro 1,2,3,4,5` to refresh;
 cached files are skipped). Compiled output: `public/tiles/`.
 
 ## NYC Open Data (Socrata, data.cityofnewyork.us — public domain / NYC Open Data terms)
@@ -19,6 +19,8 @@ cached files are skipped). Compiled output: `public/tiles/`.
 | **Borough Boundaries** | `gthc-hcne` | `boundaries.geojson` | Land polygons → water mask for terrain |
 | **Bus Stop Shelters** | `t4f2-8md7` | `shelters.geojson` | Shelter positions/orientation |
 | **LinkNYC Kiosks** | `s4kf-3yrf` | `linknyc.geojson` | Kiosk positions |
+| **Planimetric Database: Railroad Line** | `anc7-97cy` | `rail_lines.geojson` | One centreline per track with its feature code (2400 at grade, 2410 elevated, 2420 embankment, 2430 viaduct, 2440 open cut) → the rail layer drawn at grade and in open cut (compile.mjs RL36; fetch: `fetch.mjs --rail`) |
+| **Topobathymetric LiDAR Data (2017): bare-earth topographic hydroflattened DEM** | `7sc8-jtbz` (attachment `Bare_Earth_Topographic_Hydroflattened.zip`, 15.6 GB) | `terrain/nyc_dem_2017/bh_NYC.tif` (+ the zip and `bh_NYC.tif.xml`; `provenance.json`) | The city's 1 ft bare-earth model from its 2017 LiDAR survey (surveyed 2017-05-03 to 05-17), hydroflattened, float32 US survey feet NAVD88 (Geoid 12B) on NY State Plane Long Island (EPSG:2263): 154,859 x 153,378 cells. The source for terrain in revision 5 (R5.6, docs/notes/tile-system.md); not read by the compiler yet. Survey and hillshades: `tools/pipeline/dem_tools.py` |
 | **DOT Bicycle Parking (CityRacks)** | `592z-n7dk` | `bikeracks.geojson` | 47,267 rack positions → bike racks, some with parked bicycles |
 | **Bus Lanes – Local Streets** | `ycrg-ses3` | `bus_lanes.json` (optional) | Red-lane segments, matched geometrically to CSCL roads → red bus lanes |
 | **Planimetric Database: Sidewalk, Roadbed, Median, Parking Lot, Public Plazas, Open Space (Parks and Other)** | `52n9-sdep`, `i36f-5ih7`, `ees7-4ufv`, `7cgt-uhhz`, `ue2e-9jm2`, `y6ja-fw4f`, `b7j8-z8a7` | `planimetric/*.geojson` (fetched 2026-10-05) | Polygons of walks, roadbeds, medians, lots, plazas and open space, baked per tile into the ground fill of the 125th Street tiles (`public/data/gf38/`, `tools/ar34/ground/gf38_bake.py`) |
@@ -53,6 +55,39 @@ cached files are skipped). Compiled output: `public/tiles/`.
 | **NYS ITS orthoimagery** (orthos.its.ny.gov, 2022 to 2025 mosaic; public) | not cached in the repository | Measurements of Bethesda Terrace, the Lake's edges and the park landmarks in plan |
 | **Central Park's published tree composition** (the Conservancy's 1982 survey as tabulated by Loeb, Journal of Arboriculture 19(4), 1993; the Conservancy's later counts and species pages) | constants in `tools/cp/flora_species.py` | The park-wide shares of 33 species groups (black cherry about 18 %, then black locust, pin oak, Norway maple, American elm, London plane), to which the placed trees' species are fitted |
 | **NYC Municipal Archives, Central Park drawings** (1860s) and **Scientific American, 21 July 1900** | not reproduced | Dimensions of Bethesda Terrace and its fountain, and of the Riverside Drive viaduct at 125th Street; read for measurement only |
+
+
+| **Bridge landings in New Jersey, Gateway parkland** | Main OSM API `map` calls via `tools/pipeline/fetch_osm_extras.mjs` (XML cached in `osm_extras/`) | `osm_landings.json`, `osm_gateway.json` | The four New Jersey bridge alignments and the shore round their landings (land patches), and the Gateway National Recreation Area units in the city (Fort Wadsworth, Miller Field, Breezy Point, Fort Tilden, Jacob Riis Park, Floyd Bennett Field, the Jamaica Bay Wildlife Refuge, Canarsie Pier, Plumb Beach, Frank M. Charles Memorial Park) with their land cover |
+
+## USGS (public domain)
+
+| Data | Endpoint | Cache file | What we use |
+|---|---|---|---|
+| **3DEP 1 m DEM, project NJ_NE6County_B23** | The National Map API (`tnmaccess.nationalmap.gov/api/v1/products`, dataset "Digital Elevation Model (DEM) 1 meter"); tiles from `prd-tnm.s3.amazonaws.com` | `terrain/usgs_1m_nj/USGS_1M_18_x{55..58}y{449..453}_NJ_NE6County_B23.tif` (7 tiles, 2.0 GB, each with its metadata XML; `provenance.json`) | Bare-earth 1 m elevation (float32 metres NAVD88, UTM 18N / EPSG:26918; lidar 2023-04-13 to 2025-04-09, published 2026-09-17) round the four New Jersey landings (George Washington, Bayonne, Goethals, Outerbridge Crossing), for terrain in revision 5 (R5.6); not read by the compiler yet |
+
+<!-- BD40 (backdrop lane): the region visible from the city but outside it -->
+## The backdrop: New Jersey, Westchester, Nassau and the water outside the city (BD40)
+
+What is visible from the city but outside it (docs/notes/tile-system.md D12, docs/notes/r2-backdrop.md): the five
+boroughs' line buffered by 25 km. Raw files under `data/raw/backdrop/` with `provenance.json` (URL, size, SHA-256, date
+retrieved and licence of every file); fetched with the User-Agent `valdrada-research/0.1 (project contact:
+github.com/mkturkcan/valdrada)`. Records: `tools/pipeline/backdrop/` (osm_extract.py, terrain.py, land.py, heights.py,
+buildings.py); far levels: `tools/lod/backdrop_ground.py`, `tools/lod/build_backdrop.mjs`; the water:
+`tools/lod/fetch_enc_water.mjs`, `tools/lod/water_l6.py`.
+
+| Data | Source | Cache file | What we use |
+|---|---|---|---|
+| **OpenStreetMap extracts of New Jersey, New York and Connecticut** (**ODbL 1.0, © OpenStreetMap contributors**) | Geofabrik (`download.geofabrik.de/north-america/us/<state>-latest.osm.pbf`, data as of 2026-10-10, md5-checked) | `backdrop/osm/*.osm.pbf` | Building footprints and parts with `height`, `min_height`, `building:levels`, `roof:shape`, `building:colour`, type; land use and cover, water, piers, roads (class, lanes), railways, waterways, runways, tree rows and single trees; the city of New York's administrative line (relation 175905, water areas included); parsed with pyosmium |
+| **OSM land polygons** (**ODbL 1.0, © OpenStreetMap contributors**) | osmdata.openstreetmap.de, `land-polygons-split-4326.zip` (2026-10-11) | `backdrop/coast/` | The coastline's land: where only a coastal-scale chart covers, the chart's water stops at it; the inland water's level classification |
+| **Microsoft Global ML Building Footprints** (**ODbL 1.0**) | `minedbuildings.z5.web.core.windows.net/global-buildings/` (release 2026-02-03, RegionName UnitedStates, the eight zoom-9 quadkeys over the region) | `backdrop/footprints/ms_global_2026-02-03/` | Footprints no OSM footprint covers (the gap-fill), and the estimated height of untagged OSM buildings matched to them |
+| **USGS 3DEP 1/3 arc-second DEM** (public domain) | The National Map, `prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/` (n41w074, n41w075, n42w074, n42w075; published 2026-09-17) | `backdrop/dem/` | Bare-earth elevation (metres NAVD88) on an 8 m grid in world coordinates: the backdrop's terrain (the Palisades, the Watchung ridges, Westchester's hills), building bases, lake levels |
+| **NOAA Electronic Navigational Charts** (public domain) | ENC Direct (`encdirect.noaa.gov`, harbour, approach and coastal scales: depth, dredged and unsurveyed areas and each chart's coverage) | `enc_water.json` → `water_l6.json`, `water_l6.wkb` | The far level's water over the backdrop's L6 squares, each scale only where no finer chart covers; the backdrop's land outside the city is its exact complement |
+
+Attribution to ship with any build that includes the backdrop: "© OpenStreetMap contributors (ODbL); Microsoft Global ML
+Building Footprints (ODbL); U.S. Geological Survey 3D Elevation Program; NOAA Office of Coast Survey". Under the ODbL,
+renders and other produced works carry that notice, and a derived database that is published (the backdrop's records
+layers) is offered under the ODbL as well.
+<!-- end BD40 -->
 
 ## Hand-authored (registries in-repo, derived from public knowledge)
 
@@ -127,6 +162,15 @@ cached files are skipped). Compiled output: `public/tiles/`.
 - **Shrubs, hedges and beds** (CC0, fetched by tools/ar35/veg/fetch_vg37.sh, built into `public/textures/veg/` by build_vg37.py): ambientCG LeafSet001, LeafSet017, LeafSet019, LeafSet020, LeafSet022, LeafSet024 and LeafSet026, cut out, scaled and recoloured; the lawn blades, turf and tree-pit fills are procedural.
 - **Blender target assets** (dataset folder `Blender/`): the street tree set at film detail (`Blender/bxtrees/`, the same trees and sources as `public/models/bxtrees/`) and the window interiors (`Blender/bxwin/rooms_atlas.png`, eight CC0 Poly Haven interior HDRIs listed in its ASSETS_NOTICE.md).
 - **Sign typefaces** (github.com/google/fonts; SIL Open Font License 1.1, Apache License 2.0 for Roboto Slab and Yellowtail): the storefront and landmark sign families in `public/fonts/ar33/`, each with its licence text beside it and listed in FONTS.txt; fetched by tools/ar33/signs/fetch_fonts.mjs. The three.js outlines in `o/` are format conversions and stay under each font's licence.
+- **Statue of Liberty** (Sketchfab via Objaverse 1.0, **CC BY 4.0**, attribution required): "Statue Of Liberty Bronze Model"
+  by jerryfisher, https://sketchfab.com/3d-models/statue-of-liberty-bronze-model-5b9aa58d51624f01b9009b52379bf18a
+  (licence http://creativecommons.org/licenses/by/4.0/; the copy from allenai/objaverse, glbs/000-057/
+  5b9aa58d51624f01b9009b52379bf18a.glb). Changes: scaled to the HAER NY-138 measurements, re-oriented, retextured with a
+  copper patina, decimated into levels of detail (tools/assets/liberty_bake.py, liberty_statue.mjs) into
+  public/models/landmarks/liberty_statue_l0..l3.glb, with its NOTICE_liberty.md. The raw scan stays outside the repository.
+  The pedestal and Fort Wood: HAER NY-138 (Library of Congress, public domain) measured drawings, sheets 15, 17-23 (the
+  elevations) and 12-14 (the statue's platform plans); Liberty Island's lawns, walks, trees and buildings: OpenStreetMap
+  (ODbL), the island's map call of 2026-10-11 (src/city/libertyIslandData.js).
 - **NV200 taxi body** (Sketchfab via Objaverse 1.0, **CC BY 4.0**, attribution required): "Dhl delivery van" (Nissan NV200) by memoov, https://sketchfab.com/3d-models/6f952a34d1f44905af42c803cba2805f; re-proportioned to Nissan's North American sheet, re-wheeled, glazed, fitted with a cab interior and roof equipment, given a TLC livery drawn from scratch and reduced to levels of detail by tools/ar34/vehicles/taxi/build_nv200.py and finish.mjs into `public/models/fleet24/taxinv200.glb`.
 - **26 ft box truck cab and chassis** (Sketchfab via Objaverse 1.0, **CC BY 4.0**, attribution required): "Isuzu FFR" by mekanismo, https://sketchfab.com/3d-models/29931659dfe84909a226a625cf5a8f75; re-materialised, the chassis lengthened to a 6.10 m wheelbase, a 26 ft box with its lamps, markers and DOT tape built from scratch, by tools/ar34/vehicles/vh36/build_ftr26.py and finish_vh36.mjs into `public/models/fleet24/boxtruck26_vh36.glb`.
 - **Other NYC vehicles** (original models, CC BY 4.0, M. K. Turkcan): the MTA buses (`mtalfs`, `mtalfsa`, `mtalfsal`, `mtaxd40`, `mtaxd60`), `nypd`, `uspsllv`, `uspsngdv`, `dsny`, `schoolbus`, `stepvan`, `cargovan`, `boxtruck26`, `foodtruck` and `icecream` in `public/models/fleet24/` are built from scratch by the scripts under tools/ar34/vehicles/, with liveries drawn from scratch; photographs were used as look references only and are not included. The subway and commuter trains (R62A, M7A, M8) and the 125th Street station are modelled in code from published dimensions.

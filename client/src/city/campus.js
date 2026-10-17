@@ -269,6 +269,60 @@ export function tazzaFountain({ x, z, R = 5.35, seed = 0 }) {
   return { group: G, footR: o + 0.06 };
 }
 
+// LOOK14 (owner 2026-10-09: Bryant Park's Lowell fountain to the real one): the fountain built from city/bryantParkKit.js's
+// lowellStone() geometry (`stone`: { dry, wet }) in this file's granite, with tazzaFountain's water fitted to it: the pool
+// over the notched basin (`water`: its outline [[x, z], ...] in the local frame), the ring waves, the bowl's water, the
+// spray, the overflow veil from the 13 ft bowl's lip to the pool, the jet and its crown, the probe. L: the kit's LOWELL
+// numbers. x, z: the world position (the ring waves and the probe are world-anchored). Returns { group, footR }.
+export function lowellFountain({ x, z, seed = 0, stone, water, L }) {
+  const G = new THREE.Group();
+  const wl = L.wl;
+  const part = (geo, mat, py = 0, cast = true) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.y = py; m.castShadow = cast; m.receiveShadow = true;
+    G.add(m);
+    return m;
+  };
+  part(stone.dry, GRANITE);
+  part(stone.wet, WETGRANITE);
+  const Rw = L.Ro - L.w, landR = L.landR, lipY = L.lipY, bowlY = L.bowlY;
+  const poolMat = FW.water(4.5);
+  const setPool = FW25 ? poolRings(poolMat, { impR: landR, amp: FW26 ? 0.08 : 0.16, k: 17, foam: 1, foamIn: 0.55, foamOut: 1.3,
+    basin: { R: Rw, depth: 0.36, ped: L.plinth, veilR: landR, veilH: lipY + 0.02 - wl, copeH: L.rimH - wl, floor: 0.2, chop: 1 } }) : null;
+  if (setPool) setPool(x, z);
+  const S = new THREE.Shape(water.filter((p, i) => i === 0 || Math.hypot(p[0] - water[i - 1][0], p[1] - water[i - 1][1]) > 1e-5).map(([px, pz]) => new THREE.Vector2(px, -pz)));
+  const poolMesh = part(new THREE.ShapeGeometry(S, 1), poolMat, wl, false);
+  poolMesh.rotation.x = -Math.PI / 2;
+  const bowlMat = FW.water(1.8);
+  const setBowl = FW25 ? poolRings(bowlMat, { impR: 0.8, amp: FW26 ? 0.06 : 0.12, k: 22, foam: 0.85, foamIn: 0.7, foamOut: 2.2,
+    basin: { R: L.bowlR, depth: 0.11, ped: 0.08, copeH: lipY - bowlY, floor: 0.2, chop: 0.6 } }) : null;
+  if (setBowl) setBowl(x, z);
+  part(new THREE.CircleGeometry(L.bowlR + 0.02, 96), bowlMat, bowlY, false).rotation.x = -Math.PI / 2;
+  if (FW25) G.add(fountainSpray({ lipR: L.lipR + 0.02, lipY: lipY + 0.01, wl, impR: landR, jetY: bowlY, jetH: 1.35, bowlY, bowlR: L.bowlR, seed }));
+  const fallT = (h, v0) => (-v0 + Math.sqrt(v0 * v0 + 19.62 * h)) / 9.81;
+  // the overflow: over the lip, nearly straight down the 2.75 m to the pool, landing just outside the plinth's sides
+  const vt = lipY + 0.02;
+  part(lathe([[1.94, lipY - 0.015], [2.0, vt], [2.045, vt - 0.006], [2.075, vt - 0.05], [2.1, vt - 0.2], [2.13, vt - 0.5], [2.16, vt - 0.95],
+    [2.19, vt - 1.55], [2.22, vt - 2.15], [landR, wl]], 112), FW26
+    // (LOOK14b, the Lead 22:35: thin bright strands, not a dark wall: whole at the lip, breaking into fine strands as it
+    // falls, white from the lip, the glassy body all but clear; ue_prep's LOOK14 curtain uses the same numbers)
+    ? veilMat(FW27 ? { y0: vt, dir: 1, v0: 0.3, tMax: fallT(vt - wl, 0.3), aer: [0.0, 0.3], holes: 0.5, body: 0.06, freq: 20, tear0: 0.15 }
+      : { y0: vt, dir: 1, v0: 0.3, tMax: fallT(vt - wl, 0.3), aer: [0.0, 0.3], holes: 0.5, body: 0.06, freq: 20, tear0: 0.15 }, LT)
+    : FW.sheet(16, 1.5, 2.4, 0.85), 0, false).renderOrder = 2;
+  // the jet from the bowl's centre and its falling crown (tazzaFountain's, raised onto this bowl)
+  const dy = bowlY - 2.11, jetV0 = Math.sqrt(19.62 * 1.24);
+  part(lathe([[0.075, 2.11 + dy], [0.07, 2.4 + dy], [0.075, 2.8 + dy], [0.085, 3.1 + dy], [0.1, 3.25 + dy], [0.07, 3.33 + dy], [0, 3.35 + dy]], 24), FW26
+    ? veilMat({ y0: 2.11 + dy, dir: -1, v0: jetV0, tMax: jetV0 / 9.81, aer: [0.3, 0.95], holes: 0.2, body: 0.34, freq: 30 }, LT)
+    : FW.sheet(3, 2, 6.4, FW25 ? 0.75 : 0.9), 0, false).renderOrder = 1;
+  part(lathe([0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1].map((t) => [0.1 + 0.75 * t, 3.28 + dy + 0.08 * t - 1.25 * t * t]), 48), FW26
+    ? veilMat(FW27 ? { y0: 3.37 + dy, dir: 1, v0: 0.4, tMax: fallT(3.37 - 2.11, 0.4), aer: [0.05, 0.55], holes: 0.8, body: 0.22, freq: 15 }
+      : { y0: 3.37 + dy, dir: 1, v0: 0.4, tMax: fallT(3.37 - 2.11, 0.4), aer: [0.1, 0.8], holes: 0.6, body: 0.3, freq: 9 }, LT)
+    : FW.sheet(8, 1.2, 1.9, 0.6), 0, false).renderOrder = 1;
+  if (FW27) fountainProbe(poolMesh, G, [poolMat, bowlMat], wl + 1.2);
+  return { group: G, footR: L.Ro + L.step + 0.06 };
+}
+// LOOK14 end
+
 const tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3();
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
 

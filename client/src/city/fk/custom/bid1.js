@@ -1,7 +1,6 @@
 // AR33 custom builders and sign marks, segment bid1: Morningside Avenue to Frederick Douglass Boulevard. Specs name them as 'bid1:<fn>' (docs/notes/ar33-spec.md).
 // Owner: the BID1 worker (docs/notes/ar33-bid1.md).
 // Sign marks: fn(ctx2d, W, H) paints the whole face (logoAt 'fill') or the logo square; every mark is drawn from scratch
-// fn.fonts names the fonts it uses.
 // Builders: fn(group, ctx, spec, frame) after the kit's own faces (`with: 'kit'`); u along the front from its left end,
 // y up from the sidewalk, w out of the wall (negative = behind the facade plane).
 
@@ -170,7 +169,6 @@ export const deligrill = mark((c, W, H) => {
   text(c, 'DELI & GRILL', W * 0.56, H * 0.52, { key: 'Oswald', weight: 700, px: H * 0.62, maxW: W * 0.75, color: '#ffffff', track: 0.05 });
 }, ['Oswald-700']);
 
-// ---------------------------------------------------------------- 321 W 125th, the St. Nicholas Ave side
 export const gourmetdeli = mark((c, W, H) => {
   const g = c.createLinearGradient(0, 0, W, 0); g.addColorStop(0, '#8e86a6'); g.addColorStop(0.5, '#a9a3bd'); g.addColorStop(1, '#bcb7cf');
   c.fillStyle = g; c.fillRect(0, 0, W, H);
@@ -206,7 +204,6 @@ export const newtang = mark((c, W, H) => {
   text(c, 'CHINESE FOOD • TAKE OUT • DELIVERY', W * 0.57, H * 0.82, { key: 'Inter', weight: 700, px: H * 0.1, maxW: W * 0.7, color: '#ffffff' });
 }, ['KaushanScript-400', 'Inter-700']);
 
-// ---------------------------------------------------------------- 350 W 125th, the St. Nicholas Ave side
 export const pizzahut = mark((c, W, H) => {
   c.fillStyle = '#14141a'; c.fillRect(0, 0, W, H);
   // the red roof, left of the name
@@ -249,7 +246,6 @@ export const orange = mark((c, W, H) => {
   c.fillStyle = '#3f8a2f'; c.beginPath(); c.ellipse(W * 0.62, H * 0.12, r * 0.35, r * 0.14, -0.5, 0, Math.PI * 2); c.fill();
   text(c, 'orange', W / 2, H * 0.57, { key: 'KaushanScript', weight: 400, px: r * 0.55, maxW: r * 1.7, color: '#ffffff' });
 }, ['KaushanScript-400']);
-// SIGNS' roundel (signMarks.orangeBeauty: the silver ring open at the upper right, the word over a silver
 // tongue, the dark red stem); my `orange` stands in if that module has not loaded
 export const orangeBeauty = via('orangeBeauty', orange, ['Nunito-800', 'KaushanScript-400']);
 export const popeyes = mark((c, W, H) => {
@@ -421,7 +417,6 @@ export const puregymWall = mark((c, W, H) => {
 // a flush curtain wall on a face kit (u / y lists include the ends). Every pane is two smooth tones, a paler upper part (the
 // sky in the glass) over a darker lower part (the room, the street), a little different from pane to pane, with a thin glass
 // sheen over the lot and the aluminium members (round 2026-10-01: the chipped-paint set behind a clear pane read as rubble).
-// o.hi / o.lo: the tones; o.split: the share of a pane that is the dark part (0.4); o.vary: the
 // lightness spread between panes (0.08); o.glass: the sheen's set (null = none)
 const hsh = (a, b) => { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
 const shade = (hex, k) => {
@@ -540,11 +535,11 @@ function drawGates(spec, frame) {
 }
 export function gates(group, ctx, spec, frame) { drawGates(spec, frame); roofOf(spec, frame); }
 
-// The kit lays one membrane set per roof (white / black / gravel / pavers).
 // spec's roof gets a tinted membrane laid over the slab (an earcut-style triangulation of its ring, 2 cm up), optional patches (u / depth
 // shares of the front: a ballasted field, a skylight band) and rooftop units from the same image. Colours are warm greys read off the aerial.
 const ROOFS = {
-  // units: [share along the front, share of the depth behind it, w, d, h, tint]
+  // 324 x0.87, 381 x0.92, 309 x0.91, 361 x0.94, 11 Hancock x0.82, 313 x0.85; 317 x1.08, 319 x1.16, 305 x1.15)
+  // blue-grey, 307 x0.87, 324 x1.25, 280 x0.9; each a ratio seen in two or three of the four aerial views)
   'w125-383': { tint: '#bfb7af' }, 'w125-381': { tint: '#b4a698' }, 'w125-379': { tint: '#bfb8b2' }, 'w125-377': { tint: '#bdb7b1' }, 'w125-375': { tint: '#66625e' },
   'w125-365': { tint: '#cfcbc6', units: [[0.38, 0.62, 3.2, 2.6, 1.6, '#aeb0b2'], [0.2, 0.3, 1.4, 1.4, 1.0, '#c6c7c7']] },
   'w125-361': { tint: '#786a61', units: [[0.3, 0.6, 3.4, 3.0, 2.6, '#8e8174'], [0.62, 0.35, 2.2, 1.6, 1.3, '#b9baba'], [0.74, 0.5, 2.2, 1.6, 1.3, '#b9baba']] },
@@ -560,7 +555,6 @@ const ROOFS = {
   'w125-350': { tint: '#c0b4a8', units: [[0.3, 0.35, 2.2, 1.6, 1.1, '#b4b4b2'], [0.65, 0.4, 2.2, 1.6, 1.1, '#b4b4b2']] },
   'w125-324': { tint: '#c3b6aa', units: [[0.12, 0.2, 1.4, 1.4, 1.1, '#b4b4b2'], [0.22, 0.2, 1.4, 1.4, 1.1, '#b4b4b2'], [0.32, 0.25, 1.4, 1.4, 1.1, '#b4b4b2'], [0.6, 0.55, 1.8, 1.4, 1.1, '#b4b4b2']] },
   // Harlem USA: the ring is an L round the CVS (324 W sits in its north-west notch: u 75.9-106.4, depth 0-27.4 m of the 106.4 x 61.3 m span), so a share of the span is
-  // not a share of the 125th front.
   // 75.9 m front; u from the FDB building line, depth from the front): a long white air handler along the north strip (u 8-26 in the two views, centre ~16, depth ~8.6)
   // with a dark unit at its west end, three AC units at u ~66.8 / 53.7 / 40.5 (depth 6.8), a rusty unit at u 25 / depth 26, two vents, a long white unit along the FDB
   // side at the south, the round fan housing (a box here) at u 88 / depth 53 and units on the west wing behind the CVS; the darker ribbed field between u ~15 and the
@@ -634,7 +628,7 @@ function roofOf(spec, frame) {
     if (w < 3.2 && d < 3.2) { const fan = k.mat('panel_grey', { tint: '#4a4c4e', dirt: 0.2 }); k.box(fan, uc - w * 0.32, uc + w * 0.32, y + h + 0.07, y + h + 0.1, wc - d * 0.32, wc + d * 0.32, { c: 0 }); }
   });
 }
-// ---------------------------------------------------------------- curtains. A light curtain quad 2 cm behind each window's pane, in three slightly different whites.
+// the glass, where the kit draws a dark room: i1 / j1 s381 2x zoom; KIT request 6 in ar33-kit.md). A light curtain quad 2 cm behind each window's pane, in three slightly different whites.
 const SHADE_ROW = { 'w125-383': 5.92, 'w125-381': 6.11, 'w125-379': 6.02, 'w125-377': 6.02, 'w125-375': 6.54 };   // front widths: three windows at L/2 - 1 / L/2 / L/2 + 1 ... centres
 function shadesOn(kit, centres, y0, nFloors, pitch, seed, share = 0.72) {
   const tones = ['#dcd8cf', '#cfcbc2', '#e4e0d8'].map((c) => kit.mat('plain', { tint: c, rough: 0.95 }));
@@ -650,7 +644,6 @@ function shadesOn(kit, centres, y0, nFloors, pitch, seed, share = 0.72) {
 }
 const QB = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
 const OWN_SHADES = !!(QB && QB.get('b1shades') === '1');
-// BF36 (BIDFIX 2026-10-02): 324's St. Nicholas face (see specs/bid1.js W324_STNICH); `?bf36=0` as before
 const BF36 = !(QB && QB.get('bf36') === '0');   // A/B: my curtain quads of wave 1 (the specs now ask the kit for sheers)
 function tenementShades(spec, frame) {
   const L = SHADE_ROW[spec.id];
@@ -665,14 +658,13 @@ function tenementShades(spec, frame) {
     }
   }
 }
-// ---------------------------------------------------------------- window panes
+// ---------------------------------------------------------------- window panes (2026-10-01: the kit's window glass is transparent over a dark room and reads ~1.5 x darker than the
 const PANES = {
   // [kit face, [[ua, ub, ya, yb], ...] built below, reveal, hi, lo, split]
   'w125-321': () => ({
     front: { boxes: [[0.45, 4.9], [5.47, 9.92], [10.49, 14.51]].map(([a, b]) => [a, b, 5.15, 7.7]), rv: 0.12, hi: '#a2a9a4', lo: '#7a817e', split: 0.4 },
   }),
   'w125-365': () => ({ front: { boxes: [[3.235, 9.835], [11.335, 17.935], [19.235, 25.835]].map(([a, b]) => [a, b, 7.2, 9.2]), rv: 0.16, hi: '#878c8f', lo: '#5d6266', split: 0.45 } }),
-  // a light panel in
   // four of five upper sashes, down 60-100 % of the sash, the lower sashes left to the kit's glass
   'w125-361': () => {
     const boxes = [];
@@ -711,7 +703,6 @@ function windowPanes(spec, frame) {
 // the generic builder for a spec with no custom builder of its own (specs/bid1.js prep sets it)
 export function roofs(group, ctx, spec, frame) { tenementShades(spec, frame); windowPanes(spec, frame); roofOf(spec, frame); }
 
-// Party City's letter colours, P a r t y C i t y, and PureGym's teal dot
 const PARTY_FGS = ['#e8706a', '#a48fd0', '#e8706a', '#4f8fd6', '#7cc47a', '#e8706a', '#7cc47a', '#e8706a', '#a48fd0'];
 export const tealDot = mark((c, W, H) => { c.clearRect(0, 0, W, H); c.fillStyle = '#16b8b0'; c.beginPath(); c.arc(W / 2, H / 2, Math.min(W, H) * 0.46, 0, Math.PI * 2); c.fill(); }, []);
 // 2329 Frederick Douglass Blvd: the two double-height glazed blocks, the sign panel column, the corner band window and
@@ -735,7 +726,6 @@ function _eighth2329(group, ctx, spec, frame) {
   for (const [a, b] of [[0.2, 22.3]]) { panelJoints(k, a, b, 18.85, 21.0); panelJoints(k, a, b, 14.6, 16.3); }
   panelJoints(k, 7.2, 15.3, 6.75, 7.4); panelJoints(k, 7.2, 15.3, 12.9, 14.5); panelJoints(k, 0.2, 7.0, 14.6, 15.0); panelJoints(k, 21.5, 22.3, 6.75, 14.5);
   for (let j = 0; j < 6; j++) pane2(k, 1.22 + 3.54 * j + 0.06, 1.22 + 3.54 * j + 2.26, 16.4, 18.55, -0.15, '#b9d2c8', '#7c978d', 0.3, j);
-  // the shops' opening dress: a red-white-blue bunting fan at each end of the two banners and a GRAND OPENING banner under Danice's
   for (const u of [8.35, 14.05, 15.35, 21.45]) k.sign({ kind: 'painted', text: 'bunting', u0: u - 0.55, u1: u + 0.55, y: 4.95, h: 0.62, bg: null, fg: '#c8202b', logo: buntingFan, logoAt: 'fill' }, { z: 0.08 });
   k.sign({ kind: 'painted', text: 'GRAND OPENING', u0: 16.2, u1: 20.6, y: 4.55, h: 0.42, bg: null, fg: '#ffffff', logo: grandOpening, logoAt: 'fill' }, { z: 0.09 });
   // the vertical PUREGYM panel behind the store glass
@@ -807,7 +797,6 @@ function _w324(group, ctx, spec, frame) {
   // the imaging centre's window strips on the 2nd floor: navy headers (MRI MRA CT XRAY SONO) over each window, a yellow NOW OPEN burst
   k.sign({ kind: 'panel', text: 'MRI MRA CT XRAY SONO', u0: 3.75, u1: 15.0, h: 0.62, y: 11.3, bg: '#3b2f70', fg: '#ffffff', depth: 0.04, lit: 'none', logo: imagingHeader, logoAt: 'fill' }, { z: 0.03 });
   k.sign({ kind: 'panel', text: 'arrows', u0: 3.75, u1: 15.0, h: 0.26, y: 8.0, bg: '#3b2f70', fg: '#ffffff', depth: 0.03, lit: 'none', logo: imagingArrows, logoAt: 'fill' }, { z: 0.03 });
-  // the pharmacy's window is papered with red and white posters: panels 1.3 m wide, 0.55 m behind the glass
   const red = k.mat('panel_grey', { tint: '#b8352b', dirt: 0.05 }), wht = k.mat('panel_grey', { tint: '#e8e4dc', dirt: 0.05 });
   for (let j = 0, u = 4.9; u < 26.2; j++, u += 1.35 + 0.3 * hsh(j, 5)) {
     const w = 1.1 + 0.3 * hsh(j, 9), y0 = 0.45 + 0.15 * hsh(j, 3);
@@ -835,7 +824,6 @@ function _w324(group, ctx, spec, frame) {
     k.sign({ kind: 'painted', text: 'NOW OPEN', u0: 22.55, u1: 23.85, y: 8.0, h: 1.3, bg: null, fg: '#2a2f7a', logo: nowOpen, logoAt: 'fill' }, { z: -0.12 });
   }
 }
-// (BF36) 324's St. Nicholas face, u from the 125th corner southward: the corner tower's west
 // face (the charcoal pier with its grey glass panels) over a grey projecting canopy at the corner entrance; the CVS letters south of
 // the canopy on the light band; the imaging centre's six windows with their posters (a NOW OPEN burst, a purple banner), a purple
 // header over them and an arrow strip under them; weathering: rain streaks under the parapet and the canopy, a grime line at the base
@@ -881,7 +869,6 @@ export const imagingHeader = mark((c, W, H) => {
     if (j) { c.fillStyle = '#6c62a8'; c.fillRect(W * (1.6 * j - 0.05) / 11.25, H * 0.12, Math.max(1, W * 0.002), H * 0.76); }
   });
 }, ['Inter-800']);
-// (BF36) the imaging centre's window graphics over the west windows of the 125th front: a maroon
 // field, MRI / XRAY / MAMMO over the panes, ENTRANCE AROUND CORNER with arrows, a white arc (drawn lettering, an invented layout)
 export const aroundCorner = mark((c, W, H) => {
   c.fillStyle = '#4b2335'; c.fillRect(0, 0, W, H);
@@ -961,7 +948,6 @@ function _w351(group, ctx, spec, frame) {
 // the exposed parts of 313's party walls (QA Q49, 2026-10-02: a spec face on a party wall makes the kit warn, so they are built here): the kit
 // leaves the west wall (over 317, blind in the record) plain and gives the east wall (over P.C. Richard) punched windows at the compiled floor
 // height; a brick skin 9 cm deep covers each above the neighbour's roof, with an invented spray piece (the kit's painter) over its street end where
-// s307 / s305: the east wall). The street end is u = L on the west wall, u = 0 on the east wall.
 const PARTY313 = [
   { edge: [1616, -3066.99, 1632.1, -3096.19], y0: 12.9, mat: { mat: 'brick_painted', tint: '#cbc6bb', dirt: 0.55 }, g: [19.5, 33.2, 13.4, 19.4, 313, 0.5] },
   { edge: [1645.28, -3088.9, 1629.18, -3059.7], y0: 9.9, mat: { mat: 'brick_red', tint: '#6e4c40', dirt: 0.6 }, g: [0.5, 10.0, 10.6, 14.6, 3131, 0.45] },
@@ -983,7 +969,7 @@ function _w313(group, ctx, spec, frame) {
       side.kit.poly(kitGraffitiMat(t, g1 - g0, gy1 - gy0, g0, gy0), [[g0, gy0, w], [g1, gy0, w], [g1, gy1, w], [g0, gy1, w]], [0, 0, 1], { shadow: false });
     } catch (e) { /* no canvas (node bench): the brick stays bare */ }
   }
-  // Popeyes' teal band along the foot of the white fascia, under the wordmark, standing 1.5 cm proud of the fascia (proj 0.15)
+  // 825 px storefront, 30 px tall against the 115 px letters: ~0.2 m), standing 1.5 cm proud of the fascia (proj 0.15)
   k.box(k.mat('plain', { tint: '#65a7aa', rough: 0.45 }), 0.1, 5.6, 3.2, 3.42, 0.15, 0.165, { c: 0.004 });
   for (let f = 0; f < 4; f++) {
     const y0 = 4.8 + 3.28 * f + 0.3, y1 = y0 + 2.5;             // the windows' sill and head (specs/bid1.js: sill 0.3, h 2.5 since a3)
@@ -993,7 +979,6 @@ function _w313(group, ctx, spec, frame) {
       k.box(m, u - 0.11, u + 0.11, y1 + 0.02, Math.min(y1 + 0.16, 4.8 + 3.28 * (f + 1) - 0.13), 0.0, 0.19, { c: 0.01, near: true });
       k.box(m, u - 0.1, u + 0.1, y0 - 0.17, y0 - 0.05, 0.0, 0.18, { c: 0.01, near: true });
     }
-    // each storey's order: a capital on every pilaster under the belt course
     const yb = [7.95, 11.23, 14.51, 17.45][f];
     for (const u of [0.3, 3.24, 6.18, 9.12, 12.06, 15.0]) {
       k.box(m, u - 0.27, u + 0.27, yb - 0.1, yb, 0.0, 0.2, { c: 0.01, near: true });
@@ -1001,7 +986,6 @@ function _w313(group, ctx, spec, frame) {
     }
   }
 }
-// 321: the signband is corrugated metal: ribs standing off the fascia, lighter than the band,
 // plus the closed gates of the St. Nicholas side from the spec
 function _w321(group, ctx, spec, frame) {
   const k = frame.kit, m = k.mat('panel_grey', { tint: '#6c6764', dirt: 0.1 });
@@ -1018,7 +1002,6 @@ function _w321(group, ctx, spec, frame) {
   if (side) tops(side.kit, [0.33, 6.05, 11.8, 17.55, 23.15, 29.05, 34.85, 40.0], 0.7, 0.06);
   drawGates(spec, frame);
 }
-// 361: the four brick pilasters are banded, a rusticated course every 0.3 m, up the whole
 // front from the granite base; the closed gate comes from the spec's gate data (bid1:gates)
 const F361 = 3.55;   // 361's storey (specs/bid1.js: 3.76 until 2026-10-02)
 function _w361(group, ctx, spec, frame) {
@@ -1026,8 +1009,7 @@ function _w361(group, ctx, spec, frame) {
   for (const u of [0.33, 5.0, 9.67, 14.33]) {
     for (let y = 4.6; y < spec.h - 0.2; y += 0.3) k.box(m, u - 0.405, u + 0.405, y + 0.04, y + 0.27, 0.0, 0.132, { c: 0.008, near: true });
   }
-  // the panelled spandrels: a raised border of
-  // 9 cm, 2.5 cm proud, round a darker field, between a window head (6.6 m + 3.76 per floor) and the sill above it (8.36 m +...), clear of the belt courses
+  // 9 cm, 2.5 cm proud, round a darker field, between a window head (6.6 m + 3.76 per floor) and the sill above it (8.36 m + ...), clear of the belt courses
   const fieldM = k.mat('brick_red', { tint: '#a3846e', dirt: 0.4 });
   for (let f = 0; f < 4; f++) {
     const ya = 7.1 + F361 * f + 0.15, yb = 4.6 + F361 * (f + 1) - 0.15;   // (heads at 7.1 m + one storey per floor, the windows 2.5 m tall; sills 0.1 over each floor)
@@ -1063,7 +1045,6 @@ function markerTags(seed, n = 7) {
   return m;
 }
 // 5.1 m, the gate head 3.75-3.95 m and a chevron top falling from the corners (5.1 m) to 4.6 m at the centre over buff brick; a third row of lights
-// in the steel window above
 function _w319(group, ctx, spec, frame) {
   const k = frame.kit, g = k.mat('plain', { tint: '#2d7347', rough: 0.45, env: 0.35 });
   const wf = 0.11, wb = -0.02, t = 0.2, uL = 0.42, uR = 7.15, uc = (uL + uR) / 2, yt = 5.1, yc = 4.6;
@@ -1078,7 +1059,6 @@ function _w319(group, ctx, spec, frame) {
   k.box(k.mat('steel_black'), 0.65, 7.25, 6.05, 6.1, -0.2, -0.116, { c: 0.004, near: true });
   drawGates(spec, frame);
 }
-// 365: the pale-green glazed tile round the entrance,
 // the canopy over the doors (u 12.5-17.75, 3.15-3.62 m), the station's letters on the tile, marker tags on the lower tiles
 function _w365(group, ctx, spec, frame) {
   const k = frame.kit, w = 0.04;
@@ -1095,7 +1075,6 @@ function _w365(group, ctx, spec, frame) {
   k.sign({ kind: 'channel', text: 'NEW YORK, N.Y. 10027', font: 'Inter-600', fg: '#383b3c', bg: null, u0: 13.5, u1: 16.1, h: 0.13, y: 3.68, depth: 0.02, lit: 'none' }, { z: w + 0.005 });
   k.sign({ kind: 'painted', text: 'tags', u0: U0 + 0.05, u1: ua - 0.05, y: 0.55, h: 1.7, bg: null, fg: '#111111', logo: markerTags(36.5, 8), logoAt: 'fill' }, { z: w + 0.004 });
   k.sign({ kind: 'painted', text: 'tags', u0: ub + 0.05, u1: U1 - 0.05, y: 0.7, h: 1.4, bg: null, fg: '#111111', logo: markerTags(41.2, 4), logoAt: 'fill' }, { z: w + 0.004 });
-  // the flagpole on the roof over the Post Office sign, set back 4 m, the flag at its head
   const pole = k.mat('plain', { tint: '#d9dcde', rough: 0.35, metal: 0.6 }), top = spec.h + 7.0, pu = 14.7, pw = -4.0;
   k.box(pole, pu - 0.04, pu + 0.04, spec.h, top, pw - 0.04, pw + 0.04, { c: 0.01 });
   k.box(k.mat('plain', { tint: '#c9a43c', rough: 0.4, metal: 0.7 }), pu - 0.08, pu + 0.08, top, top + 0.16, pw - 0.08, pw + 0.08, { c: 0.04 });
@@ -1169,6 +1148,7 @@ function _w383(group, ctx, spec, frame) {
 // (u 0.4-41.6; floors 5-9 continue the street wall's 4.33 m pitch to 39.2 m, a louvred mechanical level to 44.3 m)
 function _w374(group, ctx, spec, frame) {
   const k = frame.kit, L = frame.L;
+  // silver bands, two per storey, over wide panes where the twin's 0.5 m bands and pane-to-pane tones made a checkerboard)
   const BLUEGLASS = { w: 0.02, glass: 'glass_clear', frame: 'panel_grey', frameTint: '#a9aeb3', hi: '#a0bfdc', lo: '#6b8daa', split: 0.5, vary: 0.05, fw: 0.03, fd: 0.06, sp: 0.14, spTint: '#aeb5bb' };
   const GY = [0.3, 2.45, 4.6, 6.77, 8.93, 11.1, 13.26, 15.43, 17.6, 19.8];
   // the glass corner: spandrel lines at the floor slabs, mullions every 1.48 m
@@ -1228,7 +1208,7 @@ function _w374(group, ctx, spec, frame) {
   k.box(mech, 6.0, 36.0, yt, 44.3, wb + 3.0, wf - 3.0, { c: 0.02 });
   for (let y = yt + 0.4; y < 43.9; y += 0.25) k.box(k.mat('panel_grey', { tint: '#3e4246' }), 6.2, 35.8, y, y + 0.06, wf - 3.0, wf - 2.93, { c: 0, near: true });
 }
-// 11 Hancock Place: the window glass: a two-tone pane with a mullion and a transom in every opening, the podium and ten floors
+// big pale-blue reflective lights in dark frames): a two-tone pane with a mullion and a transom in every opening, the podium and ten floors
 function _hancock(group, ctx, spec, frame) {
   const rows = [[5.85, 7.95]];
   for (let f = 0; f < 10; f++) rows.push([8.25 + 3.0 * f + 0.45, 8.25 + 3.0 * f + 0.45 + 2.2]);

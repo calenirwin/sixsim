@@ -13,7 +13,7 @@ const seg = (q, hi, lo) => (q ? hi : lo);
 export function hydrant(q = 1, p = {}) {
   const M = new Model(), s = seg(q, 20, 9);
   const body = p.body || 'hydrantY', bon = p.bonnet || body;
-  // base flange, barrel, the break-away flange, the upper barrel, then the bonnet dome
+  // base flange, barrel, the break-away flange, the upper barrel, then the bonnet dome (silver on the black-barrelled
   M.add(body, lathe([[0.001, 0.0], [0.135, 0.0], [0.135, 0.028], [0.118, 0.04], [0.098, 0.05], [0.096, 0.15], [0.118, 0.16], [0.118, 0.185], [0.096, 0.195],
     [0.092, 0.6], [0.108, 0.615]], s));
   M.add(bon, lathe([[0.108, 0.615], [0.128, 0.64], [0.13, 0.69], [0.112, 0.73], [0.078, 0.775], [0.04, 0.8], [0.001, 0.81]], s));
@@ -169,7 +169,6 @@ export function shelter(q = 1, p = {}) {
     M.add('shelterFrame', rbox(0.075, H, 0.075, 0.012, x, H / 2, zf, seg(q, 2, 1)));
   }
   if (p.adBack) {
-    // the 125th Street shelter: a light glass roof in two panes on a low ridge along the shelter,
     // in a slim stainless frame with a front and a back beam
     const rz0 = -D / 2 - 0.05, rz1 = D / 2 + 0.22, rzm = (rz0 + rz1) / 2, yr = H + 0.05, yRidge = H + 0.2;
     M.add('shelterFrame', rbox(L + 0.2, 0.08, 0.06, 0.012, 0, H + 0.02, rz1 - 0.03), rbox(L + 0.2, 0.08, 0.06, 0.012, 0, H + 0.02, rz0 + 0.03));
@@ -231,7 +230,7 @@ export function shelter(q = 1, p = {}) {
     M.add('shelterFrame', rbox(0.18, 2.05, 1.32, 0.02, x, 1.12, 0.0, seg(q, 2, 1)));
     M.add('shelterFrame', rbox(0.2, 0.12, 1.34, 0.02, x, 0.1, 0.0));
     for (const sgn of [1, -1]) {
-      // each face's normal points out of the case on its own side
+      // each face's normal points out of the case on its own side (it used to follow `ad` too, so a case at the west
       const g = plane(1.2, 1.83);
       g.rotateY(sgn * Math.PI / 2);
       g.translate(x + sgn * 0.0915, 1.12, 0);
@@ -278,6 +277,7 @@ export function subway(q = 1, p = {}) {
   rail(W / 2, -L / 2, W / 2, L / 2);
   rail(-W / 2, -L / 2, W / 2, -L / 2);
   // the newel posts, capped, and the globes on the two front ones
+  // the newels; a double-sided digital display stands on the railing at the closed end where the station has one)
   const gh = 2.42;
   for (const [x, z, globe] of [[-W / 2, L / 2, 1], [W / 2, L / 2, 1], [-W / 2, -L / 2, 0], [W / 2, -L / 2, 0]]) {
     M.add('subGreen', rbox(0.11, hr + 0.06, 0.11, 0.02, x, (hr + 0.06) / 2, z, seg(q, 2, 1)));
@@ -313,6 +313,8 @@ export function subway(q = 1, p = {}) {
 // a dark steel frame on a granite curb, glass walls, a flat roof with a shallow overhang, stainless doors on the open end
 // (+z, as the stair head's), the station plate over them and a globe at the door. W 2.3 across, L 2.6 along, 3.0 high.
 export function subElev(q = 1, p = {}) {
+  // shaft's dark mesh seen through them, a stainless band at the top, a canopy of glass louvres on steel brackets over the
+  // doors, the station's sign on the side facing the corner; no globe on it)
   const M = new Model();
   // (ST38, STATIONS2: the A C B D elevator at St Nicholas Avenue stands in a green frame: p.frame 'green')
   const W = 2.3, L = 2.6, H = 4.4, s = seg(q, 2, 1), fr = p.frame === 'green' ? 'subGreen' : 'stainless';
@@ -380,7 +382,6 @@ export function shed(q = 1, p = {}) {
     const x = x0 + i * bl;
     M.add('scaffold', rod([x, Hd - 0.12, zw], [x, Hd - 0.12, zk], r, s));
   }
-  // diagonal bracing on every third bay; none in an open bay
   for (let i = 0; i < bays; i += (p.xb || 3)) {
     if (open(i)) continue;
     const xa = x0 + i * bl, xb = xa + bl;
@@ -392,7 +393,6 @@ export function shed(q = 1, p = {}) {
   deck.rotateX(0.035).translate(0, 0, 0);
   M.add('shedDeck', deck);
   if (p.rail) {
-    // an open guard rail on the deck instead of the boarded fascia: a slim edge board, painted posts at
     // every bay, a top and a mid rail
     M.add('shedFascia', rbox(len + 0.34, 0.3, 0.04, 0.008, 0, Hd + 0.15, zk + 0.36, 1));
     for (const xr of [-len / 2 - 0.15, len / 2 + 0.15]) M.add('shedFascia', rbox(0.04, 0.3, dep + 0.44, 0.008, xr, Hd + 0.15, 0.08, 1));
@@ -451,7 +451,6 @@ export function mailbox(q = 1) {
 
 // ---------------------------------------------------------------- FDNY street alarm box on a pole
 export function callBox(q = 1) {
-  // the FDNY alarm post: a red cabinet on a tapered pedestal over a plinth, a hooded top and the finial,
   // the street's tags on its face
   const M = new Model();
   M.add('redPaint', rbox(0.36, 0.1, 0.36, 0.015, 0, 0.05, 0, seg(q, 2, 1)));
@@ -470,7 +469,6 @@ export function bollard(q = 1, p = {}) {
   const M = new Model();
   const c = p.concrete ? 'concrete' : 'black', r = p.concrete ? 0.15 : 0.085, H = p.h || 0.92;
   if (p.cap) {
-    // the 125th Street kerb bollard: a black steel pipe with a bolted base ring and a cast cap, its
     // dome and rim worn to bare metal
     M.add(c, lathe([[0.001, 0], [r + 0.03, 0], [r + 0.03, 0.025], [r + 0.012, 0.04], [r, 0.06], [r, H - 0.09]], seg(q, 18, 8)));
     M.add('silverPaint', lathe([[r, H - 0.09], [r + 0.012, H - 0.085], [r + 0.012, H - 0.05], [r - 0.004, H - 0.04], [r - 0.02, H - 0.012], [r - 0.05, H + 0.004], [0.001, H + 0.012]], seg(q, 18, 8)));
@@ -663,6 +661,7 @@ export function pitBarrier(q = 1, p = {}) {
     g.rotateY(ang); g.translate(x0, 0.58, z0);
     M.add('face:mesh', g);
   };
+  // p.mesh 'front' = 0.65 of the street face from its west end and that end, 'end' = the west end only)
   if (p.mesh !== 'end') sheet(L * 0.65, -L * 0.175, D / 2 + 0.1, 0);
   sheet(D + 0.1, -L / 2 - 0.1, 0, -Math.PI / 2);
   return M;

@@ -1,20 +1,16 @@
 // AR34 b5 (HPT): Gantry Plaza State Park's ground south of the gantries' slip, between the curved walkway and the LIC Greenway
 // (Center Boulevard's wide west walk). The compiled city drew it as bare terrain (tile 1_8, 2_8: no section between the greenway's
-// sidewalk and the river;
 // (2022-02, h22 / h297) show planted beds of grasses and shrubs, lawns, the park's paths and its Central Park lamps.
 // Laid as the tile's own sections before anything samples the ground (hptSign.js apply), so the walkers, the furniture and the
 // camera stand on them:
-// * lawns and beds: OpenStreetMap landuse=grass / natural=scrub / natural=wetland ways (ODbL, (c) OpenStreetMap contributors;
-// Overpass 2026-10-02), the beds as grassU;
-// * the rest of the land between the greenway and the river as planted beds (grassU): 2 m cells where the shore-applied
-// terrain is the park's level (>= 3.0) at all four corners (so no bed reaches the river's slope), behind the wall where it
-// * the park's paths: OSM highway=footway ways 1213322046, 1210162928, 696508285, 1210162927 at 1.25 m half width (NOT measured);
-// and built (buildSouth): Central Park lamps along the inner path;
+//   * lawns and beds: OpenStreetMap landuse=grass / natural=scrub / natural=wetland ways (ODbL, (c) OpenStreetMap contributors;
+//     Overpass 2026-10-02), the beds as grassU;
+//   * the rest of the land between the greenway and the river as planted beds (grassU): 2 m cells where the shore-applied
+//     terrain is the park's level (>= 3.0) at all four corners (so no bed reaches the river's slope), behind the wall where it
+//   * the park's paths: OSM highway=footway ways 1213322046, 1210162928, 696508285, 1210162927 at 1.25 m half width (NOT measured);
 // the greenway's west wall: split-face grey-pink granite in two courses under a flamed coping, 0.86 m over the walk, 10 m north-west
 // ar33-hpt.md batch 5): the coping's top lies (lens - top) = 0.17 x its distance off the line in both (h297 at both frame edges:
 // 0.166 and 0.177; h22 at the left edge: 0.171), so with the 2023-24 rig's lens 2.76 m over the walk and the wall 0.85 m tall
-// it stands 10-11 m off; the walk between is laid as sidewalk.
-// Its ends are NOT measured.
 // `?hpso=0` leaves the compiled ground.
 import * as THREE from 'three';
 import { Builder } from './hptSignSteel.js';
@@ -135,9 +131,8 @@ export function wallGeo(y) {
   return { blocks, core, cope, top };
 }
 
-// the rip-rap: granite rocks over the shore's slope south of the walkway.
+// 2022-02 h214: a bank of grey rocks 0.3-1 m from the park's edge down into the water, green weed on those at the water line).
 // Rocks stand where the shore-applied terrain is between the water (-0.6) and the park's level (3.0) inside the box; their
-// sizes and spacing are NOT measured. A rock: a jittered, flattened icosahedron, half sunk.
 const RIP = { x0: 935, x1: 1012, z0: 4311, z1: 4352, step: 0.45, weedY: 0.95 };
 function rockInto(B, x, y, z, r, seed) {
   const g = new THREE.IcosahedronGeometry(1, 0), P = g.attributes.position;   // 20 faces: angular quarry stone (b5_d: detail 1 read as round cobbles)
@@ -171,7 +166,6 @@ export function riprapGeo(sampleT) {
   return { dry, weed, n };
 }
 
-// the lamps along the inner path, the wall and the rip-rap; the rip-rap's
 // stones cast no shadow (2,700 small parts)
 export function buildSouth(group, ctx, y) {
   if (!SOUTH) return 0;

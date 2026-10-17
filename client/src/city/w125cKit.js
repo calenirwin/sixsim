@@ -508,7 +508,7 @@ export function addPieces(group, pieces, name) {
 }
 
 // ================================================================ AR33: the Apollo rebuilt to the measured front
-// Called by fk/custom/bid2.js apollo with the facade kit's frame: u from the compiled
+// ~0.1 m on the plane features). Called by fk/custom/bid2.js apollo() with the facade kit's frame: u from the compiled
 // front's west end, y over the sidewalk, w out of the wall. The AR32 front above (apolloParts, 20 m tall) stays for the
 // ?fk=0 fallback (city/w125c.js).
 export const AP33 = {
@@ -526,7 +526,6 @@ export const AP33 = {
   frame: { u0: 1.8, u1: 5.0, w0: -5.2, w1: -2.0, y1: 20.2 },   // AR34: its top under the blade's (blade_1415)
   lobbyD: 14.0, audH: 20.05,
 };
-// ---------------------------------------------------------------- AR33: the marquee's LED boards
 // A full-colour LED wall as the camera car saw it: a violet-blue field of random coloured diodes, the message in near-black
 // letters (z1375: THANK YOU / THE HOWARD GILMAN FOUNDATION / PROUD SPONSOR OF THE 2023-2024 SEASON on the front, z1395: RESPECT
 // BLACK WOMEN on the east end, the west end a darker board), a faint 4 px diode grid over everything.
@@ -543,10 +542,11 @@ function paintLed33(c) {
     let s = seed;
     const rnd = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296);
     // AR34 batch 3 session 2 (QA Q13: the board read as purple TV static at 1:1): the screen as the eye sees it, not the
-    // lighter at the top, the LED modules (32 diodes, 128 px) a shade
+    // field solved so the mean through the grid holds), lighter at the top, the LED modules (32 diodes, 128 px) a shade
     // apart, the message in near-black, the diode pitch a faint regular grid
     const px = 4;
     const gr = c.createLinearGradient(0, y, 0, y + h);
+    // a checker at 1:1: greyer and teal, the modules at 0.5-1.5 %)
     gr.addColorStop(0, dark ? '#2a2e40' : '#6c727a'); gr.addColorStop(1, dark ? '#212433' : '#60666c');
     c.fillStyle = gr; c.fillRect(x, y, w, h);
     for (let my = 0; my < h; my += 32 * px) for (let mx = 0; mx < w; mx += 32 * px) {
@@ -559,6 +559,7 @@ function paintLed33(c) {
     for (let gx = px - 1; gx < w; gx += px) c.fillRect(x + gx, y, 1, h);
     for (let gy = px - 1; gy < h; gy += px) c.fillRect(x, y + gy, w, 1);
   };
+  // half the board, the two small lines a third of its height)
   led(LED33.front, [['THANK YOU', 0.22, 0.13, COND, 0.2], ['THE HOWARD GILMAN FOUNDATION', 0.5, 0.3, COND, 0.62], ['PROUD SPONSOR OF THE 2023-2024 SEASON', 0.8, 0.15, COND, 0.58]], 11, false);
   led(LED33.east, [['RESPECT BLACK WOMEN', 0.5, 0.4, COND, 0.9]], 23, false);
   led(LED33.west, [['125TH STREET', 0.5, 0.3, COND]], 37, true);
@@ -667,6 +668,7 @@ function roundBox(u0, u1, d, r, y0, y1, seg = 5) {
   return g;
 }
 // ================================================================ AR34: the blade and the crests, drawn from scratch
+// client/shots/ar34/bid2/refs): the blade is a painted sheet-metal cabinet, an ochre field with a white street edge,
 // the six letters stacked down it as open channel letters (red returns ~0.15 m deep over a red back) with three to four
 // parallel neon tubes nested in every stroke; the crests on the marquee carry the same letters in a row on a cream
 // housing. The letters are a geometric face (Jost, the Futura cut; Montserrat until it has loaded) painted on a canvas,
@@ -771,7 +773,6 @@ function putChan(L, M, lists) {
 }
 export function buildApollo33(group, frame) {
   const K = frame.kit, A = AP33, Mk = mats33();
-  // AR34: a warmer, greyer terracotta with more grime
   // (AR34 wave 2 b3: N253w_sq / apollo_win_1395 at full size: the sunlit piers read (207-212, 204-205, 189-200), lum 205,
   // the twin's (174-199, 162-185, 141-160), lum 164-186 with '#d6cbb2': too yellow and dark; the set's cream base is in
   // the render, so the tint is a near-neutral light grey)
@@ -779,7 +780,7 @@ export function buildApollo33(group, frame) {
   const TCd = K.mat('terracotta_cream', { tint: '#cbc7bc', dirt: 0.55 });
   const BRZ = K.mat('alu_bronze', { tint: '#3d3125' });
   const SS = K.mat('stainless', {});
-  const BLK = K.mat('steel_black', { tint: '#27305a' });   // AR34: the rooftop lattice and the arms are navy-painted steel
+  const BLK = K.mat('steel_black', { tint: '#27305a' });
   const box = (m, u0, u1, y0, y1, w0, w1, o) => K.box(m, u0, u1, y0, y1, w0, w1, o);
   const near = { near: true };
   // ------------------------------------------------------------ the front wall (w = 0) with its openings
@@ -832,16 +833,13 @@ export function buildApollo33(group, frame) {
     box(TC, c - A.capW / 2, c + A.capW / 2, A.cap[1] - 0.14, A.cap[1], 0, 0.24);
   }
   const round = [], rods = [], bal = [];
-  // the Ionic volutes: a disc and its rolled rim at each top corner of the capital
   for (const c of A.pil) for (const s of [-1, 1]) {
     round.push([new THREE.CylinderGeometry(0.15, 0.15, 0.2, 14).rotateX(Math.PI / 2), mtx(c + s * 0.36, A.cap[1] - 0.2, 0.15)]);
     round.push([new THREE.TorusGeometry(0.09, 0.025, 6, 16), mtx(c + s * 0.36, A.cap[1] - 0.2, 0.26)]);
   }
   // ------------------------------------------------------------ the windows: bronze frames, a mullion, a transom light
-  // AR34: the frames are a light sage-grey painted metal, not bronze
-  // AR34 wave 2 b3: the kit's
   // panes read; the opaque glass_tower_grey took its default near-black body (the window passes no body colour)
-  const T2 = { kind: 'fixed', mullions: 0, transom: A.t2, frame: { mat: 'plain', tint: '#a9b0a5', rough: 0.5 }, frameW: 0.08, reveal: 0.35, lintel: null, sillStone: null, sheer: 1.0, sheerTint: '#66767c', blinds: 0.35, lit: 0.45 };   // b3b: '#d3d6d5' in 0.8 read lum 182 / 102 (no sheer), b3c '#9eaaae' 166-170, b3d '#7f8f95' 157-161 135-141
+  const T2 = { kind: 'fixed', mullions: 0, transom: A.t2, frame: { mat: 'plain', tint: '#a9b0a5', rough: 0.5 }, frameW: 0.08, reveal: 0.35, lintel: null, sillStone: null, sheer: 1.0, sheerTint: '#66767c', blinds: 0.35, lit: 0.45 };
   const T3 = { ...T2, transom: A.t3 };
   for (const [b0, b1] of A.bays) {
     K.window(T2, b0 + 0.2, b1 - 0.2, A.w2[0], A.w2[1], { wallMat: TC });
@@ -853,7 +851,6 @@ export function buildApollo33(group, frame) {
     K.poly(TCd, [[mid - 0.22, A.w2[1] + 0.45, 0.056], [mid, A.w2[1] + 0.3, 0.056], [mid + 0.22, A.w2[1] + 0.45, 0.056]], [0, 0, 1]);
     box(TC, b0 - 0.02, b1 + 0.02, A.w3[0] - 0.2, A.w3[0], 0, 0.09);                             // the third storey's sill band
     box(TC, b0, b1, A.w3[1], A.arch[0], 0, 0.03);
-    // AR34: the Greek-key fret runs in each bay over the third-storey window, level with the
     // capitals (it was drawn in the frieze over the architrave, which is plain)
     {
       const y0 = A.w3[1] + 0.07, y1 = A.arch[0] - 0.05, hh = y1 - y0, t = 0.03, P = 0.3;
@@ -889,7 +886,6 @@ export function buildApollo33(group, frame) {
     bal.push([new THREE.CylinderGeometry(0.045, 0.06, hB * 0.5, 8), mtx(u, yc + hB * 0.25, 0.3)], [new THREE.CylinderGeometry(0.06, 0.045, hB * 0.5, 8), mtx(u, yc - hB * 0.25, 0.3)]);
   }
   box(TC, A.u0, A.u1, A.roof, A.bal[1], -0.35, 0.06);
-  // ------------------------------------------------------------ the marquee
   // brushed stainless over a steel core: a soffit rim, a ribbed valance, a lower cap with two neon lines, the recessed LED
   // screens between rounded corner posts, an upper cap with two neon lines, a top slab; an APOLLO crest on each END
   const Q = A.mq, place = frame.matrix(0, 0, 0);
@@ -949,7 +945,6 @@ export function buildApollo33(group, frame) {
       const m = new THREE.Mesh(g, mat); m.name = `bid2:apollo:${name}:${k}`; m.castShadow = shadow; m.receiveShadow = true; group.add(m);
     }
   };
-  // the crests: cream housings 0.92 m tall on the marquee's top at both ends, their
   // street ends rounded, APOLLO in open red channels with neon on the outer faces (the west crest looks west, the east east)
   {
     const M4 = ap34Mats(), Hc = 0.86, t = 0.3, w0 = 0.95, w1 = Q.d - 0.12, R = 0.4, y = Q.y1 + 0.03;
@@ -977,7 +972,6 @@ export function buildApollo33(group, frame) {
     rods.push([new THREE.CylinderGeometry(r, r, L, 5), new THREE.Matrix4().compose(new THREE.Vector3((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2), new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()), new THREE.Vector3(1, 1, 1))]); };
   {
     const B = A.blade, z0 = B.off, z1 = B.off + B.w, zc = (z0 + z1) / 2, yc = (B.y0 + B.y1) / 2, H = B.y1 - B.y0;
-    // AR34: a painted sheet-metal cabinet, the ochre field on both faces, the
     // white street edge with a white strip down each face beside it, white top and foot trims; the letters 1.4 m caps every
     // 1.65 m from 0.5 m under the top (the A 18.6-20.0 m over the sidewalk off blade_1415), open red channels 0.14 m deep
     // with three nested tubes
@@ -1057,7 +1051,6 @@ export function buildApollo33(group, frame) {
       const m2 = new THREE.Mesh(g2, BR); m2.name = 'bid2:apollo:auditorium'; m2.castShadow = true; m2.receiveShadow = true; group.add(m2);
       tris += g2.getAttribute('position').count / 3;
     }
-    // AR34: the roofs a dark grey membrane, not the walls' brick
     const MEM = K.mat('roof_membrane', { tint: '#4b4b4d', dirt: 0.5 });
     for (const [poly, y] of [[[P0, P1, back(P1), back(P0)], y0 + A.roof + 0.03], [out, y0 + A.audH + 0.03]]) {
       if (poly.length < 3) continue;

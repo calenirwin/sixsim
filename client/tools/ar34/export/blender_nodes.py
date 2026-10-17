@@ -1965,6 +1965,139 @@ def build_sign(mat, P, root_dir):
 # ----------------------------------------------------------------------------------------------------------------------
 # the hook
 # ----------------------------------------------------------------------------------------------------------------------
+# TSQADS (2026-10-08): the TA31 boards (usd_mat `board`; billboards.js ensureTA, M_bx_board in Unreal) in Cycles: one ad
+# per screen from the atlas by the per-vertex playlist (aAd: class base, count, phase, duration, a ticker by a negative
+# duration; aSize: an LED wall's metres, a printed board's width negative) and the web's sim time (the camera layer's
+# bx:simT, keyed per frame on a value node), the next ad wiping in over the last 0.6 s with a bright leading edge, every
+# tap inside its cell (Cycles samples without mips: the cells' 2 px insets and a texel's margin in a ticker's row keep the
+# bilinear tap inside), the LED wall's off-axis falloff, a printed board floodlit from its foot at night, the night's
+# pale-field hold, the web's gains and the brightest channel's compression above 1.1; an emitter, so it lights its
+# surroundings as the web's screen lights do. The cell rects go to the shader as a float image, one texel per cell.
+_SIMT = {}
+
+
+def board_simt(root_dir, root):
+    """frame -> the web's sim time, off the camera layer's bx:simT time samples (Sdf, no stage)."""
+    cam = str((root or {}).get('camera') or '')
+    key = (root_dir, cam)
+    if key in _SIMT:
+        return _SIMT[key]
+    from pxr import Sdf
+    out = {}
+    if cam:
+        ap_ = Sdf.Path(cam + '.bx:simT')
+        for fn in sorted(os.listdir(root_dir)):
+            if not (fn.startswith('cam_') and fn.endswith('.usda')):
+                continue
+            lay = Sdf.Layer.FindOrOpen(os.path.join(root_dir, fn))
+            if lay and lay.GetAttributeAtPath(ap_):
+                for t in lay.ListTimeSamplesForPath(ap_):
+                    out[int(round(t))] = float(lay.QueryTimeSample(ap_, t))
+    _SIMT[key] = out
+    return out
+
+
+def build_board(mat, P, root_dir, simt):
+    tex = (P.get('tex') or {}).get('map')
+    rects = P.get('rects') or []
+    if not tex or not rects or not simt:
+        return False
+    nt = mat.node_tree
+    nt.nodes.clear()
+    b = B(nt)
+    nc = len(rects)
+    atl = [float(v) for v in (P.get('atlas') or [4096, 2048])[:2]]
+    night = float(P.get('night') or 0.0)
+    tab = bpy.data.images.get('bx_board_tab_%d' % nc)
+    if tab is None:
+        tab = bpy.data.images.new('bx_board_tab_%d' % nc, nc, 1, alpha=True, float_buffer=True)
+        tab.colorspace_settings.name = 'Non-Color'
+        tab.alpha_mode = 'CHANNEL_PACKED'
+        try:
+            tab.use_half_precision = False
+        except Exception:
+            pass
+        tab.pixels.foreach_set([float(v) for r in rects for v in r[:4]])
+        tab.update()   # (kept in memory: pack() would regenerate a generated image and zero it)
+    # the sim time, keyed on every frame of the take (linear between)
+    tv = b.node('ShaderNodeValue')
+    for f in sorted(simt):
+        tv.outputs[0].default_value = simt[f]
+        tv.outputs[0].keyframe_insert('default_value', frame=f)
+    try:
+        for fc in nt.animation_data.action.fcurves:
+            for kp in fc.keyframe_points:
+                kp.interpolation = 'LINEAR'
+            fc.extrapolation = 'LINEAR'
+    except Exception:
+        pass
+    T = b.sock(tv.outputs[0], False)
+    u, v, _ = b.split(b.uv('st'))
+    ad = b.attr('aAd')
+    base0, cnt0, ph = b.split(b.sock(ad.outputs['Color']))
+    du = b.sock(ad.outputs['Alpha'], False)
+    sx, sy, _ = b.split(b.sock(b.attr('aSize').outputs['Vector']))
+    base, cnt = b.floor(base0 + 0.5), b.floor(cnt0 + 0.5)
+    img = os.path.join(root_dir, tex) if not os.path.isabs(tex) else tex
+
+    def modn(k):
+        return k - cnt * b.floor(k / b.max(cnt, 1.0))
+
+    def rect(slot):   # the cell (x, y, w, h in the atlas' uv from the bottom) off the table, one texel per cell
+        nd = b.node('ShaderNodeTexImage', interpolation='Closest', extension='EXTEND')
+        nd.image = tab
+        b.link(nd.inputs['Vector'], b.v3((slot + 0.5) * (1.0 / nc), 0.5, 0.0))
+        rx, ry, rw = b.split(b.sock(nd.outputs['Color']))
+        return rx, ry, rw, b.sock(nd.outputs['Alpha'], False)
+
+    def fetch(r, lx, ly):
+        return b.image(img, b.v3(r[0] + lx * r[2], r[1] + ly * r[3], 0.0), srgb=True)[0]
+    # a cycling board: its cell, and the next one wiping in over the cycle's last 0.6 s
+    t = (T + ph) / du
+    k = b.floor(t)
+    f = t - k
+    c0 = fetch(rect(base + modn(k)), u, v)
+    c1 = fetch(rect(base + modn(k + 1.0)), u, v)
+    tw = b.min(0.6 / du, 0.25)
+    p = (f - (1.0 - tw)) / tw
+    won = b.gt(f, 1.0 - tw) * b.gt(cnt, 1.5)
+    e = b.smoothstep(p - 0.015, p + 0.015, u)
+    edge = (1.0 - b.smoothstep(0.0, 0.02, b.abs(u - p))) * b.step(0.02, p) * b.step(p, 0.98) * 0.35
+    cyc = b.mix(c0, b.mix(c1, c0, e) + b.vec(edge), won)
+    # a ticker: the run folded into the cell's two rows, unfolded, repeated along the strip and scrolled right to left
+    rt = rect(base + modn(b.floor(ph + 0.5)))
+    s = b.fract(u + T * (0.0 - du)) * 2.0
+    row = b.floor(s)
+    r0 = (1.0 - row) * 0.5
+    mg = 0.5 / b.max(rt[3] * atl[1], 1.0)   # (half a texel of the cell: the bilinear tap stays in its row)
+    ly = b.max(b.min(r0 + v * 0.5, r0 + 0.5 - mg), r0 + mg)
+    tic = fetch(rt, b.fract(s), ly)
+    texel = b.mix(cyc, tic, b.lt(du, 0.0))
+    texel = b.mix(b.c((0.018, 0.022, 0.03)), texel, b.gt(cnt, 0.5))
+    # an LED wall dims off its axis; a printed board is floodlit from its foot at night
+    g = b.geo()
+    ca = b.abs(b.dot(b.sock(g.outputs['Normal']), b.sock(g.outputs['Incoming'])))
+    led = b.gt(sx, 0.0)
+    kLed = b.mix(0.45, 1.0, b.smoothstep(0.05, 0.55, ca))
+    kPrint = 1.0 + (0.45 + 0.7 * (1.0 - v) * (1.0 - v) + 0.25 - 1.0) * night
+    texel = texel * b.mix(kPrint, kLed, led)
+    L = b.lum(texel)
+    col = texel * (1.0 - night * 0.5 * b.smoothstep(0.3, 0.9, L))
+    col = col * b.mix(1.25 + 0.45 * night, 1.45 + 0.45 * night, led)
+    cr, cg, cb = b.split(col)
+    kmx = b.max(cr, b.max(cg, cb))
+    kex = b.max(kmx - 1.1, 0.0)
+    col = col * b.mix(1.0, b.min(1.0, (kex / (kex * 1.5 + 1.0) + 1.1) / b.max(kmx, 1e-4)), night)
+    col = col * float(os.environ.get('BXCYC_BOARDK') or 1.0)
+    em = b.node('ShaderNodeEmission')
+    b.link(em.inputs['Color'], b.max(col, 0.0))
+    em.inputs['Strength'].default_value = 1.0
+    out = b.node('ShaderNodeOutputMaterial', target='ALL')
+    nt.links.new(em.outputs[0], out.inputs['Surface'])
+    return True
+# TSQADS end
+
+
 def read_tags(usd_path):
     """material name -> its `bx` parameters, read off looks.usdc next to the root (no stage composition)."""
     from pxr import Sdf
@@ -2039,6 +2172,21 @@ def apply(sc, usd_path, root=None, opt=None):
         if ok:
             mat['bx'] = kind
             n[kind] = n.get(kind, 0) + 1
+    # TSQADS: the TA31 boards (build_board), with the web's sim time per frame off the camera layer
+    for mat in list(bpy.data.materials):
+        P = tags.get(mat.name.split('.')[0]) if mat.use_nodes and not mat.get('bx') else None
+        if not P or P.get('kind') != 'board' or (only and 'board' not in only):
+            continue
+        try:
+            ok = build_board(mat, P, root_dir, board_simt(root_dir, root))
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            fail['board'] = fail.get('board', 0) + 1
+            ok = False
+        if ok:
+            mat['bx'] = 'board'
+            n['board'] = n.get('board', 0) + 1
     # the ground casts no shadows (its stacked layers; blender_render.py's rule for the per-kind ground materials)
     ng = 0
     for ob in sc.objects:

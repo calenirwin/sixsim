@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "fetch": "node tools/pipeline/fetch.mjs",
-    "compile": "node --max-old-space-size=6144 tools/pipeline/compile.mjs",
+    "compile": "node --max-old-space-size=24576 tools/pipeline/compile.mjs",
     "shot": "node tools/shot.mjs"
   },
   "keywords": [],

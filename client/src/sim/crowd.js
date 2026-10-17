@@ -1667,3 +1667,8 @@ export async function createCrowd(scene, engine, cap = 700) {
   if (!assets || !assets.variants.length) return null;
   return new Crowd(scene, engine, assets, cap);
 }
+// ==== R1D (CORE, docs/notes/arch-r1-d.md): the tables and the clip fix tools/core/tracks_to_peds.mjs needs to give the
+// headless core's walkers this crowd's bodies, clips and tints as update() does (the per-walker rules it calls on the
+// prototype: setAnim, _clipFor, _heightScale, _propMask)
+export const R1D_CROWD = { fixLoop, FADE, LODD, TARGET_H, hash, BOTTOMS, SHOES };
+// ==== R1D end

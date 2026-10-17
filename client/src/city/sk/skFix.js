@@ -1,14 +1,11 @@
 // AR34 sk: compiled ground details that read wrong in the pairs, corrected in the tile's sections before anything samples or
 // draws them (streetscape.js apply; `?skfix=0` keeps them as compiled). Pure (no three, no DOM).
-// 1. Warning pads on the roadway. The compiled `warn` / `warnIron` pads are flat rectangles at the walk's height (y 3.53-3.54);
-// ten of the 111 within 30 m of the 125th Street line lie over asphalt (node probe of the tiles 2026-10-02): the four ends
-// of St Clair Place's skewed crossing inside 125th, one at 12th Avenue, five under the Broadway viaduct where the twin has
-// no median island. They float 0.155 m over the road.
-// 2. St Clair Place: a skewed crossing (bars 4.58 x 0.61 m at 27 deg to 125th) and two skewed stop lines are laid over
-// 125th's own zebras at stations 222-243, which drew a hatch of crossed bars (QA Q45); the 2023-08
-// shows plain zebras across 125th there. The skewed pieces inside 125th's carriageway go.
-// 4. The Riverside Drive viaduct's tower and column feet at 12th Avenue on the walk, the crossings ending at their kerbs, and
-// `?skfeet=0` alone keeps them as compiled).
+//  1. Warning pads on the roadway. The compiled `warn` / `warnIron` pads are flat rectangles at the walk's height (y 3.53-3.54);
+//     ten of the 111 within 30 m of the 125th Street line lie over asphalt (node probe of the tiles 2026-10-02): the four ends
+//     of St Clair Place's skewed crossing inside 125th, one at 12th Avenue, five under the Broadway viaduct where the twin has
+//  2. St Clair Place: a skewed crossing (bars 4.58 x 0.61 m at 27 deg to 125th) and two skewed stop lines are laid over
+//     shows plain zebras across 125th there. The skewed pieces inside 125th's carriageway go.
+//  4. The Riverside Drive viaduct's tower and column feet at 12th Avenue on the walk, the crossings ending at their kerbs, and
 import { Field } from './skField.js';
 import { corridorSB, LINE } from './skGeom.js';
 import { inZone } from './skBuild.js';
@@ -20,9 +17,9 @@ export const SK_FIX_ON = !(Q && (Q.get('sk') === '0' || Q.get('skfix') === '0'))
 // out (m; the lines that run through a window are long strips, a legend's glyphs short triangles)]
 const DROP_LEGENDS = [
   // the westbound travel lane east of St Nicholas: an ONLY, an arrow and a letter group at s 1184-1199 (compiled); the
-  [1183.0, 1200.0, -1, 0.1, 3.05, ''],
+  [1183.0, 1200.0, -1, 0.1, 3.05, 'sn26_n 2026-08, b1_mid 2023-08'],
   // QA Q28: the eastbound BUS ONLY at s 1444.3-1450.8 (compiled |b| 5.55-8.5 in the kerbside red, moved 2.00 m in by skBus);
-  // The red's inner line (|b| 5.30-5.40) and the parking line (6.70-6.80) cross the window as
+  // x 900-1320, y 690-810). The red's inner line (|b| 5.30-5.40) and the parking line (6.70-6.80) cross the window as
   // 11.6 m strips: kept (edges over 3 m)
   [1443.9, 1451.2, 1, 5.45, 8.6, '', 3.0],
 ];
