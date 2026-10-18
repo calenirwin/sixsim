@@ -102,6 +102,8 @@ nav:
       - Renderer architecture: architecture.md
       - Rendering in Blender Cycles: blender-cycles.md
       - Rendering in Unreal Engine 5: unreal.md
+      - Unreal Engine 5 client: ue-client.md
+      - Building the Unreal Engine 5 client: ue-client-build.md
       - Interactive client: client.md
       - Building from source: building.md
       - Development and quality checks: development.md

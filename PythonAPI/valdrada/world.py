@@ -62,7 +62,9 @@ class ActorBlueprint:
         1 coat, 2 hoodie, 4 backpack, 8 bag, 16 phone, 32 umbrella). Cameras: fov (horizontal degrees),
         image_size_x / image_size_y (label cameras; RGB always renders at the server resolution), sensor_tick
         (seconds between frames; 0 = every tick), amodal (how many of the largest objects get an amodal box and an
-        occlusion measurement: 0 by default, ~5 ms each), min_pixels (smallest visible area that gets a label)."""
+        occlusion measurement: 0 by default, ~5 ms each), min_pixels (smallest visible area that gets a label). RGB
+        cameras on a renderer client: exposure_mode ('auto', metered per frame, or 'manual', the time of day's fixed
+        exposure) and exposure_compensation (EV)."""
         self._set[name] = value
 
     @property

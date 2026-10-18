@@ -13,6 +13,7 @@
 import * as THREE from 'three';
 import { createWorld, NIGHT_OF } from '../sim/world.mjs';
 import { PUBLIC } from '../env/shim.mjs';
+import { createRenderHub } from './render.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -78,11 +79,16 @@ export async function createApiSession({ server, seed = 1, time = 'day', start, 
   // ---------------------------------------------------------------- the page bridge.js expects
   globalThis.window = globalThis.window || globalThis;
   for (const k of ['addEventListener', 'removeEventListener']) if (typeof window[k] !== 'function') window[k] = () => {};
-  window.__PERC = { classes: semanticClasses(), capture: () => { throw Object.assign(new Error('captures need a renderer client'), { code: NEEDS_RENDERER }); } };
-  window.__RECSTAT = () => ({ idle: W.streamer.idle(), near: W.streamer.stats.near, macro: 0, dressQ: 0, dressActive: 0 });
+  const classes = semanticClasses();
+  // a renderer client (docs/specs/render-protocol.md) serves the sensors: bridge.js runSensors hands each group to
+  // __PERC.group while one is attached
+  let hub = null;
+  window.__PERC = { classes, capture: () => { throw Object.assign(new Error('captures need a renderer client'), { code: NEEDS_RENDERER }); },
+    get group() { return hub && hub.count ? hub.capture : null; } };
+  window.__RECSTAT = () => ({ idle: W.streamer.idle() && (!hub || hub.idle()), near: W.streamer.stats.near, macro: 0, dressQ: 0, dressActive: 0 });
   const fr = new THREE.Frustum(), pv = new THREE.Matrix4(), sph = new THREE.Sphere();
   const engine = {
-    camera: W.camera, fps: 0, taa: null, skipDraw: false, _grab: null, idleNap: null,
+    camera: W.camera, fps: 0, taa: null, skipDraw: false, _grab: null, idleNap: null, headless: true,
     renderer: {
       getDrawingBufferSize: (v) => v.set(RW, RH),
       getContext: () => ({ RENDERER: 0x1f01, getExtension: () => null, getParameter: () => 'none: the headless core (sensors need a renderer client)' }),
@@ -133,23 +139,27 @@ export async function createApiSession({ server, seed = 1, time = 'day', start, 
   };
   const { initApi } = await import('../../client/src/api/bridge.js');
   const hooks = initApi({ engine, streamer: W.streamer, traffic: W.traffic, peds: W.peds, signals: null, sky, weather, dresser: null, instancer: null, cam, spawnGuard: null });
-  W.hooks = { pre: hooks.preStep, post: hooks.postStep };
+  hub = createRenderHub({ server, W, sky, weather, classes, walkerVariants: (W.rig && W.rig.A ? W.rig.A.variants : []).map((v, i) => ({ index: i, body: v.body, id: v.id ?? null, age: v.age ?? null, build: v.build ?? null })),
+    apiVersion: readyInfo ? readyInfo.api_version : '0.1.0', geoOrigin: { lat: 40.7831, lon: -73.9712 }, publicDir: PUBLIC, log });
+  // after the sims and bridge.js postStep (the cameras follow their parents there): the renderers' state of this step
+  W.hooks = { pre: hooks.preStep, post: (dt) => { hooks.postStep(dt); hub.afterStep(dt); } };
   if (!readyInfo || !onReq) throw new Error('bridge.js did not start');
 
   // the requests: sensor captures need a renderer client; server.info says what serves it; the rest is bridge.js
   server.attach((cid, msg) => {
     const m = msg.method, p = msg.params || {};
-    if (m === 'sensor.listen') {
+    if (m.startsWith('render.')) return hub.handle(cid, msg);
+    if (m === 'sensor.listen' && !hub.count) {
       const a = window.__API.actors.get(p.id | 0);
       const what = a ? `${a.type_id} ${a.id}` : `sensor ${p.id}`;
       return server.send(cid, { id: msg.id, error: { code: NEEDS_RENDERER, message: `${what}: sensor data needs a renderer client; this server is the headless core (simulation, no pixels). See docs/specs/render-protocol.md` } });
     }
     if (m === 'server.info') {
-      return window.__API.call('server.info', p).then((r) => server.send(cid, { id: msg.id, result: { ...r, engine: 'valdrada-core', renderer: null, sensors: 'need a renderer client' } }),
+      return window.__API.call('server.info', p).then((r) => server.send(cid, { id: msg.id, result: { ...r, engine: 'valdrada-core', renderer: hub.count ? hub.info() : null, sensors: hub.count ? 'served by the renderer client' : 'need a renderer client' } }),
         (e) => server.send(cid, { id: msg.id, error: { code: e.code || 'internal', message: String(e.message || e) } }));
     }
     onReq({ cid, id: msg.id, method: m, params: p });
-  }, (cid) => onBye && onBye(cid));
+  }, (cid) => { if (hub.bye(cid)) return; if (onBye) onBye(cid); });
   server.setReady();
   log(`ready: bridge.js API ${readyInfo.api_version} on the headless core (seed ${seed}, ${time}, ${RW}x${RH}${idleFps ? `, idle frames at ${idleFps} fps` : ''})`);
   return { W, cam, engine, close() { clearInterval(pump); } };

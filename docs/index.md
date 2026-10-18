@@ -100,6 +100,11 @@ hosts. In a browser, as on the Hugging Face Space, it is an interactive explorer
 Electron application, it advances one fixed step per request and sends sensor data over TCP to the Python API
 ([wire protocol](api/protocol.md)).
 
+The Unreal Engine 5 client, ValdradaUE, runs the simulation in a headless core and renders it in a packaged Unreal
+Engine 5 application connected to that core: the renderer streams the city's 128 m cells round the cameras the core
+names and returns the camera images, and the Python API and the wire protocol are the same
+([The Unreal Engine 5 client](ue-client.md); [Building the Unreal Engine 5 client](ue-client-build.md)).
+
 ## Gallery
 
 <figure markdown="span">
@@ -116,7 +121,7 @@ Valdrada, the compiled city or imagery rendered with it, please cite Valdrada it
   author  = {Turkcan, Mehmet Kerem},
   title   = {{Valdrada}: a real-data, real-time digital twin of New York City},
   year    = {2026},
-  version = {0.4.0},
+  version = {0.5.0},
   url     = {https://github.com/mkturkcan/valdrada}
 }
 ```

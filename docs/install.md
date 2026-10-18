@@ -20,9 +20,9 @@ The Python package has no required dependencies and runs on any machine that can
 
 ## Windows
 
-**Release.** Download `Valdrada-0.4.0-win64.zip` and `Valdrada-0.4.0-win64-tiles.zip` from the
+**Release.** Download `Valdrada-0.5.0-win64.zip` and `Valdrada-0.5.0-win64-tiles.zip` from the
 [releases page](https://github.com/mkturkcan/valdrada/releases) and extract both into the same place: both hold the
-folder `Valdrada_0.4.0_win64`, and the second only its `Content/tiles/`. The folder contains:
+folder `Valdrada_0.5.0_win64`, and the second only its `Content/tiles/`. The folder contains:
 
 | Path | Contents |
 |---|---|
@@ -62,7 +62,7 @@ cd valdrada
 (cd server && npm install)
 ls server/node_modules/electron/dist/electron        # the runtime; if missing: (cd server && node node_modules/electron/install.js)
 pip install -U "huggingface_hub>=1.0"
-hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.4.0 --include "Content/*" --local-dir .
+hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.5.0 --include "Content/*" --local-dir .
 cd server
 env -u ELECTRON_RUN_AS_NODE npx electron . --content ../Content
 ```
@@ -165,6 +165,6 @@ node server/build.mjs --platform win32 --link --zip
 | `--zip` | also write `release/Valdrada-<version>-<platform>.zip` |
 | `--out DIR` | the output directory (default `release/`) |
 
-For 0.4.0 the folder held 5,528 files (5.3 GB) and one archive of it was 2,235,027,747 bytes, over the 2 GiB that
+For 0.5.0 the folder held 5,528 files (5.3 GB) and one archive of it was 2,235,032,879 bytes, over the 2 GiB that
 GitHub accepts for a release asset, so the release is published as two archives, the second holding `Content/tiles/`. To check a Windows build on Linux, serve its `Content/` with the
 Linux runtime, as in the headless section, and run an example against it.

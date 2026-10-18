@@ -74,7 +74,9 @@ float4 diffuseColor = float4(UV6.y, UV7.x, UV7.y, 1.0) * float4(Tint.rgb, 1.0);
         bool cornice = H.gmod(flags, 2.0) >= 1.0;
         bool blind = H.gmod(floor(flags / 2.0), 2.0) >= 1.0;
         if (blind && vAux2.x > 36.0 && vFUv.y > 26.0) blind = false;
-        bool isRoof = H.gmod(floor(flags / 4.0), 2.0) >= 1.0;
+        // (S125 v101: and any up-facing surface: a tile roof cap without the flag drew the wall code with collapsed facade uv,
+        // streaks across it, Broadway frame 907)
+        bool isRoof = H.gmod(floor(flags / 4.0), 2.0) >= 1.0 || normalize(NWS).z > 0.7;
         bool store = H.gmod(floor(flags / 8.0), 2.0) >= 1.0;
         bool mech = H.gmod(floor(flags / 16.0), 2.0) >= 1.0;
         bool crownF = H.gmod(floor(flags / 32.0), 2.0) >= 1.0;
@@ -629,7 +631,7 @@ float4 diffuseColor = float4(UV6.y, UV7.x, UV7.y, 1.0) * float4(Tint.rgb, 1.0);
               room *= lerp(0.72, 1.0, aoQy * aoQz);
             }
             float dayAmb = (1.0 - night) * (0.08 + 0.26 * id);
-            float roomGlow = lit_ * lerp(0.22, 1.0, night);
+            float roomGlow = lit_ * lerp(0.08, 1.0, night);   // (S125 v101: 0.22 by day lit random panes in the shade, a checkerboard)
             room *= (dayAmb + roomGlow * 1.6 + 0.02) * lerp(1.0, 0.45, q.z);
             room = lerp(room, room * lightCol, lit_ * lerp(0.25, 0.85, night));
             float cwid = pow(id2, 2.0) * 0.42;
@@ -689,7 +691,7 @@ float4 diffuseColor = float4(UV6.y, UV7.x, UV7.y, 1.0) * float4(Tint.rgb, 1.0);
               albedo *= lerp(((float3)(1.0)), lerp(float3(1.07, 1.0, 0.92), float3(0.92, 0.99, 1.09), tv), 0.4 * paneVis);
             }
             FAC_rough = 0.16 + pooled * 0.45 + dust * 0.2;
-            FAC_rough = lerp(FAC_rough, 0.72, smoothstep(0.05, 0.2, aaU));
+            FAC_rough = lerp(FAC_rough, 0.35, smoothstep(0.15, 0.45, aaU));   // (S125 v101: 0.72 from 0.05 made the far panes matte, a dark grid)
             FAC_emis += room * glassTint * roomGlow * 2.2 * (1.0 - grime * 0.6) * grazeVis;
             {
               float wyR = clamp(pv / Hp, 0.0, 1.0);

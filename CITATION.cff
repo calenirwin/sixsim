@@ -5,7 +5,7 @@ message: >-
   cite it as below. Valdrada is developed and
   maintained by Mehmet Kerem Turkcan.
 type: software
-version: "0.4.0"
+version: "0.5.0"
 abstract: >-
   A city-scale digital twin of the five boroughs of New York City compiled from
   public municipal records. 1,085,937 buildings, joined to tax-lot records and
@@ -17,7 +17,8 @@ abstract: >-
   tiles, which a WebGL2 client streams within a 1 km detail radius and a 13 km
   far-field radius. A CARLA-style server and Python API provide synchronous
   stepping, vehicle and pedestrian control, and RGB, semantic, instance and depth
-  sensors with per-object visible and amodal boxes.
+  sensors with per-object visible and amodal boxes. A packaged Unreal Engine 5
+  client renders the same simulation, run by a headless core, through the same API.
 authors:
   - family-names: Turkcan
     given-names: Mehmet Kerem

@@ -96,7 +96,8 @@ export function initApi(ctx) {
     const [W, H] = drawSize();
     const cams = Object.keys(SENSORS).map((id) => ({
       id, tags: ['sensor', 'camera'],
-      attributes: { image_size_x: W, image_size_y: H, fov: 90, sensor_tick: 0, amodal: 0, min_pixels: 30 },
+      attributes: { image_size_x: W, image_size_y: H, fov: 90, sensor_tick: 0, amodal: 0, min_pixels: 30,
+        ...(id === 'sensor.camera.rgb' ? { exposure_mode: 'auto', exposure_compensation: 0 } : {}) },
     }));
     return [
       ...vehicleKinds.map((k) => {
@@ -330,6 +331,10 @@ export function initApi(ctx) {
     if (bpId === 'sensor.camera.rgb') {
       // RGB renders through the full post chain at the window's resolution (the server's --res)
       a.attributes.image_size_x = W; a.attributes.image_size_y = H;
+      // as CARLA's camera: metered per frame (auto) or the time of day's fixed exposure (manual), plus a compensation in
+      // EV (a renderer client applies them; the page's own frame keeps its fixed exposure)
+      a.attributes.exposure_mode = attrs.exposure_mode === 'manual' ? 'manual' : 'auto';
+      a.attributes.exposure_compensation = num(attrs.exposure_compensation, 0);
     }
     actors.set(id, a);
     return a;
@@ -590,7 +595,8 @@ export function initApi(ctx) {
   // ---------------------------------------------------------------- stepping
   const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
   // the RGBA of the next beauty frame the engine draws, read back in that frame's own task (core/engine.js _grab)
-  const grab = () => new Promise((res, rej) => { engine._grab = { res, rej }; });
+  // (a process that draws nothing, the headless core with its renderer gone: no image, the RGB sensor skips the tick)
+  const grab = () => (engine.headless ? Promise.resolve(null) : new Promise((res, rej) => { engine._grab = { res, rej }; }));
   // One fixed step is ONE engine frame. main.js consumes the pending dt in its next frame, whose postStep resolves
   // stepWait; the awaiting code resumes (a microtask) once that frame's rAF callback, render included, has returned.
   // main.js's own promise resolves a frame later: the fallback if the frame body threw before postStep.
@@ -614,7 +620,7 @@ export function initApi(ctx) {
       const due = dueSensors(simTime + dt);
       // the primary RGB camera's image is the step's own frame, read back in its task
       const pr = primarySensor();
-      const stepRgb = pr && pr.type_id === 'sensor.camera.rgb' && due.includes(pr) ? grab() : null;
+      const stepRgb = pr && pr.type_id === 'sensor.camera.rgb' && due.includes(pr) && !(perc() && perc().group) ? grab() : null;
       await advance(dt);
       frame++; simTime += dt;
       // where the tick's time went (ms): the step frame, then one entry per sensor group
@@ -701,6 +707,41 @@ export function initApi(ctx) {
   // dt = 0 frame is enough (film-8 API test: label passes read without it drew the road users culled for the OTHER
   // camera). A label-only group runs that frame without drawing it (engine.skipDraw); an RGB group draws it with its own
   // TAA history swapped in, and that frame is its image.
+  // The headless core with a renderer client attached (core/api/render.mjs, docs/specs/render-protocol.md): one
+  // render.capture per group, the primary group first, each answered with its planes in the protocol's own formats (rows
+  // top to bottom, class ids, metres), so nothing is converted here; labels go through labelsOut as the page's do.
+  async function renderClientSensors(P, ordered, pr, tlog) {
+    for (const [, g] of ordered) {
+      const lead = g[0];
+      const T = sensorWorld(lead);
+      const W = lead.attributes.image_size_x, H = lead.attributes.image_size_y;
+      const outs = [...new Set(g.flatMap((a) => a.outputs))];
+      const t0 = performance.now();
+      let r;
+      try {
+        r = await P.group({ frame, t: simTime, primary: g.includes(pr), sensors: g.map((a) => a.id), outputs: outs, width: W, height: H, fov: lead.attributes.fov,
+          transform: T, pose: poseFor(T, lead.attributes.fov, W / H), amodal: Math.max(0, ...g.map((a) => a.attributes.amodal || 0)),
+          min_pixels: Math.min(...g.map((a) => a.attributes.min_pixels || 30)),
+          exposure: (({ attributes: x }) => ({ mode: x.exposure_mode || 'auto', compensation: x.exposure_compensation || 0 }))(g.find((a) => a.type_id === 'sensor.camera.rgb') || lead) });
+      } catch (e) {
+        if (tlog) tlog.push({ sensors: g.map((a) => a.id), error: e.code || 'internal' });
+        continue;
+      }
+      for (const a of g) {
+        const meta = { event: 'sensor', sensor: a.id, type_id: a.type_id, frame, timestamp: +simTime.toFixed(6), transform: T, width: r.width || W, height: r.height || H, fov: a.attributes.fov };
+        let blob = null;
+        if (a.type_id === 'sensor.camera.rgb') { blob = r.planes.rgb; meta.format = 'rgba8'; }
+        else if (a.type_id === 'sensor.camera.semantic_segmentation') { blob = r.planes.semantic; meta.format = 'class_u8'; }
+        else if (a.type_id === 'sensor.camera.instance_segmentation') { blob = r.planes.instance; meta.format = 'instance_rgba8'; if (r.labels) meta.labels = labelsOut(r.labels, T); }
+        else if (a.type_id === 'sensor.camera.depth') { blob = r.planes.depth; meta.format = 'depth_f32'; meta.depth_max = r.depth_max; }
+        else if (a.type_id === 'sensor.camera.bounding_boxes') { meta.format = 'labels'; if (r.labels) meta.labels = labelsOut(r.labels, T); else continue; }
+        if (a.type_id !== 'sensor.camera.bounding_boxes' && !blob) continue;
+        a.lastT = simTime;
+        emit(a.owner, meta, blob ? [blob] : []);
+      }
+      if (tlog) tlog.push({ sensors: g.map((a) => a.id), switch: !g.includes(pr), render_ms: r.ms, renderer: r.timing || null, total_ms: +(performance.now() - t0).toFixed(1) });
+    }
+  }
   async function runSensors(live, stepRgb, tlog = null) {
     live = live.filter((a) => a.listening && actors.has(a.id));
     if (!live.length) return;
@@ -714,6 +755,7 @@ export function initApi(ctx) {
     const pr = primarySensor();
     const primaryPose = viewPose();
     const ordered = [...groups.entries()].sort(([, g1], [, g2]) => (g2.includes(pr) ? 1 : 0) - (g1.includes(pr) ? 1 : 0));
+    if (P && P.group) return renderClientSensors(P, ordered, pr, tlog);
     try {
       for (const [key, g] of ordered) {
         const lead = g[0];
@@ -1271,7 +1313,14 @@ export function initApi(ctx) {
     });
     host.ready?.({ api_version: API_VERSION });
   }
-  window.__API = { call: (m, p) => handle(m, p, 0), events, actors, version: API_VERSION };
+  window.__API = { call: (m, p) => handle(m, p, 0), events, actors, version: API_VERSION,
+    // for a renderer client of the headless core (core/api/render.mjs): the API's frame and clock, and every listening
+    // camera's pose in the renderer's frame (its streaming and actor region)
+    clock: () => ({ frame, simTime }),
+    cameras: () => [...actors.values()].filter((a) => a.kind === 'sensor' && a.listening).map((a) => {
+      const W = a.attributes.image_size_x, H = a.attributes.image_size_y;
+      return { id: a.id, ...poseFor(sensorWorld(a), a.attributes.fov, W / H), width: W, height: H };
+    }) };
   updateCamera();
   console.log(`[api] Valdrada API ${API_VERSION} ready (${host ? 'host connected' : 'no host: window.__API'})`);
   return { preStep, postStep };

@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { Sink, edgeFrame, flatRing, quadW, quadY, quadU, poly, box as kbox } from '../fk/kitGeom.js';
 import { towerParams, rng, LM_GLASS } from './tkParams.js';
 import { buildTowerKit, tkGlassAttrs } from './tkBuild.js';
-import { surfMat, partMat, cwGlassMat, holdNight } from './tkMats.js';
+import { surfMat, partMat, cwGlassMat, holdNight, litWinMat } from './tkMats.js';
 
 const GE = [0.8746, 0.4848], GN = [0.4848, -0.8746];   // the Manhattan grid's street (east) and avenue (north) axes, world x z
 
@@ -118,6 +118,7 @@ function buildSpec(key, spec, ctx) {
     const m = new THREE.Mesh(geo, mat);
     m.position.set(org[0], 0, org[1]);
     inner.add(m);
+    if (mat.userData && mat.userData.tkNightOnly) holdNight(m);   // (a crown's night windows: S125 w53)
   }
   g.userData.tw = key;
   return g;
@@ -276,7 +277,408 @@ const shrink = (ring, k) => {
   return ring.map(([x, z]) => [cx + (x - cx) * k, cz + (z - cz) * k]);
 };
 
+// ---------------------------------------------------------------- faceted envelopes (S125 w53, 2026-10-17)
+// 53 West 53rd's skin: planar facets (world triangles [x, y, z], wound counter-clockwise seen from outside), each with
+// its curtain wall drawn in the facet's own plane: u level along it, v up its slope (u, v, n right-handed), the floors
+// horizontal lines across it; the panes clipped to the facet; the mullions down the slope, the transoms on the floor
+// lines; the structure as square-cut members along the facets' edges, proud of the glass, a block at each node
+const v3sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const v3add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const v3mul = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
+const v3dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const v3x = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const v3n = (a) => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+const v3lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+// the facet's frame about a fixed origin O (the lot's: coplanar facets share their pane grid)
+function facetFrame(a, b, c, O) {
+  const n = v3n(v3x(v3sub(b, a), v3sub(c, a)));
+  let u = v3x([0, 1, 0], n);
+  if (Math.hypot(u[0], u[1], u[2]) < 1e-3) u = [1, 0, 0];
+  u = v3n(u);
+  const v = v3x(n, u);
+  const P2 = (p) => { const d = v3sub(p, O); return [v3dot(d, u), v3dot(d, v)]; };
+  const W3 = (s, t, w = 0) => [O[0] + u[0] * s + v[0] * t + n[0] * w, O[1] + u[1] * s + v[1] * t + n[1] * w, O[2] + u[2] * s + v[2] * t + n[2] * w];
+  // the plane's offset along n from O (the facet's points are at w = d)
+  return { n, u, v, O, P2, W3, d: v3dot(v3sub(a, O), n) };
+}
+// a convex polygon (2D, counter-clockwise) clipped to a convex polygon (Sutherland-Hodgman)
+function clip2(poly, clipR) {
+  let out = poly;
+  for (let i = 0; i < clipR.length && out.length; i++) {
+    const A = clipR[i], B = clipR[(i + 1) % clipR.length];
+    const side = (p) => (B[0] - A[0]) * (p[1] - A[1]) - (B[1] - A[1]) * (p[0] - A[0]);
+    const inp = out; out = [];
+    for (let k = 0; k < inp.length; k++) {
+      const P = inp[k], Q = inp[(k + 1) % inp.length], sp = side(P), sq = side(Q);
+      if (sp >= 0) out.push(P);
+      if ((sp >= 0) !== (sq >= 0)) { const t = sp / (sp - sq); out.push([P[0] + (Q[0] - P[0]) * t, P[1] + (Q[1] - P[1]) * t]); }
+    }
+  }
+  return out;
+}
+const area2 = (p) => { let a = 0; for (let i = 0; i < p.length; i++) { const q = p[i], r = p[(i + 1) % p.length]; a += q[0] * r[1] - r[0] * q[1]; } return a / 2; };
+// the range of the line s = const (axis 0) or t = const (axis 1) inside a convex polygon
+function span2(poly, axis, c) {
+  let lo = Infinity, hi = -Infinity;
+  const o = 1 - axis;
+  for (let i = 0; i < poly.length; i++) {
+    const P = poly[i], Q = poly[(i + 1) % poly.length];
+    if ((P[axis] - c) * (Q[axis] - c) > 0 || P[axis] === Q[axis]) continue;
+    const t = (c - P[axis]) / (Q[axis] - P[axis]), x = P[o] + (Q[o] - P[o]) * t;
+    lo = Math.min(lo, x); hi = Math.max(hi, x);
+  }
+  return hi > lo ? [lo, hi] : null;
+}
+// a planar polygon of facet coordinates (s, t) at offset w (from the facet's plane) into S, facing n
+function facetPoly(S, F, pts, w, org, uv) {
+  if (pts.length < 3) return;
+  const b = S.n;
+  for (const [s, t] of pts) {
+    const p = F.W3(s, t, F.d + w);
+    S.v(p[0] - org[0], p[1], p[2] - org[1], F.n[0], F.n[1], F.n[2], uv ? uv(s, t)[0] : s, uv ? uv(s, t)[1] : t, 0);
+  }
+  for (let i = 1; i + 1 < pts.length; i++) S.tri(b, b + i, b + i + 1);
+}
+// a strip standing on the facet: the rectangle s0..s1 x t0..t1, its front at w = d (normal n), its two long cheeks
+// (normals -/+ the axis across it: 'u' strips run along t, 'v' strips along s)
+function facetStrip(S, F, s0, s1, t0, t1, d, along, org) {
+  facetPoly(S, F, [[s0, t0], [s1, t0], [s1, t1], [s0, t1]], d, org);
+  const q = (pa, pb, nrm) => {   // the cheek from the plane (w 0) to the front (w d) between two facet points
+    const p0 = F.W3(pa[0], pa[1], F.d), p1 = F.W3(pb[0], pb[1], F.d), p2 = F.W3(pb[0], pb[1], F.d + d), p3 = F.W3(pa[0], pa[1], F.d + d);
+    const b = S.n, Lq = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]);
+    [p0, p1, p2, p3].forEach((p, k) => S.v(p[0] - org[0], p[1], p[2] - org[1], nrm[0], nrm[1], nrm[2], k === 1 || k === 2 ? Lq : 0, k >= 2 ? d : 0, 0));
+    const e = v3x(v3sub(p1, p0), v3sub(p2, p0));
+    if (v3dot(e, nrm) >= 0) { S.tri(b, b + 1, b + 2); S.tri(b, b + 2, b + 3); } else { S.tri(b, b + 2, b + 1); S.tri(b, b + 3, b + 2); }
+  };
+  if (along === 't') { q([s0, t0], [s0, t1], v3mul(F.u, -1)); q([s1, t0], [s1, t1], F.u); }
+  else { q([s0, t0], [s1, t0], v3mul(F.v, -1)); q([s0, t1], [s1, t1], F.v); }
+}
+// a member of the structure from p0 to p1 (world), its face out along N (orthogonalised to it), w wide, from `back`
+// behind the glass to `out` in front of it (the two cheeks, the front; the ends are inside the nodes' blocks)
+function member(S, p0, p1, N, w, out, back, org) {
+  const d = v3n(v3sub(p1, p0));
+  const n = v3n(v3sub(N, v3mul(d, v3dot(N, d))));
+  const t = v3n(v3x(n, d));
+  const h = w / 2;
+  const P = (p, a, b) => [p[0] + t[0] * a + n[0] * b, p[1] + t[1] * a + n[1] * b, p[2] + t[2] * a + n[2] * b];
+  const sides = [[[-h, out], [h, out], n], [[h, -back], [h, out], t], [[-h, out], [-h, -back], v3mul(t, -1)]];
+  for (const [[a0, b0], [a1, b1], nr] of sides) {
+    const q = [P(p0, a0, b0), P(p0, a1, b1), P(p1, a1, b1), P(p1, a0, b0)];
+    const bi = S.n;
+    const L = Math.hypot(...v3sub(p1, p0));
+    q.forEach((p, k) => S.v(p[0] - org[0], p[1], p[2] - org[1], nr[0], nr[1], nr[2], k === 1 || k === 2 ? w : 0, k >= 2 ? L : 0, 0));
+    const e = v3x(v3sub(q[1], q[0]), v3sub(q[2], q[0]));
+    if (v3dot(e, nr) >= 0) { S.tri(bi, bi + 1, bi + 2); S.tri(bi, bi + 2, bi + 3); } else { S.tri(bi, bi + 2, bi + 1); S.tri(bi, bi + 3, bi + 2); }
+  }
+}
+// a node's block: a box s across, from `back` behind the glass to `out` in front, its faces square to N
+function nodeBlock(S, p, N, s, out, back, org) {
+  const n = v3n(N);
+  let a = v3x([0, 1, 0], n);
+  if (Math.hypot(...a) < 1e-3) a = [1, 0, 0];
+  a = v3n(a);
+  const b = v3x(n, a), h = s / 2;
+  const C = (x, y, z) => [p[0] + a[0] * x + b[0] * y + n[0] * z, p[1] + a[1] * x + b[1] * y + n[1] * z, p[2] + a[2] * x + b[2] * y + n[2] * z];
+  const faces = [
+    [[C(-h, -h, out), C(h, -h, out), C(h, h, out), C(-h, h, out)], n],
+    [[C(h, -h, -back), C(h, h, -back), C(h, h, out), C(h, -h, out)], a],
+    [[C(-h, h, -back), C(-h, -h, -back), C(-h, -h, out), C(-h, h, out)], v3mul(a, -1)],
+    [[C(h, h, -back), C(-h, h, -back), C(-h, h, out), C(h, h, out)], b],
+    [[C(-h, -h, -back), C(h, -h, -back), C(h, -h, out), C(-h, -h, out)], v3mul(b, -1)],
+  ];
+  for (const [q, nr] of faces) {
+    const bi = S.n;
+    q.forEach((pp, k) => S.v(pp[0] - org[0], pp[1], pp[2] - org[1], nr[0], nr[1], nr[2], k === 1 || k === 2 ? s : 0, k >= 2 ? s : 0, 0));
+    const e = v3x(v3sub(q[1], q[0]), v3sub(q[2], q[0]));
+    if (v3dot(e, nr) >= 0) { S.tri(bi, bi + 1, bi + 2); S.tri(bi, bi + 2, bi + 3); } else { S.tri(bi, bi + 2, bi + 1); S.tri(bi, bi + 3, bi + 2); }
+  }
+}
+const hsh = (a, b, c = 0) => { const x = Math.sin(a * 127.1 + b * 311.7 + c * 74.7) * 43758.5453; return x - Math.floor(x); };
+// the curtain wall of facet (a, b, c): per floor and bay a spandrel band over the slab and the vision pane above it, each
+// clipped to the facet; the mullions every bay down the slope, the transoms on the slab lines. o: { O, org, slabs (world
+// heights, rising), pw (the bay), spH (the band), glass(k, j, h) -> { S, GW, GS } (the vision pane's sink, by bay, floor
+// and the facet's hash), spand (sink), mull (sink), mW, mD, tW, tD, lit(k, j, h) -> sink | null (the night window) }
+function facetSkin(a, b, c, o) {
+  const F = facetFrame(a, b, c, o.O);
+  if (F.v[1] < 0.08) return 0;   // (no level glass: a facet this flat is a roof)
+  const T = [F.P2(a), F.P2(b), F.P2(c)];
+  if (area2(T) < 0.5) return 0;
+  const tOf = (y) => (y - o.O[1] - F.n[1] * F.d) / F.v[1];
+  const s0 = Math.min(T[0][0], T[1][0], T[2][0]), s1 = Math.max(T[0][0], T[1][0], T[2][0]);
+  const y0 = Math.min(a[1], b[1], c[1]), y1 = Math.max(a[1], b[1], c[1]);
+  const h = hsh(Math.round(F.n[0] * 50), Math.round(F.n[2] * 50), Math.round(F.n[1] * 50));
+  const { org, pw, spH, slabs } = o;
+  let panes = 0;
+  for (let j = 0; j + 1 < slabs.length; j++) {
+    const ya = slabs[j], yb = slabs[j + 1];
+    if (yb <= y0 || ya >= y1) continue;
+    const ta = tOf(ya), tm = tOf(ya + spH), tb = tOf(yb);
+    for (let k = Math.floor(s0 / pw); k * pw < s1; k++) {
+      const sa = k * pw, sb = sa + pw;
+      const sp = clip2([[sa, ta], [sb, ta], [sb, tm], [sa, tm]], T);
+      if (sp.length >= 3 && area2(sp) > 1e-3) facetPoly(o.spand, F, sp, 0, org);
+      const vp = clip2([[sa, tm], [sb, tm], [sb, tb], [sa, tb]], T);
+      if (vp.length < 3 || area2(vp) < 1e-3) continue;
+      const g = o.glass(k, j, h), n0 = g.S.n;
+      facetPoly(g.S, F, vp, 0, org, (s, t) => [(s - sa) / pw, (t - tm) / (tb - tm)]);
+      for (let i = n0; i < g.S.n; i++) {
+        g.GW[i * 4] = k; g.GW[i * 4 + 1] = j; g.GW[i * 4 + 2] = h * 37.0; g.GW[i * 4 + 3] = 3.0;
+        g.GS[i * 4] = pw; g.GS[i * 4 + 1] = tb - tm; g.GS[i * 4 + 2] = spH; g.GS[i * 4 + 3] = yb - ya;
+      }
+      const lit = o.lit && o.lit(k, j, h);
+      if (lit) facetPoly(lit, F, vp, 0.03, org);
+      panes++;
+    }
+  }
+  // the mullions (down the slope, every bay) and the transoms (the slab's line and the band's top), in front of the glass
+  for (let k = Math.ceil(s0 / pw); k * pw < s1; k++) {
+    const r = span2(T, 0, k * pw);
+    if (r && r[1] - r[0] > 0.2) facetStrip(o.mull, F, k * pw - o.mW / 2, k * pw + o.mW / 2, r[0], r[1], o.mD, 't', org);
+    // (the finer order: a slim mullion at each half bay, set back behind the bay's)
+    const rh = span2(T, 0, (k + 0.5) * pw);
+    if (rh && rh[1] - rh[0] > 0.2) facetStrip(o.mull, F, (k + 0.5) * pw - o.mW * 0.3, (k + 0.5) * pw + o.mW * 0.3, rh[0], rh[1], o.mD * 0.55, 't', org);
+  }
+  for (const ya of slabs) {
+    for (const [y, w] of [[ya, o.tW], [ya + spH, o.tW * 0.6]]) {
+      if (y <= y0 || y >= y1) continue;
+      const t = tOf(y), r = span2(T, 1, t);
+      if (r && r[1] - r[0] > 0.2) facetStrip(o.mull, F, r[0], r[1], t - w / 2, t + w / 2, o.tD, 's', org);
+    }
+  }
+  return panes;
+}
+
 const { COBALT, SKYBLUE, SILVERW, CLEARG, BLACKG, GOLDG, BRONZEK } = LM_GLASS;
+
+// 53 West 53rd's lot frame: grid offsets measured on the compiled ring (tile -2_4 #89, 12 vertices) from its vertex mean,
+// held to the ring's area centroid (-5.59, -1.85 in that frame) so a ring of other vertices keeps them in place
+function w53G(L) {
+  const c = L.rectA(0, 0, 0, 0)[0], dx = c[0] - L.cx, dz = c[1] - L.cz;
+  const ga = [dx * GE[0] + dz * GE[1], dx * GN[0] + dz * GN[1]];
+  return (gx, gn) => L.W(gx + 5.59 + ga[0], gn + 1.85 + ga[1]);
+}
+// the shaft's corners (counter-clockwise from the south-west, the lot's L: the west face jogs at the middle of the
+// block), each a run of [y, gx, gn] it moves along straight between: the gallery floors upright to 30 m, then the north
+// and the south faces both leaning in (about 5 degrees, steeper above 160 m) toward the ridge at the block's middle,
+// the east and west faces near upright, the jog closing as it rises
+const W53_CORNERS = [
+  [[0, -23.6, -33.9], [30, -23.6, -33.9], [160, -22.4, -23.5], [266, -20.2, -13.5]],   // south-west
+  [[0, 3.1, -33.9], [30, 3.1, -33.9], [160, 2.6, -23.5], [266, 1.3, -14.1]],           // south-east
+  [[0, 3.1, -3.3], [30, 3.1, -3.3], [160, 2.9, -5.0], [266, 1.8, -6.2]],               // the east face's fold
+  [[0, 3.1, 27.3], [30, 3.1, 25.5], [160, 2.4, 12.0], [266, 0.8, 1.4]],                // north-east
+  [[0, -17.6, 27.3], [30, -17.6, 25.5], [160, -19.5, 12.0], [266, -19.5, 1.4]],        // north-west
+  [[0, -17.5, -3.3], [30, -17.5, -3.3], [160, -20.8, -4.5], [266, -20.2, -5.7]],       // the jog (in)
+  [[0, -23.6, -3.2], [30, -23.6, -3.2], [160, -22.0, -4.8], [266, -20.1, -6.0]],       // the jog (out)
+];
+// the ridge over the block's middle from west to east, [gx, gn, y]: three summits, the west one the highest, the east
+// one the lowest (from the south the top steps down to the east; from the west the three line up in one point), with
+// a notch between each two
+const W53_PEAKS = [[-16.5, -6.0, 320], [-11.6, -5.6, 295], [-7.0, -5.0, 306], [-3.4, -5.8, 283], [0.0, -6.5, 294]];
+// the diagrid's node rows (m above the ground): irregular, a row at each fold of the corners' runs
+const W53_ROWS = [0, 30, 58, 84, 111, 137, 160, 187, 213, 240, 266];
+// the rows a level member runs round (the gallery floors' top; two ties high up, the upper one the shoulder under the
+// summits: the reference's two light bands across the west face at about 213 and 266 m)
+const W53_BELTS = [30, 213, 266];
+const W53_SLABS = (() => { const s = [0, 6.5, 12.5, 18.5, 24.5, 30.5]; while (s[s.length - 1] + 4.15 < 318) s.push(s[s.length - 1] + 4.15); return s; })();
+
+function w53Corner(run, y) {
+  for (let i = 0; i + 1 < run.length; i++) {
+    const [y0, a0, b0] = run[i], [y1, a1, b1] = run[i + 1];
+    if (y <= y1 || i + 2 === run.length) { const t = (y - y0) / (y1 - y0); return [a0 + (a1 - a0) * t, b0 + (b1 - b0) * t]; }
+  }
+  return null;
+}
+// the envelope: points (world [x, y, z]) and outward facets [i, j, k]
+function w53Envelope(L) {
+  const G = w53G(L), y0 = L.y0;
+  const pts = [], key = new Map();
+  const pt = (gx, gn, y) => {
+    const k = Math.round(gx * 50) + ':' + Math.round(gn * 50) + ':' + Math.round(y * 50);
+    let i = key.get(k);
+    if (i === undefined) { const [x, z] = G(gx, gn); i = pts.length; pts.push([x, y0 + y, z]); key.set(k, i); }
+    return i;
+  };
+  const nC = W53_CORNERS.length;
+  const soft = new Set(), softT = new Set();
+  // each row's nodes per side: [t, index]; even rows k segments, odd rows staggered by half a segment
+  const rows = W53_ROWS.map((y, r) => {
+    const C = W53_CORNERS.map((run) => w53Corner(run, y));
+    const CI = C.map(([gx, gn]) => pt(gx, gn, y));
+    const sides = [];
+    for (let s = 0; s < nC; s++) {
+      const A = C[s], B = C[(s + 1) % nC], len = Math.hypot(B[0] - A[0], B[1] - A[1]);
+      const k = len < 4 ? 0 : Math.max(1, Math.floor(len / 20));
+      const ts = [0];
+      // (the nodes staggered row to row and side to side, slid along the side by up to a fifth of a bay, and now and
+      // then left out: the triangles come out large and irregular, a single diagonal across a face where a row has none)
+      if (k > 0 && r > 0 && hsh(r * 3.1, s * 1.7, 5.5) > 0.22) {
+        const odd = (r + s) % 2 === 1;
+        const n = odd ? k : k - 1;
+        for (let i = 0; i < n; i++) {
+          const t0 = odd ? (i + 0.5) / k : (i + 1) / k;
+          ts.push(Math.min(0.9, Math.max(0.1, t0 + (hsh(r, s, i) - 0.5) * 0.4 / k)));
+        }
+      }
+      if (r + 1 === W53_ROWS.length) {
+        // (the shoulder: besides its diagrid nodes, soft ones every 6 m or so for the summits' fans to share out along
+        // the ridge; their edges are folds of the glass, no members)
+        const n = len < 4 ? 0 : Math.max(1, Math.round(len / 6) - 1);
+        for (let i = 0; i < n; i++) {
+          const t = (i + 1) / (n + 1);
+          if (ts.every((u) => Math.abs(u - t) * len > 2.5)) { ts.push(t); softT.add(s + ':' + t); }
+        }
+        ts.sort((a, b) => a - b);
+      }
+      ts.push(1);
+      // (the corners by their own index: a corner reached as the end of one side and the start of the next, rounded
+      // apart, drew its members twice)
+      sides.push(ts.map((t) => {
+        const i = t === 0 ? CI[s] : t === 1 ? CI[(s + 1) % nC] : pt(A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, y);
+        if (softT.has(s + ':' + t)) soft.add(i);
+        return [t, i];
+      }));
+    }
+    return { y, C, sides };
+  });
+  const faces = [];
+  const P = (i) => pts[i];
+  // the strip of side s between two rows: advance along whichever row gives the shorter new diagonal
+  for (let r = 0; r + 1 < rows.length; r++) {
+    for (let s = 0; s < nC; s++) {
+      const A = rows[r].sides[s], B = rows[r + 1].sides[s];
+      let i = 0, j = 0;
+      while (i + 1 < A.length || j + 1 < B.length) {
+        let lower;
+        if (i + 1 >= A.length) lower = false;
+        else if (j + 1 >= B.length) lower = true;
+        else {
+          const dl = Math.hypot(...v3sub(P(A[i + 1][1]), P(B[j][1]))), du = Math.hypot(...v3sub(P(A[i][1]), P(B[j + 1][1])));
+          lower = dl < du;
+        }
+        if (lower) { faces.push([A[i][1], A[i + 1][1], B[j][1]]); i++; } else { faces.push([A[i][1], B[j + 1][1], B[j][1]]); j++; }
+      }
+    }
+  }
+  // the cap: each node of the top row to its nearest summit, the turns between summits, the summits' own facet
+  const top = rows[rows.length - 1];
+  const ring = [];
+  for (const sd of top.sides) for (let q = 0; q + 1 < sd.length; q++) ring.push(sd[q][1]);
+  const pk = W53_PEAKS.map(([gx, gn, y]) => pt(gx, gn, y));
+  const near = ring.map((i) => {
+    let best = 0, bd = 1e9;
+    for (let p = 0; p < pk.length; p++) { const d = Math.hypot(P(i)[0] - P(pk[p])[0], P(i)[2] - P(pk[p])[2]); if (d < bd) { bd = d; best = p; } }
+    return best;
+  });
+  // (the ridge's points lie west to east and each side of the ring meets them in turn, so the turns use every ridge
+  // edge from both sides and close the cap; a ridge edge met once is closed by the ridge's own fan)
+  // the cap's members: the ridge, each shoulder corner to its summit, and the folds between the summits' facets (a
+  // ring node to the two ridge points of a turn); the fans' other edges lie flat in their facet and carry none
+  const used = new Map(), capM = new Set();
+  const ek2 = (p, q) => (p < q ? p + ',' + q : q + ',' + p);
+  const corners = new Set(top.sides.map((sd) => sd[0][1]));
+  for (let p = 0; p + 1 < pk.length; p++) capM.add(ek2(pk[p], pk[p + 1]));
+  for (let q = 0; q < ring.length; q++) {
+    const a = ring[q], b = ring[(q + 1) % ring.length];
+    let pa = near[q];
+    const pb = near[(q + 1) % ring.length];
+    faces.push([a, b, pk[pa]]);
+    if (corners.has(a)) capM.add(ek2(a, pk[pa]));
+    while (pa !== pb) {   // (a jump over a ridge point walks the ridge one edge at a time)
+      const nx = pa + Math.sign(pb - pa);
+      faces.push([b, pk[nx], pk[pa]]);
+      capM.add(ek2(b, pk[nx])); capM.add(ek2(b, pk[pa]));
+      const ek = Math.min(pa, nx) + ',' + Math.max(pa, nx);
+      used.set(ek, (used.get(ek) || 0) + 1);
+      pa = nx;
+    }
+  }
+  for (let p = 0; p + 1 < pk.length; p++) if ((used.get(p + ',' + (p + 1)) || 0) < 2) faces.push([pk[0], pk[p], pk[p + 1]]);
+  // wound outward: away from the axis (the centroid of the corners at the facet's height; the cap's from below it)
+  const axis = (y) => {
+    const yy = Math.min(Math.max(y - y0, 0), 266);
+    let ax = 0, az = 0;
+    for (const run of W53_CORNERS) { const [gx, gn] = w53Corner(run, yy); const [x, z] = G(gx, gn); ax += x; az += z; }
+    return [ax / nC, Math.min(y, y0 + 250), az / nC];
+  };
+  const out = [];
+  for (const f of faces) {
+    const a = P(f[0]), b = P(f[1]), c = P(f[2]);
+    const n = v3x(v3sub(b, a), v3sub(c, a));
+    if (Math.hypot(...n) < 1e-4) continue;
+    const m = v3mul(v3add(v3add(a, b), c), 1 / 3);
+    out.push(v3dot(n, v3sub(m, axis(m[1]))) >= 0 ? f : [f[0], f[2], f[1]]);
+  }
+  return { pts, faces: out, G, capM, capY: y0 + top.y + 0.5, soft };
+}
+// the tower: its curtain wall facet by facet, the diagrid along the facets' edges, a block at each node
+function w53Build(L, K) {
+  const { pts, faces, capM, capY, soft } = w53Envelope(L);
+  const org = K.org, O = [L.cx, L.y0, L.cz];
+  // the glass: vision panes in three families (clear, silvered, dark: the tower's glass runs from dark to clear), each
+  // a sink of its own with the rooms' side streams (tkGlassAttrs)
+  const fams = [CLEARG, SILVERW, BLACKG];
+  const GLS = fams.map(() => ({ S: new Sink(), GW: [], GS: [] }));
+  const glass = (k, j, h) => {
+    const r = hsh(Math.floor(k / 2) + h * 13.0, j * 0.37 + Math.floor(j / 3), 4.1);
+    return GLS[r < 0.58 ? 0 : r < 0.84 ? 1 : 2];
+  };
+  const LIT = ['warm', 'cool', 'dim', 'hi'].map((k) => K.sinkOf(litWinMat(k)));
+  const lit = (k, j, h) => {
+    const r = hsh(k + h * 7.0, j, 9.3);
+    if (r > 0.42) return null;
+    const q = hsh(j, h * 3.0, 2.2);
+    return LIT[q < 0.55 ? 0 : q < 0.68 ? 1 : q < 0.92 ? 2 : 3];
+  };
+  const we = [0.57, L.y0, L.y0 + 320];
+  const spand = K.sinkOf(K.surfMat('panel_alu', '#9ea4a8'), we);   // (the slab's cover: the facade's fine light grid)
+  const mull = K.sinkOf(K.partMat('alu_clear'));
+  const conc = K.sinkOf(K.surfMat('concrete_smooth', '#a9a7a2'), we);
+  const o = { O, org, slabs: W53_SLABS.map((y) => L.y0 + y), pw: 1.52, spH: 0.55, glass, spand, mull, lit,
+    mW: 0.07, mD: 0.14, tW: 0.11, tD: 0.19 };
+  // the facets' normals at each edge and node
+  const edges = new Map(), nodeN = new Map();
+  let panes = 0;
+  for (const [i, j, k] of faces) {
+    const a = pts[i], b = pts[j], c = pts[k];
+    panes += facetSkin(a, b, c, o);
+    const n = v3n(v3x(v3sub(b, a), v3sub(c, a)));
+    for (const [p, q] of [[i, j], [j, k], [k, i]]) {
+      const ek = p < q ? p + ',' + q : q + ',' + p;
+      const e = edges.get(ek);
+      if (e) { e.n = v3add(e.n, n); e.c++; } else edges.set(ek, { p: Math.min(p, q), q: Math.max(p, q), n, c: 1 });
+    }
+    for (const p of [i, j, k]) nodeN.set(p, v3add(nodeN.get(p) || [0, 0, 0], n));
+  }
+  // the diagrid: every edge that rises (the floors' level edges are the slabs' lines, no member), its width falling
+  // with height from 1.25 m to 0.75 m; a block at each node of two members or more
+  const deg = new Map(), rise = new Set();
+  for (const e of edges.values()) {
+    const A = pts[e.p], B = pts[e.q];
+    if (Math.abs(A[1] - B[1]) < 0.5 && !W53_BELTS.some((b) => Math.abs(A[1] - L.y0 - b) < 0.5)) continue;
+    if (Math.max(A[1], B[1]) > capY && !capM.has(e.p + ',' + e.q)) continue;
+    if ((soft.has(e.p) || soft.has(e.q)) && Math.abs(A[1] - B[1]) >= 0.5 && !capM.has(e.p + ',' + e.q)) continue;
+    const ym = (A[1] + B[1]) / 2 - L.y0, w = 1.6 - 0.6 * Math.min(1, ym / 320);
+    member(conc, A, B, v3n(e.n), w, 0.42, 0.6, org);
+    deg.set(e.p, (deg.get(e.p) || 0) + 1); deg.set(e.q, (deg.get(e.q) || 0) + 1);
+    if (Math.abs(A[1] - B[1]) >= 0.5) { rise.add(e.p); rise.add(e.q); }
+  }
+  for (const [p, d] of deg) {
+    const P = pts[p], y = P[1] - L.y0;
+    if (d < 2 || y < 0.5 || !rise.has(p)) continue;   // (a node only where a diagonal lands, not along a tie)
+    if (y > 286) continue;   // (the summits: the members meet in a point)
+    nodeBlock(conc, P, nodeN.get(p), 1.95 - 0.6 * Math.min(1, y / 320), 0.5, 0.6, org);
+  }
+  for (const g of GLS) {
+    const geo = g.S.build();
+    if (!geo) continue;
+    tkGlassAttrs(geo, g);
+    const m = new THREE.Mesh(geo, cwGlassMat(fams[GLS.indexOf(g)]));
+    m.position.set(org[0], 0, org[1]);
+    K.inner.add(m);
+  }
+  return { panes, facets: faces.length, members: deg.size };
+}
+
 
 // 111 West 57th's tiers in the lot's grid frame: the hall on the 57th Street end, the tower's south face stepping north
 function SW_TIERS(L) {
@@ -533,39 +935,22 @@ export const TW_SPECS = {
     ],
   },
 
-  // 53 West 53rd (Jean Nouvel, 2019; 320 m): a tapering faceted tower in clear glass behind an exposed concrete diagrid,
-  // on the MoMA gallery floors; the taper here is a run of tiers, each a diamond of the diagrid high
+  // 53 West 53rd (Jean Nouvel, 2019; 320 m, 77 floors; S125 w53, 2026-10-17, faceted instead of the stepped tiers): a
+  // slender prism of planar facets on the L of its lot (61 m from 53rd to 54th Street), its north face one slope from
+  // 54th Street to the summits, the south face near vertical and folding in above 160 m, three summits (320, 302 and
+  // 289 m); the exposed concrete diagrid in large irregular triangles along the facets' edges, dark to clear glass in a
+  // fine aluminium grid between them; the MoMA gallery block on the lot's north-east arm (w53Build)
   tw53w53: {
-    style: 11, color: [170, 178, 182], seed: 0.57,
-    P: { arch: 'cwSuper', famObj: CLEARG, floorH: 3.9, winW: 1.5, bayFit: true, finish: 'alu_clear', mullW: 0.06, mullD: 0.1, spandrelH: 0.45, spandrelHex: '#a7aeb1',
-      diagrid: { floors: 5, span: 8.5, w: 0.95, d: 0.65, set: 'concrete_smooth' } },
+    style: 11, color: [150, 158, 164], seed: 0.57,
+    P: { arch: 'cwGrid', famObj: CLEARG, floorH: 4.15, winW: 1.52, bayFit: true, finish: 'alu_clear', mullW: 0.07, mullD: 0.14, spandrelH: 0.85, spandrelHex: '#3d4246' },
     masses: (L) => {
-      const tiers = [];
-      const n = 13, y0 = 32, y1 = 300;
-      for (let i = 0; i < n; i++) {
-        const t = (i + 1) / n, yt = y0 + (y1 - y0) * t;
-        const k = Math.pow(1 - t * 0.82, 1.15);
-        tiers.push({ ring: L.rect(-4 - 16 * k, -4 + 16 * k, -3 - 27 * k, -3 + 27 * k + 4 * (1 - k)), y1: yt });
-      }
-      return [
-        { tiers: [{ ring: L.ring, y1: 32 }], P: { arch: 'cwGrid', diagrid: null, spandrelH: 1.6, floorH: 6.4 } },
-        { y0: 32, tiers, roof: { parapet: 0.6, set: 'concrete_smooth' } },
-      ];
+      const G = w53G(L);
+      // (its west wall 0.7 m inside the tower's east face, hidden behind the tower's glass; its east and south walls and
+      // the notch 0.3 m inside the lot lines MoMA's own walls stand on: never in another wall's plane)
+      const ring = L.pos([[2.4, -3.0], [15.0, -3.0], [15.0, 3.8], [7.8, 3.8], [7.9, 9.3], [15.0, 9.2], [15.0, 27.3], [2.4, 27.3]].map(([a, b]) => G(a, b)));
+      return [{ tiers: [{ ring, y1: 26.5 }], P: { floorH: 5.3, spandrelH: 1.1, famObj: BLACKG }, roof: { parapet: 0.9, set: 'alu_clear' } }];
     },
-    // S125: the top as the tower's three glass peaks (to 320, 311 and 305 m) over the last tier, edged in the diagrid's concrete
-    crown: (L, K) => {
-      const k = Math.pow(1 - 0.82, 1.15), gx0 = -4 - 16 * k, gx1 = -4 + 16 * k, gn0 = -3 - 27 * k, gn1 = -3 + 27 * k + 4 * (1 - k);
-      const gl = K.sinkOf(K.cwGlassMat(CLEARG)), cs = K.sinkOf(K.surfMat('concrete_smooth', '#c9c6bf'));
-      const gm = (gx0 + gx1) / 2, w = gx1 - gx0, d = gn1 - gn0;
-      for (const [a, b, c, e, y] of [[gx0, gm + w * 0.1, gn0, gn0 + d * 0.55, 320], [gm - w * 0.15, gx1, gn0 + d * 0.3, gn1, 311], [gx0, gm, gn0 + d * 0.5, gn1, 305]]) {
-        const r = L.rect(a, b, c, e);
-        pyramid(gl, r, L.y0 + 300, L.y0 + y, K.org, 0);
-        for (let i = 0; i < 4; i++) {   // the peak's edges, the diagrid's members carried up to the point
-          const p = r[i], cx = (r[0][0] + r[2][0]) / 2, cz = (r[0][1] + r[2][1]) / 2;
-          rib(cs, p[0], L.y0 + 300, p[1], cx, L.y0 + y, cz, 0.45, K.org);
-        }
-      }
-    },
+    crown: (L, K) => { w53Build(L, K); },
   },
 
   // 520 Park Avenue (Robert A.M. Stern, 2018; 238 m): a slender limestone tower, its top stepping in under corner

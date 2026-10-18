@@ -163,3 +163,20 @@ speak.
 So the three.js renderer client is the page with its own sims off, drawing `render.state` (its replay path for player
 takes already places bodies from records, src/game/control.js `createReplay`) and serving `render.capture` with the
 code above; the Unreal plugin implements the same messages over the socket.
+
+## 10. Implementations (2026-10-17)
+
+- The core: `core/api/render.mjs` (the hub: hello, state, load, capture, result; one per core process) behind
+  `core/api/session.mjs`; `client/src/api/bridge.js` hands each sensor group to the attached renderer
+  (`renderClientSensors`, one `render.capture` per group, the primary group first) and exposes the API frame and the
+  listening cameras to the hub (`window.__API.clock`, `window.__API.cameras`). The state's records are the take
+  recorder's (`core/tracks/recorder.mjs`, `core/tracks/format.mjs` `frameBlock`) over a region of 300 m round the view
+  and every listening camera (`VALDRADA_RENDER_RADIUS`); API actors keep their API ids, the recorder's own start at
+  1,000,000. The load sets are the streaming manager's at the renderer's tier, residency taken as immediate.
+- Fields this version adds, as section 8 allows: `render.load` `seq` (echoed by `render.loaded`; an answer to an older
+  load set is ignored) and `cells_missing` (grid cells lane A has not baked); `render.state` `signals` (the junctions
+  whose state bytes the frame block carries, in that order, sent when the list changes); a parked vehicle's `actors.add`
+  record `{id, type: "parked", kind, kind_index, x, y, z, q, seed, col, metal, grime, rough}`; the hello's answer `view`,
+  `train_kinds` and `formats`; `render.capture` `exposure` `{mode: "auto" | "manual", compensation}` from the group's RGB
+  camera (its attributes `exposure_mode` and `exposure_compensation`, EV).
+- The Unreal renderer: `ue_client/ValdradaUE` (the plugin ValdradaRender; its notes are the plugin's sources).

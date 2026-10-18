@@ -48,17 +48,27 @@ export function startServer({ port = 2000, host = '127.0.0.1', log = () => {}, v
     sock.setNoDelay(true);
     log(`client #${cid} connected from ${sock.remoteAddress}:${sock.remotePort}`);
     let buf = Buffer.alloc(0);
+    // a request with `blobs: n` (a renderer client's render.result, docs/specs/render-protocol.md) is handled once its n
+    // binary frames have arrived; they reach the session as msg._blobs
+    let open = null;
     sock.on('data', (chunk) => {
       buf = buf.length ? Buffer.concat([buf, chunk]) : chunk;
       while (buf.length >= 5) {
         const n = buf.readUInt32BE(0);
-        if (n < 1 || n > 512 * 1024 * 1024) { sock.destroy(new Error('bad frame length')); return; }
+        if (n < 1 || n > 1024 * 1024 * 1024) { sock.destroy(new Error('bad frame length')); return; }
         if (buf.length < 4 + n) break;
-        const kind = buf[4], payload = buf.subarray(5, 4 + n);
+        const kind = buf[4], payload = Buffer.from(buf.subarray(5, 4 + n));
         buf = buf.subarray(4 + n);
-        if (kind !== KIND_JSON) continue;   // clients send no blobs
+        if (kind === KIND_BLOB) {
+          if (!open) continue;   // a blob nobody announced
+          open._blobs.push(payload);
+          if (open._blobs.length >= open.blobs) { const m = open; open = null; handle(cid, m); }
+          continue;
+        }
+        if (kind !== KIND_JSON) continue;
         let msg;
         try { msg = JSON.parse(payload.toString('utf8')); } catch { send(cid, { id: null, error: { code: 'bad_json', message: 'request is not JSON' } }); continue; }
+        if ((msg.blobs | 0) > 0) { msg._blobs = []; open = msg; continue; }
         handle(cid, msg);
       }
     });

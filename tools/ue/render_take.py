@@ -49,7 +49,7 @@ def mat_sig():
     sig = {n: fsha(os.path.join(HERE, n)) for n in MAT_TOOLS}
     if os.environ.get('BD_TILEFAC') == '1':
         h = os.environ.get('BD_TILEFAC_HLSL', 'bd_tilefac.hlsl')
-        sig['bd_tilefac_master'] = f"{os.environ.get('BD_TILEFAC_V', '100')}|glass{os.environ.get('BD_TILEFAC_GLASS', '1')}|{h}|{fsha(os.path.join(HERE, h)) if os.path.exists(os.path.join(HERE, h)) else 'missing'}"
+        sig['bd_tilefac_master'] = f"{os.environ.get('BD_TILEFAC_V', '101')}|glass{os.environ.get('BD_TILEFAC_GLASS', '1')}|{h}|{fsha(os.path.join(HERE, h)) if os.path.exists(os.path.join(HERE, h)) else 'missing'}"
     return sig
 
 
@@ -889,7 +889,7 @@ def main():
     ap.add_argument('--rebuild-world', action='store_true'); ap.add_argument('--rebuild-take', action='store_true'); ap.add_argument('--keep-raw', action='store_true')
     ap.add_argument('--no-xgate', action='store_true', help='skip the cross-renderer gate')
     ap.add_argument('--settings', default=os.path.join(HERE, 'render_take.json'))
-    ap.add_argument('--preset', default='', choices=('', 'cine', 'cine2', 'cine2c', 'cine2d', 'cine2e', 'cine2f', 'cine2g', 'pt'), help='cine: the trailer\'s cinematic settings (render_take_cine.json); pt: path traced (render_take_pt.json)')
+    ap.add_argument('--preset', default='', choices=('', 'cine', 'cine2', 'cine2c', 'cine2d', 'cine2e', 'cine2f', 'cine2g', 'cine2h', 'pt'), help='cine: the trailer\'s cinematic settings (render_take_cine.json); pt: path traced (render_take_pt.json)')
     ap.add_argument('--group', default='', help='shots a,b,c whose load sets make one world (the union of their cells, chunks and landmarks): built once, every shot of the group renders in it')
     ap.add_argument('--prebuild', default='', help='GB43: shots a,b,c (the shot argument is ignored): the union of their cells through the cell cache in one pass (pack, dedupe, import, bind; up to BATCHES editors on large batches), so their renders find every cell built; nothing rendered')
     a = ap.parse_args()

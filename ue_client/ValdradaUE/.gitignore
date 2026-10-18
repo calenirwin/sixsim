@@ -1,0 +1,8 @@
+# build products and the editor's caches; Content is a link to the take renderer's content (see Tools/run_client.sh)
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+Content
+Plugins/*/Binaries/
+Plugins/*/Intermediate/

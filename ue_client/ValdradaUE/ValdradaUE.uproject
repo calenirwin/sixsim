@@ -1,0 +1,19 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "",
+	"Category": "",
+	"Description": "Valdrada: the Unreal Engine 5 renderer client of the headless core (docs/specs/render-protocol.md)",
+	"Modules": [
+		{ "Name": "ValdradaUE", "Type": "Runtime", "LoadingPhase": "Default" }
+	],
+	"Plugins": [
+		{ "Name": "ValdradaRender", "Enabled": true },
+		{ "Name": "ValdradaCells", "Enabled": true },
+		{ "Name": "USDImporter", "Enabled": true, "TargetAllowList": [ "Editor" ] },
+		{ "Name": "PythonScriptPlugin", "Enabled": true, "TargetAllowList": [ "Editor" ] },
+		{ "Name": "EditorScriptingUtilities", "Enabled": true, "TargetAllowList": [ "Editor" ] },
+		{ "Name": "MovieRenderPipeline", "Enabled": false },
+		{ "Name": "AndroidFileServer", "Enabled": false }
+	],
+	"TargetPlatforms": [ "Linux", "Windows" ]
+}

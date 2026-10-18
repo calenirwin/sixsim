@@ -7,7 +7,9 @@ Queue. A 108 frame take renders in about 5 minutes including the import (0.13 to
 described in [One city, three renderers](architecture.md).
 
 The whole city can also be built into Unreal once, so that a shot needs only its take and its render: see
-[The whole city](#the-whole-city). Those tools are published as they run on the machine they were developed on.
+[The whole city](#the-whole-city). Those tools are published as they run on the machine they were developed on. A
+packaged Unreal Engine 5 renderer for the simulation and the Python API, which needs no engine installed, is described
+in [The Unreal Engine 5 client](ue-client.md).
 
 This guide installs the engine, prepares the project and the material sets, renders `t7ArchSoffit` (the shot of the
 Cycles guide), gives the measured times and lists the known limits. The commands are written for a Linux shell.
@@ -78,7 +80,7 @@ export BXTREES_ASSETS=$PWD/.cache/hf/Blender/bxtrees2
 The tree set comes from the dataset, as in the Cycles guide:
 
 ```bash
-hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.4.0 --include "Blender/bxtrees2/*" --local-dir .cache/hf
+hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.5.0 --include "Blender/bxtrees2/*" --local-dir .cache/hf
 ```
 
 ## Fetch the CC0 material sets
@@ -215,7 +217,10 @@ UE_CITY=1 UE_KITCELLS=1 UE_CITY_DIR=<cache>/city_v2 bash tools/ue/render_take.sh
 cells of its own frames, so the ranges of one long shot render in parallel on several GPUs; each range writes its
 frames under `f<a>-<b>/` in the output root. The presets are in `tools/ue/render_take*.json`: `cine2f` renders
 2560 × 1440 with 8 spatial samples a frame, ray-traced sun shadows, a 1 GB Nanite streaming pool and the aerial
-perspective at full strength from 6 km.
+perspective at full strength from 6 km. `cine2h` is `cine2f` with Unreal's temporal super resolution (TSR) as the
+anti-aliasing over those 8 samples: on frames 1050 to 1090 of `lfBroadway125`, a lens skimming the towers, the pixels
+that flip against both neighbouring frames (reprojected through depth) fell from 1.7 % to 0.11 %, at the same 2.3 s a
+frame.
 
 **Measured.** On the development machine (128 hardware threads, three RTX 6000 Ada GPUs, Unreal Engine 5.8.3) the
 first build of the five boroughs took 11 h 20 min: the 56,819 cells were baked in 7 h 41 min on the three GPUs while

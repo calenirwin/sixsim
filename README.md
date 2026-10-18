@@ -18,7 +18,7 @@ streetscape studies in which every modelled element can be traced to a public re
 | Streaming | Binary tiles streamed around the camera at full detail, with coarser far-field tiles beyond |
 | Simulation | IDM car following on the lane graph with signal phases and turn planning; pedestrians on the sidewalk graph with signal-aware crossings; vehicles of the NYC fleet: taxis, private cars, MTA buses on their routes, school buses, police, postal, sanitation and delivery vehicles, vans, box trucks and emergency vehicles; the 1 train on the Manhattan Valley viaduct and Metro-North on the Park Avenue tracks |
 | Sensors | RGB; semantic segmentation (Cityscapes-compatible classes); instance segmentation with visible and amodal boxes, occlusion ratios and 3D poses; metric depth |
-| Interfaces | Interactive browser client; simulation server with a TCP API and a Python client (synchronous stepping, actor control, sensors, map queries); export of a recorded take to OpenUSD, rendered offline in Blender Cycles and Unreal Engine 5; the whole city built into Unreal Engine 5 once, for shots that need only their take and their render |
+| Interfaces | Interactive browser client; simulation server with a TCP API and a Python client (synchronous stepping, actor control, sensors, map queries); export of a recorded take to OpenUSD, rendered offline in Blender Cycles and Unreal Engine 5; the whole city built into Unreal Engine 5 once, for shots that need only their take and their render; a packaged Unreal Engine 5 renderer for the simulation server and its Python API |
 
 Links:
 
@@ -27,6 +27,7 @@ Links:
 - Demo in the browser (WebGL2): <https://huggingface.co/spaces/mehmetkeremturkcan/valdrada>
 - Compiled city, models and textures: <https://huggingface.co/datasets/mehmetkeremturkcan/valdrada>
 - Simulation server for Windows x64, compiled city included: <https://github.com/mkturkcan/valdrada/releases>
+- Unreal Engine 5 client for Linux x86-64: <https://mkturkcan.github.io/valdrada/ue-client/>
 
 ## How it works
 
@@ -64,7 +65,7 @@ python PythonAPI/examples/intersection_120_amsterdam.py
 ```
 npm install && (cd client && npm install)
 # binary banks (tiles, models, textures): download, or compile the tiles (BUILDING.md)
-hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.4.0 \
+hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.5.0 \
     --include "Content/tiles/*" --include "Content/models/*" --include "Content/textures/*" --local-dir .cache/hf
 mv .cache/hf/Content/tiles .cache/hf/Content/models .cache/hf/Content/textures client/public/
 cd client && npm run dev        # http://127.0.0.1:5219
@@ -109,6 +110,25 @@ one script per step in [PythonAPI/examples/tutorials/](PythonAPI/examples/tutori
 
 ![RGB, semantic segmentation, instance segmentation with visible and amodal boxes, and depth for one step at W 120th St and Amsterdam Ave](docs/assets/figures/sensors.jpg)
 
+## Unreal Engine 5 client
+
+ValdradaUE is Valdrada with an Unreal Engine 5 renderer, packaged so that it runs without compiling anything. A
+launcher starts the headless core (the simulation and the Python API on port 2000) and the renderer connected to it;
+the Python code above runs against it unchanged.
+
+```bash
+curl -LO https://github.com/mkturkcan/valdrada/releases/latest/download/fetch_valdrada_ue.py
+python3 fetch_valdrada_ue.py          # downloads, checks and assembles the release for this system
+./ValdradaUE.sh                       # Windows: ValdradaUE.bat
+```
+
+The [guide](https://mkturkcan.github.io/valdrada/ue-client/) gives the requirements, the options and what the
+renderer serves so far; [building it from source](https://mkturkcan.github.io/valdrada/ue-client-build/) covers the
+engine, the city's content, cooking, chunking and publishing on Linux and Windows. The renderer is distributed under
+the Unreal Engine End User License Agreement; the repository's code stays MIT.
+Release 0.5.0 provides the Linux x86-64 build (29 files, 29.7 GB to download, 46.5 GB installed); the Windows x64
+build is made from source as the build guide describes.
+
 ## Coverage
 
 ![Every building of the five boroughs shaded by height, with the tile grid and the streaming radii around a camera in Harlem](docs/assets/figures/coverage.jpg)
@@ -128,6 +148,7 @@ client/            renderer, simulation and perception client (three.js, Vite)
 src/                    building-generator library shared with the client (@nyc alias); index.html is its demo
 core/                   the simulation core shared by the client and the headless tools: streaming, fleet, takes
 server/                 simulation server (Electron): TCP API, content serving, release builder
+ue_client/              ValdradaUE: the Unreal Engine 5 renderer client (project, plugins) and its packaging and release scripts
 PythonAPI/              `valdrada` Python client, examples
 space/                  the Hugging Face Space: static server for the dataset's Content/
 tools/                  figures, web packaging, headless rendering, film recorder and render QA, perception export, asset build scripts
@@ -154,6 +175,8 @@ the architecture diagram is a draw.io file in `docs/assets/figures/src/`.
   vehicles and the street trees are original models (CC BY 4.0); two vehicle bodies, the Angel of the Waters and the
   Statue of Liberty derive from CC BY 4.0 scans and models credited in ACKNOWLEDGEMENTS.md.
 - **Textures and skies:** CC0, from Poly Haven and ambientCG. **Typefaces:** SIL OFL 1.1 and Apache 2.0.
+- **Unreal Engine 5 client:** the source in `ue_client/` is MIT; the packaged renderer is built with Unreal Engine and
+  distributed in object code under the Unreal Engine End User License Agreement.
 
 The photoreal pedestrians contain components created with Epic Games' MetaHuman. The MetaHuman licence does not allow
 using MetaHuman characters to build or enhance a database or to train or test AI models. For datasets, training and
@@ -173,7 +196,7 @@ rendered with it, please cite Valdrada itself:
   author  = {Turkcan, Mehmet Kerem},
   title   = {{Valdrada}: a real-data, real-time digital twin of New York City},
   year    = {2026},
-  version = {0.4.0},
+  version = {0.5.0},
   url     = {https://github.com/mkturkcan/valdrada}
 }
 ```

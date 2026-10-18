@@ -13,9 +13,9 @@ export const TRAIN_KINDS = ['r62a', 'm7a', 'm8'];
 export function writeTracks(file, header, frames) {
   const hdr = Buffer.from(JSON.stringify(header), 'utf8');
   const hpad = (4 - ((12 + hdr.length) % 4)) % 4;
+  const blocks = frames.map(frameBlock);
   let size = 12 + hdr.length + hpad + 4 + 4 * frames.length;
-  const blockSize = (F) => 8 + F.veh.length * VEH_BYTES + F.walk.length * WALK_BYTES + ((F.sig.length + 3) & ~3) + (F.train ? F.train.length : 0) * TRAIN_BYTES;
-  for (const F of frames) size += blockSize(F);
+  for (const b of blocks) size += b.length;
   const buf = Buffer.alloc(size);
   let o = 0;
   buf.writeUInt32LE(MAGIC, o); o += 4;
@@ -25,40 +25,47 @@ export function writeTracks(file, header, frames) {
   buf.fill(0x20, o, o + hpad); o += hpad;
   buf.writeUInt32LE(frames.length, o); o += 4;
   const table = o; o += 4 * frames.length;
-  frames.forEach((F, i) => {
-    buf.writeUInt32LE(o, table + 4 * i);
-    buf.writeUInt16LE(F.veh.length, o); buf.writeUInt16LE(F.walk.length, o + 2); buf.writeUInt16LE(F.sig.length, o + 4); buf.writeUInt16LE(F.train ? F.train.length : 0, o + 6); o += 8;
-    for (const v of F.veh) {
-      buf.writeUInt32LE(v.id, o);
-      buf.writeFloatLE(v.x, o + 4); buf.writeFloatLE(v.y, o + 8); buf.writeFloatLE(v.z, o + 12);
-      buf.writeFloatLE(v.q[0], o + 16); buf.writeFloatLE(v.q[1], o + 20); buf.writeFloatLE(v.q[2], o + 24); buf.writeFloatLE(v.q[3], o + 28);
-      buf.writeFloatLE(v.v, o + 32); buf.writeFloatLE(v.spin, o + 36); buf.writeFloatLE(v.steer, o + 40); buf.writeFloatLE(v.bend, o + 44);
-      buf.writeUInt8(v.lamps & 255, o + 48); buf.writeUInt8(v.flags & 255, o + 49); buf.writeUInt16LE(v.kind, o + 50);
-      o += VEH_BYTES;
-    }
-    for (const w of F.walk) {
-      buf.writeUInt32LE(w.id, o);
-      buf.writeFloatLE(w.x, o + 4); buf.writeFloatLE(w.y, o + 8); buf.writeFloatLE(w.z, o + 12);
-      buf.writeFloatLE(w.yaw, o + 16); buf.writeFloatLE(w.v, o + 20); buf.writeFloatLE(w.phase, o + 24); buf.writeFloatLE(w.hz, o + 28);
-      buf.writeFloatLE(w.sxz, o + 32); buf.writeFloatLE(w.sy, o + 36);
-      buf.writeUInt8(Math.round(Math.max(0, Math.min(1, w.amp)) * 255), o + 40); buf.writeUInt8(w.pose & 255, o + 41); buf.writeUInt16LE(Math.round(Math.max(0, Math.min(6.5, w.pace ?? 1)) * 10000), o + 42);
-      o += WALK_BYTES;
-    }
-    for (let k = 0; k < F.sig.length; k++) buf.writeUInt8(F.sig[k], o + k);
-    o += (F.sig.length + 3) & ~3;
-    for (const t of F.train || []) {
-      buf.writeUInt32LE(t.id, o);
-      buf.writeFloatLE(t.x, o + 4); buf.writeFloatLE(t.y, o + 8); buf.writeFloatLE(t.z, o + 12); buf.writeFloatLE(t.yaw, o + 16);
-      for (let k = 0; k < 4; k++) { buf.writeFloatLE(t.ta[k], o + 20 + 4 * k); buf.writeFloatLE(t.tb[k], o + 36 + 4 * k); }
-      buf.writeFloatLE(t.roll, o + 52); buf.writeFloatLE(t.doors, o + 56); buf.writeFloatLE(t.v, o + 60);
-      buf.writeUInt8(t.lamps & 255, o + 64); buf.writeUInt8(t.kind & 255, o + 65); buf.writeUInt8(t.flags & 255, o + 66); buf.writeInt8(t.side, o + 67);
-      buf.writeUInt8(t.num & 255, o + 68); buf.writeUInt8(t.dest & 255, o + 69); buf.writeUInt16LE(0, o + 70);
-      o += TRAIN_BYTES;
-    }
-  });
+  blocks.forEach((b, i) => { buf.writeUInt32LE(o, table + 4 * i); b.copy(buf, o); o += b.length; });
   if (o !== size) throw new Error(`tracks size ${o} != ${size}`);
   fs.writeFileSync(file, buf);
   return size;
+}
+
+// one frame block (the file's per-frame record block; also the blob of the render protocol's render.state)
+export function frameBlock(F) {
+  const size = 8 + F.veh.length * VEH_BYTES + F.walk.length * WALK_BYTES + ((F.sig.length + 3) & ~3) + (F.train ? F.train.length : 0) * TRAIN_BYTES;
+  const buf = Buffer.alloc(size);
+  let o = 0;
+  buf.writeUInt16LE(F.veh.length, o); buf.writeUInt16LE(F.walk.length, o + 2); buf.writeUInt16LE(F.sig.length, o + 4); buf.writeUInt16LE(F.train ? F.train.length : 0, o + 6); o += 8;
+  for (const v of F.veh) {
+    buf.writeUInt32LE(v.id, o);
+    buf.writeFloatLE(v.x, o + 4); buf.writeFloatLE(v.y, o + 8); buf.writeFloatLE(v.z, o + 12);
+    buf.writeFloatLE(v.q[0], o + 16); buf.writeFloatLE(v.q[1], o + 20); buf.writeFloatLE(v.q[2], o + 24); buf.writeFloatLE(v.q[3], o + 28);
+    buf.writeFloatLE(v.v, o + 32); buf.writeFloatLE(v.spin, o + 36); buf.writeFloatLE(v.steer, o + 40); buf.writeFloatLE(v.bend, o + 44);
+    buf.writeUInt8(v.lamps & 255, o + 48); buf.writeUInt8(v.flags & 255, o + 49); buf.writeUInt16LE(v.kind, o + 50);
+    o += VEH_BYTES;
+  }
+  for (const w of F.walk) {
+    buf.writeUInt32LE(w.id, o);
+    buf.writeFloatLE(w.x, o + 4); buf.writeFloatLE(w.y, o + 8); buf.writeFloatLE(w.z, o + 12);
+    buf.writeFloatLE(w.yaw, o + 16); buf.writeFloatLE(w.v, o + 20); buf.writeFloatLE(w.phase, o + 24); buf.writeFloatLE(w.hz, o + 28);
+    buf.writeFloatLE(w.sxz, o + 32); buf.writeFloatLE(w.sy, o + 36);
+    buf.writeUInt8(Math.round(Math.max(0, Math.min(1, w.amp)) * 255), o + 40); buf.writeUInt8(w.pose & 255, o + 41); buf.writeUInt16LE(Math.round(Math.max(0, Math.min(6.5, w.pace ?? 1)) * 10000), o + 42);
+    o += WALK_BYTES;
+  }
+  for (let k = 0; k < F.sig.length; k++) buf.writeUInt8(F.sig[k], o + k);
+  o += (F.sig.length + 3) & ~3;
+  for (const t of F.train || []) {
+    buf.writeUInt32LE(t.id, o);
+    buf.writeFloatLE(t.x, o + 4); buf.writeFloatLE(t.y, o + 8); buf.writeFloatLE(t.z, o + 12); buf.writeFloatLE(t.yaw, o + 16);
+    for (let k = 0; k < 4; k++) { buf.writeFloatLE(t.ta[k], o + 20 + 4 * k); buf.writeFloatLE(t.tb[k], o + 36 + 4 * k); }
+    buf.writeFloatLE(t.roll, o + 52); buf.writeFloatLE(t.doors, o + 56); buf.writeFloatLE(t.v, o + 60);
+    buf.writeUInt8(t.lamps & 255, o + 64); buf.writeUInt8(t.kind & 255, o + 65); buf.writeUInt8(t.flags & 255, o + 66); buf.writeInt8(t.side, o + 67);
+    buf.writeUInt8(t.num & 255, o + 68); buf.writeUInt8(t.dest & 255, o + 69); buf.writeUInt16LE(0, o + 70);
+    o += TRAIN_BYTES;
+  }
+  if (o !== size) throw new Error(`frame block size ${o} != ${size}`);
+  return buf;
 }
 
 export function readTracks(file) {
