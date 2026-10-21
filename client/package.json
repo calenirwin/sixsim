@@ -9,7 +9,10 @@
     "build": "vite build",
     "fetch": "node tools/pipeline/fetch.mjs",
     "compile": "node --max-old-space-size=24576 tools/pipeline/compile.mjs",
-    "shot": "node tools/shot.mjs"
+    "shot": "node tools/shot.mjs",
+    "dev:fixture": "vite --config vite.fixture.config.js --open /fixture.html",
+    "build:fixture": "vite build --config vite.fixture.config.js",
+    "test:fixture": "npm run build:fixture && node tools/tests/fixture.mjs"
   },
   "keywords": [],
   "author": "",

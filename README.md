@@ -2,6 +2,9 @@
 
 # Valdrada
 
+SixSim fork development: see [the Toronto handoff](TORONTO_HANDOFF.md) for the
+small asset-free fixture, current limitations and next experiments.
+
 Valdrada is a city-scale digital twin of New York City compiled from
 public municipal records. It combines a
 real-time WebGL2 renderer, lane-level traffic and pedestrian simulation, pixel-exact perception ground truth and a
