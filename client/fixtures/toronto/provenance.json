@@ -1,0 +1,42 @@
+{
+  "dataset": "City of Toronto — 3D Massing",
+  "dataset_url": "https://open.toronto.ca/dataset/3d-massing/",
+  "package_api": "https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_show?id=3d-massing",
+  "resource_id": "667237d6-4d3c-4cf3-8cb7-e91c48d59375",
+  "archive_url": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/387b2e3b-2a76-4199-8b3b-0b7d22e2ec10/resource/667237d6-4d3c-4cf3-8cb7-e91c48d59375/download/3dmassingshapefile_2025_wgs84.zip",
+  "archive_bytes": 81415175,
+  "archive_sha256": "9617089710518f1a24f70ca11b4a7c20ae45ab8e52a6fbed1bc088192efe6285",
+  "accessed_utc": "2026-10-21",
+  "resource_last_modified": "2025-12-02T19:10:20",
+  "license": "Open Government Licence – Toronto, version 1.0",
+  "license_url": "https://open.toronto.ca/open-data-licence/",
+  "attribution": "Contains information licensed under the Open Government Licence – Toronto.",
+  "license_evidence": {
+    "portal_label": "Open Government Licence - Toronto",
+    "package_notes_excerpt": "Further to the Open Government Licence",
+    "ckan_license_id": "notspecified",
+    "ckan_license_title": "License not specified",
+    "ckan_isopen": false,
+    "decision": "Use the explicit dataset-page licence link and dataset-specific notes as the affirmative grant; retain the inconsistent CKAN tag as a metadata defect, not a separate restriction. No confirmation from City staff obtained."
+  },
+  "source_crs": "WGS_1984_Web_Mercator_Auxiliary_Sphere (EPSG:3857 equivalent), verified from .prj; not geographic degrees",
+  "output_crs": "GeoJSON longitude/latitude, inverse spherical Mercator using radius 6378137 m",
+  "bbox": [
+    -79.3965,
+    43.6484,
+    -79.3948,
+    43.6498
+  ],
+  "selection": "Whole polygons fully covered by bbox; boundary intersections excluded, no clipping.",
+  "records": 15,
+  "boundary_exclusions": 10,
+  "id_semantics": "Snapshot-qualified zero-based DBF record index. Archive has no OBJECTID field despite workbook description. Not a stable City building/parcel identifier.",
+  "height": "AVG_HEIGHT metres, retained without fallback. Workbook describes maximum average footprint height; source HEIGHT_SRC retained. Extruded on flat local y=0; no terrain/elevation accuracy claimed.",
+  "geometry": "Source polygons retained whole, no clipping/repair/deduplication; Z ignored for footprint, holes retained. Rendering a source mass is not identifying a unique physical building.",
+  "subset_sha256": "c99070c7e17f2e11104569284a01f9bd8b752ba5818bd3180cdfd6daf527cac5",
+  "limitations": [
+    "Illustrative use; verify independently for legal or official purposes.",
+    "2025 archive includes earlier measurements (LiDAR-derived fields reference 2015).",
+    "No MPAC assessment/ownership data, third-party imagery or pedestrian assets included."
+  ]
+}

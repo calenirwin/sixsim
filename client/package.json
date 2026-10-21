@@ -12,7 +12,12 @@
     "shot": "node tools/shot.mjs",
     "dev:fixture": "vite --config vite.fixture.config.js --open /fixture.html",
     "build:fixture": "vite build --config vite.fixture.config.js",
-    "test:fixture": "npm run build:fixture && node tools/tests/fixture.mjs"
+    "test:fixture": "npm run build:fixture && node tools/tests/fixture.mjs",
+    "compile:toronto": "node tools/toronto/compile.mjs",
+    "dev:toronto": "npm run compile:toronto && vite --config vite.toronto.config.js --open /toronto.html",
+    "build:toronto": "npm run compile:toronto && vite build --config vite.toronto.config.js",
+    "test:toronto": "node --test tools/tests/toronto.mjs",
+    "test:toronto:browser": "npm run build:toronto && node tools/tests/toronto-browser.mjs"
   },
   "keywords": [],
   "author": "",

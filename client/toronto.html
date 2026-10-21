@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SixSim · Toronto massing study</title><link rel="icon" href="data:,">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101922;color:#e9eef3;font:14px/1.55 system-ui;display:grid;grid-template-columns:300px 1fr;height:100dvh}
+aside{padding:24px;overflow:auto;border-right:1px solid #34404b}h1{font-size:26px;line-height:1.15;margin:10px 0}h2{font-size:14px;margin-top:26px}.label{letter-spacing:.15em;font-size:11px;text-transform:uppercase;color:#aec9d5}p{color:#bdc9d2}a{color:#acd7ed}button{padding:8px 12px;border:1px solid #687c8b;background:transparent;color:inherit;border-radius:4px;cursor:pointer}button:hover{background:#263c4b}#viewport{min-width:0;min-height:0;position:relative}canvas{display:block}#detail{overflow-wrap:anywhere}#status{font-variant-numeric:tabular-nums}.note{font-size:12px}#north{position:absolute;right:20px;top:15px;color:#243543;pointer-events:none}@media(max-width:650px){body{grid-template-columns:1fr;grid-template-rows:230px 1fr}aside{padding:14px;border-right:0;border-bottom:1px solid #34404b}h1{font-size:20px}h2{margin-top:12px}}
+</style>
+</head>
+<body>
+<aside>
+<div class="label">SixSim · Toronto study 01</div>
+<h1>Queen &amp; Spadina</h1>
+<p>Real City of Toronto massing records in a small window northeast of the intersection.</p>
+<p id="status" role="status">Loading local tile…</p>
+<button id="perspective">Perspective</button> <button id="plan">Top view · north up</button>
+<p class="note">Drag to orbit · scroll to zoom · click a mass to inspect.</p>
+<h2>Source record</h2><p id="detail">Select a mass to see its recorded height and provenance.</p>
+<h2>What this shows</h2>
+<p class="note">Footprints extruded to the source AVG_HEIGHT, on a flat display plane. No inferred facades, floors, terrain, roads or traffic. Source records may represent parts of a building. This is an illustrative massing study, not a surveyed or simulated streetscape.</p>
+<p class="note"><a id="source-download" download>Download the source subset</a><br><a id="provenance-download" download>Download provenance</a></p>
+<p class="note">Contains information licensed under the <a href="https://open.toronto.ca/open-data-licence/">Open Government Licence – Toronto</a>.<br>Source: <a href="https://open.toronto.ca/dataset/3d-massing/">City of Toronto, 3D Massing (2025)</a>. No City endorsement.</p>
+<p class="note">SixSim uses Valdrada by Mehmet Kerem Turkcan (<a href="./LICENSE.txt">MIT</a>). <a href="./THIRD_PARTY_NOTICES.txt">Library notices</a>. This real-data study is separate from the procedural NYC fixture.</p>
+</aside>
+<main id="viewport" aria-label="Interactive Toronto building massing"><span id="north">North = −Z · metres</span></main>
+<script type="module" src="./src/toronto/main.js"></script>
+</body>
+</html>

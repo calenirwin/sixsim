@@ -56,13 +56,14 @@ export function parseTile(buf) {
   return { header, S };
 }
 
-export function* buildingsOf(tile) {
+// Bounded non-NYC import viewers can opt out; the existing city runtime keeps its default.
+export function* buildingsOf(tile, { applyOverrides = true } = {}) {
   const meta = tile.S.bldg;
   const dv = new DataView(meta.buffer, meta.byteOffset, meta.byteLength);
   const n = meta.byteLength / 44;
   // overrides whose point falls near this tile (a footprint may reach a little past its tile's square)
   const org = tile.header && tile.header.origin;
-  const near = org ? RT_OVR.filter((r) => r.x > org[0] - 150 && r.x < org[0] + 662 && r.z > org[1] - 150 && r.z < org[1] + 662) : [];
+  const near = applyOverrides && org ? RT_OVR.filter((r) => r.x > org[0] - 150 && r.x < org[0] + 662 && r.z > org[1] - 150 && r.z < org[1] + 662) : [];
   for (let i = 0; i < n; i++) {
     const o = i * 44;
     const b = {

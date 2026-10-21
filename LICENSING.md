@@ -74,3 +74,16 @@ In practice:
   simulation server with `--pedestrians procedural`: it replaces the bank with the built-in procedural pedestrians,
   which use no third-party assets and are MIT-licensed like the rest of the code, and it exposes one walker blueprint,
   `walker.pedestrian.procedural`. In the browser client, the URL parameter `?crowd=0` does the same.
+
+## SixSim Toronto massing subset
+
+The separate `client/fixtures/toronto/block.geojson` subset and its generated
+Toronto-only CTL1 tile contain City of Toronto 3D Massing records under the
+[Open Government Licence – Toronto](https://open.toronto.ca/open-data-licence/).
+They do not incorporate the NYC compiled city or OpenStreetMap geometry.
+Contains information licensed under the Open Government Licence – Toronto.
+
+See [the subset provenance](client/fixtures/toronto/README.md) for the precise
+resource, revision hash, licence evidence, CKAN metadata discrepancy and
+illustrative-use limitations. Code remains MIT. The upstream component terms
+above are unchanged; combining additional datasets/assets needs their terms too.

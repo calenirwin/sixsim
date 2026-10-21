@@ -1,137 +1,126 @@
 # SixSim: Toronto adaptation handoff
 
-## Start here
+## Runs now
 
-SixSim is the `calenirwin/sixsim` fork of Mehmet Kerem Turkcan's Valdrada (formerly
-BoundlessNYC). The current runnable slice is a **procedural NYC building fixture**,
-not a Toronto digital twin. It exercises the existing shared building generator in
-a browser without downloading city tiles, models or textures. No Toronto records
-or invented Toronto geometry have been added.
+SixSim is `calenirwin/sixsim`, a fork of Mehmet Kerem Turkcan's Valdrada (formerly
+BoundlessNYC). There are now **two distinct, small browser paths**:
 
-From the repository root, with Node >=22.12 (verified here with 24.19.0):
-
-```sh
-npm ci --ignore-scripts
-npm --prefix client ci --ignore-scripts
-npm --prefix client run dev:fixture
-# http://127.0.0.1:5219/fixture.html
-```
-
-The fixture has rowhouse and mixed-use views. Drag to orbit, scroll to zoom.
-Its separate Vite configuration excludes public banks and builds only the fixture:
-
-```sh
-npm --prefix client run build:fixture
-CHROMIUM_PATH=/usr/bin/chromium npm --prefix client run test:fixture
-```
-
-Point `CHROMIUM_PATH` at an existing Chromium, or install Playwright's browser with
-`npx playwright install chromium` at the root and omit that variable. The browser
-install is optional and separate from city assets. `--ignore-scripts` avoids the
-unneeded ffmpeg binary installer for this path; offline film tools need their own
-setup. The smoke test launches and closes its own loopback preview server, rejects
-external HTTP requests, checks page/console/HTTP errors, rendered mesh/triangle
-counts and context health for both views. Screenshots go to ignored
-`client/shots/fixture-{rowhouse,mixeduse}.png`. This verifies the shared generator,
-not city streaming, traffic, perception or the Python server.
-
-## Fork audit (2026-10-21)
-
-- Origin default branch `main`: `eaee8b10b7962ca71efbeedfe80a7634405c1286`.
-  Initial local branch `work` was clean and at that exact commit; origin had only
-  `main` at inspection. Work is isolated on `pilot/toronto-readiness`.
-- GitHub identifies `mkturkcan/valdrada` as parent and source. The fork has zero
-  unique commits against upstream HEAD `3a017c1cb4c49b4a669043526e67a0e4118b3a30`
-  and is one commit behind. That commit touches 55 files (+1585/-159), including
-  rendering, tower geometry, core API buffering and replay tools. It was inspected,
-  not merged. Compare separately before any later upstream sync.
-- No project AGENTS.md or project skill files were present. Workspace instruction
-  directories were empty. Existing README, BUILDING, LICENSING, client docs,
-  compiler, projection, tile reader, server and core API were inspected.
-- Original LICENSE, LICENSING, ACKNOWLEDGEMENTS and citations remain unchanged.
-  New fixture code follows the repository MIT licence; this document follows its
-  documentation licensing. Namespaces and upstream branding were not mass-renamed.
-
-## Data and execution path
-
-| Stage | Existing implementation | Toronto implication |
+| Path | What is real / procedural | Start from repository root |
 |---|---|---|
-| Records | `client/tools/pipeline/fetch.mjs`, `client/DATA_SOURCES.md` | NYC Socrata/PLUTO/CSCL schemas cannot consume Toronto records unchanged. |
-| Compiler | `compile.mjs`, `classify.mjs`, `binio.mjs` in that pipeline | Keep binary sections/manifest contract; add a small explicit input adapter. NYC facade classifications are assumptions, not Toronto observations. |
-| Coordinates | `client/src/shared/geo.js` | Fixed Manhattan anchor (40.7831,-73.9712); 512 m near tiles, 2048 m far tiles; x east, y up, z south. Do not just change camera latitude. |
-| Runtime | `client/src/world/{streamer,tiledata,assemble}.js`, `core/` | Tiles feed buildings/roads, graphs, furniture, simulation and rendering. NYC landmark overrides and dressing require an explicit Toronto opt-out. |
-| API | `server/main.js` hosts Electron/client `?api=1`; `client/src/api/bridge.js` implements calls; `PythonAPI/valdrada` is TCP client | API coordinates are ENU, x east/y north/z up. `server/main.js` and `core/api/session.mjs` also hard-code the Manhattan origin; bridge map name is NYC. Update and test together in a later change. |
-| Renderer options | WebGL client, headless core and UE renderer | Preserve these paths. This pilot does not validate Electron, Python stepping or UE. |
+| Toronto massing study | 15 real City of Toronto massing records near Queen/Spadina, in a ~24 KB attributed source subset. Observed footprints/AVG_HEIGHT; flat display base, no inferred facades/roads/traffic. | `npm --prefix client run dev:toronto`, open `http://127.0.0.1:5219/toronto.html` |
+| Upstream generator fixture | Procedural NYC rowhouse/mixed-use examples, explicitly **not Toronto data**. | `npm --prefix client run dev:fixture`, open `http://127.0.0.1:5219/fixture.html` |
 
-The fixture imports `src/main.js`, the existing procedural building demo consumed
-by the city's `@nyc` subproject. It is deliberately separate from `client/src/main.js`.
-The original client entry and production build remain intact.
+Both use port 5219; run one development server at a time. Setup with Node >=22.12
+(verified with 24.19.0): `npm ci --ignore-scripts` then
+`npm --prefix client ci --ignore-scripts`. The normal build/test path needs no city
+archive or multiGB asset banks. Ignoring install scripts avoids an unnecessary
+ffmpeg download; film-rendering tools need their own setup.
 
-## Verified state and gaps
+The Toronto path compiles one ~4 KB CTL1 tile using the existing binary writer,
+then fetches and decodes it with the existing runtime tile reader. A neutral
+massing inspector lets you orbit, look from above and select source records. This
+is a bounded **import/decoder/rendering vertical slice**, not the full Toronto
+simulation. It does not run `assembleTile`, the city streamer, traffic, the
+Electron/Python API or UE. Default NYC simulation coordinates remain unchanged.
 
-- Clean lockfile installs with `npm ci --ignore-scripts` passed in root and client.
-- Fixture production build: ~1.3 MB, no public asset banks. Chromium WebGL smoke
-  passed: rowhouse 12 meshes / 20,982 rendered triangles; mixed-use 33 meshes /
-  33,182 triangles; neither lost its context or emitted captured errors. Screenshots
-  were produced and the rowhouse frame visually inspected. These are upstream
-  procedural visuals, not validated Toronto architecture or city simulation.
+See [source evidence and reproduction](client/fixtures/toronto/README.md),
+[machine-readable provenance](client/fixtures/toronto/provenance.json) and
+[free hosting assessment](client/fixtures/toronto/HOSTING.md).
 
-- `npm --prefix client run build`: passed; upstream dynamic-import and large-chunk
-  warnings remain. A successful bundle does not establish a loaded city.
-- `npm --prefix client test`: fails with ENOENT for `public/tiles/manifest.json`.
-  The original full-data suite remains strict; it is not silently skipped.
-- `client/public` has committed basis/data/fonts/luts/settings (~52 MB), but no
-  tiles/models/textures banks. Some committed data is NYC/OSM-derived (ODbL), not
-  a Toronto fixture. The procedural fixture does not copy those banks.
-- BUILDING describes 3.1 GB binary banks and 17.7 GB peak memory for a full city
-  compile. No full compile or binary-bank download was attempted. Setup reported
-  an upstream asset HTTP 503; this run did not retry or bypass it. The guide also
-  describes access-controlled periods for the dataset. No credentials were added.
-- Existing CI only deploys docs on main/manual dispatch. This branch adds a
-  pull-request fixture/build check with read-only contents permission and no
-  deployment step. Nothing is merged or hosted by this work.
+## Source/licence resolution
 
-## Toronto source decision before importing
+The first pilot deferred Toronto data because the API licence tag was unspecified.
+On the continuation, the official dataset page's explicit licence link, the
+package's dataset-specific licence reference, and the linked City licence were
+checked together. They support this attributed subset under the Open Government
+Licence – Toronto. The inconsistent CKAN fields remain recorded; no claim is made
+that the City fixed them or separately confirmed the interpretation.
 
-On 2026-10-21, metadata was fetched (no archive download) from the official
-[3D Massing catalogue](https://open.toronto.ca/dataset/3d-massing/) and its
-[CKAN package API](https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_show?id=3d-massing).
-The portal lists Open Government Licence – Toronto, while CKAN returns
-`license_title: "License not specified"` and no licence URL. Package notes refer
-to the Open Government Licence and describe illustrative-use limitations.
-Resolve and record the applicable licence/attribution for the selected resource
-before committing a redistributed subset. This is a provenance gap, not a claim
-that public records require new credentials.
+One official 81,415,175-byte 2025 archive was downloaded and hashed. No multipatch,
+full-city NYC bank, restricted parcel source or imagery was downloaded. Only 15
+whole polygons fit the selected ~137 × 156 m window; ten boundary intersections
+were excluded. Source details matter:
 
-The listed 2025 WGS84 shapefile is resource
-`667237d6-4d3c-4cf3-8cb7-e91c48d59375` (81,415,175 bytes); the multipatch archive is
-145,110,632 bytes. Neither was downloaded. Confirm actual schema, CRS and height
-semantics after retrieval; filename alone is not validation. Package notes also
-identify MPAC/parcel information that the City cannot provide: do not recreate a
-PLUTO equivalent from restricted assessment data or assume ownership/use fields.
-Use only published fields and explicitly mark missing heights, floors and use.
-Do not bring MetaHuman pedestrians into training/evaluation datasets; preserve
-all component-specific terms in LICENSING.md when later assets are used.
+- The archive filename says WGS84, but its `.prj` is Web Mercator metres. It is
+  explicitly transformed to longitude/latitude before local metric projection.
+- The DBF lacks an official OBJECTID despite the metadata workbook. IDs are
+  snapshot-qualified archive record indices, not stable building/property IDs.
+- `AVG_HEIGHT` is retained as observed; floors/use/facades remain unknown. Source
+  masses may be parts of buildings, and older measurements exist in the 2025
+  archive. This is illustrative, not surveyed current building truth.
+- The source subset, derived Toronto-only tile and code have separately stated
+  licences. Existing NYC/OSM/CARLA/MetaHuman terms remain unchanged. No OSM geometry
+  is merged into the Toronto subset. Original LICENSE/citations are preserved;
+  LICENSING.md adds a scoped Toronto exception with attribution and evidence.
 
-## Next two experiments
+## Checks
 
-1. **A real Toronto block, geometry only.** Choose one 512 m study area (proposed:
-   Queen/Spadina; confirm this is the desired first neighbourhood). Resolve the
-   source licence discrepancy above, then obtain the named ~81 MB public archive
-   or a documented bounded official export. Keep raw data ignored; record URL,
-   resource ID, retrieval date, SHA256, licence, source CRS and crop bounds. Extract
-   at most 50 intersecting footprints with original IDs and observed height fields;
-   retain missing values rather than inventing floors/heights. Inspect geometry
-   validity, holes, units and extrema. A tiny fixture with explicit provenance and
-   a reviewed local map overlay is the deliverable. Stop if access requires a new
-   account, purchase or restricted parcel source.
-2. **One tile through existing contracts.** After experiment 1, add a city profile
-   shared by compiler, client and API origin reporting (default remains NYC).
-   Adapt the subset into `binio.mjs` sections plus manifest, then exercise
-   `parseTile`/`buildingsOf` and existing assembly at a Toronto camera location.
-   Disable NYC-specific dressing/landmarks for that profile. Test lon/lat round
-   trips, east/north orientation, negative tile boundaries, known footprint widths
-   and client↔ENU transforms. Acceptance: the same real source IDs and heights
-   survive decode, visible buildings stay inside the crop, NYC fixture still
-   passes, and no background full-city requests occur. Add a verified Toronto
-   Centreline segment only after this, marking lane count/width inference openly.
+```sh
+npm --prefix client run test:toronto
+CHROMIUM_PATH=/usr/bin/chromium npm --prefix client run test:toronto:browser
+CHROMIUM_PATH=/usr/bin/chromium npm --prefix client run test:fixture
+npm --prefix client run build
+```
+
+Use an existing Chromium, or `npx playwright install chromium` at the root and omit
+`CHROMIUM_PATH`. Browser tests launch/close their own loopback servers. Screenshots
+are in ignored `client/shots/` and uploaded by the PR workflow.
+
+- Six Toronto Node tests cover provenance hashes, deterministic CTL1 encoding,
+  source identities/heights/coordinates, projection/winding, holes/multipart
+  handling, rejected invalid inputs and preservation/opt-out of NYC overrides.
+- Toronto production browser test renders 15 masses / 528 triangles with no
+  captured errors or context loss, picks a known source record and checks source,
+  provenance and licence files. It runs below `/sixsim/` to exercise project-path
+  static hosting, with one tile request and no external/root-relative requests.
+- Procedural fixture smoke renders both upstream scenes. The full client build
+  passes with existing dynamic-import and large-chunk warnings.
+- Original `npm --prefix client test` still requires absent
+  `public/tiles/manifest.json`; no silent skip or claim that full-data tests pass.
+- PR workflow checks both small browser paths and the full build. It has read-only
+  contents permissions and no deployment step. No merge or deployment performed.
+
+## Fork audit and architecture
+
+Initial origin main was `eaee8b10b7962ca71efbeedfe80a7634405c1286`, local `work`
+was clean at that commit and origin had only main. GitHub confirms parent/source
+`mkturkcan/valdrada`. At inspection upstream HEAD was
+`3a017c1cb4c49b4a669043526e67a0e4118b3a30`: the fork had zero unique commits and
+was one commit behind (55 files, +1585/-159). That upstream rendering/core/replay
+change was inspected, not merged. All work remains on `pilot/toronto-readiness`.
+No project AGENTS.md or project skill files were present; workspace instruction
+directories were empty.
+
+| Stage | Existing implementation | Toronto status / next work |
+|---|---|---|
+| Records | `client/tools/pipeline/fetch.mjs`, `client/DATA_SOURCES.md` | Keep NYC schema handling; separate bounded Toronto extractor is `client/tools/toronto/extract.py`. |
+| Compiler | `compile.mjs`, `classify.mjs`, `binio.mjs` | Small Toronto importer reuses `binio.mjs`, 44-byte building records and hole sidecar; full compiler stays NYC. |
+| Coordinates | `client/src/shared/geo.js` | Fixed Manhattan origin remains. New explicit local-frame helper/profile is used only by the Toronto slice. |
+| Runtime | `client/src/world/{streamer,tiledata,assemble}.js`, `core/` | Existing parser/building/hole iterators decode Toronto CTL1; optional NYC override opt-out defaults to existing behaviour. Full assembly is not yet city-profile aware. |
+| API | `server/main.js`, `client/src/api/bridge.js`, `PythonAPI/valdrada`, `core/api/session.mjs` | Client frame x east/y up/z south; API ENU x east/y north/z up. Server/core also hard-code Manhattan, bridge map name is NYC. Coordinate/profile migration must update them together later. |
+| Assets | `client/public` basis/data/fonts/luts/settings (~52 MB) | Original tiles/models/textures absent. Upstream guide describes 3.1 GB banks and 17.7 GB peak full compile memory; setup reported asset HTTP 503. No access bypass or full-city compile attempted. |
+
+## Hosting and next two experiments
+
+The Toronto build is ~640 KB and entirely static. GitHub Pages (public project)
+and Hugging Face **Static** Spaces are viable CAD $0/month candidates within the
+user's CAD $20–30 monthly ceiling. No paid compute is needed for this study. The
+[assessment](client/fixtures/toronto/HOSTING.md) records official limits and the
+existing documentation Pages workflow conflict to resolve before publishing.
+No hosting destination, account, DNS, secret or deployment was changed.
+
+1. **Review source geometry and height interpretation.** Validate the selected
+   record IDs against a bounded official source/map, confirm whether the window is
+   the desired neighbourhood and inspect overlapping/tier records. Compare
+   AVG_HEIGHT/MAX_HEIGHT with explicit labels before choosing a richer envelope;
+   retain provenance and never invent missing values. Decide whether to extend
+   the crop to complete the physical block. The present crop excludes boundary
+   buildings and is not complete coverage.
+2. **Integrate one tile into the real city runtime.** Introduce a shared city
+   profile for compiler/client/API origin and map reporting, retaining NYC as the
+   default. Explicitly disable NYC dressing/landmarks/ground overlays for Toronto
+   before using `assembleTile`. Verify client↔ENU transforms, source IDs/heights,
+   camera placement and zero background city-bank requests. Only then consider a
+   licensed Toronto Centreline segment; distinguish measured widths/lane counts
+   from inference. This is the remaining simulation integration, not something
+   this massing viewer claims to have completed.
