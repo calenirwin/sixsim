@@ -14,7 +14,9 @@ aside{padding:24px;overflow:auto;border-right:1px solid #34404b}h1{font-size:26p
 <h1>Queen &amp; Spadina</h1>
 <p>Real City of Toronto massing records in a small window northeast of the intersection.</p>
 <p id="status" role="status">Loading local tile…</p>
-<button id="perspective">Perspective</button> <button id="plan">Top view · north up</button>
+<button id="perspective" disabled>Perspective</button> <button id="plan" disabled>Top view · north up</button>
+<button id="reload" hidden>Reload study</button>
+<noscript><p>This interactive study requires JavaScript and WebGL2. Source data and licence information remain available in the repository.</p></noscript>
 <p class="note">Drag to orbit · scroll to zoom · click a mass to inspect.</p>
 <h2>Source record</h2><p id="detail">Select a mass to see its recorded height and provenance.</p>
 <h2>What this shows</h2>
@@ -24,6 +26,6 @@ aside{padding:24px;overflow:auto;border-right:1px solid #34404b}h1{font-size:26p
 <p class="note">SixSim uses Valdrada by Mehmet Kerem Turkcan (<a href="./LICENSE.txt">MIT</a>). <a href="./THIRD_PARTY_NOTICES.txt">Library notices</a>. This real-data study is separate from the procedural NYC fixture.</p>
 </aside>
 <main id="viewport" aria-label="Interactive Toronto building massing"><span id="north">North = −Z · metres</span></main>
-<script type="module" src="./src/toronto/main.js"></script>
+<script type="module" src="./src/toronto/boot.js"></script>
 </body>
 </html>

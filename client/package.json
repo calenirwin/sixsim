@@ -15,9 +15,12 @@
     "test:fixture": "npm run build:fixture && node tools/tests/fixture.mjs",
     "compile:toronto": "node tools/toronto/compile.mjs",
     "dev:toronto": "npm run compile:toronto && vite --config vite.toronto.config.js --open /toronto.html",
-    "build:toronto": "npm run compile:toronto && vite build --config vite.toronto.config.js",
+    "build:toronto": "npm run compile:toronto && vite build --config vite.toronto.config.js && node tools/toronto/package.mjs",
     "test:toronto": "node --test tools/tests/toronto.mjs",
-    "test:toronto:browser": "npm run build:toronto && node tools/tests/toronto-browser.mjs"
+    "test:toronto:browser": "npm run build:toronto && node tools/tests/toronto-browser.mjs",
+    "test:toronto:delivery": "node --test tools/tests/toronto-delivery.mjs",
+    "test:toronto:static": "npm run build:toronto && node tools/tests/toronto-static.mjs",
+    "test:toronto:repro": "node tools/tests/toronto-repro.mjs"
   },
   "keywords": [],
   "author": "",

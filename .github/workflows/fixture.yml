@@ -21,7 +21,12 @@ jobs:
       - run: npm --prefix client ci --ignore-scripts
       - run: npx playwright install --with-deps chromium
       - run: npm --prefix client run test:toronto
-      - run: npm --prefix client run test:toronto:browser
+      - run: npm --prefix client run test:toronto:delivery
+      - run: npm --prefix client run test:toronto:repro
+      - run: node tools/tests/toronto-static.mjs
+        working-directory: client
+      - run: node tools/tests/toronto-browser.mjs
+        working-directory: client
       - run: npm --prefix client run test:fixture
       - run: npm --prefix client run build
       - uses: actions/upload-artifact@v4
@@ -32,3 +37,8 @@ jobs:
             client/shots/fixture-*.png
             client/shots/toronto-*.png
           if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: toronto-static-demo
+          path: client/dist-toronto/
+          if-no-files-found: error

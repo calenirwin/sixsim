@@ -102,7 +102,7 @@ directories were empty.
 
 ## Hosting and next two experiments
 
-The Toronto build is ~640 KB and entirely static. GitHub Pages (public project)
+The Toronto build is ~650 KB and entirely static. GitHub Pages (public project)
 and Hugging Face **Static** Spaces are viable CAD $0/month candidates within the
 user's CAD $20–30 monthly ceiling. No paid compute is needed for this study. The
 [assessment](client/fixtures/toronto/HOSTING.md) records official limits and the
@@ -124,3 +124,21 @@ No hosting destination, account, DNS, secret or deployment was changed.
    licensed Toronto Centreline segment; distinguish measured widths/lane counts
    from inference. This is the remaining simulation integration, not something
    this massing viewer claims to have completed.
+
+## Static delivery continuation
+
+The bounded demo now has a default index, a deterministic SHA256 file inventory,
+automatic byte-budget checks and a CI `toronto-static-demo` artifact. Five delivery
+unit tests and a plain-server browser suite cover failure/reload behaviour and
+root/nested deployment paths; two clean builds must match. See the
+[delivery evidence and commands](client/fixtures/toronto/HOSTING.md#verified-static-package-and-recovery).
+This continuation changes transport/boot and packaging only; source GeoJSON,
+provenance, compiler, projection and shared decoder remain as previously reviewed.
+
+Next independent review: audit importer/runtime regressions and coordinate/data
+integrity against the exact PR head. Check the source revision/selection/height
+semantics, multipart/hole winding and bounds, NYC override opt-out/default
+preservation and client-frame assumptions. Report reproducible findings first;
+coordinate any implementation edits before overlapping these files. Full-city
+assembly/API integration remains the next implementation decision, not a feature
+of this static delivery pass. Design exploration is paused.

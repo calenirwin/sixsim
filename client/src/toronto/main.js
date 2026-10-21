@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { parseTile, buildingsOf, holesOf } from '../world/tiledata.js';
 import { PROFILE } from './profile.js';
+import { loadTileBytes } from './load.js';
 import tileUrl from '../../.generated/toronto/0_0.bin?url';
 import sourceUrl from '../../fixtures/toronto/block.geojson?url';
 import provenanceUrl from '../../fixtures/toronto/provenance.json?url';
@@ -10,10 +11,8 @@ const status = document.querySelector('#status');
 document.querySelector('#source-download').href = sourceUrl;
 document.querySelector('#provenance-download').href = provenanceUrl;
 
-async function start() {
-  const response = await fetch(tileUrl);
-  if (!response.ok) throw new Error(`Tile request failed (${response.status})`);
-  const tile = parseTile(await response.arrayBuffer());
+export async function start(showFailure) {
+  const tile = parseTile(await loadTileBytes(tileUrl));
   if (tile.header.profile?.id !== PROFILE.id) throw new Error('Unexpected city profile');
   const records = [...buildingsOf(tile, { applyOverrides: false })];
   const holes = holesOf(tile);
@@ -21,6 +20,11 @@ async function start() {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   viewport.appendChild(renderer.domElement);
+  renderer.domElement.addEventListener('webglcontextlost', event => {
+    event.preventDefault();
+    renderer.setAnimationLoop(null);
+    showFailure(new Error('Graphics context lost. Reload to restart the study.'));
+  });
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xdbe4e8);
   scene.add(new THREE.HemisphereLight(0xffffff, 0x687781, 2.6));
@@ -84,4 +88,3 @@ async function start() {
     renderer.render(scene, camera); window.__TORONTO.frames++;
   });
 }
-start().catch(error => { status.textContent = `Unable to load study: ${error.message}`; console.error(error); });
