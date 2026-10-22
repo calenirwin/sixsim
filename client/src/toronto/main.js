@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { applyIdentity } from './identity.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { parseTile, buildingsOf, holesOf } from '../world/tiledata.js';
 import { PROFILE } from './profile.js';
@@ -12,6 +13,7 @@ document.querySelector('#source-download').href = sourceUrl;
 document.querySelector('#provenance-download').href = provenanceUrl;
 
 export async function start(showFailure) {
+  applyIdentity('Queen & Spadina massing study');
   const tile = parseTile(await loadTileBytes(tileUrl));
   if (tile.header.profile?.id !== PROFILE.id) throw new Error('Unexpected city profile');
   const records = [...buildingsOf(tile, { applyOverrides: false })];

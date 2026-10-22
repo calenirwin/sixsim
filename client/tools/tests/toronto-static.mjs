@@ -71,13 +71,15 @@ try {
   assert.equal(await page.locator('#plan').isDisabled(), true);
   await page.locator('#reload').click();
   await page.waitForFunction(() => window.__TORONTO?.frames > 1);
-  await page.route('**/assets/main-*.js', route => route.abort());
-  await page.goto(origin + '/sixsim/');
-  await page.waitForFunction(() => !document.querySelector('#reload').hidden);
-  assert.match(await page.locator('#status').innerText(), /Unable to display/);
-  await page.unroute('**/assets/main-*.js');
-  await page.locator('#reload').click();
-  await page.waitForFunction(() => window.__TORONTO?.frames > 1);
+  for (const module of ['main', 'identity']) {
+    await page.route(`**/assets/${module}-*.js`, route => route.abort());
+    await page.goto(origin + '/sixsim/');
+    await page.waitForFunction(() => !document.querySelector('#reload').hidden);
+    assert.match(await page.locator('#status').innerText(), /Unable to display/);
+    await page.unroute(`**/assets/${module}-*.js`);
+    await page.locator('#reload').click();
+    await page.waitForFunction(() => window.__TORONTO?.frames > 1);
+  }
   const noGpu = await browser.newPage();
   await noGpu.addInitScript(() => {
     const original = HTMLCanvasElement.prototype.getContext;

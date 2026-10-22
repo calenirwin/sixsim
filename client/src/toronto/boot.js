@@ -1,5 +1,3 @@
-import { applyIdentity } from './identity.js';
-applyIdentity('Queen & Spadina massing study');
 const status = document.querySelector('#status');
 const reload = document.querySelector('#reload');
 const controls = ['#plan', '#perspective'].map(id => document.querySelector(id));
