@@ -2,6 +2,10 @@
 
 SixSim’s proposed direction is a reproducible Toronto city model that can support exploration and, eventually, explicit mobility and urban scenarios. Visual detail should remain traceable to sources; simulated behaviour should state its assumptions. This is a direction for discussion, not approval of a fixed feature set or a claim of predictive validity.
 
+## Working identity
+
+**SixSim is a provisional working name.** A more Toronto-specific, professional public identity may replace it; no name or repository change is decided here. Keep display branding separate from provider IDs, data schemas, source provenance and geographic profiles. New user-facing surfaces should share configurable display identity where practical, rather than introducing product-name dependencies into import/runtime contracts or new infrastructure. The GTFS slice uses TTC IDs, route numbers and service dates, not a SixSim-specific data namespace.
+
 ## Current boundary
 
 The draft branch contains a 15-record real massing slice, a small binary importer and an isolated Three.js viewer. Buildings use observed average heights on a flat plane. A separate 510 Spadina static GTFS experiment now preserves one service day and visualizes schedule-derived positions. No Toronto street graph, terrain, population, demand model or calibrated simulation is integrated. The procedural NYC fixture exercises inherited rendering but supplies no Toronto facts. Main remains the upstream NYC baseline until review.
