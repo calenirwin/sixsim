@@ -1,3 +1,4 @@
+import { externalAttempts } from './helpers/offline-fetch.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -7,13 +8,20 @@ import { position, prepare } from '../../client/src/toronto/transit.js';
 import { localFrame } from '../../client/src/shared/localFrame.js';
 import { PROFILE } from '../../client/src/toronto/profile.js';
 const data = JSON.parse(fs.readFileSync(new URL('../../client/fixtures/transit/510-20261022.json', import.meta.url)));
+test('offline guard catches absolute fetch through the shim', async () => {
+  for (const input of ['https://example.invalid/test', new URL('https://example.invalid/url'), new Request('https://example.invalid/request')]) {
+    await assert.rejects(fetch(input), /Offline test blocked fetch/);
+  }
+  assert.equal(externalAttempts.length, 3);
+  externalAttempts.length = 0;
+});
 test('real CTL1 tile and GTFS actors advance in inherited world before post-step hooks', async () => {
   const { world: W } = await torontoWorld();
   assert.deepEqual([...W.streamer.tiles.keys()], ['0_0']);
   assert.equal(W.streamer.stats.bytes, 4084);
   assert.equal(W.traffic, null); assert.equal(W.peds, null); assert.equal(W.trains, null);
   assert.equal(W.streamer.cityOverrides, false);
-  assert.deepEqual(W.fetches, []); // no NYC correction tables, assets or remote access
+  assert.deepEqual(W.fetches, []); // only local shim requests; external guard is asserted separately
   assert.equal(W.transit.actors.length, 10);
   const before = structuredClone(W.transit.actors);
   let post;
@@ -27,9 +35,11 @@ test('real CTL1 tile and GTFS actors advance in inherited world before post-step
   assert.equal(actor.y, 0); assert.equal(actor.basis, 'schedule-derived');
   for (const dt of [-1, NaN, Infinity]) await assert.rejects(W.step(dt), /Invalid simulation step/);
   assert.equal(W.simTime, 60);
+  assert.deepEqual(externalAttempts, []);
   const { world: other } = await torontoWorld();
   for (let i=0;i<60;i++) await other.step(1);
   assert.deepEqual(other.transit.actors, W.transit.actors);
+  assert.deepEqual(externalAttempts, []);
 });
 test('service-day midnight, lifecycle, missing shapes and stable trip identities', () => {
   const model = scheduledTransit(data, { geoOrigin: PROFILE.geoOrigin, startSeconds: 90000 });
