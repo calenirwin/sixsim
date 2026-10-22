@@ -21,7 +21,7 @@ try {
  node('rect',{x:a[0],y:a[1],width:b[0]-a[0],height:b[1]-a[1],fill:'none',stroke:'#833f9b','stroke-width':8});
  const actors=node('g',{}), time=$('#time');time.min=Math.min(...model.trips.map(t=>t.times[0].a));time.max=Math.max(...model.trips.map(t=>t.times.at(-1).b));time.value=8*3600;
  const unavailable=model.trips.filter(t=>!t.shape).length;
- $('#coverage').textContent=`Service day ${data.service_day} · ${data.timezone} · ${data.trips.length} scheduled trips · ${data.stops.length} stops · ${model.shapes.size} shapes. Pinned historical snapshot; not today's service.`;
+ $('#coverage').textContent=`Service day ${data.service_day} · ${data.timezone} · ${data.trips.length} scheduled trips · ${data.stops.length} stop/station records · ${model.shapes.size} shapes. Pinned historical snapshot; not today's service.`;
  function draw(){actors.replaceChildren();let n=0;for(const t of model.trips){if($('#direction').value!=='all'&&t.direction_id!==$('#direction').value)continue;const p=position(t,+time.value);if(!p)continue;const[cx,cy]=project(...p);node('title',{},node('circle',{cx,cy,r:18,fill:'#bf571d'},actors)).textContent=t.trip_headsign+' · '+t.trip_id;n++;}$('#clock').textContent=clock(+time.value)+' America/Toronto';$('#status').textContent=`${n} scheduled trips at this time · ${unavailable} trips omitted from playback for missing/invalid shape distances`;window.__CORRIDOR={data,model,active:n,seconds:+time.value};}
  time.disabled=false;$('#direction').disabled=false;$('#play').disabled=false;time.oninput=()=>{cursor=+time.value;draw();};$('#direction').onchange=draw;
  let playing=false,last,cursor=+time.value;$('#play').onclick=()=>{playing=!playing;$('#play').textContent=playing?'Pause':'Play ×60';last=undefined;cursor=+time.value;};

@@ -2,7 +2,7 @@
 
 Service day **2026-10-22**, timezone **America/Toronto**, TTC merged feed version **S1000542** (September 30–October 31, 2026). This is a historical schedule snapshot, not a promise of current service, a realtime feed or vehicle tracking.
 
-The feed lists 510 Spadina as route type 0 (streetcar). It passes the Queen/Spadina massing crop and provides a bounded first corridor. All 378 active trips for the day, 34 referenced stops, 5,984 stop-time rows and seven shapes (1,553 points) are retained, including short turns and waterfront branches. No inferred rail network, basemap or vehicle identity is supplied. Latest stop departure is 25:47:00 on the selected service day.
+The feed lists 510 Spadina as route type 0 (streetcar). It passes the Queen/Spadina massing crop and provides a bounded first corridor. All 378 active trips for the day, 34 scheduled stops plus two referenced parent stations, 5,984 stop-time rows and seven shapes (1,553 points) are retained, including short turns and waterfront branches. No inferred rail network, basemap or vehicle identity is supplied. Latest stop departure is 25:47:00 on the selected service day.
 
 ## Source and permissions
 

@@ -36,8 +36,14 @@ def extract(archive,day,route):
         if not ids or len(ids)!=len(trips): raise ValueError('No trips or duplicate trip IDs')
         times=[r for r in rows('stop_times.txt') if r['trip_id'] in ids]
         stop_ids={r['stop_id'] for r in times}
-        stops=[r for r in rows('stops.txt') if r['stop_id'] in stop_ids]
-        if {r['stop_id'] for r in stops}!=stop_ids: raise ValueError('Missing stop')
+        all_stops={r['stop_id']:r for r in rows('stops.txt')}
+        pending=list(stop_ids)
+        while pending:
+            sid=pending.pop()
+            if sid not in all_stops: raise ValueError('Missing stop or parent station: '+sid)
+            parent=all_stops[sid].get('parent_station','')
+            if parent and parent not in stop_ids: stop_ids.add(parent);pending.append(parent)
+        stops=[all_stops[sid] for sid in sorted(stop_ids)]
         shape_ids={r.get('shape_id','') for r in trips}
         shapes=[r for r in rows('shapes.txt') if r['shape_id'] in shape_ids]
         used={r['service_id'] for r in trips}

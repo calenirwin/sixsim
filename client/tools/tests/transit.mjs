@@ -11,7 +11,8 @@ test('pinned source, route, service selection and referential integrity',()=>{
  const p=JSON.parse(fs.readFileSync(new URL('../../fixtures/transit/provenance.json',import.meta.url)));
  assert.equal(createHash('sha256').update(bytes).digest('hex'),p.subset_sha256);
  assert.equal(data.source_sha256,p.source_sha256);assert.equal(data.routes[0].route_type,'0');
- assert.equal(data.trips.length,378);assert.equal(data.stops.length,34);assert.equal(model.shapes.size,7);
+ assert.equal(data.trips.length,378);assert.equal(data.stops.length,36);assert.equal(model.shapes.size,7);
+ for(const s of data.stops) if(s.parent_station) assert.ok(model.stops.has(s.parent_station));
  for(const t of model.trips){assert.equal(t.route_id,'510');assert.equal(t.service_id,'1');assert.ok(t.shape);assert.ok(data.calendar.some(c=>c.service_id===t.service_id&&c.thursday==='1'));}
 });
 test('service-day midnight and shape interpolation with dwell',()=>{

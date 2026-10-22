@@ -11,7 +11,7 @@
   "service_day": "20261022",
   "timezone": "America/Toronto",
   "coordinates": "EPSG:4326",
-  "selection": "route_short_name=510, route_type=0; all active trips for service day; related stops/shapes/stop_times; calendar and all exceptions retained",
+  "selection": "route_short_name=510, route_type=0; all active trips for service day; related stops/shapes/stop_times; calendar and all exceptions retained; parent stations retained",
   "derivation": "python client/tools/transit/extract.py client/data/toronto/completegtfs.zip",
-  "subset_sha256": "3706b3dc0f632f58a2bf0f86eeb81970178e6d8824f5971cf45e2b6fdc055e5c"
+  "subset_sha256": "6fbce770e767f802f088bd152974d32a4ed7ec319efc1fc5b9cdeed45b8a7f1f"
 }

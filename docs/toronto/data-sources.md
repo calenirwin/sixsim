@@ -81,7 +81,7 @@ The existing subset relies on the affirmative official portal and dataset-note e
 | Field | Record |
 |---|---|
 | Owner / geography | City of Toronto — Toronto Transit Commission; Toronto |
-| Status | Integrated: route 510, service day 2026-10-22; 378 trips, 34 stops, seven shapes |
+| Status | Integrated: route 510, service day 2026-10-22; 378 trips, 34 scheduled stops plus two parent stations, seven shapes |
 | Format / coordinates | GTFS ZIP, all subway/streetcar/bus modes. GTFS geographic coordinates are WGS84; verify agency timezone and service calendars in archive. |
 | Update evidence | Catalogue cadence: Quarterly; last refresh: 2026-09-30 14:17:52. These describe publication, not accuracy or measurement date. |
 | Terms / attribution / redistribution | Toronto portal licence evidence as above; CKAN licence: License not specified, id: notspecified. Preserve source-specific limitations; verify selected resource terms before redistribution. |
