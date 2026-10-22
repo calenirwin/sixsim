@@ -40,6 +40,9 @@ try {
   await page.screenshot({ path: 'shots/toronto-perspective.png' });
   await page.locator('#plan').click();
   const click = await page.evaluate(() => {
+    // Exercise a preset change and projection in the same event turn, before RAF.
+    document.querySelector('#perspective').click();
+    document.querySelector('#plan').click();
     const { masses, camera, renderer } = window.__TORONTO;
     const geometry = masses.children[1].geometry;
     geometry.computeBoundingBox();

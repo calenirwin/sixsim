@@ -60,6 +60,8 @@ export async function start(showFailure) {
     camera.up.set(0, 1, 0);
     camera.position.set(centre.x + (plan ? 0 : 165), plan ? 290 : 175, centre.z + (plan ? 0.01 : 190));
     controls.update();
+    // Preset picking must use the new pose before the next render frame.
+    camera.updateMatrixWorld(true);
   }
   document.querySelector('#plan').onclick = () => view(true);
   document.querySelector('#perspective').onclick = () => view(false);
