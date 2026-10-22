@@ -8,7 +8,7 @@ const server=createServer(async(req,res)=>{try{let p=new URL(req.url,'http://loc
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 let browser;
 try{
- browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||undefined});const page=await browser.newPage({viewport:{width:1100,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||undefined});const page=await browser.newPage({viewport:{width:1440,height:1000}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  const origin=`http://127.0.0.1:${server.address().port}`;
  for(const prefix of ['/','/sixsim/']){
   await page.route('**/*',route=>{const u=new URL(route.request().url());assert.equal(u.origin,origin);assert.ok(u.pathname.startsWith(prefix));return route.continue();});
@@ -23,6 +23,28 @@ try{
   await fs.mkdir('shots',{recursive:true});await page.screenshot({path:'shots/toronto-510-schedule.png',fullPage:true});
   await page.unroute('**/*');
  }
+ assert.match(await page.title(),/working name/);
+ assert.equal(await page.locator('#direction option[value="0"]').innerText(),'Southbound');
+ assert.equal(await page.locator('#direction option[value="1"]').innerText(),'Northbound');
+ const fullBounds=await page.locator('#map').getAttribute('viewBox');
+ await page.locator('#focus-crop').click();assert.notEqual(await page.locator('#map').getAttribute('viewBox'),fullBounds);
+ const queenStop=await page.evaluate(()=>window.__CORRIDOR.data.stops.find(s=>s.stop_name==='Spadina Ave at Queen St West North Side').stop_id);
+ await page.locator('#stop').selectOption(queenStop);assert.match(await page.locator('#stop-detail').innerText(),/Queen St West North Side/);
+ await page.locator('#full-route').click();assert.equal(await page.locator('#map').getAttribute('viewBox'),fullBounds);
+ await page.locator('#late').click();assert.match(await page.locator('#clock').innerText(),/25:00:00 America/);
+ await page.locator('#morning').click();
+ await page.screenshot({path:'shots/toronto-review-desktop.png',fullPage:true});
+ const mobile=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:1});
+ const phone=await mobile.newPage();phone.on('pageerror',e=>errors.push(e.message));
+ await phone.goto(origin+'/sixsim/corridor.html');await phone.waitForFunction(()=>window.__CORRIDOR?.active>0);
+ assert.equal(await phone.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'mobile horizontal overflow');
+ await phone.locator('#stop').selectOption(queenStop);assert.match(await phone.locator('#stop-detail').innerText(),/Queen St West North Side/);
+ await phone.locator('#focus-crop').tap();assert.notEqual(await phone.locator('#map').getAttribute('viewBox'),fullBounds);
+ await phone.locator('g[aria-label="Spadina Ave at Queen St West South Side"] circle').first().tap();
+ assert.match(await phone.locator('#stop-detail').innerText(),/Queen St West South Side/);
+ await phone.locator('#stop').selectOption(queenStop);
+ await phone.locator('#full-route').tap();await phone.locator('#late').tap();assert.match(await phone.locator('#clock').innerText(),/25:00:00/);
+ await phone.locator('#morning').tap();await phone.screenshot({path:'shots/toronto-review-mobile.png',fullPage:true});await mobile.close();
  await page.route('**/assets/510-*.json',route=>route.fulfill({status:404,body:'missing'}));
  await page.reload();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('HTTP 404'));assert.equal(await page.locator('#retry').isVisible(),true);assert.equal(await page.locator('#play').isDisabled(),true);
  await page.unroute('**/assets/510-*.json');await page.locator('#retry').click();await page.waitForFunction(()=>window.__CORRIDOR?.active>0);
@@ -40,5 +62,5 @@ try{
  await page.reload();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('No valid route shapes'));
  assert.equal(await page.locator('#play').isDisabled(),true);
  assert.equal(await page.locator('#retry').isVisible(),true);
- assert.deepEqual(errors,[]);console.log('Corridor: root/subpath, service midnight, playback, direction, failure/recovery, malformed-shape omission and screenshot passed');
+ assert.deepEqual(errors,[]);console.log('Corridor: root/subpath, service midnight, playback, direction, failure/recovery, malformed-shape omission, review controls and desktop/mobile screenshots passed');
 }finally{await browser?.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

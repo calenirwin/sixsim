@@ -92,6 +92,7 @@ validation:
 nav:
   - Home: index.md
   - Toronto:
+      - Review checkpoint: toronto/review.md
       - Vision and roadmap: toronto/vision.md
       - Data-source register: toronto/data-sources.md
       - Reference audit: toronto/reference-audit.md

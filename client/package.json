@@ -22,7 +22,8 @@
     "test:toronto:static": "npm run build:toronto && node tools/tests/toronto-static.mjs",
     "test:toronto:repro": "node tools/tests/toronto-repro.mjs",
     "test:transit": "python3 tools/transit/test_extract.py && node --test tools/tests/transit.mjs",
-    "test:transit:browser": "npm run build:toronto && node tools/tests/transit-browser.mjs"
+    "test:transit:browser": "npm run build:toronto && node tools/tests/transit-browser.mjs",
+    "review:toronto": "npm run compile:toronto && vite --config vite.toronto.config.js --open /corridor.html"
   },
   "keywords": [],
   "author": "",

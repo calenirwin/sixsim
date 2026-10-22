@@ -8,6 +8,10 @@ On [draft PR #1](https://github.com/calenirwin/sixsim/pull/1), a real Toronto ma
 
 The NYC compiler, renderer special cases, simulation defaults, Electron/server/Python API and Unreal client remain upstream implementations. Renaming them would not port their geography or behaviour. See the [reference audit](docs/toronto/reference-audit.md).
 
+## Review the current corridor
+
+[Open the local review checkpoint](docs/toronto/review.md): one command starts the corridor, with desktop/mobile controls, source evidence and the proposed Toronto direction in the same page. No credentials or new data download are needed.
+
 ## Direction and data
 
 - [Toronto vision and architecture roadmap](docs/toronto/vision.md): proposed capability layers, boundaries and milestones.
