@@ -4,10 +4,15 @@ pointed at the pages, and links to any other repository file are pointed at GitH
 import os
 import posixpath
 import re
+import subprocess
 
 REPO = "https://github.com/calenirwin/sixsim"
-REVISION = "48f3de238efa23d9600fbe7a4656714be3065f4b"  # Existing inherited files and Toronto fixture; stable before merge.
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Link included source files to the revision being documented, including new fixtures.
+try:
+    REVISION = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, stderr=subprocess.DEVNULL).strip()
+except (OSError, subprocess.CalledProcessError):
+    REVISION = "c10289dba8d24a2138b99976c26394c0944575da"  # Source archive fallback containing both Toronto studies.
 SITE = {  # repository path -> site page (directory URL)
     "BUILDING.md": "building/",
     "ACKNOWLEDGEMENTS.md": "acknowledgements/",
