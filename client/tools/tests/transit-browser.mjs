@@ -26,5 +26,19 @@ try{
  await page.route('**/assets/510-*.json',route=>route.fulfill({status:404,body:'missing'}));
  await page.reload();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('HTTP 404'));assert.equal(await page.locator('#retry').isVisible(),true);assert.equal(await page.locator('#play').isDisabled(),true);
  await page.unroute('**/assets/510-*.json');await page.locator('#retry').click();await page.waitForFunction(()=>window.__CORRIDOR?.active>0);
- assert.deepEqual(errors,[]);console.log('Corridor: root/subpath, service midnight, playback, direction, failure/recovery and screenshot passed');
+ const malformed=await page.evaluate(()=>window.__CORRIDOR.data);
+ const invalidShape=malformed.shapes[0].shape_id;
+ malformed.shapes[0].shape_dist_traveled=' ';
+ await page.route('**/assets/510-*.json',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(malformed)}));
+ await page.reload();await page.waitForFunction(()=>window.__CORRIDOR?.model.shapes.size===6);
+ assert.equal(await page.evaluate(id=>window.__CORRIDOR.model.trips.filter(t=>t.shape_id===id).every(t=>t.shape===null),invalidShape),true);
+ assert.match(await page.locator('#status').innerText(),/[1-9]\d* trips omitted/);
+ assert.equal(await page.locator('#play').isEnabled(),true);
+ await page.unroute('**/assets/510-*.json');
+ malformed.shapes=[];
+ await page.route('**/assets/510-*.json',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(malformed)}));
+ await page.reload();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('No valid route shapes'));
+ assert.equal(await page.locator('#play').isDisabled(),true);
+ assert.equal(await page.locator('#retry').isVisible(),true);
+ assert.deepEqual(errors,[]);console.log('Corridor: root/subpath, service midnight, playback, direction, failure/recovery, malformed-shape omission and screenshot passed');
 }finally{await browser?.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

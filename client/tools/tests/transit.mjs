@@ -31,3 +31,46 @@ test('missing shapes are explicit, invalid schedules fail closed',()=>{
  const missing=prepare({...data,shapes:[]});assert.ok(missing.trips.every(t=>t.shape===null));
  assert.throws(()=>prepare({...data,stops:[]}));assert.throws(()=>prepare({...data,timezone:'UTC'}));
 });
+
+function numericFixture() {
+ return {version:1,timezone:'America/Toronto',stops:[{stop_id:'a',stop_lon:'0',stop_lat:'0'},{stop_id:'b',stop_lon:'1',stop_lat:'1'}],shapes:[
+  {shape_id:'s',shape_pt_sequence:'0',shape_dist_traveled:'0',shape_pt_lon:'0',shape_pt_lat:'0'},
+  {shape_id:'s',shape_pt_sequence:'1',shape_dist_traveled:'100',shape_pt_lon:'1',shape_pt_lat:'1'}],
+  trips:[{trip_id:'t',shape_id:'s'}],stop_times:[
+   {trip_id:'t',stop_id:'a',stop_sequence:'0',arrival_time:'00:00:00',departure_time:'00:00:00',shape_dist_traveled:'0'},
+   {trip_id:'t',stop_id:'b',stop_sequence:'1',arrival_time:'00:01:00',departure_time:'00:01:00',shape_dist_traveled:'100'}]};
+}
+const missingNumbers=['',' \t ',null,undefined,false,'NaN','Infinity',Infinity];
+test('malformed numeric shape fields omit the entire shape and never invent a position',()=>{
+ for(const field of ['shape_dist_traveled','shape_pt_lon','shape_pt_lat','shape_pt_sequence']) for(const value of missingNumbers) {
+  const fixture=numericFixture();fixture.shapes[0][field]=value;
+  const result=prepare(fixture);
+  assert.equal(result.shapes.size,0,`${field}: ${String(value)}`);
+  assert.equal(result.trips[0].shape,null);
+  assert.equal(position(result.trips[0],30),null);
+ }
+});
+test('valid string and numeric zero distances/coordinates/sequences remain usable',()=>{
+ for(const zero of ['0',0]) {
+  const fixture=numericFixture();
+  Object.assign(fixture.shapes[0],{shape_dist_traveled:zero,shape_pt_lon:zero,shape_pt_lat:zero,shape_pt_sequence:zero});
+  Object.assign(fixture.stop_times[0],{shape_dist_traveled:zero,stop_sequence:zero});
+  const trip=prepare(fixture).trips[0];
+  assert.ok(trip.shape);assert.equal(trip.times[0].d,0);
+  assert.deepEqual(position(trip,0),[0,0]);assert.deepEqual(position(trip,30),[0.5,0.5]);
+ }
+});
+test('analogous stop distance, sequence and coordinate coercions fail closed',()=>{
+ for(const value of missingNumbers) {
+  let fixture=numericFixture();fixture.stop_times[0].shape_dist_traveled=value;
+  assert.equal(position(prepare(fixture).trips[0],30),null);
+  fixture=numericFixture();fixture.stop_times[0].stop_sequence=value;
+  assert.throws(()=>prepare(fixture),/Invalid trip times/);
+  for(const field of ['stop_lon','stop_lat']) {
+   fixture=numericFixture();fixture.stops[0][field]=value;
+   assert.throws(()=>prepare(fixture),/Invalid stop coordinates/);
+  }
+ }
+ assert.equal(position(prepare(numericFixture()).trips[0],NaN),null);
+ assert.throws(()=>serviceSeconds('9'.repeat(400)+':00:00'),/Invalid service time/);
+});

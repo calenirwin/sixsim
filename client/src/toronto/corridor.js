@@ -12,6 +12,7 @@ try {
  if(!response.ok)throw new Error(`HTTP ${response.status}`);
  const data=await response.json(), model=prepare(data);
  const points=[...model.shapes.values()].flat().map(p=>project(p.lon,p.lat));
+ if(!points.length) throw new Error('No valid route shapes available for playback');
  const xs=points.map(p=>p[0]),ys=points.map(p=>p[1]);
  const x=Math.min(...xs)-100,y=Math.min(...ys)-100,w=Math.max(...xs)-x+100,h=Math.max(...ys)-y+100;
  svg.setAttribute('viewBox',`${x} ${y} ${w} ${h}`);
