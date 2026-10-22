@@ -1,6 +1,6 @@
 # SixSim — Toronto adaptation
 
-SixSim is Calen Irwin’s Toronto-focused fork of [Valdrada](https://github.com/mkturkcan/valdrada), by Mehmet Kerem Turkcan. The original NYC application remains inherited code. The draft Toronto branch adds a real 15-record massing prototype; it is not a full city or transport simulation.
+SixSim is Calen Irwin’s Toronto-focused fork of [Valdrada](https://github.com/mkturkcan/valdrada), by Mehmet Kerem Turkcan. The original NYC application remains inherited code. The draft Toronto branch loads a real 15-record massing tile through the inherited headless world and steps pinned 510 Spadina GTFS actors on its clock. This is non-interacting schedule-derived motion, not observed vehicles or a calibrated city simulation. Run `node tools/toronto/simulate.mjs` from the repository root after installing root dependencies. SixSim remains a provisional name.
 
 Start with the [Toronto roadmap](toronto/vision.md), [data-source register](toronto/data-sources.md), [reference audit](toronto/reference-audit.md) and [decisions needed](toronto/decisions-needed.md). The repository README contains bounded local-run commands. The remaining guides describe upstream NYC capabilities unless explicitly stated otherwise.
 

@@ -20,12 +20,13 @@ export const NEAR_R = 1000, UNLOAD_R = NEAR_R + 320;
 export const TILES_DIR = process.env.VALDRADA_TILES ? path.resolve(process.env.VALDRADA_TILES) : path.join(PUBLIC, 'tiles');
 
 export class HeadlessStreamer {
-  constructor({ tilesDir = TILES_DIR, nearR = NEAR_R, unloadR = UNLOAD_R, colliders = true, obstaclesDir = null } = {}) {
+  constructor({ tilesDir = TILES_DIR, nearR = NEAR_R, unloadR = UNLOAD_R, colliders = true, cityOverrides = true, obstaclesDir = null } = {}) {
     this.dir = tilesDir;
+    this.cityOverrides = cityOverrides;
     this.nearR = nearR; this.unloadR = unloadR;
     this.withColliders = colliders;
     this.manifest = JSON.parse(fs.readFileSync(path.join(this.dir, 'manifest.json'), 'utf8'));
-    this.bridges = JSON.parse(fs.readFileSync(path.join(this.dir, 'bridges.json'), 'utf8'));
+    this.bridges = cityOverrides ? JSON.parse(fs.readFileSync(path.join(this.dir, 'bridges.json'), 'utf8')) : []; // no inferred Toronto bridges
     // city/bridgeKit.js buildBridges: the decks that carry cars (the same record traffic.js adds as edges)
     this.bridgeRoads = [];
     for (const br of this.bridges) {
@@ -108,7 +109,7 @@ export class HeadlessStreamer {
     const file = path.join(this.dir, this.manifest.tiles[key].f);
     const nb = fs.readFileSync(file);
     const buf = nb.buffer.slice(nb.byteOffset, nb.byteOffset + nb.byteLength);
-    const data = await simTile(key, buf);
+    const data = await simTile(key, buf, { cityOverrides: this.cityOverrides });
     if (this.withColliders) this._addColliders(key, buf);
     if (this.obstaclesDir) this._addObstacles(key);
     this.tiles.set(key, { state: 'ready', data });
@@ -125,7 +126,7 @@ export class HeadlessStreamer {
     const tile = parseTile(buf);
     if (!tile.S.bldg || !tile.S.bldgXZ) return;
     const [ox, oz] = tile.header.origin, XZ = tile.S.bldgXZ;
-    for (const b of buildingsOf(tile)) {
+    for (const b of buildingsOf(tile, { applyOverrides: this.cityOverrides })) {
       if (b.len < 3) continue;
       const pts = new Float32Array(b.len * 2);
       let minX = 1e9, minZ = 1e9, maxX = -1e9, maxZ = -1e9;

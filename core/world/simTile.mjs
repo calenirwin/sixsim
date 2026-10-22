@@ -11,38 +11,42 @@
 // be imported): the section sampler (surfHash / sectionY / padYAt / grassOver / surfaceKindAt / roadAt) and the roads /
 // nodes records. The mirror keeps the page's names and constants; tools/core/parity.mjs compares it with the page.
 import { parseTile, roadsOf } from '../../client/src/world/tiledata.js';
-import { lf39Load, lf39Apply } from '../../client/src/world/lotfix39.js';
-import { tpTileHit, tpApply } from '../../client/src/city/tsqPlaza.js';
-import { bpApply } from '../../client/src/city/bryantPark.js';
-import { cpTileHit, cpApply } from '../../client/src/city/centralPark.js';
-import { areaTileHit, areaApply } from '../../client/src/city/areas.js';
-import { st38GapFill } from '../../client/src/city/stations/subEnt38.js';
-import { gf38Load, gf38Apply, gf38Index } from '../../client/src/city/groundFix38.js';
-import { tileContentKey } from '../../client/src/shared/overlay.js';
 
 const warnOnce = new Set();
 const warn = (k, e) => { if (!warnOnce.has(k)) { warnOnce.add(k); console.warn(`[core] ${k}`, e?.message || e); } };
 
-export async function simTile(key, arrayBuf) {
+export async function simTile(key, arrayBuf, { cityOverrides = true } = {}) {
   const tile = parseTile(arrayBuf);
-  // OV39: the overlays apply by the content key of the compiled tile, taken before any pass changes its sections
-  const lf39D = await lf39Load(), gf38I = await gf38Index().catch(() => null);
-  const ckey = (lf39D && lf39D.tiles && lf39D.tiles[key]) || (gf38I && gf38I.tiles && gf38I.tiles[key]) ? tileContentKey(tile) : null;
-  try { lf39Apply(key, tile, arrayBuf.byteLength, lf39D, ckey); } catch (e) { warn('lf39', e); }
   const [ox, oz] = tile.header.origin;
-  const gf38P = gf38Load(key, arrayBuf.byteLength, ckey).catch(() => null);
   const roadsW = () => [...roadsOf(tile)].map((r) => ({
     ...r,
     pts: Array.from({ length: r.len }, (_, i) => [tile.S.roadVerts[(r.start + i) * 3] + ox, tile.S.roadVerts[(r.start + i) * 3 + 1], tile.S.roadVerts[(r.start + i) * 3 + 2] + oz]),
     name: tile.header.names[r.nameIdx] || '',
   }));
-  // the ground re-kinding passes, in assembleTile's order
-  if (tpTileHit(ox, oz)) { try { tpApply(tile, ox, oz, roadsW()); } catch (e) { warn('tp28', e); } }
-  try { bpApply(tile, ox, oz); } catch (e) { warn('bp28', e); }
-  if (cpTileHit(ox, oz)) { try { cpApply(tile, ox, oz); } catch (e) { warn('cp32', e); } }
-  if (areaTileHit(ox, oz)) { try { areaApply(tile, ox, oz); } catch (e) { warn('ar32', e); } }
-  try { st38GapFill(tile); } catch (e) { warn('st38', e); }
-  try { gf38Apply(tile, await gf38P); } catch (e) { warn('gf38', e); }
+  if (cityOverrides) {
+    const { lf39Load, lf39Apply } = await import('../../client/src/world/lotfix39.js');
+    const { tpTileHit, tpApply } = await import('../../client/src/city/tsqPlaza.js');
+    const { bpApply } = await import('../../client/src/city/bryantPark.js');
+    const { cpTileHit, cpApply } = await import('../../client/src/city/centralPark.js');
+    const { areaTileHit, areaApply } = await import('../../client/src/city/areas.js');
+    const { st38GapFill } = await import('../../client/src/city/stations/subEnt38.js');
+    const { gf38Load, gf38Apply, gf38Index } = await import('../../client/src/city/groundFix38.js');
+    const { tileContentKey } = await import('../../client/src/shared/overlay.js');
+
+    // OV39: the overlays apply by the content key of the compiled tile, taken before any pass changes its sections
+    const lf39D = await lf39Load(), gf38I = await gf38Index().catch(() => null);
+    const ckey = (lf39D && lf39D.tiles && lf39D.tiles[key]) || (gf38I && gf38I.tiles && gf38I.tiles[key]) ? tileContentKey(tile) : null;
+    try { lf39Apply(key, tile, arrayBuf.byteLength, lf39D, ckey); } catch (e) { warn('lf39', e); }
+    const gf38P = gf38Load(key, arrayBuf.byteLength, ckey).catch(() => null);
+    // the ground re-kinding passes, in assembleTile's order
+    if (tpTileHit(ox, oz)) { try { tpApply(tile, ox, oz, roadsW()); } catch (e) { warn('tp28', e); } }
+    try { bpApply(tile, ox, oz); } catch (e) { warn('bp28', e); }
+    if (cpTileHit(ox, oz)) { try { cpApply(tile, ox, oz); } catch (e) { warn('cp32', e); } }
+    if (areaTileHit(ox, oz)) { try { areaApply(tile, ox, oz); } catch (e) { warn('ar32', e); } }
+    try { st38GapFill(tile); } catch (e) { warn('st38', e); }
+    try { gf38Apply(tile, await gf38P); } catch (e) { warn('gf38', e); }
+
+  }
 
   // ---- the section sampler (mirror of assembleTile's SURFACE SAMPLER block)
   const SURF = new Map();

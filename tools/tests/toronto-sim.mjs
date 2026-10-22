@@ -1,0 +1,45 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { torontoWorld } from '../toronto/simulate.mjs';
+import { scheduledTransit } from '../../core/sim/scheduledTransit.mjs';
+import { position, prepare } from '../../client/src/toronto/transit.js';
+import { localFrame } from '../../client/src/shared/localFrame.js';
+import { PROFILE } from '../../client/src/toronto/profile.js';
+const data = JSON.parse(fs.readFileSync(new URL('../../client/fixtures/transit/510-20261022.json', import.meta.url)));
+test('real CTL1 tile and GTFS actors advance in inherited world before post-step hooks', async () => {
+  const { world: W } = await torontoWorld();
+  assert.deepEqual([...W.streamer.tiles.keys()], ['0_0']);
+  assert.equal(W.streamer.stats.bytes, 4084);
+  assert.equal(W.traffic, null); assert.equal(W.peds, null); assert.equal(W.trains, null);
+  assert.equal(W.streamer.cityOverrides, false);
+  assert.deepEqual(W.fetches, []); // no NYC correction tables, assets or remote access
+  assert.equal(W.transit.actors.length, 10);
+  const before = structuredClone(W.transit.actors);
+  let post;
+  W.hooks = { post: () => { post = W.transit.serviceSeconds; } };
+  await W.step(60);
+  assert.equal(post, 28860); assert.equal(W.simTime, 60); assert.equal(W.ENV.time.value, 60);
+  assert.notDeepEqual(W.transit.actors, before);
+  const actor = W.transit.actors[0], trip = prepare(data).trips.find(t => t.trip_id === actor.tripId);
+  const expected = localFrame(PROFILE.geoOrigin).project(...position(trip, 28860));
+  assert.deepEqual([actor.x, actor.z], expected);
+  assert.equal(actor.y, 0); assert.equal(actor.basis, 'schedule-derived');
+  for (const dt of [-1, NaN, Infinity]) await assert.rejects(W.step(dt), /Invalid simulation step/);
+  assert.equal(W.simTime, 60);
+  const { world: other } = await torontoWorld();
+  for (let i=0;i<60;i++) await other.step(1);
+  assert.deepEqual(other.transit.actors, W.transit.actors);
+});
+test('service-day midnight, lifecycle, missing shapes and stable trip identities', () => {
+  const model = scheduledTransit(data, { geoOrigin: PROFILE.geoOrigin, startSeconds: 90000 });
+  assert.ok(model.actors.length > 0); assert.equal(model.serviceSeconds, 90000);
+  assert.ok(model.actors.every(a => a.id.startsWith('20261022:')));
+  model.update(10000); assert.deepEqual(model.actors, []);
+  model.update(0); assert.ok(model.actors.length > 0);
+  const missing = structuredClone(data); missing.shapes = [];
+  const omitted = scheduledTransit(missing, { geoOrigin: PROFILE.geoOrigin });
+  assert.equal(omitted.omittedTrips.length, 378); assert.deepEqual(omitted.actors, []);
+  const duplicate = structuredClone(data); duplicate.trips.push(duplicate.trips[0]);
+  assert.throws(() => scheduledTransit(duplicate, { geoOrigin: PROFILE.geoOrigin }), /duplicate trip ID/);
+});

@@ -1,5 +1,7 @@
 # Review checkpoint: one Toronto streetcar corridor
 
+> Historical data-inspection checkpoint. The current technical entry point is the [headless simulation slice](vision.md#current-simulation-contract); this viewer is not the project’s primary deliverable.
+
 The working name **SixSim is provisional**. This checkpoint asks for a review of the corridor and proposed direction, not a naming decision or deployment approval. It combines the pinned 510 Spadina schedule study, source evidence and a short Toronto roadmap in one locally runnable page.
 
 ## Open the review

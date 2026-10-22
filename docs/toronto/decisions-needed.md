@@ -1,10 +1,9 @@
 # Decisions and actual unblockers
 
-**No credentials, paid service, new storage or action from Calen is needed to continue the current block, source research or bounded offline tests.** The existing source subset is sufficient. No deployment or merge is requested.
+**No credentials, paid service, new storage or action from Calen is needed to continue the current block, source research or bounded offline tests.** The approved starting point is the GTFS streetcar corridor. The existing source subsets are sufficient for the headless scheduled-motion baseline; no further prioritization is needed for it. No deployment or merge is requested.
 
 | Decision | When it matters | Alternative and current impact |
 |---|---|---|
-| Which first question matters most: exploring Toronto’s built form, understanding transit, or comparing a specific urban scenario? | Before choosing the first simulation milestone | Continue spatial integrity and one scheduled-transit feasibility experiment meanwhile; does not block current work |
 | Whether to accept a particular provider’s additional access agreement | Only if choosing a source with additional terms, such as Metrolinx GTFS | Use TTC/City sources first; no Metrolinx download or agreement acceptance in this audit |
 | Obtain a provider credential, if the chosen live service requires one | Only after verifying that exact service’s current access terms and deciding live data is necessary | Offline GTFS schedules and recorded lawful fixtures; no token requested or assumed approved now |
 | Approve larger compute/storage or public hosting | Only after measuring a chosen neighbourhood’s needs and proposing a concrete budget/path | Keep local/static bounded experiments; respect the CAD $20–30 monthly ceiling and prefer free options |

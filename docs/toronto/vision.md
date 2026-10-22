@@ -8,7 +8,7 @@ SixSim’s proposed direction is a reproducible Toronto city model that can supp
 
 ## Current boundary
 
-The draft branch contains a 15-record real massing slice, a small binary importer and an isolated Three.js viewer. Buildings use observed average heights on a flat plane. A separate 510 Spadina static GTFS experiment now preserves one service day and visualizes schedule-derived positions. No Toronto street graph, terrain, population, demand model or calibrated simulation is integrated. The procedural NYC fixture exercises inherited rendering but supplies no Toronto facts. Main remains the upstream NYC baseline until review.
+The draft branch contains a 15-record real massing slice, a small binary importer and an isolated Three.js viewer. Buildings use observed average heights on a flat plane. The inherited headless world now steps 510 Spadina trip actors from a pinned static GTFS service day alongside the massing tile; the separate corridor page remains an inspection aid. No Toronto street graph, terrain, population, demand model or calibrated simulation is integrated. The procedural NYC fixture exercises inherited rendering but supplies no Toronto facts. Main remains the upstream NYC baseline until review.
 
 ## Preserve the architecture, make geography explicit
 
@@ -18,10 +18,10 @@ The draft branch contains a 15-record real massing slice, a small binary importe
 | Normalization | Geographic inputs compiled to local coordinates | Explicit city profile; validate horizontal/vertical units, axis direction, stable source identity and missing attributes |
 | Tile compilation | Existing CTL1 writer and decoder | Retain format and hole semantics; add bounded datasets with round-trip checks before format changes |
 | Runtime and rendering | Shared tile decoding plus NYC-specific assembly, facades and landmarks | Toronto viewer already uses shared decoding and disables NYC overrides; progressively isolate actual geographic assumptions rather than relabel NYC landmarks |
-| Simulation | Inherited road/actor systems, server and API | Build a Toronto graph first; separate observed schedules and positions from synthetic demand and behaviour |
+| Simulation | Inherited fixed-step world, tile streamer, road/actor systems | GTFS actor model now runs inside the world step; build a Toronto navigation graph before enabling interactions |
 | Application/API | Web, Electron, Python API and Unreal clients | Keep the web slice the cheapest validation surface; port other clients only when a concrete use case requires parity |
 
-The present Toronto entry point does not exercise the complete upstream tile assembly or simulation. A shared binary format alone does not establish compatibility with every downstream client. Changing origins must cover server/session metadata, picking, camera positions and exported coordinates together.
+The headless Toronto entry point exercises the inherited world step and tile streamer, with NYC correction passes explicitly disabled. It does not exercise the complete upstream renderer, road traffic, recording format or Python API. A shared binary format alone does not establish compatibility with every downstream client. Changing origins must cover server/session metadata, picking, camera positions and exported coordinates together.
 
 ## Proposed capability layers
 
@@ -46,3 +46,23 @@ M2 and M3 can proceed as independent experiments with separate data outputs; a t
 ## Limitations and later technical debt
 
 The inherited full NYC workflow documents multi-gigabyte assets and substantial compile memory; it is not the default Toronto path. Static packaging demonstrates distribution mechanics, not a completed product. Keep the current roughly 650 KB demo budget until a justified expansion is measured. A docs Pages workflow already exists: selecting a future demo URL requires reconciling that workflow and testing subpaths, not replacing it silently. No deployment is requested here. Live feeds, server hosting, persistent storage and full-city processing remain optional later decisions.
+
+## Current simulation contract
+
+Run `node tools/toronto/simulate.mjs` after root `npm ci --ignore-scripts`; redirect stdout to a JSON file. The default experiment produces 61 snapshots at one-second intervals from 08:00 on **2026-10-22**, in **America/Toronto**. `npm run test:toronto:sim` verifies real-data integration. No browser or external request is involved.
+
+`tools/toronto/simulate.mjs` verifies the pinned GTFS subset hash, compiles the massing subset using the existing CTL1 writer, and calls `core/sim/world.mjs`. The world loads the tile through `HeadlessStreamer`/`simTile`, advances its existing clock and invokes `scheduledTransit.update` before post-step hooks. Existing NYC defaults remain enabled for other callers. The Toronto call explicitly disables NYC surface/building corrections, road traffic, pedestrians and NYC train services. Disabled models are null, not fabricated empty traffic; the existing recorder/API must not be used with this configuration yet. Geographic camera paths reject this mode because their projection still assumes NYC; local controllers can position the spectator.
+
+Actors retain service-day/trip identities and route/shape references. Positions use the same x-east/z-south metric frame as the massing tile; y=0 is an explicit assumption. GTFS published distances and arrival/departure times determine motion and dwell. Times beyond 24:00 remain attached to the selected service day; no host timezone conversion or date rollover occurs. Missing or invalid shapes produce omitted-trip IDs, never invented positions. This baseline contains no acceleration, headway control, collisions, signal response, capacity or passenger model. Buildings load into the existing spatial/collider machinery but do not alter scheduled motion. Whole-route positions extend beyond the single loaded building tile.
+
+### Organized inputs and derived outputs
+
+| Input / output | Location and contract |
+|---|---|
+| Building source subset | `client/fixtures/toronto/block.geojson` plus adjacent provenance: source archive checksum, crop, original records, height fields and licence evidence |
+| Transit source subset | `client/fixtures/transit/510-20261022.json` plus adjacent provenance: routes, trips, stops, shapes, stop times, calendars and exceptions; source and subset SHA-256 |
+| Derived spatial tile | Ignored `client/.generated/toronto/`: deterministic CTL1 and manifest, explicit geographic profile; rebuilt from checked-in source |
+| Derived motion | JSON stdout: profile, source provenance, service date/timezone, omitted trips and per-step actors. No live vehicle IDs or unverified observation claims |
+| Bulk upstream archives | Ignored local caches only; not needed to run this slice |
+
+**Next integration:** a bounded Toronto Centreline/track-and-intersection graph around Queen/Spadina, matched to GTFS shapes and stops with explicit tolerances and unmatched records. Verify source licence/CRS before acquisition, then add stop/link occupancy and measured travel-time diagnostics before attempting signal or congestion response. GTFS shapes alone do not establish road connectivity, right-of-way or signal phases. This is the next technical experiment, not a claim that synthetic demand or a full-city scope is approved. Existing source terms and the CKAN licence discrepancy remain recorded in the [source register](data-sources.md).

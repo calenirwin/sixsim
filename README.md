@@ -1,16 +1,26 @@
 # SixSim — Toronto adaptation of Valdrada
 
-SixSim is Calen Irwin’s Toronto-focused fork of [Valdrada](https://github.com/mkturkcan/valdrada), created by Mehmet Kerem Turkcan. The repository inherits the NYC simulator and its earlier BoundlessNYC identifiers. **This is an early adaptation, not a completed Toronto city simulator.**
+SixSim is a **provisional working name** for Calen Irwin’s Toronto-focused fork of [Valdrada](https://github.com/mkturkcan/valdrada), created by Mehmet Kerem Turkcan. The repository inherits the NYC simulator and its earlier BoundlessNYC identifiers. **This is an early adaptation, not a completed Toronto city simulator.**
 
 ## What exists today
 
-On [draft PR #1](https://github.com/calenirwin/sixsim/pull/1), a real Toronto massing prototype imports 15 City source records into the existing CTL1 binary tile contract and renders them in a separate web entry point. It includes provenance, picking, loading failures, a reproducible static package and browser tests. It uses flat ground and neutral building extrusions. A separate [510 Spadina offline GTFS study](client/fixtures/transit/README.md) now shows one pinned service day and schedule-derived positions, sharing the massing coordinate frame. There is no Toronto traffic, terrain, live tracking or calibrated simulation. The separate procedural fixture is synthetic and is not Toronto evidence. The unmerged `main` branch still represents the inherited NYC application.
+On [draft PR #1](https://github.com/calenirwin/sixsim/pull/1), the inherited headless world now loads a real Toronto CTL1 massing tile and advances 510 Spadina GTFS trip actors on its simulation clock. This is a **non-interacting, schedule-driven motion baseline**, not live tracking or a calibrated traffic simulation. It uses 15 building records and the pinned 2026-10-22 service day; the full route extends beyond the building crop.
 
-The NYC compiler, renderer special cases, simulation defaults, Electron/server/Python API and Unreal client remain upstream implementations. Renaming them would not port their geography or behaviour. See the [reference audit](docs/toronto/reference-audit.md).
+There is no Toronto road graph, terrain, passenger demand, collision response or signal interaction yet. NYC traffic, pedestrians and train services are disabled in this bounded run. The inherited NYC application, Electron/server/Python API, Unreal client and geographic camera paths remain NYC-specific. The procedural rendering fixture is synthetic. See the [reference audit](docs/toronto/reference-audit.md).
 
-## Review the current corridor
+## Run the Toronto simulation slice
 
-[Open the local review checkpoint](docs/toronto/review.md): one command starts the corridor, with desktop/mobile controls, source evidence and the proposed Toronto direction in the same page. No credentials or new data download are needed.
+With Node 24, from the repository root:
+
+```sh
+npm ci --ignore-scripts
+node tools/toronto/simulate.mjs > /tmp/toronto-simulation.json
+npm run test:toronto:sim
+```
+
+The command compiles the checked-in building subset, loads it through the inherited headless streamer, and records 61 snapshots from 08:00:00 to 08:01:00 America/Toronto. Output includes stable service-day/trip IDs, local metric positions, source provenance and omitted-trip IDs. No city download, renderer, credentials or fleet models are required. See [the simulation and data contract](docs/toronto/vision.md#current-simulation-contract).
+
+The existing massing viewer and corridor study remain data-inspection tools; they are not the simulation entry point. `main` remains the inherited baseline until this draft is reviewed and merged.
 
 ## Direction and data
 
@@ -19,7 +29,7 @@ The NYC compiler, renderer special cases, simulation defaults, Electron/server/P
 - [Decisions and actual unblockers](docs/toronto/decisions-needed.md): what needs Calen’s input and what can proceed now.
 - [Technical handoff](TORONTO_HANDOFF.md), [sample provenance](client/fixtures/toronto/README.md) and [static hosting assessment](client/fixtures/toronto/HOSTING.md).
 
-## Run the bounded prototype
+## Inspect the source geometry
 
 Use the PR branch until it is reviewed and merged. With Node 24 (the CI version):
 
