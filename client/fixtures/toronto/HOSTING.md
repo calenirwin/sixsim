@@ -63,3 +63,7 @@ Limits: an unavailable initial bootstrap script or disabled JavaScript cannot ru
 this recovery logic; the page includes a noscript explanation. A successful fetch
 is still subject to the existing decoder. Importer/schema/coordinate integrity
 review is separate from these transport and packaging checks.
+
+## Subsequent offline corridor addition
+
+The 510 Spadina schedule study adds `corridor.html` and a pinned 1.77 MB JSON slice. The combined package is now approximately 2.44 MB uncompressed with a 2.6 MB ceiling; JavaScript/tile ceilings remain unchanged. The original massing page does not fetch this schedule asset. Both entries remain static and require no new service. See `../transit/README.md` for provenance and limitations. Earlier sizes above describe the massing-only baseline.

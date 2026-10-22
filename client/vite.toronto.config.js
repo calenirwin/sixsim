@@ -24,6 +24,6 @@ export default mergeConfig(config, defineConfig({
   }],
   build: {
     outDir: 'dist-toronto', assetsInlineLimit: 0,
-    rolldownOptions: { input: 'toronto.html' },
+    rolldownOptions: { input: ['toronto.html', 'corridor.html'] },
   },
 }));

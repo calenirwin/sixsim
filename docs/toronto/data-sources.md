@@ -1,6 +1,6 @@
 # Toronto data-source register
 
-Evidence checked **2026-10-22**. “Catalogue verified” means official metadata was read, not that an archive was downloaded, parsed, licensed for every use or integrated. Only the massing subset is integrated. No new datasets or live feeds were ingested in this audit.
+Evidence checked **2026-10-22**. “Catalogue verified” means official metadata was read, not that an archive was downloaded, parsed, licensed for every use or integrated. At the audit date only massing was integrated. A subsequent bounded 510 Spadina static GTFS experiment is now implemented; see the [fixture evidence](https://github.com/calenirwin/sixsim/blob/pilot/toronto-readiness/client/fixtures/transit/README.md). No live feed was consumed.
 
 For City entries below, the primary catalogue and CKAN metadata links identify the exact source. Catalogue pages present the [Open Government Licence – Toronto](https://open.toronto.ca/open-data-licence/); metadata fields can be missing or contradictory. Before adding a source, retain its specific terms and exemptions, attribution and resource evidence. The licence permits adaptation and redistribution subject to its conditions, excludes rights the City cannot grant and does not imply endorsement. Use the required notice: **Contains information licensed under the Open Government Licence – Toronto.** Do not treat all Toronto-related data as City-licensed.
 
@@ -81,11 +81,11 @@ The existing subset relies on the affirmative official portal and dataset-note e
 | Field | Record |
 |---|---|
 | Owner / geography | City of Toronto — Toronto Transit Commission; Toronto |
-| Status | Catalogue verified, not imported |
+| Status | Integrated: route 510, service day 2026-10-22; 378 trips, 34 stops, seven shapes |
 | Format / coordinates | GTFS ZIP, all subway/streetcar/bus modes. GTFS geographic coordinates are WGS84; verify agency timezone and service calendars in archive. |
 | Update evidence | Catalogue cadence: Quarterly; last refresh: 2026-09-30 14:17:52. These describe publication, not accuracy or measurement date. |
 | Terms / attribution / redistribution | Toronto portal licence evidence as above; CKAN licence: License not specified, id: notspecified. Preserve source-specific limitations; verify selected resource terms before redistribution. |
-| Access / quotas | Public metadata read without authentication; resource/service requirements and quotas not verified. No credential supplied or requested. |
+| Access / quotas | Public metadata read without authentication; 84.3 MB public archive downloaded without credentials under a 100 MB cap; quotas not established. No live service accessed. |
 | Source versus derived storage | Pin one schedule snapshot/checksum outside Git; retain a small relationally complete route/day fixture only after terms check. |
 | Next integration step | Prefer this for offline all-mode planning; validate stops, shapes, trips, calendars and times beyond 24:00. |
 

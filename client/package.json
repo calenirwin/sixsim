@@ -20,7 +20,9 @@
     "test:toronto:browser": "npm run build:toronto && node tools/tests/toronto-browser.mjs",
     "test:toronto:delivery": "node --test tools/tests/toronto-delivery.mjs",
     "test:toronto:static": "npm run build:toronto && node tools/tests/toronto-static.mjs",
-    "test:toronto:repro": "node tools/tests/toronto-repro.mjs"
+    "test:toronto:repro": "node tools/tests/toronto-repro.mjs",
+    "test:transit": "python3 tools/transit/test_extract.py && node --test tools/tests/transit.mjs",
+    "test:transit:browser": "npm run build:toronto && node tools/tests/transit-browser.mjs"
   },
   "keywords": [],
   "author": "",

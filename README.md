@@ -4,7 +4,7 @@ SixSim is Calen Irwin’s Toronto-focused fork of [Valdrada](https://github.com/
 
 ## What exists today
 
-On [draft PR #1](https://github.com/calenirwin/sixsim/pull/1), a real Toronto massing prototype imports 15 City source records into the existing CTL1 binary tile contract and renders them in a separate web entry point. It includes provenance, picking, loading failures, a reproducible static package and browser tests. It uses flat ground and neutral building extrusions; it has no Toronto traffic, transit, terrain or calibrated simulation. The separate procedural fixture is synthetic and is not Toronto evidence. The unmerged `main` branch still represents the inherited NYC application.
+On [draft PR #1](https://github.com/calenirwin/sixsim/pull/1), a real Toronto massing prototype imports 15 City source records into the existing CTL1 binary tile contract and renders them in a separate web entry point. It includes provenance, picking, loading failures, a reproducible static package and browser tests. It uses flat ground and neutral building extrusions. A separate [510 Spadina offline GTFS study](client/fixtures/transit/README.md) now shows one pinned service day and schedule-derived positions, sharing the massing coordinate frame. There is no Toronto traffic, terrain, live tracking or calibrated simulation. The separate procedural fixture is synthetic and is not Toronto evidence. The unmerged `main` branch still represents the inherited NYC application.
 
 The NYC compiler, renderer special cases, simulation defaults, Electron/server/Python API and Unreal client remain upstream implementations. Renaming them would not port their geography or behaviour. See the [reference audit](docs/toronto/reference-audit.md).
 

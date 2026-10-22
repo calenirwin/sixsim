@@ -4,7 +4,7 @@ SixSim’s proposed direction is a reproducible Toronto city model that can supp
 
 ## Current boundary
 
-The draft branch contains a 15-record real massing slice, a small binary importer and an isolated Three.js viewer. Buildings use observed average heights on a flat plane. No Toronto streets, terrain, transit, population, demand model or simulation are integrated. The procedural NYC fixture exercises inherited rendering but supplies no Toronto facts. Main remains the upstream NYC baseline until review.
+The draft branch contains a 15-record real massing slice, a small binary importer and an isolated Three.js viewer. Buildings use observed average heights on a flat plane. A separate 510 Spadina static GTFS experiment now preserves one service day and visualizes schedule-derived positions. No Toronto street graph, terrain, population, demand model or calibrated simulation is integrated. The procedural NYC fixture exercises inherited rendering but supplies no Toronto facts. Main remains the upstream NYC baseline until review.
 
 ## Preserve the architecture, make geography explicit
 

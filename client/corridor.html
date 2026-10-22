@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SixSim · 510 Spadina schedule study</title>
+<style>body{font:16px system-ui;margin:24px;background:#eef2f4;color:#20313d}main{max-width:1100px;margin:auto}svg{width:100%;height:60vh;background:white;border:1px solid #9baeb8}label,button,select{margin-right:12px}input{width:60%}#status{min-height:2em}a{color:#175d8c}.note{font-size:14px}button{padding:8px}</style></head><body><main>
+<h1>510 Spadina · offline schedule study</h1><p id="coverage">Loading the pinned TTC service day…</p>
+<p><strong>Schedule-derived positions — not live tracking.</strong> Dots interpolate scheduled stop times along published shapes. They are trips, not observed vehicles.</p>
+<p><a href="./toronto.html">Queen &amp; Spadina massing study</a> · <a id="download">Download GTFS subset</a> · <a id="provenance">Source provenance</a></p>
+<p id="status" role="status">Loading local data…</p><button id="retry" hidden onclick="location.reload()">Reload</button>
+<label>Direction <select id="direction" disabled><option value="all">Both directions</option><option value="0">GTFS direction 0</option><option value="1">GTFS direction 1</option></select></label>
+<button id="play" disabled>Play ×60</button><label>Service time <input id="time" type="range" step="1" disabled></label><output id="clock"></output>
+<svg id="map" role="img" aria-label="North-up 510 route shapes, stops and schedule-derived trip positions"></svg>
+<p class="note">North up. Grey lines: published route shapes; blue rings: stops (hover for names); orange dots: scheduled trips; purple box: existing massing crop. Flat local coordinates share the Toronto massing origin. Branches and short turns are preserved, not inferred rail tracks. Times beyond 24:00 remain attached to the selected service day in America/Toronto. No basemap, live feed, traffic or demand model.</p>
+<p class="note">Contains information licensed under the <a href="https://open.toronto.ca/open-data-licence/">Open Government Licence – Toronto</a>. Source: TTC merged GTFS. No City/TTC endorsement. SixSim builds on Valdrada by Mehmet Kerem Turkcan (<a href="./LICENSE.txt">MIT</a>).</p>
+<script type="module" src="./src/toronto/corridor.js"></script></main></body></html>

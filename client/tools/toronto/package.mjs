@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-export const BUDGET = Object.freeze({ totalBytes: 800_000, javascriptBytes: 700_000, tileBytes: 16_384 });
+export const BUDGET = Object.freeze({ totalBytes: 2_600_000, javascriptBytes: 700_000, tileBytes: 16_384 });
 export function packageDemo(dir) {
   fs.rmSync(path.join(dir, 'PACKAGE.json'), { force: true });
   fs.copyFileSync(path.join(dir, 'toronto.html'), path.join(dir, 'index.html'));

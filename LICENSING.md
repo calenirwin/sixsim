@@ -87,3 +87,7 @@ See [the subset provenance](client/fixtures/toronto/README.md) for the precise
 resource, revision hash, licence evidence, CKAN metadata discrepancy and
 illustrative-use limitations. Code remains MIT. The upstream component terms
 above are unchanged; combining additional datasets/assets needs their terms too.
+
+## Toronto static transit study
+
+The separate `client/fixtures/transit/` subset derives from TTC merged GTFS and carries the Toronto Open Government Licence notice. Its source evidence, metadata discrepancy and exact hashes are recorded in [the transit fixture documentation](client/fixtures/transit/README.md). It contains schedules, not live observations, and does not change inherited asset or OSM data terms.
