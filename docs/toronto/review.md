@@ -43,6 +43,8 @@ Add a **bounded Toronto Centreline road/walkway crop around Queen/Spadina**, the
 
 ## Review evidence
 
+Open the inspected review snapshots directly: [desktop, 1440 px](review-desktop.png) · [mobile, 390 px](review-mobile.png). These capture the implemented review controls and preserve the on-page attribution. CI also regenerates screenshots from the current commit.
+
 `npm --prefix client run test:transit:browser` builds the static package and generates these files under `client/shots/` (Chromium required):
 
 - `toronto-review-desktop.png` — 1440-pixel desktop layout, stop selected, direction/source context visible.
