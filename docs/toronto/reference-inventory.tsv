@@ -1,0 +1,477 @@
+path	occurrences	initial_disposition
+.gitignore	1	operational-or-fixture: retain until geographic/compatibility review
+ACKNOWLEDGEMENTS.md	19	attribution-and-terms: preserve
+BUILDING.md	13	upstream-reference: label and retain; not Toronto capability
+CITATION.cff	8	attribution-and-terms: preserve
+LICENSING.md	5	attribution-and-terms: preserve
+PythonAPI/README.md	11	upstream-reference: label and retain; not Toronto capability
+PythonAPI/boundless/__init__.py	25	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/benchmark.py	4	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/data_collection/actors_control.py	4	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/data_collection/boxes_coco_kitti.py	5	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/data_collection/camera_path.py	4	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/data_collection/first_frame.py	3	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/data_collection/record_sequence.py	4	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/data_collection/sensor_suite.py	5	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/data_collection/weather_time.py	4	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/generate_traffic.py	8	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/intersection_120_amsterdam.py	10	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/quickstart.py	9	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/tutorials/actors.py	6	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/tutorials/bounding_boxes.py	6	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/tutorials/cameras.py	4	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/tutorials/depth.py	7	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/tutorials/first_steps.py	4	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/tutorials/record_dataset.py	11	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/tutorials/segmentation.py	5	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/examples/walk_and_drive.py	4	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/pyproject.toml	5	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/tests/test_live_autopilot.py	12	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/tests/test_util_kitti.py	4	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/valdrada/__init__.py	8	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/valdrada/actors.py	1	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/valdrada/client.py	4	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/valdrada/transport.py	5	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/valdrada/util.py	1	operational-or-fixture: retain until geographic/compatibility review
+PythonAPI/valdrada/world.py	5	operational-or-fixture: retain until geographic/compatibility review
+README.md	47	fork-identity: corrected in this audit
+TORONTO_HANDOFF.md	17	upstream-reference: label and retain; not Toronto capability
+client/CITATION.bib	4	operational-or-fixture: retain until geographic/compatibility review
+client/DATA_SOURCES.md	29	upstream-reference: label and retain; not Toronto capability
+client/README.md	7	upstream-reference: label and retain; not Toronto capability
+client/docs/NYC_BUILDINGS.md	9	upstream-reference: label and retain; not Toronto capability
+client/docs/PERFORMANCE.md	1	upstream-reference: label and retain; not Toronto capability
+client/fixture.html	2	operational-or-fixture: retain until geographic/compatibility review
+client/fixtures/toronto/README.md	5	upstream-reference: label and retain; not Toronto capability
+client/index.html	5	operational-or-fixture: retain until geographic/compatibility review
+client/package-lock.json	3	operational-or-fixture: retain until geographic/compatibility review
+client/package.json	3	operational-or-fixture: retain until geographic/compatibility review
+client/public/data/gf38/index.json	1	operational-or-fixture: retain until geographic/compatibility review
+client/public/data/lf39/lf39.json	1	operational-or-fixture: retain until geographic/compatibility review
+client/public/data/tiers.json	1	operational-or-fixture: retain until geographic/compatibility review
+client/public/data/tree_forestry.json	2	operational-or-fixture: retain until geographic/compatibility review
+client/public/data/tree_overlay.json	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/api/bridge.js	8	operational-or-fixture: retain until geographic/compatibility review
+client/src/cells/bakeLib.js	3	operational-or-fixture: retain until geographic/compatibility review
+client/src/cells/cellLoader.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/cells/cellRules.js	2	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/adArt.js	3	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/billboards.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/br/suspension.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/bridgeKit.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/bryantPark.js	2	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/centralPark.js	2	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/contactShadow.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/cpBethesdaKit.js	5	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/cpLandData.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/cpLandmarksKit.js	2	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/cpReliefData.js	10	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/fasciaAtlas.js	3	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/fk/custom/bid1.js	2	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/fk/custom/bid3Shops.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/fk/custom/west.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/fk/specs/bid2.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/fk/specs/bid4_north.js	3	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/fk/specs/west.js	4	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/furnitureKit.js	48	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/groundFix38.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/hptShoreData.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/hptShoreKit.js	7	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/hptSign.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/hptSignData.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/instancer.js	4	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/landmarkKit.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/landmarks.js	10	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/lk/lkArt.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/lk/lkCart.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/lk/lkKit.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/namedShops.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/panelArt.js	3	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/pk/pkArt.js	2	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/pk/pkArt2.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/pk/pkData.js	19	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/pk/pkKit.js	3	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/pk/pkSigns.js	6	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/pk/pkStreet.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/pk/props.js	2	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/props.js	2	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/rfkData.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/roofEngine.js	3	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/shopSigns.js	8	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/signArt.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/sk/skBus.js	2	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/sk/skMats.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/stations/subEnt38.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/streetNYC.js	3	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/trains/cars.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/treeGen.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/trees.js	2	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/tsqPlaza.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/vk/park.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/w125cKit.js	4	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/w125cbKit.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/w125e.js	3	operational-or-fixture: retain until geographic/compatibility review
+client/src/city/w125wData.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/core/engine.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/game/player.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/game/rig.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/game/showcase.js	7	operational-or-fixture: retain until geographic/compatibility review
+client/src/game/showcaseUI.js	3	operational-or-fixture: retain until geographic/compatibility review
+client/src/main.js	11	operational-or-fixture: retain until geographic/compatibility review
+client/src/perception/segRender.js	12	operational-or-fixture: retain until geographic/compatibility review
+client/src/shared/geo.js	6	operational-or-fixture: retain until geographic/compatibility review
+client/src/shared/landmarkSpec.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/shared/localFrame.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/shared/overlay.js	3	operational-or-fixture: retain until geographic/compatibility review
+client/src/sim/crowd.js	7	operational-or-fixture: retain until geographic/compatibility review
+client/src/sim/fleet24.js	18	operational-or-fixture: retain until geographic/compatibility review
+client/src/sim/pedmesh.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/sim/peds.js	5	operational-or-fixture: retain until geographic/compatibility review
+client/src/sim/traffic.js	6	operational-or-fixture: retain until geographic/compatibility review
+client/src/sim/trains.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/sim/vehicles.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/ui/editor.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/assemble.js	25	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/cityLamps.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/cpuFree.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/gt.js	2	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/heroFacades.js	11	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/life.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/lotfix39.js	3	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/materials.js	54	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/night11.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/nycDress.js	29	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/sky.js	3	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/staticPool.js	1	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/tiledata.js	2	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/towers.js	4	operational-or-fixture: retain until geographic/compatibility review
+client/src/world/weather.js	3	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar33/mats/build.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar33/mats/sets.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar33/signs/fetch_fonts.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/bridges/rfk_data.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/bxtrees/build_set2.py	8	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/bxtrees/build_trees.py	6	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/bxtrees/build_trees2.py	3	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/bxtrees/bxt_post.py	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/bxtrees/leaves.py	4	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/bxtrees/leaves2.py	3	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/bxtrees/preview2.py	3	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/bxtrees/web_pack.py	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/bench_cycles.py	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/blender_light.py	15	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/blender_moving.py	19	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/blender_peds.py	17	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/blender_render.py	4	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/blender_trees.py	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/blender_wheels.py	5	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/blender_windows.py	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/bx_render_all.mjs	10	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/harvest.mjs	4	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/render_keys.sh	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/ue_families.json	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/ue_light.py	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/ue_mat.py	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/ue_prep.py	19	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/ue_project/BoundlessUE.uproject	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/ue_project/Config/DefaultEngine.ini	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/ue_project/Config/DefaultGame.ini	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/ue_project/Python/ue_masters.py	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/ue_take.py	8	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/ue_trees.py	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/usd_peds.py	11	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/usd_trees.py	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/usd_windows.py	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/export/usd_write.py	21	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/ground/gf38_bake.py	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/vehicles/bus40/build_bus40.mjs	6	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/vehicles/bus60/build_mtaxd60.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/vehicles/bus60/livery.mjs	4	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/vehicles/citytrucks/dsny.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/vehicles/citytrucks/lib.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/vehicles/citytrucks/schoolbus.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/vehicles/citytrucks/uspsllv.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/vehicles/delivery/build.sh	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/vehicles/delivery/finish.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/vehicles/delivery/textures.py	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/vehicles/services/detail_atlas.py	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/vehicles/taxi/build_nv200.py	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/vehicles/taxi/draw_tex.py	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar34/vehicles/vh36/build_ftr26.py	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar35/trees/bake36.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar35/trees/build36.py	4	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar35/trees/fetch36.sh	4	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar35/trees/ktx38.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar35/veg/bake_vg37.py	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar35/veg/build_vg37.py	3	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar35/veg/build_vg37h.py	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar35/veg/fetch_vg37.sh	4	operational-or-fixture: retain until geographic/compatibility review
+client/tools/ar35/veg/osm_vg37.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/cp/flora_naip.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/cp/flora_osm.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/cp/flora_place.py	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/cp/land_bake.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/cp/relief_bake.py	3	operational-or-fixture: retain until geographic/compatibility review
+client/tools/cp/relief_farphoto.py	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/cp33/bethesda/angel.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/cp33/bethesda/cherub.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/cp33/bethesda/scanlib.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/cp33/rocks_build.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/osm_fetch.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/backdrop/buildings.py	6	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/backdrop/common.py	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/backdrop/land.py	23	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/backdrop/osm_extract.py	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/bridges.mjs	9	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/classify.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/compile.mjs	41	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/dem_tools.py	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/extract3d.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/fetch.mjs	22	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/fetch_elev.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/fetch_osm_bridges.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/fetch_osm_extras.mjs	21	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/rooftops.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/towergate.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+client/tools/pipeline/tree_forestry.mjs	5	operational-or-fixture: retain until geographic/compatibility review
+client/tools/probe_furn.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+client/tools/tests/toronto.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+client/tools/toronto/compile.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+client/toronto.html	2	operational-or-fixture: retain until geographic/compatibility review
+client/vite.config.js	13	operational-or-fixture: retain until geographic/compatibility review
+core/api/render.mjs	7	operational-or-fixture: retain until geographic/compatibility review
+core/api/session.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+core/env/shim.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+core/sim/world.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+core/world/streamer.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+docs/api/RELEASE_README.md	12	upstream-reference: label and retain; not Toronto capability
+docs/api/getting_started.md	19	upstream-reference: label and retain; not Toronto capability
+docs/api/protocol.md	1	upstream-reference: label and retain; not Toronto capability
+docs/api/python_api.md	9	upstream-reference: label and retain; not Toronto capability
+docs/architecture.md	2	upstream-reference: label and retain; not Toronto capability
+docs/assets/figures/src/architecture.drawio	2	upstream-reference: label and retain; not Toronto capability
+docs/blender-cycles.md	1	upstream-reference: label and retain; not Toronto capability
+docs/citation.md	10	upstream-reference: label and retain; not Toronto capability
+docs/data-collection.md	1	upstream-reference: label and retain; not Toronto capability
+docs/development.md	2	upstream-reference: label and retain; not Toronto capability
+docs/hooks/repo_links.py	1	upstream-reference: label and retain; not Toronto capability
+docs/index.md	16	fork-identity: corrected in this audit
+docs/install.md	19	upstream-reference: label and retain; not Toronto capability
+docs/media.md	6	upstream-reference: label and retain; not Toronto capability
+docs/quickstart.md	15	upstream-reference: label and retain; not Toronto capability
+docs/specs/actor-tracks.md	1	upstream-reference: label and retain; not Toronto capability
+docs/specs/build-graph.md	25	upstream-reference: label and retain; not Toronto capability
+docs/specs/cell-package.md	12	upstream-reference: label and retain; not Toronto capability
+docs/specs/load-set.md	3	upstream-reference: label and retain; not Toronto capability
+docs/specs/modules.md	1	upstream-reference: label and retain; not Toronto capability
+docs/specs/render-protocol.md	7	upstream-reference: label and retain; not Toronto capability
+docs/specs/schemas/cell-gltf-extras.v0.schema.json	2	upstream-reference: label and retain; not Toronto capability
+docs/specs/schemas/cell-index.v0.schema.json	4	upstream-reference: label and retain; not Toronto capability
+docs/specs/schemas/cell-sidecar.v0.schema.json	2	upstream-reference: label and retain; not Toronto capability
+docs/stylesheets/extra.css	1	upstream-reference: label and retain; not Toronto capability
+docs/techniques.md	19	upstream-reference: label and retain; not Toronto capability
+docs/tutorials/bounding-boxes.md	1	upstream-reference: label and retain; not Toronto capability
+docs/tutorials/cameras.md	1	upstream-reference: label and retain; not Toronto capability
+docs/tutorials/depth.md	1	upstream-reference: label and retain; not Toronto capability
+docs/tutorials/first-steps.md	2	upstream-reference: label and retain; not Toronto capability
+docs/tutorials/index.md	1	upstream-reference: label and retain; not Toronto capability
+docs/tutorials/recording-a-dataset.md	1	upstream-reference: label and retain; not Toronto capability
+docs/typology/02-tenement.md	2	upstream-reference: label and retain; not Toronto capability
+docs/typology/03-loft-warehouse.md	2	upstream-reference: label and retain; not Toronto capability
+docs/typology/04-prewar-apartment.md	6	upstream-reference: label and retain; not Toronto capability
+docs/typology/05-nycha-tower.md	37	upstream-reference: label and retain; not Toronto capability
+docs/typology/06-glass-condo.md	7	upstream-reference: label and retain; not Toronto capability
+docs/typology/07-mixed-use-commercial.md	2	upstream-reference: label and retain; not Toronto capability
+docs/typology/08-vinyl-rowhouse.md	2	upstream-reference: label and retain; not Toronto capability
+docs/typology/09-corner-buildings.md	10	upstream-reference: label and retain; not Toronto capability
+docs/typology/10-rooftops.md	15	upstream-reference: label and retain; not Toronto capability
+docs/ue-client-build.md	40	upstream-reference: label and retain; not Toronto capability
+docs/ue-client.md	41	upstream-reference: label and retain; not Toronto capability
+docs/unreal.md	4	upstream-reference: label and retain; not Toronto capability
+index.html	1	operational-or-fixture: retain until geographic/compatibility review
+mkdocs.yml	6	fork-identity: corrected in this audit
+package-lock.json	2	operational-or-fixture: retain until geographic/compatibility review
+package.json	2	operational-or-fixture: retain until geographic/compatibility review
+server/build.mjs	23	operational-or-fixture: retain until geographic/compatibility review
+server/main.js	14	operational-or-fixture: retain until geographic/compatibility review
+server/package-lock.json	3	operational-or-fixture: retain until geographic/compatibility review
+server/package.json	4	operational-or-fixture: retain until geographic/compatibility review
+server/preload.js	3	operational-or-fixture: retain until geographic/compatibility review
+space/README.md	10	upstream-reference: label and retain; not Toronto capability
+src/buildings/federal.js	2	operational-or-fixture: retain until geographic/compatibility review
+src/buildings/glasstower.js	1	operational-or-fixture: retain until geographic/compatibility review
+src/buildings/index.js	3	operational-or-fixture: retain until geographic/compatibility review
+src/buildings/infill.js	2	operational-or-fixture: retain until geographic/compatibility review
+src/buildings/lib.js	1	operational-or-fixture: retain until geographic/compatibility review
+src/buildings/nycha.js	53	operational-or-fixture: retain until geographic/compatibility review
+src/buildings/whitebrick.js	1	operational-or-fixture: retain until geographic/compatibility review
+src/city.js	18	operational-or-fixture: retain until geographic/compatibility review
+src/kit.js	4	operational-or-fixture: retain until geographic/compatibility review
+src/main.js	4	operational-or-fixture: retain until geographic/compatibility review
+src/materials.js	5	operational-or-fixture: retain until geographic/compatibility review
+src/textures.js	3	operational-or-fixture: retain until geographic/compatibility review
+tools/ad/clearance.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/ad/cut.mjs	8	operational-or-fixture: retain until geographic/compatibility review
+tools/ad/datascene.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+tools/ad/lensprobe.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/ad/mapdata.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/ad/record.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+tools/ad/sheet.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+tools/ad/shots.json	3	operational-or-fixture: retain until geographic/compatibility review
+tools/ad/shots.mjs	6	operational-or-fixture: retain until geographic/compatibility review
+tools/ad/stepscan.cjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/ad/temporal_scan.py	1	operational-or-fixture: retain until geographic/compatibility review
+tools/api/pw_host.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+tools/api/smoke_bridge.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/build_peds.mjs	4	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/build_rocketbox.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/build_vehicle.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/crowd_sitqa.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/crowd_skinqa.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/fetch_hq.py	4	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/lakeside_tex.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/lib/propfit.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/lib/rocketbox.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/lib/tex.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/livery_boxtruck.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/livery_fleet27.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/livery_plate.mjs	4	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/livery_taxi.mjs	6	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/package-lock.json	2	operational-or-fixture: retain until geographic/compatibility review
+tools/assets/package.json	2	operational-or-fixture: retain until geographic/compatibility review
+tools/bshot.mjs	9	operational-or-fixture: retain until geographic/compatibility review
+tools/cells/bake.mjs	19	operational-or-fixture: retain until geographic/compatibility review
+tools/cells/export_plain.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+tools/cells/glbWrite.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+tools/cells/harness.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+tools/core/actor_layers.sh	7	operational-or-fixture: retain until geographic/compatibility review
+tools/core/api_check.py	6	operational-or-fixture: retain until geographic/compatibility review
+tools/core/boot_check.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+tools/core/light_bake.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+tools/core/loadsets.mjs	5	operational-or-fixture: retain until geographic/compatibility review
+tools/core/obstacles.mjs	4	operational-or-fixture: retain until geographic/compatibility review
+tools/core/page_take.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+tools/core/parity.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+tools/core/signals_dump.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/core/take.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+tools/core/takes.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/core/tracks_to_mov.py	1	operational-or-fixture: retain until geographic/compatibility review
+tools/core/tracks_to_peds.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+tools/figures/capture.py	9	operational-or-fixture: retain until geographic/compatibility review
+tools/figures/compose.mjs	5	operational-or-fixture: retain until geographic/compatibility review
+tools/figures/depthvis.py	1	operational-or-fixture: retain until geographic/compatibility review
+tools/figures/tutorial_images.sh	1	operational-or-fixture: retain until geographic/compatibility review
+tools/gpulock.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+tools/ground_preview.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/harness_guard.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+tools/lite/build_lite.mjs	16	operational-or-fixture: retain until geographic/compatibility review
+tools/lite/ktx_shrink.py	1	operational-or-fixture: retain until geographic/compatibility review
+tools/lite/live_check.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+tools/lod/backdrop.sh	3	operational-or-fixture: retain until geographic/compatibility review
+tools/lod/backdrop_ground.py	5	operational-or-fixture: retain until geographic/compatibility review
+tools/lod/backdrop_heights.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/lod/bake_landmarks.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/lod/bench.sh	1	operational-or-fixture: retain until geographic/compatibility review
+tools/lod/bench_sat.sh	1	operational-or-fixture: retain until geographic/compatibility review
+tools/lod/build_backdrop.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/lod/export_packages.mjs	9	operational-or-fixture: retain until geographic/compatibility review
+tools/lod/fetch_enc_water.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+tools/lod/flythrough.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/lod/proof.sh	1	operational-or-fixture: retain until geographic/compatibility review
+tools/lod/water_l6.py	14	operational-or-fixture: retain until geographic/compatibility review
+tools/package.mjs	21	operational-or-fixture: retain until geographic/compatibility review
+tools/perception/check.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/perception/export.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+tools/qa/qa_page.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+tools/qa/r4cams.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/qa/support_audit.js	2	operational-or-fixture: retain until geographic/compatibility review
+tools/serve.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/tflick.mjs	4	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/bd_tilefac.py	5	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/bd_tilefac_dump.js	1	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/bd_tilefac_extract.py	1	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/block_merge.py	1	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/city_build.py	3	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/kit_import.py	5	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/leafcut.py	4	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/matlib.py	1	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/plugins/ValdradaCells/Source/ValdradaCells/Private/ValdradaCell.cpp	12	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/plugins/ValdradaCells/Source/ValdradaCells/Private/ValdradaCellsModule.cpp	1	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/plugins/ValdradaCells/Source/ValdradaCells/Public/ValdradaCell.h	10	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/plugins/ValdradaCells/Source/ValdradaCells/ValdradaCells.Build.cs	2	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/plugins/ValdradaCells/ValdradaCells.uplugin	3	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_actors.py	7	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_addlevels.py	3	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_bind.py	3	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_cellmat.py	3	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_cellmat2.py	7	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_cells.py	3	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_decomp.mjs	1	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_lodmat.py	3	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_lodprep.py	2	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_path.py	4	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_plain.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_queue.py	4	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_relight.py	3	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_remat.py	3	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_shotpath.py	1	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_take.sh	2	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/r1c_world.sh	7	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/render_take.py	19	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/render_take.sh	1	operational-or-fixture: retain until geographic/compatibility review
+tools/ue/vcel_write.py	2	operational-or-fixture: retain until geographic/compatibility review
+tools/valdrada.mjs	26	operational-or-fixture: retain until geographic/compatibility review
+tools/zfight.mjs	3	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Config/DefaultEngine.ini	4	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Config/DefaultGame.ini	15	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Data/city.json	1	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaCells/Source/ValdradaCells/Private/ValdradaCell.cpp	12	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaCells/Source/ValdradaCells/Private/ValdradaCellsModule.cpp	1	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaCells/Source/ValdradaCells/Public/ValdradaCell.h	10	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaCells/Source/ValdradaCells/ValdradaCells.Build.cs	2	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaCells/ValdradaCells.uplugin	3	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaRender/Source/ValdradaRender/Private/ValdradaActors.cpp	17	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaRender/Source/ValdradaRender/Private/ValdradaCapture.cpp	17	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaRender/Source/ValdradaRender/Private/ValdradaClient.cpp	39	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaRender/Source/ValdradaRender/Private/ValdradaFrames.h	1	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaRender/Source/ValdradaRender/Private/ValdradaGameMode.cpp	8	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaRender/Source/ValdradaRender/Private/ValdradaLink.cpp	40	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaRender/Source/ValdradaRender/Private/ValdradaRenderModule.cpp	1	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaRender/Source/ValdradaRender/Private/ValdradaStreaming.cpp	29	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaRender/Source/ValdradaRender/Public/ValdradaClient.h	18	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaRender/Source/ValdradaRender/Public/ValdradaGameMode.h	5	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaRender/Source/ValdradaRender/Public/ValdradaLink.h	11	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaRender/Source/ValdradaRender/ValdradaRender.Build.cs	3	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Plugins/ValdradaRender/ValdradaRender.uplugin	5	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Source/ValdradaUE.Target.cs	5	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Source/ValdradaUE/ValdradaUE.Build.cs	2	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Source/ValdradaUE/ValdradaUE.cpp	3	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Source/ValdradaUEEditor.Target.cs	4	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Tools/build_editor.sh	7	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Tools/e2e_check.py	15	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Tools/e2e_compare.py	1	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Tools/e2e_run.sh	5	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Tools/e2e_threejs.sh	8	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Tools/fleet_glb.mjs	2	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Tools/make_fleet.py	2	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Tools/make_manifests.py	8	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Tools/make_map.py	5	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Tools/make_materials.py	2	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/Tools/run_client.sh	6	operational-or-fixture: retain until geographic/compatibility review
+ue_client/ValdradaUE/ValdradaUE.uproject	4	operational-or-fixture: retain until geographic/compatibility review
+ue_client/packaging/build_linux.sh	1	operational-or-fixture: retain until geographic/compatibility review
+ue_client/packaging/common.sh	9	operational-or-fixture: retain until geographic/compatibility review
+ue_client/packaging/config/DefaultGame.packaging.ini	5	operational-or-fixture: retain until geographic/compatibility review
+ue_client/packaging/core_bundle.py	4	operational-or-fixture: retain until geographic/compatibility review
+ue_client/packaging/export_content.py	7	operational-or-fixture: retain until geographic/compatibility review
+ue_client/packaging/fetch_valdrada_ue.py	25	operational-or-fixture: retain until geographic/compatibility review
+ue_client/packaging/launcher/README.md	13	upstream-reference: label and retain; not Toronto capability
+ue_client/packaging/launcher/UNREAL_ENGINE_NOTICE.md	1	upstream-reference: label and retain; not Toronto capability
+ue_client/packaging/launcher/ValdradaUE.bat	4	operational-or-fixture: retain until geographic/compatibility review
+ue_client/packaging/launcher/ValdradaUE.ps1	26	operational-or-fixture: retain until geographic/compatibility review
+ue_client/packaging/launcher/ValdradaUE.sh	37	operational-or-fixture: retain until geographic/compatibility review
+ue_client/packaging/package_linux.sh	6	operational-or-fixture: retain until geographic/compatibility review
+ue_client/packaging/release_linux.sh	8	operational-or-fixture: retain until geographic/compatibility review
+ue_client/packaging/smoke_test.py	7	operational-or-fixture: retain until geographic/compatibility review
+ue_client/packaging/ue_release.py	30	operational-or-fixture: retain until geographic/compatibility review
+ue_client/packaging/windows/package_windows.ps1	8	operational-or-fixture: retain until geographic/compatibility review
