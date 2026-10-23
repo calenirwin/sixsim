@@ -31,6 +31,9 @@ try:
  q=m.transform_to_geolocation(p)
  assert q.latitude==43.65 and q.longitude==-79.397
  t=w.get_transit_state()
+ network=w.get_source_network()
+ assert network['coordinates']=='EPSG:4326' and network['routing'] is False
+ assert len(network['roads'])==841 and len(network['stops'])==43
  assert t['provenance']['subset_sha256']=='6fbce770e767f802f088bd152974d32a4ed7ec319efc1fc5b9cdeed45b8a7f1f'
  assert t['basis']=='schedule-derived' and len(t['actors'])==10
  assert t['service_day']=='20261022' and t['service_seconds']==28800

@@ -17,8 +17,11 @@ test('offline guard catches absolute fetch through the shim', async () => {
 });
 test('real CTL1 tile and GTFS actors advance in inherited world before post-step hooks', async () => {
   const { world: W } = await torontoWorld();
-  assert.deepEqual([...W.streamer.tiles.keys()], ['0_0']);
-  assert.equal(W.streamer.stats.bytes, 4084);
+  assert.ok(W.streamer.tiles.size>10);
+  assert.ok(W.streamer.stats.bytes<2_000_000);
+  assert.equal(W.sourceNetwork.roads.length,841);
+  assert.equal(W.sourceNetwork.routing,false);
+  assert.equal(Object.keys(W.streamer.manifest.tiles).length,19);
   assert.equal(W.traffic, null); assert.equal(W.peds, null); assert.equal(W.trains, null);
   assert.equal(W.streamer.cityOverrides, false);
   assert.deepEqual(W.fetches, []); // only local shim requests; external guard is asserted separately

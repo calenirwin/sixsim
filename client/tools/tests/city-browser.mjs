@@ -14,7 +14,12 @@ try {
  await page.goto(base+'?city=toronto&pr=1',{waitUntil:'networkidle'});
  await page.waitForFunction(()=>window.__APP?.streamer.tiles.get('0_0')?.state==='ready' && window.__APP.engine.frames>3,{}, {timeout:60000});
  const first=await page.evaluate(()=>{const a=window.__APP;a.setPaused(true);a.seek(0);const P=a.traffic.pools['scheduled-trip-marker'];return {engine:a.engine.constructor.name,streamer:a.streamer.constructor.name,masses:a.streamer.tiles.get('0_0').data.records.length,actors:P.n,frame:a.replay.f,position:Array.from(P.mb.instanceMatrix.array.slice(12,15)),expected:a.tracks.frames[0].veh[0],calls:a.renderer.info.render.calls,triangles:a.renderer.info.render.triangles};});
- assert.equal(first.masses,15);assert.equal(first.actors,10);assert.ok(first.calls>0);assert.deepEqual(first.position,[first.expected.x,first.expected.y,first.expected.z]);
+ assert.equal(first.masses,360);assert.equal(first.actors,10);assert.ok(first.calls>0);assert.deepEqual(first.position,[first.expected.x,first.expected.y,first.expected.z]);
+ await page.evaluate(()=>window.__APP.controls.target.set(0,0,-1100));
+ await page.waitForFunction(()=>window.__APP.streamer.tiles.get('0_-3')?.state==='ready');
+ const context=await page.evaluate(()=>({roads:window.__APP.network.roads.length,stops:window.__APP.network.stops.length,nodes:window.__APP.network.nodes.length,lines:window.__APP.contextGroup.children.length}));
+ assert.equal(context.roads,841);assert.equal(context.stops,43);assert.ok(context.nodes>100);assert.equal(context.lines,3);
+ await page.evaluate(()=>window.__APP.controls.target.set(0,0,-200));
  const moved=await page.evaluate(()=>{const a=window.__APP;a.seek(60);return {frame:a.replay.f,position:Array.from(a.traffic.pools['scheduled-trip-marker'].mb.instanceMatrix.array.slice(12,15)),expected:a.tracks.frames[60].veh[0]};});
  assert.equal(moved.frame,60);assert.notDeepEqual(moved.position,first.position);assert.deepEqual(moved.position,[moved.expected.x,moved.expected.y,moved.expected.z]);
  assert.match(await page.locator('#stats').innerText(),/not live vehicles/);assert.ok(!requests.some(p=>/\/models\/|\/tiles\/|columbia|lf39|trains\.json/.test(p)),JSON.stringify(requests));assert.deepEqual(errors,[]);

@@ -249,7 +249,8 @@ export class Streamer {
   async _fetchMacro(key) {
     this.macros.set(key, { state: 'loading' });
     try {
-      const r = await fetch(`${this.base}/${this.manifest.macros[key].f}`);
+      const r = await fetch(this.ctx.assetUrls?.[this.manifest.macros[key].f] || `${this.base}/${this.manifest.macros[key].f}`);
+      if(!r.ok)throw new Error(`Macro ${key}: HTTP ${r.status}`);
       const buf = await r.arrayBuffer();
       const dv = new DataView(buf);
       const hLen = dv.getUint32(4, true);
@@ -263,7 +264,7 @@ export class Streamer {
       }
       // LF39 (LOTFIX, world/lotfix39.js; `?lf39=0` none): the far LoD boxes of the buildings our footprint export lacks
       // (53 W 53rd St on the skyline from Central Park), in the compiler's own format, before the crowns are rebuilt
-      try {
+      if(this.ctx.cityOverrides !== false) try {
         const add = lf39Macro(key, await lf39Load());
         if (add && pos && col) {
           const p2 = new Int16Array(pos.length + add.pos.length); p2.set(pos); p2.set(add.pos, pos.length);
@@ -274,7 +275,7 @@ export class Streamer {
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       g.setAttribute('color', new THREE.BufferAttribute(col, 4, true));
-      if (FW14) g.setAttribute('uv', new THREE.BufferAttribute(fw14Uv(pos, header.origin), 2));   // FW14 (world/materials.js): the far window grid
+      if (FW14 && this.ctx.cityOverrides !== false) g.setAttribute('uv', new THREE.BufferAttribute(fw14Uv(pos, header.origin), 2));   // FW14 (world/materials.js): the far window grid
       const mesh = new THREE.Mesh(g, this.ctx.farMat);
       mesh.position.set(header.origin[0], 0, header.origin[1]);
       g.computeBoundingSphere();
@@ -289,7 +290,7 @@ export class Streamer {
       // macros that actually contain 55 m+ buildings get a second mesh.
       let cMesh = null;
       try {
-        const cr = NO_TOWER_FX ? null : buildMacroCrowns(pos, col);
+        const cr = (NO_TOWER_FX || this.ctx.cityOverrides === false) ? null : buildMacroCrowns(pos, col);
         if (cr) {
           const cg = new THREE.BufferGeometry();
           cg.setAttribute('position', new THREE.BufferAttribute(cr.pos, 3));
@@ -333,6 +334,6 @@ export class Streamer {
         tg.dispose();
       }
       this.macros.set(key, { state: 'ready', mesh, tMesh, cMesh });
-    } catch (e) { console.warn('macro fetch', key, e); this.macros.set(key, { state: 'ready', mesh: null }); }
+    } catch (e) { console.warn('macro fetch', key, e); this.error=e; this.macros.set(key, { state: 'ready', mesh: null }); }
   }
 }

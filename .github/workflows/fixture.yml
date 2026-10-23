@@ -27,6 +27,7 @@ jobs:
       - run: npm run test:toronto:render
       - run: npm --prefix client run test:transit
       - run: npm --prefix client run test:toronto
+      - run: node --test client/tools/tests/district.mjs
       - run: npm --prefix client run test:toronto:delivery
       - run: npm --prefix client run test:toronto:repro
       - run: node tools/tests/transit-browser.mjs

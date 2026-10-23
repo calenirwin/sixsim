@@ -1045,6 +1045,10 @@ export function initApi(ctx) {
         capabilities: { road_navigation: !!traffic, pedestrians: !!peds, scheduled_transit: !!ctx.transit },
       };
     },
+    'map.get_source_network': () => {
+      need(ctx.sourceNetwork, 'unavailable', 'No source network configured');
+      return ctx.sourceNetwork;
+    },
     'transit.get_state': () => {
       need(ctx.transit, 'unavailable', 'No scheduled transit source configured');
       const t = ctx.transit;

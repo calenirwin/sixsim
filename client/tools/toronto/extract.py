@@ -27,11 +27,11 @@ def lonlat(x, y, z=None):
     return math.degrees(x / 6378137), math.degrees(2 * math.atan(math.exp(y / 6378137)) - math.pi / 2)
 
 
-def extract(archive):
+def extract(archive, bbox=BBOX, out=OUT, max_features=50, strict=True):
     assert archive.stat().st_size == 81415175, 'Unexpected source size'
     assert hashlib.sha256(archive.read_bytes()).hexdigest() == SHA256, 'Unexpected source revision'
-    extent = box(*mercator(*BBOX[:2]), *mercator(*BBOX[2:]))
-    features, excluded = [], []
+    extent = box(*mercator(*bbox[:2]), *mercator(*bbox[2:]))
+    features, excluded, invalid = [], [], []
     with zipfile.ZipFile(archive) as z, tempfile.TemporaryDirectory(dir=archive.parent) as temp:
         prj = z.read(STEM + '.prj').decode()
         assert 'WGS_1984_Web_Mercator_Auxiliary_Sphere' in prj and 'UNIT["Meter",1.0]' in prj
@@ -45,7 +45,9 @@ def extract(archive):
             record_index = row.record.oid  # zero-based snapshot index, NOT an official OBJECTID
             geom = shape(row.shape.__geo_interface__)
             if not geom.is_valid:
-                raise ValueError(f'Invalid source geometry at record {record_index}')
+                if strict: raise ValueError(f'Invalid source geometry at record {record_index}')
+                invalid.append(record_index)
+                continue
             if not extent.covers(geom):
                 excluded.append(record_index)
                 continue
@@ -57,14 +59,15 @@ def extract(archive):
                              'properties': {'source_record_index': record_index, **props},
                              'geometry': mapping(geom)})
     features.sort(key=lambda f: f['properties']['source_record_index'])
-    assert 1 <= len(features) <= 50
-    data = {'type': 'FeatureCollection', 'bbox': BBOX,
+    assert 1 <= len(features) <= max_features
+    data = {'type': 'FeatureCollection', 'bbox': bbox,
             'source_archive_sha256': SHA256,
             'selection': 'Whole polygons fully covered by bbox; boundary intersections excluded, no clipping.',
             'excluded_boundary_record_indices': sorted(excluded),
             'features': features}
-    OUT.write_text(json.dumps(data, indent=2, allow_nan=False) + '\n')
-    print(f'{len(features)} records, {len(excluded)} boundary exclusions, {OUT.stat().st_size} bytes -> {OUT}')
+    if not strict: data['excluded_invalid_record_indices'] = sorted(invalid)
+    out.write_text(json.dumps(data, indent=2, allow_nan=False) + '\n')
+    print(f'{len(features)} records, {len(excluded)} boundary exclusions, {out.stat().st_size} bytes -> {out}')
 
 
 if __name__ == '__main__':

@@ -12,8 +12,9 @@ const area = ring => ring.reduce((a, p, i) => {
   return a + p[0] * q[1] - q[0] * p[1];
 }, 0) / 2;
 
-export function compileBlock(collection, out) {
-  if (collection.type !== 'FeatureCollection' || !collection.features.length || collection.features.length > 50) {
+export function compileBlock(collection, out, { tx=0, tz=0, district=false } = {}) {
+  const origin=[tx*512,tz*512];
+  if (collection.type !== 'FeatureCollection' || !collection.features.length || collection.features.length > (district ? 5000 : 50)) {
     throw new Error('Expected 1–50 source features');
   }
   const positions = [], records = [], holes = [], identities = [], ids = new Set();
@@ -21,8 +22,8 @@ export function compileBlock(collection, out) {
     if (coordinates.length < 4 || coordinates[0].some((v, i) => v !== coordinates.at(-1)[i])) {
       throw new Error('Expected a closed source ring');
     }
-    const ring = coordinates.slice(0, -1).map(([lon, lat]) => frame.project(lon, lat));
-    if (ring.length > 65535 || ring.some(p => p.some(v => !Number.isFinite(v) || v < 0 || v >= 512))) {
+    const ring = coordinates.slice(0, -1).map(([lon, lat]) => frame.project(lon, lat).map((v,i)=>v-origin[i]));
+    if (ring.length > 65535 || ring.some(p => p.some(v => !Number.isFinite(v) || (!district && (v < 0 || v >= 512)) || Math.abs(v)>4096))) {
       throw new Error('Footprint outside the single 512 m tile or non-finite');
     }
     const signed = area(ring);
@@ -62,14 +63,14 @@ export function compileBlock(collection, out) {
       bytes.set([180, 191, 202], 18);
       bytes.writeUInt16LE(Math.round(footprintArea), 40);
       records.push(bytes);
-      identities.push({ sourceId: feature.id, part, sourceRecordIndex: feature.properties.source_record_index });
+      identities.push({ sourceId: feature.sourceId ?? feature.id, part: feature.sourcePart ?? part, sourceRecordIndex: feature.properties.source_record_index });
     }
   }
-  const header = { v: 1, tx: 0, tz: 0, origin: [0, 0], res: 1, names: [], nodes: [],
+  const header = { v: 1, tx, tz, origin, res: 1, names: [], nodes: [],
     profile: PROFILE, sourceArchiveSha256: collection.source_archive_sha256,
     records: identities, unknownFields: ['floors', 'facadeStyle', 'use', 'roof', 'terrain', 'roads'] };
   fs.mkdirSync(out, { recursive: true });
-  writeTile(path.join(out, '0_0.bin'), header, [
+  writeTile(path.join(out, `${tx}_${tz}.bin`), header, [
     { name: 'bldgXZ', array: new Float32Array(positions) },
     { name: 'bldg', array: new Uint8Array(Buffer.concat(records)) },
     { name: 'bholes', array: new Uint8Array(Buffer.concat(holes)) },
@@ -77,8 +78,40 @@ export function compileBlock(collection, out) {
     { name: 'roadVerts', array: new Float32Array() }, { name: 'terrain', array: new Float32Array(4) },
   ]);
   const manifest = { tile: 512, macro: 2048, bounds: [0, 0, 512, 512], profile: PROFILE,
-    tiles: { '0_0': { f: '0_0.bin', b: records.length, r: 0, fu: 0 } }, macros: {} };
+    tiles: { [`${tx}_${tz}`]: { f: `${tx}_${tz}.bin`, b: records.length, r: 0, fu: 0 } }, macros: {} };
   fs.writeFileSync(path.join(out, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
+  return manifest;
+}
+
+// Whole polygon parts belong to their bounding-box centre tile. Boundary-crossing
+// vertices remain intact in local float coordinates; no clipping or duplication.
+export function compileDistrict(collection, out) {
+  if(collection.type!=='FeatureCollection' || !collection.features.length || collection.features.length>5000) throw new Error('District source budget exceeded');
+  const groups=new Map(), seen=new Set();
+  for(const feature of collection.features) {
+    if(typeof feature.id!=='string' || seen.has(feature.id))throw new Error('Missing/duplicate source ID');
+    seen.add(feature.id);
+    const parts=feature.geometry.type==='Polygon'?[feature.geometry.coordinates]:feature.geometry.type==='MultiPolygon'?feature.geometry.coordinates:null;
+    if(!parts)throw new Error('Expected Polygon/MultiPolygon');
+    parts.forEach((coordinates,part)=>{
+      const points=coordinates[0].map(p=>frame.project(...p));
+      if(points.some(p=>p.some(v=>!Number.isFinite(v) || Math.abs(v)>10000)))throw new Error('District coordinate budget exceeded');
+      const axes=[0,1].map(i=>points.map(p=>p[i]));
+      const [tx,tz]=axes.map(a=>Math.floor((Math.min(...a)+Math.max(...a))/1024));
+      const key=`${tx}_${tz}`, list=groups.get(key)||[];
+      list.push({...feature,id:`${feature.id}:part:${part}`,sourceId:feature.id,sourcePart:part,geometry:{type:'Polygon',coordinates}});
+      groups.set(key,list);
+    });
+  }
+  const tiles={};
+  for(const [key,features] of [...groups].sort(([a],[b])=>a.localeCompare(b))) {
+    const [tx,tz]=key.split('_').map(Number);
+    Object.assign(tiles,compileBlock({...collection,features},out,{tx,tz,district:true}).tiles);
+  }
+  const ids=Object.keys(tiles).map(k=>k.split('_').map(Number));
+  const bounds=[Math.min(...ids.map(p=>p[0]))*512,Math.min(...ids.map(p=>p[1]))*512,(Math.max(...ids.map(p=>p[0]))+1)*512,(Math.max(...ids.map(p=>p[1]))+1)*512];
+  const manifest={tile:512,macro:2048,bounds,profile:PROFILE,coverage:collection.bbox,tiles,macros:{},selection:'Whole source polygon parts; bounding-box-centre tile ownership; no invented far geometry'};
+  fs.writeFileSync(path.join(out,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
   return manifest;
 }
 
