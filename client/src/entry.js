@@ -1,6 +1,8 @@
 // One application entry; selecting data also selects its supported asset/assembly profile.
-const city=new URLSearchParams(location.search).get('city') || 'nyc';
+const publishedCity=import.meta.env.VITE_PUBLISHED_CITY || null;
+const city=new URLSearchParams(location.search).get('city') || publishedCity || 'nyc';
 try {
+  if(publishedCity && city!==publishedCity)throw new Error('This deployment supports the Toronto profile only');
   if(city==='nyc') await import('./main.js');
   else if(city==='toronto') await (await import('./toronto/runtime.js')).start();
   else throw new Error('Unsupported city profile');

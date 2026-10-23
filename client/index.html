@@ -26,6 +26,12 @@
   #loading p { letter-spacing: 0.22em; font-size: 11px; text-transform: uppercase; opacity: 0.7; }
   #bar { width: 320px; height: 3px; background: rgba(255,255,255,0.12); margin-top: 18px; border-radius: 2px; overflow: hidden; }
   #bar div { height: 100%; width: 0%; background: linear-gradient(90deg, #4aa8e0, #7dd4ff); transition: width 0.25s; }
+  @media (max-width: 600px) {
+    body[data-city="toronto"] #help { top: 66px; left: 16px; right: 16px; text-align: left; }
+    body[data-city="toronto"] #help button { min-height: 40px; min-width: 70px; margin-top: 6px; }
+    body[data-city="toronto"] #stats { bottom: 54px; right: 16px; }
+    body[data-city="toronto"] #credits { left: 16px; right: 16px; text-align: left; }
+  }
 </style>
 </head>
 <body>

@@ -16,6 +16,7 @@ export async function start() {
   const query=new URLSearchParams(location.search);
   if(['tiles','cells','lod16'].some(k=>query.has(k))) throw new Error('Toronto selects its own verified tile and asset profile');
   applyIdentity('Toronto');
+  document.body.dataset.city='toronto';
   const response=await fetch(tracksUrl);if(!response.ok)throw new Error(`Actor tracks: HTTP ${response.status}`);
   const tracks=parseTracks(await response.arrayBuffer()), h=tracks.header;
   if(h.profile?.id!==PROFILE.id || h.profile.geoOrigin.lat!==PROFILE.geoOrigin.lat || h.profile.geoOrigin.lon!==PROFILE.geoOrigin.lon || h.rendering?.assetProfile!=='toronto-massing-scheduled' || h.rendering?.browserReplay!=='atrk/1' || h.vehicleKinds.join()!=='scheduled-trip-marker') throw new Error('Actor/asset profile mismatch');
@@ -30,13 +31,19 @@ export async function start() {
   document.querySelector('#loc span').textContent='Toronto';
   document.querySelector('#hood').textContent='Queen / Spadina';
   document.querySelector('#credits').textContent='Contains information licensed under OGL–Toronto. Framework: Valdrada, Mehmet Kerem Turkcan (MIT).';
-  document.querySelector('#help').textContent='Drag to orbit · scroll to zoom · Space pause · R restart';
+  document.querySelector('#help').innerHTML='Drag to orbit · scroll or pinch to zoom<br><button id="pause-playback">Pause</button> <button id="restart-playback">Restart</button>';
+  document.querySelector('#help').style.pointerEvents='auto';
   for(const id of ['cross','tethers'])document.getElementById(id).style.display='none';
   let elapsed=0,paused=false,failed=false;
+  engine.idleNap=()=>paused?250:0;
+  controls.addEventListener('change',()=>engine.wake());
   const fail=e=>{if(failed)return;failed=true;engine.holdDraw=true;const l=document.querySelector('#loading');l.style.display='flex';l.style.opacity='1';l.querySelector('p').textContent=`Unable to load city: ${e.message}. Reload to retry.`;};
   engine.renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();fail(new Error('Graphics context lost'));});
   const seek=t=>{if(!Number.isFinite(t)||t<0||t>h.simTime.at(-1))throw new Error('Time outside recorded schedule');elapsed=t;ENV.time.value=t;traffic.update(0);};
-  addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();paused=!paused;}if(e.code==='KeyR')seek(0);});
+  const togglePause=()=>{paused=!paused;engine.wake();document.querySelector('#pause-playback').textContent=paused?'Play':'Pause';};
+  document.querySelector('#pause-playback').onclick=togglePause;
+  document.querySelector('#restart-playback').onclick=()=>seek(0);
+  addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();togglePause();}if(e.code==='KeyR')seek(0);});
   window.__APP={engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,tracks,seek,setPaused:value=>{paused=!!value;}};
   engine.onFrame=dt=>{
     if(failed)return;

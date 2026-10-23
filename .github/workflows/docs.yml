@@ -1,49 +1,42 @@
-# Documentation site (MkDocs Material) on GitHub Pages.
-# Enable once under Settings > Pages > Build and deployment > Source: GitHub Actions. Pushes to main deploy
-# automatically while the repository is public; a private repository deploys only through a manual run
-# (Actions > docs > Run workflow), which requires a plan that supports Pages for private repositories.
-name: docs
-
+# One Pages publisher: the application. Documentation is checked by docs-check.yml.
+name: Publish Toronto
 on:
   push:
     branches: [main]
-    paths:
-      - "docs/**"
-      - "mkdocs.yml"
-      - "BUILDING.md"
-      - "ACKNOWLEDGEMENTS.md"
-      - "client/README.md"
-      - "client/DATA_SOURCES.md"
-      - ".github/workflows/docs.yml"
   workflow_dispatch:
-
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
 concurrency:
   group: pages
-  cancel-in-progress: true
-
+  cancel-in-progress: false
 jobs:
   build:
-    if: ${{ github.event_name == 'workflow_dispatch' || !github.event.repository.private }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: "3.12"
-      - run: pip install "mkdocs>=1.6,<2" "mkdocs-material>=9.5,<10"
-      - run: mkdocs build --strict
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm --prefix client ci --ignore-scripts
+      - run: npm --prefix client run build:publish
+      - run: npx playwright install --with-deps chromium
+      - run: npm --prefix client run test:publish
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
-
+          path: client/dist-publish
   deploy:
     needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

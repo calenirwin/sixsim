@@ -54,7 +54,7 @@ npm --prefix client ci --ignore-scripts
 npm --prefix client run dev:city
 ```
 
-This opens the main application with `?city=toronto`. It renders the source buildings and scheduled-trip **symbols**, using the inherited engine, tile streamer and actor-replay pools. Drag to orbit, scroll to zoom, Space to pause and R to restart. The five-minute ATRK recording runs from 08:00 to 08:05 on the included service day, sampled once per second. It is regenerated from the shared headless world before startup; it is not a live connection to the TCP server. Markers do not represent measured vehicle dimensions or heading. Geometry outside the building crop is absent, and the grid is a coordinate reference rather than measured terrain.
+This opens the main application with `?city=toronto`. It renders the source buildings and scheduled-trip **symbols**, using the inherited engine, tile streamer and actor-replay pools. Drag to orbit and scroll or pinch to zoom. Use Pause/Play and Restart, or Space and R on a keyboard. The five-minute ATRK recording runs from 08:00 to 08:05 on the included service day, sampled once per second. It is regenerated from the shared headless world before startup; it is not a live connection to the TCP server. Markers do not represent measured vehicle dimensions or heading. Geometry outside the building crop is absent, and the grid is a coordinate reference rather than measured terrain.
 
 `npm --prefix client run build` builds the application. The default browser profile and `node tools/core/serve.mjs --city nyc` retain the inherited NYC path, which requires its separately obtained assets and data. See [the upstream guide](UPSTREAM.md) for those requirements.
 
