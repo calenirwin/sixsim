@@ -1,16 +1,18 @@
-site_name: Valdrada
-site_url: https://mkturkcan.github.io/valdrada/
+site_name: SixSim
 site_description: >-
-  A real-time digital twin of New York City compiled from public records, with simulated traffic,
-  pixel-exact ground truth and a Python API.
-site_author: M. K. Turkcan
-repo_url: https://github.com/mkturkcan/valdrada
-repo_name: mkturkcan/valdrada
+  Toronto city simulation: architecture, data sources and transit.
+site_author: Calen Irwin; upstream Valdrada by M. K. Turkcan
+repo_url: https://github.com/calenirwin/sixsim
+repo_name: calenirwin/sixsim
 edit_uri: ""
-copyright: Code MIT, documentation CC BY 4.0, compiled city ODbL 1.0. Data © NYC Open Data, NY State open data and OpenStreetMap contributors.
+copyright: Code MIT; documentation CC BY 4.0. Toronto data under OGL–Toronto; inherited NYC/OSM data and assets retain their separate notices.
 
 docs_dir: docs
 exclude_docs: |
+  toronto/review.md
+  toronto/decisions-needed.md
+  toronto/reference-audit.md
+  toronto/reference-inventory.tsv
   api/RELEASE_README.md
   techniques.md
   interior-mapping.md
@@ -93,8 +95,11 @@ validation:
 
 nav:
   - Home: index.md
-  - Media: media.md
-  - Guide:
+  - Toronto:
+      - Vision and roadmap: toronto/vision.md
+      - Data-source register: toronto/data-sources.md
+  - Upstream NYC media: media.md
+  - Upstream NYC guide:
       - Quick start: quickstart.md
       - Installation: install.md
       - Getting started: api/getting_started.md
@@ -107,7 +112,7 @@ nav:
       - Interactive client: client.md
       - Building from source: building.md
       - Development and quality checks: development.md
-  - Tutorials:
+  - Upstream NYC tutorials:
       - tutorials/index.md
       - First steps: tutorials/first-steps.md
       - Cameras: tutorials/cameras.md
@@ -116,7 +121,7 @@ nav:
       - Bounding boxes: tutorials/bounding-boxes.md
       - Recording a dataset: tutorials/recording-a-dataset.md
       - Controlling actors: tutorials/controlling-actors.md
-  - Reference:
+  - Upstream API reference:
       - Python API: api/python_api.md
       - Wire protocol: api/protocol.md
   - Data:

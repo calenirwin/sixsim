@@ -83,7 +83,7 @@ export function startServer({ port = 2000, host = '127.0.0.1', log = () => {}, v
   });
   const listening = new Promise((res, rej) => {
     srv.on('error', rej);
-    srv.listen(port, host, () => { log(`listening on ${host}:${port}`); res(); });
+    srv.listen(port, host, () => { log(`listening on ${host}:${srv.address().port}`); res(); });
   });
   return {
     listening, send, clients,

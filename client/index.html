@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>Valdrada — NYC</title>
+<title>City simulation · NYC reference</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   html, body { margin: 0; padding: 0; overflow: hidden; background: #0a0e14; height: 100%; }
@@ -26,6 +26,12 @@
   #loading p { letter-spacing: 0.22em; font-size: 11px; text-transform: uppercase; opacity: 0.7; }
   #bar { width: 320px; height: 3px; background: rgba(255,255,255,0.12); margin-top: 18px; border-radius: 2px; overflow: hidden; }
   #bar div { height: 100%; width: 0%; background: linear-gradient(90deg, #4aa8e0, #7dd4ff); transition: width 0.25s; }
+  @media (max-width: 600px) {
+    body[data-city="toronto"] #help { top: 66px; left: 16px; right: 16px; text-align: left; }
+    body[data-city="toronto"] #help button { min-height: 40px; min-width: 70px; margin-top: 6px; }
+    body[data-city="toronto"] #stats { bottom: 54px; right: 16px; }
+    body[data-city="toronto"] #credits { left: 16px; right: 16px; text-align: left; }
+  }
 </style>
 </head>
 <body>
@@ -39,7 +45,7 @@
   <div id="msg"></div>
   <div id="credits">Data: NYC Open Data and © OpenStreetMap contributors (ODbL). Vehicles and pedestrians: CARLA (CC BY 4.0). Full credits in ACKNOWLEDGEMENTS.md.</div>
 </div>
-<div id="loading"><h1>Valdrada</h1><p>photorealistic urban digital twin, loading manhattan</p><div id="bar"><div></div></div></div>
-<script type="module" src="/src/main.js"></script>
+<div id="loading"><h1 data-project-name>City simulation</h1><p>Loading inherited NYC scene</p><div id="bar"><div></div></div></div>
+<script type="module" src="/src/entry.js"></script>
 </body>
 </html>

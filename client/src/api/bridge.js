@@ -15,7 +15,8 @@
 // TIME: the page runs the record mode's fixed-step simulation (main.js ?record semantics). In synchronous mode (the
 // default, like CARLA's synchronous_mode) the world advances only on world.tick; asynchronous mode free-runs.
 import * as THREE from 'three';
-import { project, unproject, LAT0, LON0 } from '../shared/geo.js';
+import { LAT0, LON0 } from '../shared/geo.js';
+import { localFrame } from '../shared/localFrame.js';
 import { signalState, walkTimeLeft } from '../sim/signals.js';
 // CONTROL (docs/notes/ar34-control.md): the play mode's bodies, follow camera and take recorder for API heroes
 import { CarBody, WalkerBody, FollowCam, TakeRecorder, makeProbe } from '../game/control.js';
@@ -50,6 +51,9 @@ const need = (cond, code, msg) => { if (!cond) throw new ApiError(code, msg); };
 // ------------------------------------------------------------------ the module
 export function initApi(ctx) {
   const { engine, streamer, traffic, peds, sky, weather, cam } = ctx;
+  const geoOrigin = ctx.geoOrigin || { lat: LAT0, lon: LON0 };
+  const { project, unproject } = localFrame(geoOrigin);
+  const mapName = ctx.mapName || 'NYC';
   const perc = () => window.__PERC || null;
   const rig = peds ? peds.rig : null;
 
@@ -947,6 +951,7 @@ export function initApi(ctx) {
     return out;
   }
   function spawnPoints(center, radius, spacing) {
+    if (!traffic) return [];
     const c3 = toThree(center);
     const out = [];
     for (const e of traffic.edges.values()) {
@@ -966,6 +971,7 @@ export function initApi(ctx) {
     return out;
   }
   function junctions(center, radius) {
+    if (!traffic) return [];
     const c3 = toThree(center);
     const out = [];
     const seen = new Set();
@@ -1032,11 +1038,19 @@ export function initApi(ctx) {
     'server.info': () => {
       const [W, H0] = drawSize();
       return {
-        api_version: API_VERSION, engine: 'valdrada', map: 'NYC', frame, timestamp: simTime,
+        api_version: API_VERSION, engine: 'valdrada', map: mapName, frame, timestamp: simTime,
         synchronous_mode: settings.synchronous_mode, fixed_delta_seconds: settings.fixed_delta_seconds,
-        resolution: [W, H0], gpu: gpu(), fps: +(engine.fps || 0).toFixed(1), geo_origin: { lat: LAT0, lon: LON0 },
+        resolution: [W, H0], gpu: gpu(), fps: +(engine.fps || 0).toFixed(1), geo_origin: geoOrigin,
         vehicles: vehicleKinds.length, walker_variants: variants.length,
+        capabilities: { road_navigation: !!traffic, pedestrians: !!peds, scheduled_transit: !!ctx.transit },
       };
+    },
+    'transit.get_state': () => {
+      need(ctx.transit, 'unavailable', 'No scheduled transit source configured');
+      const t = ctx.transit;
+      return { basis: t.basis, service_day: t.serviceDay, timezone: t.timezone, service_seconds: t.serviceSeconds,
+        provenance: t.provenance || null, omitted_trips: [...t.omittedTrips], frame: 'ENU metres: x east, y north, z up',
+        actors: t.actors.map(({ x, y, z, ...a }) => ({ ...a, location: { x, y: -z, z: y } })) };
     },
     'world.get_settings': () => ({ ...settings }),
     'world.apply_settings': (p) => {
@@ -1256,7 +1270,7 @@ export function initApi(ctx) {
     'walker_ai.get_state': (p) => ({ state: actorOf(p.id, 'controller').state }),
     'sensor.listen': (p, owner) => { const a = actorOf(p.id, 'sensor'); a.listening = true; a.owner = owner; return { listening: true }; },
     'sensor.stop': (p) => { const a = actorOf(p.id, 'sensor'); a.listening = false; return { listening: false }; },
-    'map.info': () => ({ name: 'NYC', geo_origin: { lat: LAT0, lon: LON0 }, frame: 'ENU metres: x east, y north, z up', tiles_loaded: streamer.stats?.near ?? 0 }),
+    'map.info': () => ({ name: mapName, geo_origin: geoOrigin, frame: 'ENU metres: x east, y north, z up', tiles_loaded: streamer.stats?.near ?? 0 }),
     'map.get_spawn_points': (p) => spawnPoints(p.center || fromThree(cam.center), num(p.radius, 150), num(p.spacing, 30)),
     'map.get_waypoint': (p) => {
       const p3 = toThree(p.location || {});
@@ -1271,9 +1285,10 @@ export function initApi(ctx) {
       if (tmp.e) tmp.e.cars.delete(tmp);
       return waypointOut(e, ne.d, dir, Math.min(tmp.lane ?? 0, lanesFor(e) - 1));
     },
-    'map.waypoint_next': (p) => waypointNext(p.id, num(p.distance, 5)),
+    'map.waypoint_next': (p) => { need(traffic, 'unavailable', 'No road graph configured'); return waypointNext(p.id, num(p.distance, 5)); },
     'map.get_junctions': (p) => junctions(p.center || fromThree(cam.center), num(p.radius, 120)),
     'map.plan_walk_route': (p) => {
+      need(peds, 'unavailable', 'No pedestrian graph configured');
       const r = walkRoute(toThree(p.start || {}), toThree(p.end || {}));
       need(r, 'no_route', 'no walkable route between those points (are the tiles loaded?)');
       return { length: +r.length.toFixed(2), path: r.pts.map(([x, z]) => fromThree(new THREE.Vector3(x, groundAt(x, z, 0), z))) };

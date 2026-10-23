@@ -1,202 +1,75 @@
-<p align="center"><img src="docs/assets/figures/hero.jpg" alt="A simulator frame at W 125th St and Lenox Ave in Harlem, with its semantic segmentation and depth" width="100%"></p>
+# Toronto city simulation
 
-# Valdrada
+A Toronto adaptation of [Valdrada](https://github.com/mkturkcan/valdrada), bringing the city’s buildings, streets and transit into a shared simulation framework. The aim is to explore how Toronto moves and how changes to its transport network affect urban life, with traceable source data and explicit behavioral assumptions.
 
-Valdrada is a city-scale digital twin of New York City compiled from
-public municipal records. It combines a
-real-time WebGL2 renderer, lane-level traffic and pedestrian simulation, pixel-exact perception ground truth and a
-client–server API modelled on CARLA. It is intended for synthetic data generation, closed-loop scenario simulation and
-streetscape studies in which every modelled element can be traced to a public record.
+The project builds on Valdrada’s tile pipeline, simulation clock, rendering architecture, TCP API and Python client. **SixSim is the working name**; display identity is separate from geographic profiles and data contracts.
 
-| | |
-|---|---|
-| Coverage | All five boroughs: Manhattan, the Bronx, Brooklyn, Queens and Staten Island, 1,085,937 buildings in 3,532 tiles of 512 m and 261 far tiles of 2,048 m |
-| Buildings | Every footprint of NYC Building Footprints, gap-filled from OpenStreetMap and joined to PLUTO (use, class, floors, year) and to facade-inspection filings (wall material); facade typologies with procedural architectural detail; landmarks with dedicated models |
-| Streets | NYC Street Centerline (CSCL): widths, lane counts, direction, speed limits and grade separation become the carriageway, kerbs, sidewalks, markings and a routable lane graph |
-| Street furniture | Street trees, hydrants, bus shelters, LinkNYC kiosks, bicycle racks and subway entrances placed from their records; signals at junctions derived from the street network; lamps, signage and street furniture generated along the kerbs |
-| Areas modelled in detail | 125th Street from Twelfth Avenue to the Harlem River: facades, storefront signs, street furniture and street life, the Riverside Drive and Manhattan Valley viaducts, the Park Avenue Viaduct, the 1 train's 125th Street station and the bridge approaches at the Harlem River. Central Park: relief, water bodies, 16,951 trees in 33 species groups, bridges, Bethesda Terrace, Belvedere Castle and the other landmarks. Hunters Point's waterfront, Times Square, Bryant Park and Columbia's Morningside campus. Midtown's towers rebuilt near the camera by a tower kit, among them 111 West 57th and 53 West 53rd. The Metropolitan Museum of Art, the American Museum of Natural History with the Rose Center and the Gilder Center, and the Guggenheim on their footprints. The Statue of Liberty on Liberty Island |
-| Streaming | Binary tiles streamed around the camera at full detail, with coarser far-field tiles beyond |
-| Simulation | IDM car following on the lane graph with signal phases and turn planning; pedestrians on the sidewalk graph with signal-aware crossings; vehicles of the NYC fleet: taxis, private cars, MTA buses on their routes, school buses, police, postal, sanitation and delivery vehicles, vans, box trucks and emergency vehicles; the 1 train on the Manhattan Valley viaduct and Metro-North on the Park Avenue tracks |
-| Sensors | RGB; semantic segmentation (Cityscapes-compatible classes); instance segmentation with visible and amodal boxes, occlusion ratios and 3D poses; metric depth |
-| Interfaces | Interactive browser client; simulation server with a TCP API and a Python client (synchronous stepping, actor control, sensors, map queries); export of a recorded take to OpenUSD, rendered offline in Blender Cycles and Unreal Engine 5; the whole city built into Unreal Engine 5 once, for shots that need only their take and their render; a packaged Unreal Engine 5 renderer for the simulation server and its Python API |
+## Run
 
-Links:
+Requires Node 24. From the repository root:
 
-- Documentation: <https://mkturkcan.github.io/valdrada/>
-- Videos: <https://mkturkcan.github.io/valdrada/media/>
-- Demo in the browser (WebGL2): <https://huggingface.co/spaces/mehmetkeremturkcan/valdrada>
-- Compiled city, models and textures: <https://huggingface.co/datasets/mehmetkeremturkcan/valdrada>
-- Simulation server for Windows x64, compiled city included: <https://github.com/mkturkcan/valdrada/releases>
-- Unreal Engine 5 client for Linux x86-64: <https://mkturkcan.github.io/valdrada/ue-client/>
-
-## How it works
-
-![From public records to ground truth: records, compiled tiles, the real-time render and its labels for one block of Harlem](docs/assets/figures/pipeline.jpg)
-
-A Node.js compiler reads the city's records and writes binary tiles. Building footprints are joined to tax lots and
-facade filings and classified into facade typologies. Street centrelines become carriageways, kerbs, crosswalks, lane
-paint and the lane and sidewalk graphs. The client streams the tiles around the camera, dresses the facades, simulates
-vehicles and pedestrians, and renders every frame together with its labels.
-
-The same city renders in three engines. The three.js client is where the city is authored and simulated; a recorded
-take of a camera path is exported to OpenUSD, and Blender Cycles and Unreal Engine 5 render that export with the same
-geometry, traffic, trees and light, each with its own materials for the families it supports. The documentation
-describes the design ([One city, three renderers](https://mkturkcan.github.io/valdrada/architecture/)) and takes
-one shot through each offline renderer ([Blender Cycles](https://mkturkcan.github.io/valdrada/blender-cycles/),
-[Unreal Engine 5](https://mkturkcan.github.io/valdrada/unreal/)). For Unreal, the whole city can also be built once:
-every 128 m cell is baked by the client into a table of kit instances and its own meshes, imported by 1 km block over a
-shared material library, and a shot is a cut of that build
-([The whole city](https://mkturkcan.github.io/valdrada/unreal/#the-whole-city)).
-
-## Quick start
-
-**Binary release (Windows x64).** Download `Valdrada-<version>-win64.zip` and `Valdrada-<version>-win64-tiles.zip`
-from Releases (the server, and the compiled city's tiles), extract both into the same folder, start the server and run
-an example:
-
-```
-StartServer.bat
-pip install PythonAPI/dist/valdrada-0.1.0-py3-none-any.whl
-python PythonAPI/examples/intersection_120_amsterdam.py
+```sh
+npm ci --ignore-scripts
+npm run serve:toronto
 ```
 
-**From source.** See [BUILDING.md](BUILDING.md). In short:
+The headless server listens on `127.0.0.1:2000`. It compiles the included Toronto massing subset and loads a pinned 510 Spadina GTFS service day. No city archive, GPU or credentials are required. To choose another local port:
 
-```
-npm install && (cd client && npm install)
-# binary banks (tiles, models, textures): download, or compile the tiles (BUILDING.md)
-hf download mehmetkeremturkcan/valdrada --repo-type dataset --revision v0.5.0 \
-    --include "Content/tiles/*" --include "Content/models/*" --include "Content/textures/*" --local-dir .cache/hf
-mv .cache/hf/Content/tiles .cache/hf/Content/models .cache/hf/Content/textures client/public/
-cd client && npm run dev        # http://127.0.0.1:5219
+```sh
+node tools/core/serve.mjs --city toronto --port 2020
 ```
 
-## Python API
+Use the existing Python client (Python 3.9+):
 
-```python
+```sh
+PYTHONPATH=PythonAPI python3 - <<'PY'
 import valdrada
-from valdrada import Location, Rotation, Transform
-
-client = valdrada.Client("127.0.0.1", 2000)
-world = client.get_world()
-world.apply_settings(valdrada.WorldSettings(synchronous_mode=True, fixed_delta_seconds=0.05))
-
-# tiles stream around the spectator: place it, then wait for the area to load
-m = world.get_map()
-here = m.geolocation_to_location(40.80955, -73.95905)            # W 120th St & Amsterdam Ave
-world.get_spectator().set_transform(Transform(here + Location(-40, -40, 35), Rotation(pitch=-30, yaw=45)))
-world.wait_until_loaded()
-
-lib = world.get_blueprint_library()
-junction = m.get_junctions(center=here, radius=60)[0]
-taxi = world.spawn_actor(lib.find("vehicle.taxi2"), m.get_spawn_points(center=junction.location, radius=90)[0])
-taxi.set_autopilot(True, route=["straight", "right"])
-
-# instance segmentation with per-object labels (visible and amodal boxes, occlusion, 3D pose), behind the taxi
-bp = lib.find("sensor.camera.instance_segmentation")
-bp.set_attribute("amodal", 8)                    # amodal box and occlusion for the 8 largest objects
-cam = world.spawn_actor(bp, Transform(Location(-6.5, 0, 3.0), Rotation(pitch=-12)), attach_to=taxi)
-cam.listen(lambda image: print(image.frame, [(l.class_name, l.bbox, l.occlusion) for l in image.labels]))
-
-for _ in range(100):
+client = valdrada.Client()
+try:
+    world = client.get_world()
+    print(client.get_server_info())
     world.tick()
+    print(world.get_transit_state())
+finally:
+    client.close()
+PY
 ```
 
-Frames are ENU metres (x east, y north, z up); attachment offsets are x forward, y left, z up. The
-[tutorials](https://mkturkcan.github.io/valdrada/tutorials/) go from a first connection to a recorded dataset, with
-one script per step in [PythonAPI/examples/tutorials/](PythonAPI/examples/tutorials/). The full reference is in
-[docs/api/python_api.md](docs/api/python_api.md); the language-independent wire protocol is in
-[docs/api/protocol.md](docs/api/protocol.md).
+The `valdrada` import and protocol identifiers remain stable for compatibility. `transit.get_state` returns schedule-derived trip positions in the API’s east/north/up coordinate frame. It does not report observed vehicles. For a deterministic JSON export without a server:
 
-![RGB, semantic segmentation, instance segmentation with visible and amodal boxes, and depth for one step at W 120th St and Amsterdam Ave](docs/assets/figures/sensors.jpg)
-
-## Unreal Engine 5 client
-
-ValdradaUE is Valdrada with an Unreal Engine 5 renderer, packaged so that it runs without compiling anything. A
-launcher starts the headless core (the simulation and the Python API on port 2000) and the renderer connected to it;
-the Python code above runs against it unchanged.
-
-```bash
-curl -LO https://github.com/mkturkcan/valdrada/releases/latest/download/fetch_valdrada_ue.py
-python3 fetch_valdrada_ue.py          # downloads, checks and assembles the release for this system
-./ValdradaUE.sh                       # Windows: ValdradaUE.bat
+```sh
+node tools/toronto/simulate.mjs > /tmp/toronto-simulation.json
 ```
 
-The [guide](https://mkturkcan.github.io/valdrada/ue-client/) gives the requirements, the options and what the
-renderer serves so far; [building it from source](https://mkturkcan.github.io/valdrada/ue-client-build/) covers the
-engine, the city's content, cooking, chunking and publishing on Linux and Windows. The renderer is distributed under
-the Unreal Engine End User License Agreement; the repository's code stays MIT.
-Release 0.5.0 provides the Linux x86-64 build (29 files, 29.7 GB to download, 46.5 GB installed); the Windows x64
-build is made from source as the build guide describes.
+## Data and behavior
 
-## Coverage
+The included data covers 15 City building records near Queen/Spadina and route 510 on the **2026-10-22 service day**, in **America/Toronto**. Route coverage extends beyond the building crop. Buildings use source average heights on a flat local base; transit positions interpolate published shapes and schedules, including times beyond 24:00. Missing shapes are omitted explicitly.
 
-![Every building of the five boroughs shaded by height, with the tile grid and the streaming radii around a camera in Harlem](docs/assets/figures/coverage.jpg)
+Road traffic, pedestrian navigation, passenger demand, signal interaction and calibrated vehicle dynamics require Toronto network and behavioral inputs. Those models are disabled for this dataset. The main browser selects Toronto massing and symbolic trip markers through the inherited renderer, tile streamer and ATRK actor replay. The NYC profile retains its own assembly and assets. Electron, Unreal and live remote sensor rendering are not adapted to the Toronto dataset; unsupported requests fail explicitly.
 
-## Architecture and repository layout
+## Browser
 
-![Public records are compiled into binary tiles; the client streams, simulates and renders them inside the simulation server, which the Python API drives over TCP](docs/assets/figures/architecture.png)
-
-```
-client/            renderer, simulation and perception client (three.js, Vite)
-  src/                  engine, streaming, materials, traffic, pedestrians, perception, API bridge
-  tools/pipeline/       city compiler: NYC Open Data -> binary tiles
-  tools/ar34/export/    take export to OpenUSD; the Blender Cycles and Unreal Engine 5 renderers
-  src/lod/              the persistent skyline tier (?lod16=1)
-  tools/                asset builders (vehicles, trees, vegetation, materials, Central Park), tile probes and audits
-  public/               LUTs, fonts, data; tiles, models and textures are downloaded (BUILDING.md)
-src/                    building-generator library shared with the client (@nyc alias); index.html is its demo
-core/                   the simulation core shared by the client and the headless tools: streaming, fleet, takes
-server/                 simulation server (Electron): TCP API, content serving, release builder
-ue_client/              ValdradaUE: the Unreal Engine 5 renderer client (project, plugins) and its packaging and release scripts
-PythonAPI/              `valdrada` Python client, examples
-space/                  the Hugging Face Space: static server for the dataset's Content/
-tools/                  figures, web packaging, headless rendering, film recorder and render QA, perception export, asset build scripts
-  ue/                   the whole city in Unreal Engine 5: the city build, the material library, the cell actor plugin, render_take
-  cells/ lod/ core/     the cell baker and export, the far levels and backdrop, the take and actor tools
-docs/                   documentation site, API reference, wire protocol, rendering techniques, building typologies
+```sh
+npm --prefix client ci --ignore-scripts
+npm --prefix client run dev:city
 ```
 
-## Gallery
+This opens the main application with `?city=toronto`. It renders the source buildings and scheduled-trip **symbols**, using the inherited engine, tile streamer and actor-replay pools. Drag to orbit and scroll or pinch to zoom. Use Pause/Play and Restart, or Space and R on a keyboard. The five-minute ATRK recording runs from 08:00 to 08:05 on the included service day, sampled once per second. It is regenerated from the shared headless world before startup; it is not a live connection to the TCP server. Markers do not represent measured vehicle dimensions or heading. Geometry outside the building crop is absent, and the grid is a coordinate reference rather than measured terrain.
 
-![Six frames from the simulator: Fifth Avenue, 125th Street, Times Square at night, Harlem brownstones, Williamsburg in the rain and Columbia's Low Library](docs/assets/figures/gallery.jpg)
+`npm --prefix client run build` builds the application. The default browser profile and `node tools/core/serve.mjs --city nyc` retain the inherited NYC path, which requires its separately obtained assets and data. See [the upstream guide](UPSTREAM.md) for those requirements.
 
-The figures in this README are generated by `tools/figures/` from renders of the simulator and from the compiled tiles;
-the architecture diagram is a draw.io file in `docs/assets/figures/src/`.
+## Roadmap
 
-## Licensing
+1. Carry explicit Toronto geography and source identity through the existing runtime, APIs and clients.
+2. Connect building massing, elevation, streets and streetcar tracks in the shared tile pipeline.
+3. Match GTFS stops and shapes to a navigable network; model stop/link occupancy before adding traffic and signal interactions.
+4. Adapt the existing renderer and asset selection to Toronto, preserving measured geometry and source attribution.
+5. Introduce demand and scenario experiments with stated assumptions and comparison against observed data.
 
-- **Code:** MIT ([LICENSE](LICENSE)).
-- **Documentation and figures:** CC BY 4.0.
-- **Compiled city:** ODbL 1.0, because it contains data derived from OpenStreetMap. Images and labels rendered from it
-  may be used under any terms with the attribution "© OpenStreetMap contributors".
-- **Vehicle, prop and pedestrian models:** CC BY 4.0, from the CARLA Simulator; the Rocketbox pedestrian set
-  (`models/peds24/rb27/`) is MIT, from the Microsoft Rocketbox Avatar Library. The NYC buses, service and delivery
-  vehicles and the street trees are original models (CC BY 4.0); two vehicle bodies, the Angel of the Waters and the
-  Statue of Liberty derive from CC BY 4.0 scans and models credited in ACKNOWLEDGEMENTS.md.
-- **Textures and skies:** CC0, from Poly Haven and ambientCG. **Typefaces:** SIL OFL 1.1 and Apache 2.0.
-- **Unreal Engine 5 client:** the source in `ue_client/` is MIT; the packaged renderer is built with Unreal Engine and
-  distributed in object code under the Unreal Engine End User License Agreement.
+[Architecture and roadmap](docs/toronto/vision.md) · [Data sources and licensing evidence](docs/toronto/data-sources.md)
 
-The photoreal pedestrians contain components created with Epic Games' MetaHuman. The MetaHuman licence does not allow
-using MetaHuman characters to build or enhance a database or to train or test AI models. For datasets, training and
-evaluation, start the server with `--pedestrians procedural`, which uses the built-in procedural pedestrians instead.
+## Attribution and licensing
 
-[LICENSING.md](LICENSING.md) gives the licence of every component, including the MetaHuman notice.
-[ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md) lists the required attributions, and
-[client/DATA_SOURCES.md](client/DATA_SOURCES.md) documents every source dataset.
+This fork is maintained by Calen Irwin. Valdrada was created by Mehmet Kerem Turkcan; original code is copyright © 2026 Mehmet Kerem Turkcan under the [MIT licence](LICENSE). The [upstream acknowledgements](ACKNOWLEDGEMENTS.md), [citation](CITATION.cff) and historical BoundlessNYC compatibility identifiers are preserved.
 
-## Citation
-
-Valdrada is developed and maintained by Mehmet Kerem Turkcan. If you use Valdrada, the compiled city or imagery
-rendered with it, please cite Valdrada itself:
-
-```bibtex
-@software{turkcan2026valdrada,
-  author  = {Turkcan, Mehmet Kerem},
-  title   = {{Valdrada}: a real-data, real-time digital twin of New York City},
-  year    = {2026},
-  version = {0.5.0},
-  url     = {https://github.com/mkturkcan/valdrada}
-}
-```
+Code, documentation, datasets and art assets have separate terms; see [LICENSING.md](LICENSING.md). **Contains information licensed under the Open Government Licence – Toronto.** Building and transit fixtures retain source URLs, retrieval dates, checksums and transformation details. The [source register](docs/toronto/data-sources.md#massing-licence-evidence) records the official Toronto licence evidence and conflicting CKAN metadata. No City endorsement is implied, and Toronto data terms do not replace inherited third-party licences.

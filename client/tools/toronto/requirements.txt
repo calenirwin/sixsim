@@ -1,0 +1,4 @@
+# Only for optional extraction from the pinned City archive, not build/runtime/CI.
+pyshp==2.3.1
+shapely==2.1.2
+numpy==2.5.4

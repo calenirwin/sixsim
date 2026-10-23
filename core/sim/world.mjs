@@ -4,43 +4,46 @@
 // three.js objects the models write their instance matrices into are storage, never rendered.
 import { seedRandom, shimStats } from '../env/shim.mjs';
 import * as THREE from 'three';
-import { Traffic, PK34_TABLES } from '../../client/src/sim/traffic.js';
-import { Peds } from '../../client/src/sim/peds.js';
 import { spawnGuard, viewGuard } from '../../client/src/sim/spawnGuard.js';
 import { signalState } from '../../client/src/sim/signals.js';
-import { areasReady } from '../../client/src/city/areas.js';
-import { lf39Load } from '../../client/src/world/lotfix39.js';
 import { HeadlessStreamer, TILES_DIR } from '../world/streamer.mjs';
 import path from 'node:path';
-import { loadFleetMeta, installFleetMeta } from './fleet.mjs';
-import { installFleetState } from './fleetState.mjs';
-import { R1D_FLEET_FNS } from '../../client/src/sim/fleet24.js';
-import { HeadlessRig } from './rig.mjs';
 import { PathCam } from './pathcam.mjs';
-import { initTrains } from '../../client/src/sim/trains.js';
-import { createReplay } from '../../client/src/game/control.js';
+import { NYC_RENDERING } from './renderCapabilities.mjs';
+import { localFrame } from '../../client/src/shared/localFrame.js';
 
 // world/sky.js PRESETS night factor per time of day (the only sim-visible effect of time: lamps on at night > 0.35)
 export const NIGHT_OF = { day: 0, golden: 0.05, dusk: 0.55, night: 1 };
 
-export async function createWorld({ seed = 1, peds: withPeds = true, trains: withTrains = true, pedTarget = null, carTarget = null, aspect = 16 / 9, fov = 58, nearR, obstaclesDir = null, night = 0, tilesDir = null } = {}) {
+export async function createWorld({ seed = 1, traffic: withTraffic = true, cityOverrides = true, transit = null, renderCapabilities = null, peds: withPeds = true, trains: withTrains = true, pedTarget = null, carTarget = null, aspect = 16 / 9, fov = 58, nearR, obstaclesDir = null, night = 0, tilesDir = null } = {}) {
+  if (!withTraffic && withPeds) throw new Error("Pedestrians require traffic/navigation");
+  const { Traffic, PK34_TABLES } = withTraffic ? await import('../../client/src/sim/traffic.js') : {};
+  const { Peds } = withPeds ? await import('../../client/src/sim/peds.js') : {};
+  const { areasReady } = cityOverrides ? await import('../../client/src/city/areas.js') : {};
+  const { lf39Load } = cityOverrides ? await import('../../client/src/world/lotfix39.js') : {};
+  const { loadFleetMeta, installFleetMeta } = withTraffic ? await import('./fleet.mjs') : {};
+  const { installFleetState } = withTraffic ? await import('./fleetState.mjs') : {};
+  const { R1D_FLEET_FNS } = withTraffic ? await import('../../client/src/sim/fleet24.js') : {};
+  const { HeadlessRig } = withPeds ? await import('./rig.mjs') : {};
   seedRandom(seed);
   const t0 = performance.now();
   // the data the models wait on before a tile may be read (main.js: areasGate before tile assembly; traffic.js PK34's
   // hydrant table before a 125th Street tile parks; LF39's lot table): awaited here so the order never depends on timing
-  await areasReady;
+  if (cityOverrides) await areasReady;
   globalThis.VALDRADA_TILES_BASE = tilesDir ? path.resolve(tilesDir) : TILES_DIR;   // OV39: the set's own overlays first
-  await lf39Load();
-  await PK34_TABLES.ready();
+  if (cityOverrides) await lf39Load();
+  if (withTraffic) await PK34_TABLES.ready();
   const scene = new THREE.Scene();
-  const streamer = new HeadlessStreamer({ ...(nearR ? { nearR, unloadR: nearR + 320 } : {}), ...(tilesDir ? { tilesDir } : {}), obstaclesDir });
-  const { kinds, trafficFleet, names } = loadFleetMeta();
-  const traffic = new Traffic(scene, streamer, trafficFleet);
-  installFleetMeta(traffic, kinds);
-  installFleetState(traffic, kinds, R1D_FLEET_FNS.hash);
-  if (carTarget) traffic.target = carTarget;
+  const streamer = new HeadlessStreamer({ cityOverrides, ...(nearR ? { nearR, unloadR: nearR + 320 } : {}), ...(tilesDir ? { tilesDir } : {}), obstaclesDir });
+  const { kinds, trafficFleet, names } = withTraffic ? loadFleetMeta() : { kinds: {}, trafficFleet: {}, names: [] };
+  const traffic = withTraffic ? new Traffic(scene, streamer, trafficFleet) : null;
+  if (traffic) {
+    installFleetMeta(traffic, kinds);
+    installFleetState(traffic, kinds, R1D_FLEET_FNS.hash);
+    if (carTarget) traffic.target = carTarget;
+  }
   const camera = new THREE.PerspectiveCamera(fov, aspect, 0.4, 20000);
-  traffic.camera = camera;
+  if (traffic) traffic.camera = camera;
   let peds = null, rig = null;
   if (withPeds) {
     rig = new HeadlessRig(700);
@@ -52,9 +55,12 @@ export async function createWorld({ seed = 1, peds: withPeds = true, trains: wit
   }
   // campus walk lines arrive through fetch (peds.js constructor): let them land before the first step
   await new Promise((r) => setTimeout(r, 0));
-  const cam = new PathCam(camera, streamer);
+  const geoOrigin = streamer.manifest.profile?.geoOrigin;
+  const cam = new PathCam(camera, streamer, geoOrigin ? localFrame(geoOrigin).project : undefined);
   // the trains (sim/trains.js): closed-form timetabled runs on the sim clock ENV.time (world/sky.js advances it by the
   // frame's step); the drawing sets it builds are never updated here, only carsAt and the take cue are used
+  const { initTrains } = withTrains ? await import('../../client/src/sim/trains.js') : {};
+  const { createReplay } = withTraffic ? await import('../../client/src/game/control.js') : {};
   const trains = withTrains ? initTrains({ scene, camera }, streamer) : null;
   // the shared uniforms' clock (world/materials.js ENV, reached through the trains' api: the core imports no renderer module)
   const ENV = trains ? trains.ENV : { time: { value: 0 }, night: { value: 0 } };
@@ -63,8 +69,9 @@ export async function createWorld({ seed = 1, peds: withPeds = true, trains: wit
   // which the traffic model updates) and lamp states follow it, as in the page
   if (ENV.night) ENV.night.value = night;
   const W = {
-    scene, streamer, traffic, peds, rig, camera, cam, trains, ENV, kinds, fleetKinds: names, seed,
+    scene, streamer, traffic, peds, rig, camera, cam, trains, transit, ENV, kinds, fleetKinds: names, seed,
     frame: 0, simTime: 0,
+    renderCapabilities: Object.freeze({ ...(renderCapabilities || (streamer.manifest.profile ? {} : NYC_RENDERING)) }),
     // the API's camera and hooks (core/api/session.mjs): an ApiCam in place of the shot's PathCam, and src/api/bridge.js's
     // preStep / postStep around the sims, where main.js engine.onFrame calls them
     controller: null, hooks: null,
@@ -72,6 +79,7 @@ export async function createWorld({ seed = 1, peds: withPeds = true, trains: wit
     prof: { stream: 0, traffic: 0, peds: 0 },
     // one fixed step in the page's order; the streamer loads synchronously (a step never sees a half-loaded ring)
     async step(dt) {
+      if (!Number.isFinite(dt) || dt < 0) throw new Error("Invalid simulation step");
       ENV.time.value += dt;   // world/sky.js update, first in the page's frame
       if (W.hooks && W.hooks.pre) W.hooks.pre(dt);
       const p = W.controller ? W.controller.update(dt) : cam.path ? cam.update(dt) : { x: camera.position.x, z: camera.position.z };
@@ -80,7 +88,8 @@ export async function createWorld({ seed = 1, peds: withPeds = true, trains: wit
       let a = performance.now();
       await streamer.update(p.x, p.z);
       let b = performance.now(); W.prof.stream += b - a; a = b;
-      traffic.update(dt, p.x, p.z);
+      if (traffic) traffic.update(dt, p.x, p.z);
+      if (transit) transit.update(ENV.time.value);
       b = performance.now(); W.prof.traffic += b - a; a = b;
       if (peds) peds.update(dt, p.x, p.z);
       W.prof.peds += performance.now() - a;
@@ -92,6 +101,7 @@ export async function createWorld({ seed = 1, peds: withPeds = true, trains: wit
     // the page's __SET_PATH as sim/trains.js wraps it: the camera path (a player take's body back in the sims, main.js
     // PathCam.setPath with src/game/control.js createReplay), then the trains' timetable phased for this path
     setPath(P) {
+      if (P.takeData && !createReplay) throw new Error("Take replay requires traffic");
       cam.setPath(P);
       if (P.takeData) {
         if (!W.replay) {
@@ -108,6 +118,7 @@ export async function createWorld({ seed = 1, peds: withPeds = true, trains: wit
     // signal heads: every signalised junction of the loaded tiles with its two axes' states (sim/signals.js, the shared
     // 40 s clock on traffic.time; the north-south axis is servesEW = false)
     signals() {
+      if (!traffic) return [];
       const t = traffic.time, ns = signalState(t, false), ew = signalState(t, true), out = [];
       for (const k of traffic.signals.keys()) {
         const [x, z] = k.split('_').map(Number);

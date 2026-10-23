@@ -3,11 +3,12 @@
 // every frame — every slider is live. "Export JSON" downloads graphics.json;
 // drop it in public/settings/graphics.json and main.js loads it at boot.
 // "Import" applies a local .json without a reload for A/B comparison.
+import { DISPLAY_NAME } from '../shared/identity.js';
 import GUI from 'three/addons/libs/lil-gui.module.min.js';
 import { GFX, applyGfx } from '../world/weather.js';
 
 export function initEditor(ctx = {}) {
-  const gui = new GUI({ title: 'Valdrada Weather / Post (G)', width: 300 });
+  const gui = new GUI({ title: `${DISPLAY_NAME} Weather / Post (G)`, width: 300 });
   gui.domElement.style.cssText += 'position:fixed;top:12px;right:12px;z-index:40;';
 
   const fW = gui.addFolder('Weather');

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source_url": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/b811ead4-6eaf-4adb-8408-d389fb5a069c/resource/c920e221-7a1c-488b-8c5b-6d8cd4e85eaf/download/completegtfs.zip",
+  "catalogue": "https://open.toronto.ca/dataset/merged-gtfs-ttc-routes-and-schedules/",
+  "retrieved_utc": "2026-10-22T13:31:00.533901+00:00",
+  "source_bytes": 84337545,
+  "source_sha256": "5e0191d59cb991b6c88ba9c1a5f2ca93a5a064a4d258dbc7ba93801d15f3dfca",
+  "licence": "https://open.toronto.ca/open-data-licence/",
+  "attribution": "Contains information licensed under the Open Government Licence \u2013 Toronto.",
+  "licence_evidence": "Official portal links Toronto OGL; CKAN license_id=notspecified, isopen=false. Conflict retained, not City-confirmed.",
+  "service_day": "20261022",
+  "timezone": "America/Toronto",
+  "coordinates": "EPSG:4326",
+  "selection": "route_short_name=510, route_type=0; all active trips for service day; related stops/shapes/stop_times; calendar and all exceptions retained; parent stations retained",
+  "derivation": "python client/tools/transit/extract.py client/data/toronto/completegtfs.zip",
+  "subset_sha256": "6fbce770e767f802f088bd152974d32a4ed7ec319efc1fc5b9cdeed45b8a7f1f"
+}

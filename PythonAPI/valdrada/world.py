@@ -235,7 +235,7 @@ class World:
         return self._client._transport.call(method, params)
 
     def __repr__(self):
-        return "World(NYC)"
+        return "World()"
 
     # ---- time
     def get_settings(self) -> WorldSettings:
@@ -261,6 +261,10 @@ class World:
         return WorldSnapshot(self._call("world.get_snapshot"))
 
     # ---- content
+    def get_transit_state(self) -> dict:
+        """Pinned schedule-derived trip positions in API ENU coordinates; not live vehicles."""
+        return self._call("transit.get_state")
+
     def get_map(self) -> Map:
         return Map(self, self._call("map.info"))
 

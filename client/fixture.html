@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SixSim development fixture</title>
+<link rel="icon" href="data:,">
+<style>
+html, body { margin: 0; height: 100%; background: #0b0e12; overflow: hidden; }
+canvas { display: block; }
+aside, #hud { position: fixed; z-index: 5; padding: 12px; color: #fff; background: #14202deb; font: 14px/1.5 system-ui; }
+aside { top: 12px; left: 12px; max-width: 440px; }
+#hud { bottom: 12px; left: 12px; white-space: pre; pointer-events: none; font-size: 12px; }
+a { color: #bbddff; }
+</style>
+</head>
+<body>
+<aside><strong>SixSim · development fixture</strong><br>
+Upstream procedural NYC building, not Toronto data. Drag to orbit; scroll to zoom.<br>
+<a href="?type=rowhouse">Rowhouse</a> · <a href="?type=mixeduse">Mixed use</a><br>
+Built with Valdrada by Mehmet Kerem Turkcan (MIT).</aside>
+<div id="app"></div><div id="hud"></div>
+<script type="module">
+// Reuse the upstream building-generator demo, which needs no binary banks.
+const query = new URLSearchParams(location.search);
+for (const [key, value] of Object.entries({ type: 'rowhouse', seed: '1', time: 'noon', view: 'aerial' })) {
+  if (!query.has(key)) query.set(key, value);
+}
+history.replaceState(null, '', `${location.pathname}?${query}`);
+await import('../src/main.js');
+</script>
+</body>
+</html>

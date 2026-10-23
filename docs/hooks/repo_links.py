@@ -4,9 +4,15 @@ pointed at the pages, and links to any other repository file are pointed at GitH
 import os
 import posixpath
 import re
+import subprocess
 
-REPO = "https://github.com/mkturkcan/valdrada"
+REPO = "https://github.com/calenirwin/sixsim"
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Link included source files to the revision being documented, including new fixtures.
+try:
+    REVISION = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, stderr=subprocess.DEVNULL).strip()
+except (OSError, subprocess.CalledProcessError):
+    REVISION = "c10289dba8d24a2138b99976c26394c0944575da"  # Source archive fallback containing both Toronto studies.
 SITE = {  # repository path -> site page (directory URL)
     "BUILDING.md": "building/",
     "ACKNOWLEDGEMENTS.md": "acknowledgements/",
@@ -40,7 +46,16 @@ def on_page_content(html, page, config, files):
             return f'href="{up}{SITE[rel]}{frag}"'
         full = os.path.join(ROOT, *rel.split("/"))
         if os.path.exists(full):
-            return f'href="{REPO}/{"tree" if os.path.isdir(full) else "blob"}/main/{rel}{frag}"'
+            return f'href="{REPO}/{"tree" if os.path.isdir(full) else "blob"}/{REVISION}/{rel}{frag}"'
         return m.group(0)
 
     return HREF.sub(fix, html)
+
+
+def on_page_markdown(markdown, page, config, files):
+    """Keep inherited documentation visibly distinct from Toronto capability."""
+    path = page.file.src_uri
+    if path == "index.md" or path.startswith("toronto/") or path in {"licensing.md", "acknowledgements.md", "citation.md"}:
+        return markdown
+    return ("> **Inherited Valdrada / NYC reference.** These capabilities and examples are not a completed Toronto port. "
+            "See the SixSim Toronto roadmap and source register in the navigation.\n\n" + markdown)

@@ -1,0 +1,56 @@
+name: fixture
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  web-fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm --prefix client ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - run: git fetch --no-tags --depth=1 origin 3e73317d551fc2ddbd1d640ce2e4f795ca09016c
+      - run: npm run test:nyc:core-parity
+      - run: npm run test:toronto:sim
+      - run: npm run test:toronto:api
+      - run: npm run test:toronto:render
+      - run: npm --prefix client run test:transit
+      - run: npm --prefix client run test:toronto
+      - run: npm --prefix client run test:toronto:delivery
+      - run: npm --prefix client run test:toronto:repro
+      - run: node tools/tests/transit-browser.mjs
+        working-directory: client
+      - run: node tools/tests/toronto-static.mjs
+        working-directory: client
+      - run: node tools/tests/toronto-browser.mjs
+        working-directory: client
+      - run: npm --prefix client run test:fixture
+      - run: npm --prefix client run build
+      - run: node tools/tests/city-browser.mjs
+        working-directory: client
+      - run: npm --prefix client run build:publish
+      - run: npm --prefix client run test:publish
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fixture-screenshots
+          path: |
+            client/shots/fixture-*.png
+            client/shots/toronto-*.png
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: toronto-static-demo
+          path: client/dist-toronto/
+          if-no-files-found: error
