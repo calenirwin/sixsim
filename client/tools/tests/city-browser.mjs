@@ -16,7 +16,8 @@ try {
  const first=await page.evaluate(()=>{const a=window.__APP;a.setPaused(true);a.seek(0);const P=a.traffic.pools['scheduled-trip-marker'];return {engine:a.engine.constructor.name,streamer:a.streamer.constructor.name,masses:a.streamer.tiles.get('0_0').data.records.length,actors:P.n,frame:a.replay.f,position:Array.from(P.mb.instanceMatrix.array.slice(12,15)),expected:a.tracks.frames[0].veh[0],calls:a.renderer.info.render.calls,triangles:a.renderer.info.render.triangles};});
  assert.equal(first.masses,360);assert.equal(first.actors,10);assert.ok(first.calls>0);assert.deepEqual(first.position,[first.expected.x,first.expected.y,first.expected.z]);
  await page.evaluate(()=>window.__APP.controls.target.set(0,0,-1100));
- await page.waitForFunction(()=>window.__APP.streamer.tiles.get('0_-3')?.state==='ready');
+ await page.waitForFunction(()=>window.__APP.streamer.error || window.__APP.streamer.tiles.get('0_-3')?.state==='ready',{}, {timeout:90000});
+ assert.equal(await page.evaluate(()=>window.__APP.streamer.error?.message||null),null);
  const context=await page.evaluate(()=>({roads:window.__APP.network.roads.length,stops:window.__APP.network.stops.length,nodes:window.__APP.network.nodes.length,lines:window.__APP.contextGroup.children.length}));
  assert.equal(context.roads,841);assert.equal(context.stops,43);assert.ok(context.nodes>100);assert.equal(context.lines,3);
  await page.evaluate(()=>window.__APP.controls.target.set(0,0,-200));
