@@ -45,9 +45,18 @@ node tools/toronto/simulate.mjs > /tmp/toronto-simulation.json
 
 The included data covers 15 City building records near Queen/Spadina and route 510 on the **2026-10-22 service day**, in **America/Toronto**. Route coverage extends beyond the building crop. Buildings use source average heights on a flat local base; transit positions interpolate published shapes and schedules, including times beyond 24:00. Missing shapes are omitted explicitly.
 
-Road traffic, pedestrian navigation, passenger demand, signal interaction and calibrated vehicle dynamics require Toronto network and behavioral inputs. Those models are disabled for this dataset. The Electron application, full browser scene and Unreal renderer retain NYC-specific assets and assembly logic; they are not Toronto renderer clients. The Toronto server rejects unsupported renderer requests rather than mixing maps or assets.
+Road traffic, pedestrian navigation, passenger demand, signal interaction and calibrated vehicle dynamics require Toronto network and behavioral inputs. Those models are disabled for this dataset. The main browser selects Toronto massing and symbolic trip markers through the inherited renderer, tile streamer and ATRK actor replay. The NYC profile retains its own assembly and assets. Electron, Unreal and live remote sensor rendering are not adapted to the Toronto dataset; unsupported requests fail explicitly.
 
-For geometry inspection, install the client dependencies and run `npm --prefix client run dev:toronto`. The inherited NYC runtime remains available through `node tools/core/serve.mjs --city nyc` with its separately obtained assets and data. See [the upstream guide](UPSTREAM.md) for that dataset’s requirements.
+## Browser
+
+```sh
+npm --prefix client ci --ignore-scripts
+npm --prefix client run dev:city
+```
+
+This opens the main application with `?city=toronto`. It renders the source buildings and scheduled-trip **symbols**, using the inherited engine, tile streamer and actor-replay pools. Drag to orbit, scroll to zoom, Space to pause and R to restart. The five-minute ATRK recording runs from 08:00 to 08:05 on the included service day, sampled once per second. It is regenerated from the shared headless world before startup; it is not a live connection to the TCP server. Markers do not represent measured vehicle dimensions or heading. Geometry outside the building crop is absent, and the grid is a coordinate reference rather than measured terrain.
+
+`npm --prefix client run build` builds the application. The default browser profile and `node tools/core/serve.mjs --city nyc` retain the inherited NYC path, which requires its separately obtained assets and data. See [the upstream guide](UPSTREAM.md) for those requirements.
 
 ## Roadmap
 

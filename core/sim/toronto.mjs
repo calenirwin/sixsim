@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+import { TORONTO_RENDERING } from './renderCapabilities.mjs';
 import { createWorld } from './world.mjs';
 import { scheduledTransit } from './scheduledTransit.mjs';
 import { compileBlock } from '../../client/tools/toronto/compile.mjs';
@@ -16,7 +17,7 @@ export async function torontoWorld({ startSeconds = 28800, seed = 1 } = {}) {
   if (createHash('sha256').update(bytes).digest('hex') !== provenance.subset_sha256) throw new Error('GTFS provenance hash mismatch');
   const transit = scheduledTransit(JSON.parse(bytes), { geoOrigin: PROFILE.geoOrigin, startSeconds });
   transit.provenance = provenance;
-  const world = await createWorld({ seed, tilesDir, traffic: false, peds: false, trains: false, cityOverrides: false, transit });
+  const world = await createWorld({ seed, tilesDir, renderCapabilities: TORONTO_RENDERING, traffic: false, peds: false, trains: false, cityOverrides: false, transit });
   world.camera.position.set(128, 100, 128);
   await world.step(0);
   return { world, provenance };

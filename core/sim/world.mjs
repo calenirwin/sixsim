@@ -9,12 +9,13 @@ import { signalState } from '../../client/src/sim/signals.js';
 import { HeadlessStreamer, TILES_DIR } from '../world/streamer.mjs';
 import path from 'node:path';
 import { PathCam } from './pathcam.mjs';
+import { NYC_RENDERING } from './renderCapabilities.mjs';
 import { localFrame } from '../../client/src/shared/localFrame.js';
 
 // world/sky.js PRESETS night factor per time of day (the only sim-visible effect of time: lamps on at night > 0.35)
 export const NIGHT_OF = { day: 0, golden: 0.05, dusk: 0.55, night: 1 };
 
-export async function createWorld({ seed = 1, traffic: withTraffic = true, cityOverrides = true, transit = null, peds: withPeds = true, trains: withTrains = true, pedTarget = null, carTarget = null, aspect = 16 / 9, fov = 58, nearR, obstaclesDir = null, night = 0, tilesDir = null } = {}) {
+export async function createWorld({ seed = 1, traffic: withTraffic = true, cityOverrides = true, transit = null, renderCapabilities = null, peds: withPeds = true, trains: withTrains = true, pedTarget = null, carTarget = null, aspect = 16 / 9, fov = 58, nearR, obstaclesDir = null, night = 0, tilesDir = null } = {}) {
   if (!withTraffic && withPeds) throw new Error("Pedestrians require traffic/navigation");
   const { Traffic, PK34_TABLES } = withTraffic ? await import('../../client/src/sim/traffic.js') : {};
   const { Peds } = withPeds ? await import('../../client/src/sim/peds.js') : {};
@@ -70,6 +71,7 @@ export async function createWorld({ seed = 1, traffic: withTraffic = true, cityO
   const W = {
     scene, streamer, traffic, peds, rig, camera, cam, trains, transit, ENV, kinds, fleetKinds: names, seed,
     frame: 0, simTime: 0,
+    renderCapabilities: Object.freeze({ ...(renderCapabilities || (streamer.manifest.profile ? {} : NYC_RENDERING)) }),
     // the API's camera and hooks (core/api/session.mjs): an ApiCam in place of the shot's PathCam, and src/api/bridge.js's
     // preStep / postStep around the sims, where main.js engine.onFrame calls them
     controller: null, hooks: null,

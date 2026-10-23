@@ -19,6 +19,7 @@
     "test:toronto:sim": "node --test tools/tests/toronto-sim.mjs",
     "test:nyc:core-parity": "node --test tools/tests/nyc-world-parity.mjs",
     "serve:toronto": "node tools/core/serve.mjs --city toronto",
-    "test:toronto:api": "node --test tools/tests/toronto-api.mjs"
+    "test:toronto:api": "node --test tools/tests/toronto-api.mjs",
+    "test:toronto:render": "node --test tools/tests/toronto-render.mjs"
   }
 }

@@ -14,7 +14,7 @@ Display branding is configurable and independent of dataset IDs, geographic prof
 | World simulation | Fixed-step clock, streamed spatial data, model updates, post-step hooks | Scheduled trip positions advance with the inherited clock; traffic and pedestrians require a Toronto navigation graph |
 | Control API | Existing framed TCP transport and shared bridge | Map metadata and geographic conversion use the selected origin; Python clients query scheduled transit and advance the world |
 | Cameras | Geographic path keys projected into the world frame | Headless camera paths use the tile manifest’s origin; legacy manifests retain the inherited NYC frame |
-| Rendering and recording | Browser assembly, renderer protocol, actor recording, Electron and Unreal clients | Toronto asset selection, correction-pass isolation and transit actor rendering must be implemented before those clients can consume the Toronto world |
+| Rendering and recording | Browser engine, tile streamer, ATRK actor replay; remote renderer protocol | Main browser selects neutral source massing and scheduled-trip symbols. NYC assembly is loaded only for its profile. Remote sensors, Electron and Unreal require further adaptation |
 
 ## Dataset and motion contracts
 
@@ -24,7 +24,7 @@ The Toronto profile anchors local coordinates at latitude 43.65, longitude −79
 
 The GTFS actor model uses published distances, arrival times and departure times to interpolate motion and hold at stops. Service-day times beyond 24:00 remain on the selected calendar day in America/Toronto. Trip IDs are namespaced by service date; they are not live vehicle identities. Invalid or missing shapes produce explicit omissions. This model does not infer acceleration, signal response, vehicle capacity, passenger demand, collision avoidance or calibration.
 
-The shared API exposes `transit.get_state`, also available as Python `world.get_transit_state()`. Its actors use ENU locations, with source trip/route/shape IDs, motion basis, service day, timezone and service seconds. They are read-only scheduled actors, separate from controllable vehicles in the inherited actor API. Server capabilities identify whether road navigation, pedestrians and scheduled transit are configured. Unsupported navigation and renderer operations fail explicitly.
+The shared API exposes `transit.get_state`, also available as Python `world.get_transit_state()`. Its actors use ENU locations, with source trip/route/shape IDs, motion basis, service day, timezone and service seconds. They are read-only scheduled actors, separate from controllable vehicles in the inherited actor API. Server capabilities identify whether road navigation, pedestrians and scheduled transit are configured. Unsupported navigation and remote renderer operations fail explicitly. Rendering capabilities are declared by the map; the presence of a traffic model does not enable renderer access.
 
 ## Roadmap
 
@@ -42,7 +42,7 @@ Start with stop/link occupancy and travel-time diagnostics. Add movement constra
 
 ### Toronto rendering
 
-Reuse the inherited scene and rendering systems while selecting Toronto geometry and appropriate licensed assets. Remove operational dependence on NYC landmarks, street dressing, station details and facade overrides without deleting their attribution or historical implementations. Preserve neutral geometry where source data cannot justify detailed appearance.
+Extend the existing browser profile from neutral source massing and scheduled-trip symbols to neighbourhood geometry and appropriate licensed assets. Remove operational dependence on NYC landmarks, street dressing, station details and facade overrides without deleting their attribution or historical implementations. Preserve neutral geometry where source data cannot justify detailed appearance.
 
 ### Scenarios and validation
 
@@ -53,3 +53,11 @@ Introduce explicit demand, capacities and interventions; compare outputs with su
 The [source register](data-sources.md) records ownership, formats, coordinates, update cadence, access and licence evidence. Source licences are independent of code licences. In particular, the official City portal’s Toronto Open Government Licence evidence and conflicting CKAN fields remain explicit; they do not provide clearance for unrelated third-party assets.
 
 The static inspection package enforces 2,600,000 total bytes, 700,000 JavaScript bytes and 16,384 tile bytes. These are distribution limits, not simulation memory estimates. The inherited NYC workflow requires substantially larger external datasets and assets. Live feeds, city-scale processing and hosted services are separate resource decisions; the included offline server requires none of them.
+
+## Browser actor and asset contract
+
+The main application selects its map with `?city=toronto` or `?city=nyc`. Toronto uses the inherited `Engine`, `Streamer`, ATRK v1 decoder and `CoreReplay` instance-pool update path. Its CTL1 assembly preserves source footprints, holes, record identities and heights without NYC landmark or facade overrides. No NYC models, textures or correction tables are selected for this profile.
+
+The headless world exports a five-minute recording at one-second intervals through the existing ATRK writer. Header metadata carries the geographic profile, service day, motion basis and both datasets’ provenance. Stable numeric actor IDs map back to service-day/trip IDs. Binary positions use x east, y up, z south; the API exposes the equivalent east/north/up frame. The browser checks actor and geometry profiles before loading them together.
+
+Scheduled trips use a symbolic marker pool rather than an unverified streetcar model. ATRK vehicle slots carry the positions; unused heading, speed and animation fields are zero placeholders, not observations. The playback is finite and independent of the live TCP session. Connecting a live browser transport and adapting remote sensor/Unreal clients are separate port steps; they must preserve capability checks and coordinate/provenance contracts.

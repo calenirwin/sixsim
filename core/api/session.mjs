@@ -10,6 +10,7 @@
 // its name and the night factor the models read), world/weather.js (the rain value), the perception module's class
 // table (perception/segRender.js CLASSES, imported as it is). Sensors need pixels: sensor.listen answers needs_renderer
 // (docs/specs/render-protocol.md is what a renderer client implements to serve them from this state).
+import { supportsRemoteRenderer } from '../sim/renderCapabilities.mjs';
 import * as THREE from 'three';
 import { createWorld, NIGHT_OF } from '../sim/world.mjs';
 import { PUBLIC } from '../env/shim.mjs';
@@ -146,7 +147,7 @@ export async function createApiSession({ server, seed = 1, time = 'day', start, 
   };
   const { initApi } = await import('../../client/src/api/bridge.js');
   const hooks = initApi({ engine, streamer: W.streamer, traffic: W.traffic, peds: W.peds, signals: null, sky, weather, dresser: null, instancer: null, cam, spawnGuard: null, geoOrigin, mapName, transit: W.transit });
-  hub = W.traffic ? createRenderHub({ server, W, sky, weather, classes, walkerVariants: (W.rig && W.rig.A ? W.rig.A.variants : []).map((v, i) => ({ index: i, body: v.body, id: v.id ?? null, age: v.age ?? null, build: v.build ?? null })),
+  hub = supportsRemoteRenderer(W) ? createRenderHub({ server, W, sky, weather, classes, walkerVariants: (W.rig && W.rig.A ? W.rig.A.variants : []).map((v, i) => ({ index: i, body: v.body, id: v.id ?? null, age: v.age ?? null, build: v.build ?? null })),
     apiVersion: readyInfo ? readyInfo.api_version : '0.1.0', geoOrigin, publicDir: PUBLIC, log }) : null;
   // after the sims and bridge.js postStep (the cameras follow their parents there): the renderers' state of this step
   W.hooks = { pre: hooks.preStep, post: (dt) => { hooks.postStep(dt); hub?.afterStep(dt); } };
@@ -162,7 +163,7 @@ export async function createApiSession({ server, seed = 1, time = 'day', start, 
       return server.send(cid, { id: msg.id, error: { code: NEEDS_RENDERER, message: `${what}: sensor data needs a renderer client; this server is the headless core (simulation, no pixels). See docs/specs/render-protocol.md` } });
     }
     if (m === 'server.info') {
-      return window.__API.call('server.info', p).then((r) => server.send(cid, { id: msg.id, result: { ...r, engine: 'valdrada-core', renderer: hub?.count ? hub.info() : null, sensors: hub ? (hub.count ? 'served by the renderer client' : 'need a renderer client') : 'unavailable for this map' } }),
+      return window.__API.call('server.info', p).then((r) => server.send(cid, { id: msg.id, result: { ...r, engine: 'valdrada-core', rendering: W.renderCapabilities,  renderer: hub?.count ? hub.info() : null, sensors: hub ? (hub.count ? 'served by the renderer client' : 'need a renderer client') : 'unavailable for this map' } }),
         (e) => server.send(cid, { id: msg.id, error: { code: e.code || 'internal', message: String(e.message || e) } }));
     }
     onReq({ cid, id: msg.id, method: m, params: p });

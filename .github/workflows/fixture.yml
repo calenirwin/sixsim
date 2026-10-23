@@ -24,6 +24,7 @@ jobs:
       - run: npm run test:nyc:core-parity
       - run: npm run test:toronto:sim
       - run: npm run test:toronto:api
+      - run: npm run test:toronto:render
       - run: npm --prefix client run test:transit
       - run: npm --prefix client run test:toronto
       - run: npm --prefix client run test:toronto:delivery
@@ -36,6 +37,8 @@ jobs:
         working-directory: client
       - run: npm --prefix client run test:fixture
       - run: npm --prefix client run build
+      - run: node tools/tests/city-browser.mjs
+        working-directory: client
       - uses: actions/upload-artifact@v4
         if: always()
         with:

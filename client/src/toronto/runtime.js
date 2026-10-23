@@ -1,0 +1,50 @@
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { Engine } from '../core/engine.js';
+import { Streamer } from '../world/streamer.js';
+import { ENV } from '../world/materials.js';
+import { assembleMassingTile } from '../world/massingTile.js';
+import { parseTracks, createCoreReplay } from '../replay/coreReplay.js';
+import { scheduledMarkerPool } from '../replay/scheduledMarkers.js';
+import { applyIdentity } from '../shared/identity.js';
+import { PROFILE } from './profile.js';
+import { clock } from './transit.js';
+import manifest from '../../.generated/toronto/manifest.json';
+import tileUrl from '../../.generated/toronto/0_0.bin?url&no-inline';
+import tracksUrl from '../../.generated/toronto/tracks.atrk?url';
+export async function start() {
+  const query=new URLSearchParams(location.search);
+  if(['tiles','cells','lod16'].some(k=>query.has(k))) throw new Error('Toronto selects its own verified tile and asset profile');
+  applyIdentity('Toronto');
+  const response=await fetch(tracksUrl);if(!response.ok)throw new Error(`Actor tracks: HTTP ${response.status}`);
+  const tracks=parseTracks(await response.arrayBuffer()), h=tracks.header;
+  if(h.profile?.id!==PROFILE.id || h.profile.geoOrigin.lat!==PROFILE.geoOrigin.lat || h.profile.geoOrigin.lon!==PROFILE.geoOrigin.lon || h.rendering?.assetProfile!=='toronto-massing-scheduled' || h.rendering?.browserReplay!=='atrk/1' || h.vehicleKinds.join()!=='scheduled-trip-marker') throw new Error('Actor/asset profile mismatch');
+  const engine=new Engine(document.querySelector('#app'));
+  engine.scene.background=new THREE.Color(0x182330);
+  const streamer=await new Streamer(engine.scene,{manifest,profile:PROFILE,cityOverrides:false,assembleTile:assembleMassingTile,assetUrls:{'0_0.bin':tileUrl}}).init();
+  const replay=createCoreReplay(tracks,tracksUrl), traffic=scheduledMarkerPool(engine.scene,h.actors.length);
+  replay.attachTraffic(traffic);
+  engine.camera.position.set(280,280,360);engine.camera.lookAt(115,0,80);
+  const controls=new OrbitControls(engine.camera,engine.renderer.domElement);controls.target.set(115,0,80);controls.update();
+  const grid=new THREE.GridHelper(512,32,0x607080,0x344454);grid.position.set(256,-0.1,256);engine.scene.add(grid);
+  document.querySelector('#loc span').textContent='Toronto';
+  document.querySelector('#hood').textContent='Queen / Spadina';
+  document.querySelector('#credits').textContent='Contains information licensed under OGL–Toronto. Framework: Valdrada, Mehmet Kerem Turkcan (MIT).';
+  document.querySelector('#help').textContent='Drag to orbit · scroll to zoom · Space pause · R restart';
+  for(const id of ['cross','tethers'])document.getElementById(id).style.display='none';
+  let elapsed=0,paused=false,failed=false;
+  const fail=e=>{if(failed)return;failed=true;engine.holdDraw=true;const l=document.querySelector('#loading');l.style.display='flex';l.style.opacity='1';l.querySelector('p').textContent=`Unable to load city: ${e.message}. Reload to retry.`;};
+  engine.renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();fail(new Error('Graphics context lost'));});
+  const seek=t=>{if(!Number.isFinite(t)||t<0||t>h.simTime.at(-1))throw new Error('Time outside recorded schedule');elapsed=t;ENV.time.value=t;traffic.update(0);};
+  addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();paused=!paused;}if(e.code==='KeyR')seek(0);});
+  window.__APP={engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,tracks,seek,setPaused:value=>{paused=!!value;}};
+  engine.onFrame=dt=>{
+    if(failed)return;
+    if(streamer.error){fail(streamer.error);return;}
+    streamer.update(controls.target.x,controls.target.z);
+    if(!paused)elapsed=Math.min(h.simTime.at(-1),elapsed+dt);
+    ENV.time.value=elapsed;traffic.update(dt);controls.update();
+    document.querySelector('#stats').textContent=`${clock(h.startSeconds+elapsed)} · scheduled-trip markers, not live vehicles · flat ground`;
+    if(streamer.tiles.get('0_0')?.state==='ready')document.querySelector('#loading').style.display='none';
+  };
+}

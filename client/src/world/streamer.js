@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { StaticPool } from './staticPool.js';
-import { assembleTile } from './assemble.js';
 import { FAR_UNIFORMS, NEAR_MASK_N } from './materials.js';
 import { TILE, MACRO } from '../shared/geo.js';
 import { buildMacroCrowns } from './towers.js';
@@ -42,18 +41,20 @@ export class Streamer {
   }
   async init(base = 'tiles') {
     // ?tiles=tiles_dev or ?tiles=http://127.0.0.1:5310/tiles_dev — test a dev compile without touching the live set
-    if (typeof location !== 'undefined') base = new URLSearchParams(location.search).get('tiles') || base;
+    if (!this.ctx.manifest && typeof location !== 'undefined') base = new URLSearchParams(location.search).get('tiles') || base;
     this.base = base;
-    this.manifest = await (await fetch(`${base}/manifest.json`)).json();
-    this.bridges = await (await fetch(`${base}/bridges.json`)).json();
+    this.manifest = this.ctx.manifest || await (await fetch(`${base}/manifest.json`)).json();
+    if (this.manifest.profile && !this.ctx.assembleTile) throw new Error('Profiled tiles require an explicit assembly/asset selection');
+    this.assembleTile = this.ctx.assembleTile || (await import('./assemble.js')).assembleTile;
+    this.bridges = this.ctx.cityOverrides === false ? [] : await (await fetch(`${base}/bridges.json`)).json();
     // ==== R1A cells (client/src/cells/, docs/specs/cell-package.md): ?cells=1 draws the baked cells from their packages
-    if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('cells') === '1') {
+    if (this.ctx.cityOverrides !== false && typeof location !== 'undefined' && new URLSearchParams(location.search).get('cells') === '1') {
       try { const { CellLoader } = await import('../cells/cellLoader.js'); this.cells = await new CellLoader(this).init(); }
       catch (e) { console.warn('[cells] loader unavailable, the live city is drawn', e); this.cells = null; }
     }
     // ==== /R1A
     // ==== R1B lod16
-    if (LOD16) {
+    if (LOD16 && this.ctx.cityOverrides !== false) {
       try { const { LodManager } = await import('../lod/manager.js'); this.lod16 = await new LodManager(this.scene, this.ctx, this).init(); }
       catch (e) { console.warn('[lod16] manager unavailable, far boxes kept', e); this.lod16 = null; }
     }
@@ -221,15 +222,16 @@ export class Streamer {
     this.fetching++;
     this.tiles.set(key, { state: 'loading' });
     try {
-      const r = await fetch(`${this.base}/${this.manifest.tiles[key].f}`);
+      const r = await fetch(this.ctx.assetUrls?.[this.manifest.tiles[key].f] || `${this.base}/${this.manifest.tiles[key].f}`);
+      if (!r.ok) throw new Error(`Tile ${key}: HTTP ${r.status}`);
       const buf = await r.arrayBuffer();
       this.queue.push({ key, buf });
-    } catch (e) { console.warn('tile fetch', key, e); this.tiles.delete(key); }
+    } catch (e) { console.warn('tile fetch', key, e); this.error = e; this.tiles.delete(key); }
     this.fetching--;
   }
   async _assemble(key, buf) {
     try {
-      const data = await assembleTile(key, buf, this.ctx);
+      const data = await this.assembleTile(key, buf, this.ctx);
       const rec = this.tiles.get(key);
       if (!rec) { data.dispose(this.scene, this.ctx.instancer); return; } // unloaded while queued
       if (this.cells) { try { this.cells.onTile(key, data); } catch (e) { console.warn('[cells] tile', key, e); } }   // ==== R1A cells
@@ -242,7 +244,7 @@ export class Streamer {
       if (data.surfaceInfo) this.surfInfos.set(key, data.surfaceInfo);
       if (data.roadAt) this.roadAts.set(key, data.roadAt);
       for (const fn of this.listeners.add) fn(key, data);
-    } catch (e) { console.error('assemble', key, e); this.tiles.delete(key); }
+    } catch (e) { console.error('assemble', key, e); this.error = e; this.tiles.delete(key); }
   }
   async _fetchMacro(key) {
     this.macros.set(key, { state: 'loading' });
