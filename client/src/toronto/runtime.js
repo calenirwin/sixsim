@@ -17,6 +17,10 @@ export async function start() {
   if(['tiles','cells','lod16'].some(k=>query.has(k))) throw new Error('Toronto selects its own verified tile and asset profile');
   applyIdentity('Toronto');
   document.body.dataset.city='toronto';
+  document.querySelector('#loc span').textContent='Toronto';
+  document.querySelector('#hood').textContent='Queen / Spadina';
+  document.querySelector('#credits').textContent='Contains information licensed under OGL–Toronto. Framework: Valdrada, Mehmet Kerem Turkcan (MIT).';
+  document.querySelector('#loading p').textContent='Loading Toronto data';
   const response=await fetch(tracksUrl);if(!response.ok)throw new Error(`Actor tracks: HTTP ${response.status}`);
   const tracks=parseTracks(await response.arrayBuffer()), h=tracks.header;
   if(h.profile?.id!==PROFILE.id || h.profile.geoOrigin.lat!==PROFILE.geoOrigin.lat || h.profile.geoOrigin.lon!==PROFILE.geoOrigin.lon || h.rendering?.assetProfile!=='toronto-massing-scheduled' || h.rendering?.browserReplay!=='atrk/1' || h.vehicleKinds.join()!=='scheduled-trip-marker') throw new Error('Actor/asset profile mismatch');
@@ -28,9 +32,6 @@ export async function start() {
   engine.camera.position.set(280,280,360);engine.camera.lookAt(115,0,80);
   const controls=new OrbitControls(engine.camera,engine.renderer.domElement);controls.target.set(115,0,80);controls.update();
   const grid=new THREE.GridHelper(512,32,0x607080,0x344454);grid.position.set(256,-0.1,256);engine.scene.add(grid);
-  document.querySelector('#loc span').textContent='Toronto';
-  document.querySelector('#hood').textContent='Queen / Spadina';
-  document.querySelector('#credits').textContent='Contains information licensed under OGL–Toronto. Framework: Valdrada, Mehmet Kerem Turkcan (MIT).';
   document.querySelector('#help').innerHTML='Drag to orbit · scroll or pinch to zoom<br><button id="pause-playback">Pause</button> <button id="restart-playback">Restart</button>';
   document.querySelector('#help').style.pointerEvents='auto';
   for(const id of ['cross','tethers'])document.getElementById(id).style.display='none';

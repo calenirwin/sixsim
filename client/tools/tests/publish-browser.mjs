@@ -8,6 +8,9 @@ const server=live?null:await preview({configFile:'vite.publish.config.js',previe
 const base=live||server.resolvedUrls.local[0];
 let browser;
 try {
+ const initialHtml=await(await fetch(base)).text();
+ assert.doesNotMatch(initialHtml,/New York City|inherited NYC scene|NYC Open Data/);
+ assert.match(initialHtml,/Loading city data/);
  const meta=await(await fetch(new URL('deployment.json',base))).json();
  assert.equal(meta.city,'toronto');assert.equal(meta.mode,'scheduled-playback');
  if(process.env.EXPECTED_SHA)assert.equal(meta.commit,process.env.EXPECTED_SHA);
@@ -42,5 +45,6 @@ try {
  assert.equal((await fetch(new URL('LICENSE.txt',base))).status,200);
  assert.equal((await fetch(new URL('DATA_SOURCES.json',base))).status,200);
  await page.goto(new URL('?city=nyc',base).href);await page.waitForFunction(()=>document.querySelector('#loading p').textContent.includes('Toronto profile only'));
+ assert.equal(await page.locator('#loc span').textContent(),'City data');
  console.log(JSON.stringify({url:base,commit:meta.commit,...result,mobile:'passed',navigation:'passed'}));
 } finally {await browser?.close();if(server)await new Promise(r=>server.httpServer.close(r));}
