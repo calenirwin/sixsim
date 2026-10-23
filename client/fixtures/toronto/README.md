@@ -1,114 +1,50 @@
-# Toronto massing subset: Queen / Spadina
+# Toronto district sources and extraction
 
-15 source polygons in a block-sized window northeast of Queen Street West and
-Spadina Avenue. This is a bounded **massing import**, separate from the procedural
-NYC building fixture. It is not a traffic simulation or a complete city renderer.
+Contains information licensed under the [Open Government Licence – Toronto](https://open.toronto.ca/open-data-licence/). Sources: [City 3D Massing](https://open.toronto.ca/dataset/3d-massing/), [Toronto Centreline](https://open.toronto.ca/dataset/toronto-centreline-tcl/) and [merged TTC GTFS](https://open.toronto.ca/dataset/merged-gtfs-ttc-routes-and-schedules/). No City endorsement. Verify independently before legal or official use.
 
-Contains information licensed under the
-[Open Government Licence – Toronto](https://open.toronto.ca/open-data-licence/).
-Source: [City of Toronto, 3D Massing](https://open.toronto.ca/dataset/3d-massing/).
-No City endorsement. Verify independently before legal or official use.
+## Coverage and contracts
 
-## Licence evidence and decision (accessed 2026-10-21)
+`district.geojson` retains 2,344 massing records, comprising 2,531 polygon parts, within `[west,south,east,north] = [-79.405,43.644,-79.390,43.660]`. This is approximately 2.15 km² around Spadina, from the College area toward the rail corridor. Source parts are assigned once to the 512 m tile containing their bounding-box centre; vertices crossing internal tile boundaries remain intact. There are 19 near-detail tiles, with no fabricated far-distance macros. Panning streams neighbouring tiles through the inherited renderer.
 
-| Official evidence | Observed value / implication |
-|---|---|
-| [Dataset page](https://open.toronto.ca/dataset/3d-massing/), Licence link | `Open Government Licence - Toronto`, linking directly to the City's licence. |
-| [Package API](https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_show?id=3d-massing), `result.notes` | Starts its usage limitation with “Further to the Open Government Licence”; describes illustrative use, accuracy limitations and independent verification for official use. |
-| Same API, structured fields | `license_id: notspecified`, `license_title: License not specified`, `isopen: false`, no `license_url`. These fields conflict with the affirmative page/notes. |
-| [City licence](https://open.toronto.ca/open-data-licence/), “Using Information”, “You are free to”, attribution and exemptions | Permits adaptation and redistribution, including commercial use, with attribution; excludes rights the City cannot grant and disallows implied endorsement. Version 1.0. |
+Extraction retains whole records covered by the geographic crop. The provenance records 126 outer-boundary exclusions, invalid source record 137520 and tiny-ring record 137415. Any record containing a ring below 0.011 m² in the local metric approximation is omitted whole; geometry is not repaired, clipped or deduplicated. Source records can be parts of one physical building, so record counts are not building counts.
 
-Decision: use the affirmative dataset-specific page and notes, together with the
-linked City licence, as the permission for this attributed massing subset. The
-unspecified CKAN tag is treated as a catalogue metadata defect, not as an explicit
-contrary restriction. This resolves the previous pilot's reason to defer this
-subset; it does **not** claim the API has been corrected or that City staff have
-confirmed the interpretation. Preserve that residual metadata uncertainty in
-`provenance.json`. No MPAC/parcel/ownership records, third-party photographs or
-restricted assets are imported. The dataset itself warns that some assessment
-information cannot be supplied; this importer does not fill those gaps.
+`district-network.json` retains 841 City centreline segments and 632 source intersection IDs. Whole lines intersecting the crop are retained, including endpoints outside it. Selected source classes cover roads, railways, trails and walkways; names, feature codes, intersection IDs and one-way attributes remain explicit. Connectivity uses official endpoint IDs, never geometric snapping. It does not establish lane connections, legal turns, surveyed streetcar tracks, signal phases, widths or traffic behavior.
 
-## Exact source and transformations
+GTFS context includes 25 clipped service shapes and 43 stops for routes 501, 505, 506 and 510 active on service day 2026-10-22, America/Toronto. Clipping creates display endpoints only, not network junctions. Paths are not surveyed rails; stop proximity does not establish a pedestrian transfer. Only the separately pinned route 510 schedule drives moving actors.
 
-- Resource `667237d6-4d3c-4cf3-8cb7-e91c48d59375`,
-  `3DMassingShapefile_2025_WGS84.zip`, 81,415,175 bytes. Official download URL and
-  full SHA256 are in [provenance.json](provenance.json). Only this archive was
-  downloaded (~81 MB), not the ~145 MB multipatch or any multiGB city bank.
-- `.prj` says `WGS_1984_Web_Mercator_Auxiliary_Sphere`, with metre units
-  (EPSG:3857 equivalent). **The filename does not mean lon/lat degrees.** Extractor
-  checks the archive hash and CRS declaration before inverse spherical Mercator
-  conversion. Raw archive and extracted working files are ignored.
-- Window `[west,south,east,north] = [-79.3965,43.6484,-79.3948,43.6498]`, approximately
-  137 × 156 m. Keep whole polygons fully covered by that box: 15 retained, 10
-  boundary intersections excluded. No clipping, geometry repair or deduplication.
-  Source Z values are not used as footprint coordinates. Validity checked with
-  Shapely; holes/multipart topology is retained by extraction and tile encoding.
-- The DBF has no `OBJECTID`, despite the workbook listing one. IDs are explicitly
-  snapshot-qualified, zero-based record indices, tied to the archive hash. Do not
-  treat these as persistent building, property or parcel identifiers.
-- `AVG_HEIGHT` is the observed height field in metres (range 3.5731–23.9340 in this
-  subset), not a floor-count estimate. The archive workbook describes it as the
-  maximum average footprint height. `HEIGHT_SRC`, `BLDG_SRC`, min/max heights,
-  `HEIGHT_MSL` and `SURF_ELEV` are retained in the source subset. These selected
-  records are LiDAR-derived/photogrammetric; the workbook associates LiDAR heights
-  with 2015 data. “2025 archive” is not a claim of a 2025 survey of every building.
-- The viewer extrudes each record to `AVG_HEIGHT` on **flat local y=0**. Surface
-  elevations and roof tiers are not modelled. Records can be parts of the same
-  building; the count is source masses, not unique buildings. No facades, floors,
-  land use, roads, elevation surface or traffic are invented.
+The original `block.geojson` / `provenance.json` pair remains a 15-record import regression fixture. It is separate from the procedural NYC building fixture and the district runtime.
 
-## Reproduce without a download
+## Provenance, coordinates and licence evidence
 
-From repository root (Node >=22.12; verified with Node 24):
+- `district-provenance.json` pins the massing archive URL, SHA256, extraction rules and subset hash. The archive is 81,415,175 bytes. Despite its WGS84 filename, its `.prj` declares Web Mercator metres (EPSG:3857 equivalent). Extraction checks that declaration before conversion to GeoJSON longitude/latitude.
+- Massing IDs are snapshot-qualified zero-based DBF record indices, not persistent City property IDs. The source lacks `OBJECTID`. `AVG_HEIGHT` supplies extrusion height; other original height/source fields remain in GeoJSON. The 2025 archive includes earlier measurements, including LiDAR-derived fields associated with 2015 data.
+- `network-provenance.json` pins the 29,511,680-byte centreline GeoPackage, retrieved 2026-10-23, its full SHA256 and selected resource URL. EPSG:4326 is verified through `gpkg_geometry_columns`. GTFS provenance references the pinned archive and existing transit provenance.
+- The shared coordinate origin is latitude 43.65, longitude −79.397. CTL1 and browser coordinates use metres east/up/south. Building and transit elevations assume flat local y=0; no measured terrain is claimed. The source-network API returns explicitly labelled EPSG:4326 GeoJSON.
+- Official dataset pages link the Toronto OGL. Massing notes additionally reference it explicitly. CKAN massing fields say `notspecified`; centreline licence fields are null and `isopen` is false. The subsets rely on the affirmative official page/licence evidence, retaining that discrepancy. No clarification from City staff or legal assurance is claimed. Code licensing does not grant rights to unrelated imagery, MPAC data or third-party assets.
+
+## Build and use
+
+Normal builds use committed subsets and need no archive downloads or Python geospatial dependencies:
 
 ```sh
 npm ci --ignore-scripts
 npm --prefix client ci --ignore-scripts
-npm --prefix client run dev:toronto
-# http://127.0.0.1:5219/toronto.html
-npm --prefix client run test:toronto
-CHROMIUM_PATH=/usr/bin/chromium npm --prefix client run test:toronto:browser
+npm --prefix client run dev:city
+npm run serve:toronto
 ```
 
-Use an existing Chromium path or Playwright's installed browser (omit
-`CHROMIUM_PATH`; `npx playwright install chromium` at root if needed).
+The shared world compiles district CTL1 files and source-network metadata under ignored `client/.generated/toronto/`. Python `world.get_source_network()` returns the source graph with `routing: false`; `world.get_transit_state()` returns scheduled route 510 positions in API ENU coordinates. Traffic, pedestrian navigation and remote sensor rendering remain unavailable.
 
-`compile:toronto` creates ignored `client/.generated/toronto/0_0.bin` and
-`manifest.json`. It uses upstream `binio.mjs` and the existing 44-byte `bldg`,
-`bldgXZ` and `bholes` contracts. A profile header stores an explicit origin
-(43.65,-79.397), units, source identities, flat-base decision and unknown fields.
-The shared local projection follows upstream's x east / y up / z south convention.
+## Re-extract the pinned sources
 
-The viewer fetches that CTL1 tile and uses upstream `parseTile`, `buildingsOf` and
-`holesOf`; `buildingsOf(..., {applyOverrides:false})` prevents NYC landmark facts
-from contaminating Toronto records. The default is unchanged for the NYC client.
-Neutral Three.js extrusion is a small inspection surface. **Full `assembleTile`,
-streaming, traffic, Electron/Python API and UE are not adapted or tested for
-Toronto.** Do not put this tile into the NYC public bank: facade style is deliberately
-unclassified (255), floors unknown (0), and terrain is a display plane.
-
-Tests cover exact subset hash, deterministic binary output, source IDs/heights,
-coordinate round trips, winding, synthetic holes/multipart cases, rejected invalid
-heights/bounds, and both enabled/disabled NYC overrides. Browser tests check real
-rendering (15 masses / 528 triangles), picking a known record, attribution,
-downloadable source/provenance, licence notices and no external/root-relative
-requests when served below `/sixsim/`. Screenshots are CI artifacts and ignored
-locally at `client/shots/toronto-*.png`.
-
-## Optional source re-extraction
-
-Normal build and CI use the small committed GeoJSON; neither needs Python or the
-81 MB archive. To audit the extraction:
+Place the exact archives named below in ignored `client/data/toronto/`, using the URLs and hashes in the provenance files. Do not substitute a newer revision silently.
 
 ```sh
 python -m venv client/data/toronto/.venv
 client/data/toronto/.venv/bin/pip install -r client/tools/toronto/requirements.txt
-# Obtain the exact archive URL from provenance.json into the ignored path below.
-# Expected size 81,415,175 bytes; cap a transfer at 90,000,000 bytes.
-client/data/toronto/.venv/bin/python client/tools/toronto/extract.py client/data/toronto/massing-2025.zip
-npm --prefix client run test:toronto
+# massing-2025.zip, centreline-20261023.gpkg, completegtfs.zip
+client/data/toronto/.venv/bin/python client/tools/toronto/extract_district.py client/data/toronto
+node --test client/tools/tests/district.mjs
 ```
 
-Extractor refuses a different hash, size, CRS declaration or invalid geometry.
-Do not update the pinned revision automatically. A new source revision needs a
-fresh provenance and licensing review; the raw archive is never committed.
+The extractor is offline, verifies input hashes and emits deterministic source subsets. Raw archives and working files stay outside Git. The separate `extract.py` retains the original small-fixture extraction contract.

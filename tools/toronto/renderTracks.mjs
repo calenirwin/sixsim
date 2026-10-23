@@ -25,7 +25,7 @@ export async function exportTorontoTracks() {
   const header={shot:'510-scheduled',seed:W.seed,dt:1,simTime,profile:PROFILE,rendering:W.renderCapabilities,
     basis:'schedule-derived',serviceDay:W.transit.serviceDay,timezone:W.transit.timezone,startSeconds:28800,
     vehicleKinds:['scheduled-trip-marker'],actors:[...actors.values()],parked:[],signals:[],
-    provenance, massingProvenance:JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/provenance.json'))),
+    provenance, massingProvenance:JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/district-provenance.json'))),
     unknownFields:['vehicleDimensions','heading','speed','animation'],
     marker:'Symbol only; no vehicle dimensions, heading, speed or fleet model inferred'};
   const file=path.join(root,'client/.generated/toronto/tracks.atrk');

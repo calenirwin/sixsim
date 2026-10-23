@@ -8,6 +8,11 @@ const server=live?null:await preview({configFile:'vite.publish.config.js',previe
 const base=live||server.resolvedUrls.local[0];
 let browser;
 try {
+ if(!live){
+   const files=fs.readdirSync('dist-publish',{recursive:true}).filter(f=>fs.statSync(`dist-publish/${f}`).isFile());
+   assert.ok(files.reduce((n,f)=>n+fs.statSync(`dist-publish/${f}`).size,0)<=18_000_000,'Publication byte budget');
+   assert.ok(files.filter(f=>f.endsWith('.bin')).reduce((n,f)=>n+fs.statSync(`dist-publish/${f}`).size,0)<=1_500_000,'Building tile byte budget');
+ }
  const initialHtml=await(await fetch(base)).text();
  assert.doesNotMatch(initialHtml,/New York City|inherited NYC scene|NYC Open Data/);
  assert.match(initialHtml,/Loading city data/);
@@ -22,7 +27,7 @@ try {
  await page.waitForFunction(()=>window.__APP?.streamer.tiles.get('0_0')?.state==='ready' && window.__APP.engine.frames>3,{}, {timeout:90000});
  console.log('Loaded publication geometry');
  const result=await page.evaluate(()=>{const a=window.__APP;a.setPaused(true);a.seek(0);const initial=Array.from(a.traffic.pools['scheduled-trip-marker'].mb.instanceMatrix.array);a.seek(60);const changed=Array.from(a.traffic.pools['scheduled-trip-marker'].mb.instanceMatrix.array).some((v,i)=>v!==initial[i]);return {masses:a.streamer.tiles.get('0_0').data.records.length,actors:a.traffic.cars.length,changed,frame:a.replay.f,commitProfile:a.profile.id};});
- assert.equal(result.masses,15);assert.ok(result.actors>0);assert.equal(result.changed,true);assert.equal(result.frame,60);
+ assert.equal(result.masses,360);assert.ok(result.actors>0);assert.equal(result.changed,true);assert.equal(result.frame,60);
  console.log('Verified playback');
  const before=await page.evaluate(()=>window.__APP.engine.camera.position.toArray());
  await page.mouse.move(600,350);await page.mouse.down();await page.mouse.move(700,400,{steps:1});await page.mouse.up();

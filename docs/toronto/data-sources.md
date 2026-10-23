@@ -1,6 +1,6 @@
 # Toronto data-source register
 
-Source evidence checked **2026-10-22**. “Catalogue verified” means official metadata was read; it does not imply that an archive was downloaded, parsed or integrated. The included inputs are a bounded massing subset and route 510 static GTFS for a pinned service day; see the [transit provenance](https://github.com/calenirwin/sixsim/blob/pilot/toronto-readiness/client/fixtures/transit/provenance.json). No live feed is configured.
+Source evidence and retrieval dates are recorded per resource. “Catalogue verified” means official metadata was read; it does not imply that an archive was downloaded, parsed or integrated. The included inputs are Spadina district massing, Toronto Centreline and route 510 schedules, with 501/505/506/510 path-and-stop context for a pinned service day; see the [transit provenance](https://github.com/calenirwin/sixsim/blob/pilot/toronto-readiness/client/fixtures/transit/provenance.json). No live feed is configured.
 
 For City entries below, the primary catalogue and CKAN metadata links identify the exact source. Catalogue pages present the [Open Government Licence – Toronto](https://open.toronto.ca/open-data-licence/); metadata fields can be missing or contradictory. Before adding a source, retain its specific terms and exemptions, attribution and resource evidence. The licence permits adaptation and redistribution subject to its conditions, excludes rights the City cannot grant and does not imply endorsement. Use the required notice: **Contains information licensed under the Open Government Licence – Toronto.** Do not treat all Toronto-related data as City-licensed.
 
@@ -26,8 +26,8 @@ The existing subset relies on the affirmative official portal and dataset-note e
 | Update evidence | Catalogue cadence: Annually; last refresh: 2025-12-05 13:38:35. These describe publication, not accuracy or measurement date. |
 | Terms / attribution / redistribution | Toronto portal licence evidence as above; CKAN licence: License not specified, id: notspecified. Preserve source-specific limitations; verify selected resource terms before redistribution. |
 | Access / quotas | Public metadata read without authentication; resource/service requirements and quotas not verified. No credential supplied or requested. |
-| Source versus derived storage | 2025 archive already cached outside Git; 15-record GeoJSON and provenance tracked; CTL1 derived during build. |
-| Next integration step | Validate another adjacent crop and source identity; no new bulk download. |
+| Source versus derived storage | Pinned 81,415,175-byte archive outside Git; 2,344 source records / 2,531 polygon parts in district GeoJSON; 19 CTL1 tiles derived during build. The original 15-record regression fixture is retained. |
+| Next integration step | Validate elevations and source updates before increasing detail. Provenance lists 126 boundary exclusions, one invalid geometry and one tiny-ring record; no repair or clipping. |
 
 ### Toronto Centreline (TCL)
 
@@ -36,13 +36,13 @@ The existing subset relies on the affirmative official portal and dataset-note e
 | Field | Record |
 |---|---|
 | Owner / geography | City of Toronto — Information & Technology; Toronto |
-| Status | Catalogue verified, not imported |
-| Format / coordinates | CSV/SHP/GeoJSON/GPKG; resource caches advertise EPSG:4326 and 2952; inspect selected resource before conversion. Includes non-road feature classes. |
-| Update evidence | Catalogue cadence: Daily; last refresh: 2026-10-21 18:14:18.773693. These describe publication, not accuracy or measurement date. |
+| Status | Integrated district source connectivity: 841 segments, official intersection IDs; not a lane-routing model |
+| Format / coordinates | Pinned 4326 GeoPackage; EPSG:4326 verified from gpkg_geometry_columns. Whole intersecting features retained for road/rail classes 201100–202002 and trail/walkway classes 204001/204002. |
+| Update evidence | Catalogue cadence: Daily; selected resource modified 2026-10-22T18:15:12.599704, retrieved 2026-10-23. These describe publication, not accuracy or measurement date. |
 | Terms / attribution / redistribution | Toronto portal licence evidence as above; CKAN licence: missing, id: missing. Preserve source-specific limitations; verify selected resource terms before redistribution. |
 | Access / quotas | Public metadata read without authentication; resource/service requirements and quotas not verified. No credential supplied or requested. |
-| Source versus derived storage | Keep bounded raw query/response and checksum outside generated tiles; track small licensed test graph separately. |
-| Next integration step | Select road/walkway classes, crop around existing block and test connectivity/grade separation. |
+| Source versus derived storage | 29,511,680-byte GPKG retained outside Git. Pinned archive SHA and URL, selected GeoJSON and provenance tracked under client/fixtures/toronto/. Source lines are not clipped; boundary endpoints can extend outside the building crop. |
+| Next integration step | Validate direction semantics, grade separation, legal turns, lanes and crossing/transfer links before enabling traffic routing. Do not infer tracks from centreline proximity. |
 
 ### Sidewalk Inventory
 
@@ -81,7 +81,7 @@ The existing subset relies on the affirmative official portal and dataset-note e
 | Field | Record |
 |---|---|
 | Owner / geography | City of Toronto — Toronto Transit Commission; Toronto |
-| Status | Integrated: route 510, service day 2026-10-22; 378 trips, 34 scheduled stops plus two parent stations, seven shapes |
+| Status | Integrated: route 510, service day 2026-10-22; 378 trips, 34 scheduled stops plus two parent stations, seven shapes. District context additionally retains 25 clipped service paths and 43 stops across routes 501/505/506/510; these do not add moving actors |
 | Format / coordinates | GTFS ZIP, all subway/streetcar/bus modes. GTFS geographic coordinates are WGS84; verify agency timezone and service calendars in archive. |
 | Update evidence | Catalogue cadence: Quarterly; last refresh: 2026-09-30 14:17:52. These describe publication, not accuracy or measurement date. |
 | Terms / attribution / redistribution | Toronto portal licence evidence as above; CKAN licence: License not specified, id: notspecified. Preserve source-specific limitations; verify selected resource terms before redistribution. |

@@ -10,7 +10,9 @@ import { applyIdentity } from '../shared/identity.js';
 import { PROFILE } from './profile.js';
 import { clock } from './transit.js';
 import manifest from '../../.generated/toronto/manifest.json';
-import tileUrl from '../../.generated/toronto/0_0.bin?url&no-inline';
+import network from '../../.generated/toronto/network.json';
+import { addSourceNetwork } from './networkScene.js';
+const tileUrls=Object.fromEntries(Object.entries(import.meta.glob('../../.generated/toronto/*.bin',{eager:true,query:'?url&no-inline',import:'default'})).map(([file,url])=>[file.split('/').at(-1),url]));
 import tracksUrl from '../../.generated/toronto/tracks.atrk?url';
 export async function start() {
   const query=new URLSearchParams(location.search);
@@ -18,7 +20,7 @@ export async function start() {
   applyIdentity('Toronto');
   document.body.dataset.city='toronto';
   document.querySelector('#loc span').textContent='Toronto';
-  document.querySelector('#hood').textContent='Queen / Spadina';
+  document.querySelector('#hood').textContent='Spadina district';
   document.querySelector('#credits').textContent='Contains information licensed under OGL–Toronto. Framework: Valdrada, Mehmet Kerem Turkcan (MIT).';
   document.querySelector('#loading p').textContent='Loading Toronto data';
   const response=await fetch(tracksUrl);if(!response.ok)throw new Error(`Actor tracks: HTTP ${response.status}`);
@@ -26,13 +28,14 @@ export async function start() {
   if(h.profile?.id!==PROFILE.id || h.profile.geoOrigin.lat!==PROFILE.geoOrigin.lat || h.profile.geoOrigin.lon!==PROFILE.geoOrigin.lon || h.rendering?.assetProfile!=='toronto-massing-scheduled' || h.rendering?.browserReplay!=='atrk/1' || h.vehicleKinds.join()!=='scheduled-trip-marker') throw new Error('Actor/asset profile mismatch');
   const engine=new Engine(document.querySelector('#app'));
   engine.scene.background=new THREE.Color(0x182330);
-  const streamer=await new Streamer(engine.scene,{manifest,profile:PROFILE,cityOverrides:false,assembleTile:assembleMassingTile,assetUrls:{'0_0.bin':tileUrl}}).init();
+  const streamer=await new Streamer(engine.scene,{manifest,profile:PROFILE,cityOverrides:false,assembleTile:assembleMassingTile,assetUrls:tileUrls}).init();
   const replay=createCoreReplay(tracks,tracksUrl), traffic=scheduledMarkerPool(engine.scene,h.actors.length);
   replay.attachTraffic(traffic);
-  engine.camera.position.set(280,280,360);engine.camera.lookAt(115,0,80);
-  const controls=new OrbitControls(engine.camera,engine.renderer.domElement);controls.target.set(115,0,80);controls.update();
-  const grid=new THREE.GridHelper(512,32,0x607080,0x344454);grid.position.set(256,-0.1,256);engine.scene.add(grid);
-  document.querySelector('#help').innerHTML='Drag to orbit · scroll or pinch to zoom<br><button id="pause-playback">Pause</button> <button id="restart-playback">Restart</button>';
+  engine.camera.position.set(550,800,800);engine.camera.lookAt(0,0,-200);
+  const controls=new OrbitControls(engine.camera,engine.renderer.domElement);controls.target.set(0,0,-200);controls.maxDistance=2200;controls.minDistance=30;controls.update();
+  const grid=new THREE.GridHelper(2560,80,0x607080,0x344454);grid.position.set(0,-0.1,-256);engine.scene.add(grid);
+  const contextGroup=addSourceNetwork(engine.scene,network,PROFILE);
+  document.querySelector('#help').innerHTML='Drag to orbit · right-drag to pan · scroll/pinch to zoom<br><button id="pause-playback">Pause</button> <button id="restart-playback">Restart</button>';
   document.querySelector('#help').style.pointerEvents='auto';
   for(const id of ['cross','tethers'])document.getElementById(id).style.display='none';
   let elapsed=0,paused=false,failed=false;
@@ -45,10 +48,12 @@ export async function start() {
   document.querySelector('#pause-playback').onclick=togglePause;
   document.querySelector('#restart-playback').onclick=()=>seek(0);
   addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();togglePause();}if(e.code==='KeyR')seek(0);});
-  window.__APP={engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,tracks,seek,setPaused:value=>{paused=!!value;}};
+  window.__APP={engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,controls,tracks,seek,setPaused:value=>{paused=!!value;}};
   engine.onFrame=dt=>{
     if(failed)return;
     if(streamer.error){fail(streamer.error);return;}
+    controls.target.x=Math.max(manifest.bounds[0],Math.min(manifest.bounds[2],controls.target.x));
+    controls.target.z=Math.max(manifest.bounds[1],Math.min(manifest.bounds[3],controls.target.z));
     streamer.update(controls.target.x,controls.target.z);
     if(!paused)elapsed=Math.min(h.simTime.at(-1),elapsed+dt);
     ENV.time.value=elapsed;traffic.update(dt);controls.update();

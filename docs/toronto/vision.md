@@ -8,7 +8,7 @@ Display branding is configurable and independent of dataset IDs, geographic prof
 
 | Layer | Contract | Toronto adaptation |
 |---|---|---|
-| Source acquisition | Versioned source subsets with provenance | City building massing and TTC GTFS; retain URLs, retrieval dates, hashes, licence evidence and original identifiers |
+| Source acquisition | Versioned source subsets with provenance | City building massing, source centreline topology and TTC GTFS; retain URLs, retrieval dates, hashes, licence evidence and original identifiers |
 | Normalization | Explicit geographic profile and units | WGS84 inputs projected to metres: x east, y up, z south; API locations use x east, y north, z up |
 | Spatial pipeline | CTL1 tiles and manifests | Building footprints, holes and heights use the inherited writer/decoder; NYC correction passes are disabled for Toronto |
 | World simulation | Fixed-step clock, streamed spatial data, model updates, post-step hooks | Scheduled trip positions advance with the inherited clock; traffic and pedestrians require a Toronto navigation graph |
@@ -20,11 +20,11 @@ Display branding is configurable and independent of dataset IDs, geographic prof
 
 Building inputs live in `client/fixtures/toronto/`, with source provenance and transformation details. Transit inputs live in `client/fixtures/transit/`: routes, stops, shapes, trips, stop times, calendars and exceptions for a pinned service day. Bulk archives stay outside Git. Derived CTL1 files are regenerated under `client/.generated/toronto/`.
 
-The Toronto profile anchors local coordinates at latitude 43.65, longitude −79.397. Building base elevation and transit elevation are flat local y=0 assumptions, not a measured terrain surface. Only the building crop has spatial coverage; scheduled transit extends along the full included route.
+The Toronto profile anchors local coordinates at latitude 43.65, longitude −79.397. Building base elevation and transit elevation are flat local y=0 assumptions, not a measured terrain surface. The Spadina district uses 19 near-detail tiles with whole polygon-part ownership and a shared origin. Official centrelines and four routes’ GTFS paths/stops provide context; scheduled transit extends along the full included route.
 
 The GTFS actor model uses published distances, arrival times and departure times to interpolate motion and hold at stops. Service-day times beyond 24:00 remain on the selected calendar day in America/Toronto. Trip IDs are namespaced by service date; they are not live vehicle identities. Invalid or missing shapes produce explicit omissions. This model does not infer acceleration, signal response, vehicle capacity, passenger demand, collision avoidance or calibration.
 
-The shared API exposes `transit.get_state`, also available as Python `world.get_transit_state()`. Its actors use ENU locations, with source trip/route/shape IDs, motion basis, service day, timezone and service seconds. They are read-only scheduled actors, separate from controllable vehicles in the inherited actor API. Server capabilities identify whether road navigation, pedestrians and scheduled transit are configured. Unsupported navigation and remote renderer operations fail explicitly. Rendering capabilities are declared by the map; the presence of a traffic model does not enable renderer access.
+The shared API exposes source GeoJSON and intersection-ID adjacency through `map.get_source_network` / Python `world.get_source_network()`, in EPSG:4326 with provenance and `routing: false`. It exposes `transit.get_state`, also available as Python `world.get_transit_state()`. Its actors use ENU locations, with source trip/route/shape IDs, motion basis, service day, timezone and service seconds. They are read-only scheduled actors, separate from controllable vehicles in the inherited actor API. Server capabilities identify whether road navigation, pedestrians and scheduled transit are configured. Unsupported navigation and remote renderer operations fail explicitly. Rendering capabilities are declared by the map; the presence of a traffic model does not enable renderer access.
 
 ## Roadmap
 
@@ -34,7 +34,7 @@ Propagate city profiles through browser startup, Electron and renderer handshake
 
 ### Connected spatial data
 
-Extend the shared tile pipeline with a bounded Toronto Centreline/track-and-intersection graph around Queen/Spadina. Match GTFS stops and shapes using documented tolerances and retain unmatched records. Add a licensed elevation crop with explicit horizontal and vertical datums. Shapes alone do not establish track topology, right-of-way or signal phases.
+Turn the Spadina district’s source centreline/intersection adjacency into a validated lane and track graph. Keep official IDs, grade separation and direction evidence distinct from inferred connections. Match GTFS stops and shapes using documented tolerances and retain unmatched records. Add a licensed elevation crop with explicit horizontal and vertical datums. Shapes alone do not establish track topology, right-of-way or signal phases.
 
 ### Transit and street interactions
 
@@ -52,7 +52,7 @@ Introduce explicit demand, capacities and interventions; compare outputs with su
 
 The [source register](data-sources.md) records ownership, formats, coordinates, update cadence, access and licence evidence. Source licences are independent of code licences. In particular, the official City portal’s Toronto Open Government Licence evidence and conflicting CKAN fields remain explicit; they do not provide clearance for unrelated third-party assets.
 
-The static inspection package enforces 2,600,000 total bytes, 700,000 JavaScript bytes and 16,384 tile bytes. These are distribution limits, not simulation memory estimates. The inherited NYC workflow requires substantially larger external datasets and assets. Live feeds, city-scale processing and hosted services are separate resource decisions; the included offline server requires none of them.
+The main publication build is capped at 18 MB, including inherited lazy code chunks, with at most 1.5 MB of streamed building tiles. Near-detail tiles are loaded around the camera target; no Toronto macro geometry is invented. The retained single-block inspection fixture separately enforces 2,600,000 total bytes, 700,000 JavaScript bytes and 16,384 tile bytes. These are distribution limits, not simulation memory estimates. The inherited NYC workflow requires substantially larger external datasets and assets. Live feeds, city-scale processing and hosted services are separate resource decisions; the included offline server requires none of them.
 
 ## Browser actor and asset contract
 
