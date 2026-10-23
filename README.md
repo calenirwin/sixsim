@@ -1,48 +1,66 @@
-# SixSim — Toronto adaptation of Valdrada
+# Toronto city simulation
 
-SixSim is a **provisional working name** for Calen Irwin’s Toronto-focused fork of [Valdrada](https://github.com/mkturkcan/valdrada), created by Mehmet Kerem Turkcan. The repository inherits the NYC simulator and its earlier BoundlessNYC identifiers. **This is an early adaptation, not a completed Toronto city simulator.**
+A Toronto adaptation of [Valdrada](https://github.com/mkturkcan/valdrada), bringing the city’s buildings, streets and transit into a shared simulation framework. The aim is to explore how Toronto moves and how changes to its transport network affect urban life, with traceable source data and explicit behavioral assumptions.
 
-## What exists today
+The project builds on Valdrada’s tile pipeline, simulation clock, rendering architecture, TCP API and Python client. **SixSim is the working name**; display identity is separate from geographic profiles and data contracts.
 
-On [draft PR #1](https://github.com/calenirwin/sixsim/pull/1), the inherited headless world now loads a real Toronto CTL1 massing tile and advances 510 Spadina GTFS trip actors on its simulation clock. This is a **non-interacting, schedule-driven motion baseline**, not live tracking or a calibrated traffic simulation. It uses 15 building records and the pinned 2026-10-22 service day; the full route extends beyond the building crop.
+## Run
 
-There is no Toronto road graph, terrain, passenger demand, collision response or signal interaction yet. NYC traffic, pedestrians and train services are disabled in this bounded run. The inherited NYC application, Electron/server/Python API, Unreal client and geographic camera paths remain NYC-specific. The procedural rendering fixture is synthetic. See the [reference audit](docs/toronto/reference-audit.md).
-
-## Run the Toronto simulation slice
-
-With Node 24, from the repository root:
+Requires Node 24. From the repository root:
 
 ```sh
 npm ci --ignore-scripts
+npm run serve:toronto
+```
+
+The headless server listens on `127.0.0.1:2000`. It compiles the included Toronto massing subset and loads a pinned 510 Spadina GTFS service day. No city archive, GPU or credentials are required. To choose another local port:
+
+```sh
+node tools/core/serve.mjs --city toronto --port 2020
+```
+
+Use the existing Python client (Python 3.9+):
+
+```sh
+PYTHONPATH=PythonAPI python3 - <<'PY'
+import valdrada
+client = valdrada.Client()
+try:
+    world = client.get_world()
+    print(client.get_server_info())
+    world.tick()
+    print(world.get_transit_state())
+finally:
+    client.close()
+PY
+```
+
+The `valdrada` import and protocol identifiers remain stable for compatibility. `transit.get_state` returns schedule-derived trip positions in the API’s east/north/up coordinate frame. It does not report observed vehicles. For a deterministic JSON export without a server:
+
+```sh
 node tools/toronto/simulate.mjs > /tmp/toronto-simulation.json
-npm run test:toronto:sim
 ```
 
-The command compiles the checked-in building subset, loads it through the inherited headless streamer, and records 61 snapshots from 08:00:00 to 08:01:00 America/Toronto. Output includes stable service-day/trip IDs, local metric positions, source provenance and omitted-trip IDs. No city download, renderer, credentials or fleet models are required. See [the simulation and data contract](docs/toronto/vision.md#current-simulation-contract).
+## Data and behavior
 
-The existing massing viewer and corridor study remain data-inspection tools; they are not the simulation entry point. `main` remains the inherited baseline until this draft is reviewed and merged.
+The included data covers 15 City building records near Queen/Spadina and route 510 on the **2026-10-22 service day**, in **America/Toronto**. Route coverage extends beyond the building crop. Buildings use source average heights on a flat local base; transit positions interpolate published shapes and schedules, including times beyond 24:00. Missing shapes are omitted explicitly.
 
-## Direction and data
+Road traffic, pedestrian navigation, passenger demand, signal interaction and calibrated vehicle dynamics require Toronto network and behavioral inputs. Those models are disabled for this dataset. The Electron application, full browser scene and Unreal renderer retain NYC-specific assets and assembly logic; they are not Toronto renderer clients. The Toronto server rejects unsupported renderer requests rather than mixing maps or assets.
 
-- [Toronto vision and architecture roadmap](docs/toronto/vision.md): proposed capability layers, boundaries and milestones.
-- [Data-source register](docs/toronto/data-sources.md): primary sources, licences, coordinates, access and integration status.
-- [Decisions and actual unblockers](docs/toronto/decisions-needed.md): what needs Calen’s input and what can proceed now.
-- [Technical handoff](TORONTO_HANDOFF.md), [sample provenance](client/fixtures/toronto/README.md) and [static hosting assessment](client/fixtures/toronto/HOSTING.md).
+For geometry inspection, install the client dependencies and run `npm --prefix client run dev:toronto`. The inherited NYC runtime remains available through `node tools/core/serve.mjs --city nyc` with its separately obtained assets and data. See [the upstream guide](UPSTREAM.md) for that dataset’s requirements.
 
-## Inspect the source geometry
+## Roadmap
 
-Use the PR branch until it is reviewed and merged. With Node 24 (the CI version):
+1. Carry explicit Toronto geography and source identity through the existing runtime, APIs and clients.
+2. Connect building massing, elevation, streets and streetcar tracks in the shared tile pipeline.
+3. Match GTFS stops and shapes to a navigable network; model stop/link occupancy before adding traffic and signal interactions.
+4. Adapt the existing renderer and asset selection to Toronto, preserving measured geometry and source attribution.
+5. Introduce demand and scenario experiments with stated assumptions and comparison against observed data.
 
-```sh
-npm ci --ignore-scripts
-npm --prefix client ci --ignore-scripts
-npm --prefix client run dev:toronto
-```
-
-The checked-in source subset is sufficient; no city archive or new credentials are needed. `npm --prefix client run build:toronto` produces `client/dist-toronto/`. Source/runtime checks: `npm --prefix client run test:toronto`; delivery checks: `npm --prefix client run test:toronto:delivery`. Browser checks require Chromium; exact commands and limitations are in the handoff. Do not run the full NYC fetch/compile just to try this prototype.
+[Architecture and roadmap](docs/toronto/vision.md) · [Data sources and licensing evidence](docs/toronto/data-sources.md)
 
 ## Attribution and licensing
 
-Original Valdrada code is copyright © 2026 Mehmet Kerem Turkcan under the [MIT licence](LICENSE). SixSim preserves that copyright, [upstream acknowledgements](ACKNOWLEDGEMENTS.md) and [citation](CITATION.cff). [The upstream overview](UPSTREAM.md) documents the inherited NYC project, not SixSim’s shipped features.
+This fork is maintained by Calen Irwin. Valdrada was created by Mehmet Kerem Turkcan; original code is copyright © 2026 Mehmet Kerem Turkcan under the [MIT licence](LICENSE). The [upstream acknowledgements](ACKNOWLEDGEMENTS.md), [citation](CITATION.cff) and historical BoundlessNYC compatibility identifiers are preserved.
 
-Code permission does not confer permission for every dataset or asset. [LICENSING.md](LICENSING.md) records the separate documentation, OSM-derived city, models, fonts and engine terms. The Toronto subset carries this notice: **Contains information licensed under the Open Government Licence – Toronto.** Its [provenance](client/fixtures/toronto/provenance.json) and [licence evidence](docs/toronto/data-sources.md#massing-licence-evidence) record the conflicting CKAN metadata; no City endorsement or legal assurance is implied. No full-city data redistribution or public deployment is part of this work.
+Code, documentation, datasets and art assets have separate terms; see [LICENSING.md](LICENSING.md). **Contains information licensed under the Open Government Licence – Toronto.** Building and transit fixtures retain source URLs, retrieval dates, checksums and transformation details. The [source register](docs/toronto/data-sources.md#massing-licence-evidence) records the official Toronto licence evidence and conflicting CKAN metadata. No City endorsement is implied, and Toronto data terms do not replace inherited third-party licences.

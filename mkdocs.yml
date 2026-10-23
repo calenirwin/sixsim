@@ -1,14 +1,18 @@
 site_name: SixSim
 site_description: >-
-  Toronto adaptation of Valdrada: current prototype, source evidence and architecture roadmap.
+  Toronto city simulation: architecture, data sources and transit.
 site_author: Calen Irwin; upstream Valdrada by M. K. Turkcan
 repo_url: https://github.com/calenirwin/sixsim
 repo_name: calenirwin/sixsim
 edit_uri: ""
-copyright: Code MIT, documentation CC BY 4.0, compiled city ODbL 1.0. Data © NYC Open Data, NY State open data and OpenStreetMap contributors.
+copyright: Code MIT; documentation CC BY 4.0. Toronto data under OGL–Toronto; inherited NYC/OSM data and assets retain their separate notices.
 
 docs_dir: docs
 exclude_docs: |
+  toronto/review.md
+  toronto/decisions-needed.md
+  toronto/reference-audit.md
+  toronto/reference-inventory.tsv
   api/RELEASE_README.md
   techniques.md
   interior-mapping.md
@@ -92,11 +96,8 @@ validation:
 nav:
   - Home: index.md
   - Toronto:
-      - Review checkpoint: toronto/review.md
       - Vision and roadmap: toronto/vision.md
       - Data-source register: toronto/data-sources.md
-      - Reference audit: toronto/reference-audit.md
-      - Decisions needed: toronto/decisions-needed.md
   - Upstream NYC media: media.md
   - Upstream NYC guide:
       - Quick start: quickstart.md

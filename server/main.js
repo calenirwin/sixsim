@@ -207,7 +207,7 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   win = new BrowserWindow({
     width: RES_W, height: RES_H, useContentSize: true, resizable: false, show: !HEADLESS,
-    autoHideMenuBar: true, backgroundColor: '#000000', title: `Valdrada — server on ${HOST}:${PORT}`,
+    autoHideMenuBar: true, backgroundColor: '#000000', title: `City simulation · NYC reference — ${HOST}:${PORT}`,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true, nodeIntegration: false, sandbox: false,

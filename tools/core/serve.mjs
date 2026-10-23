@@ -11,6 +11,8 @@
 // between ticks, as the page's loop keeps streaming round the spectator (default 0: the world moves only when a request
 // steps it: world.tick, world.wait_until_loaded, the asynchronous mode).
 import fs from 'node:fs';
+import { localFrame } from '../../client/src/shared/localFrame.js';
+import { PROFILE } from '../../client/src/toronto/profile.js';
 
 const argv = process.argv.slice(2);
 const opt = (name, def = null) => {
@@ -23,7 +25,10 @@ const opt = (name, def = null) => {
 const flag = (name) => argv.includes('--' + name);
 const PORT = Number(opt('port', '2000')), HOST = opt('host', '127.0.0.1');
 const [RES_W, RES_H] = String(opt('res', '1280x720')).split('x').map(Number);
-const START_LAT = Number(opt('start-lat', '40.80955')), START_LON = Number(opt('start-lon', '-73.95905'));   // W 120th St & Amsterdam Ave
+const CITY = opt('city', 'nyc');
+if (!['nyc', 'toronto'].includes(CITY)) throw new Error('Unsupported city');
+const geoOrigin = CITY === 'toronto' ? PROFILE.geoOrigin : { lat: 40.7831, lon: -73.9712 };
+const START_LAT = Number(opt('start-lat', CITY === 'toronto' ? '43.649' : '40.80955')), START_LON = Number(opt('start-lon', CITY === 'toronto' ? '-79.3955' : '-73.95905'));   // W 120th St & Amsterdam Ave
 const TIME = opt('time', 'day'), QUALITY = opt('quality', 'high'), PEDESTRIANS = opt('pedestrians', 'photoreal');
 const SEED = parseInt(opt('seed', '1'), 10), IDLE_FPS = Number(opt('idle-fps', '0')), VERBOSE = flag('verbose'), LOG_FILE = opt('log');
 const log = (...a) => {
@@ -33,8 +38,7 @@ const log = (...a) => {
 };
 
 // the start position and the page query exactly as server/main.js builds them
-const LAT0 = 40.7831, LON0 = -73.9712, M_LAT = 111132.0, M_LON = 111320.0 * Math.cos((LAT0 * Math.PI) / 180);
-const sx = (START_LON - LON0) * M_LON, sz = -(START_LAT - LAT0) * M_LAT;
+const [sx, sz] = localFrame(geoOrigin).project(START_LON, START_LAT);
 const q = new URLSearchParams({ api: '1', hud: '0', clean: '1', life: '0', x: sx.toFixed(1), z: sz.toFixed(1), y: '60', time: TIME, pedtarget: '520', lmwait: '150' });
 if (QUALITY === 'medium') q.set('crowdlod', '15,45');
 if (PEDESTRIANS === 'procedural') q.set('crowd', '0');
@@ -46,7 +50,8 @@ const server = startServer({ port: PORT, host: HOST, log, verbose: VERBOSE });
 try { await server.listening; } catch (e) { log(`ERROR cannot listen on ${HOST}:${PORT}: ${e.message}`); process.exit(2); }
 const { createApiSession } = await import('../../core/api/session.mjs');
 const t0 = performance.now();
-const S = await createApiSession({ server, seed: SEED, time: TIME, start: { x: +sx.toFixed(1), y: 60, z: +sz.toFixed(1) }, res: [RES_W, RES_H], procedural: PEDESTRIANS === 'procedural', idleFps: IDLE_FPS, log });
+const world = CITY === 'toronto' ? (await (await import('../../core/sim/toronto.mjs')).torontoWorld({ seed: SEED })).world : null;
+const S = await createApiSession({ server, world, geoOrigin, mapName: CITY === 'toronto' ? 'Toronto' : 'NYC', seed: SEED, time: TIME, start: { x: +sx.toFixed(1), y: 60, z: +sz.toFixed(1) }, res: [RES_W, RES_H], procedural: PEDESTRIANS === 'procedural', idleFps: IDLE_FPS, log });
 log(`world ready in ${((performance.now() - t0) / 1000).toFixed(1)} s`);
 const bye = () => { log('stopping'); S.close(); server.close().then(() => process.exit(0)); setTimeout(() => process.exit(0), 2000).unref(); };
 process.on('SIGINT', bye);

@@ -16,7 +16,8 @@ export const holdAt = (P, K) => ({ duration: 1e6, ease: 0, abs: P.abs, tension: 
 export const midKey = (a, b) => ({ p: a.p.map((v, i) => (v + b.p[i]) / 2), look: (a.look || a.p).map((v, i) => (v + (b.look || b.p)[i]) / 2) });
 
 export class PathCam {
-  constructor(camera, streamer) {
+  constructor(camera, streamer, projectCoordinates = project) {
+    this.project = projectCoordinates;
     this.camera = camera; this.streamer = streamer;
     this.pos = new THREE.Vector3(); this.yaw = 0; this.pitch = 0; this.t = 0; this.path = null;
   }
@@ -35,8 +36,8 @@ export class PathCam {
     this.take = path.takeData || null; this.takeHold = !!path.takeHold;
     const cam = this.camera;
     if (path.fov && Math.abs(cam.fov - path.fov) > 1e-4) { cam.fov = path.fov; cam.updateProjectionMatrix(); }
-    const pts = path.keys.map((k) => { const [x, z] = project(k.p[0], k.p[1]); return new THREE.Vector3(x, k.p[2], z); });
-    const lks = path.keys.map((k) => { const s = k.look || k.p; const [x, z] = project(s[0], s[1]); return new THREE.Vector3(x, k.look ? k.look[2] : k.p[2], z); });
+    const pts = path.keys.map((k) => { const [x, z] = this.project(k.p[0], k.p[1]); return new THREE.Vector3(x, k.p[2], z); });
+    const lks = path.keys.map((k) => { const s = k.look || k.p; const [x, z] = this.project(s[0], s[1]); return new THREE.Vector3(x, k.look ? k.look[2] : k.p[2], z); });
     this.curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', path.tension ?? 0.5);
     this.lookCurve = new THREE.CatmullRomCurve3(lks, false, 'catmullrom', path.tension ?? 0.5);
   }

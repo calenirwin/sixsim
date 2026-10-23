@@ -64,9 +64,16 @@ export function semanticClasses() {
   return out;
 }
 
-export async function createApiSession({ server, seed = 1, time = 'day', start, res = [1280, 720], procedural = false, idleFps = 0, log = console.log }) {
+export async function createApiSession({ server, seed = 1, time = 'day', start, res = [1280, 720], procedural = false, idleFps = 0, world = null, mapName = null, geoOrigin = null, log = console.log }) {
   const [RW, RH] = res;
-  const W = await createWorld({ seed, peds: true, trains: true, night: NIGHT_OF[time] ?? 0 });
+  const W = world || await createWorld({ seed, peds: true, trains: true, night: NIGHT_OF[time] ?? 0 });
+  const profile = W.streamer.manifest.profile;
+  if (geoOrigin && profile?.geoOrigin && (geoOrigin.lat !== profile.geoOrigin.lat || geoOrigin.lon !== profile.geoOrigin.lon)) {
+    throw new Error('API origin does not match tile profile');
+  }
+  geoOrigin ||= profile?.geoOrigin || { lat: 40.7831, lon: -73.9712 };
+  mapName ||= profile?.id || 'NYC';
+  if (W.ENV.night) W.ENV.night.value = NIGHT_OF[time] ?? 0;
   const cam = new ApiCam(W.camera, start.x, start.y, start.z);
   W.controller = cam;
   if (!procedural && W.rig) Object.assign(W.rig, (({ variants, pool }) => ({ A: { variants }, pool }))(crowdVariants(location.search)));
@@ -74,7 +81,7 @@ export async function createApiSession({ server, seed = 1, time = 'day', start, 
   const tl = performance.now();
   await W.step(0);
   W.reseed(1);
-  log(`world: ${W.streamer.stats.near} tiles round (${start.x.toFixed(1)}, ${start.z.toFixed(1)}) in ${((performance.now() - tl) / 1000).toFixed(1)} s; ${Object.keys(W.traffic.pools || {}).length} vehicle kinds, ${W.rig?.A ? W.rig.A.variants.length + ' walker variants' : 'procedural walkers'}`);
+  log(`world: ${W.streamer.stats.near} tiles round (${start.x.toFixed(1)}, ${start.z.toFixed(1)}) in ${((performance.now() - tl) / 1000).toFixed(1)} s; ${Object.keys(W.traffic?.pools || {}).length} vehicle kinds, ${W.rig?.A ? W.rig.A.variants.length + ' walker variants' : W.peds ? 'procedural walkers' : 'walkers disabled'}`);
 
   // ---------------------------------------------------------------- the page bridge.js expects
   globalThis.window = globalThis.window || globalThis;
@@ -138,28 +145,28 @@ export async function createApiSession({ server, seed = 1, time = 'day', start, 
     ready(info) { readyInfo = info; },
   };
   const { initApi } = await import('../../client/src/api/bridge.js');
-  const hooks = initApi({ engine, streamer: W.streamer, traffic: W.traffic, peds: W.peds, signals: null, sky, weather, dresser: null, instancer: null, cam, spawnGuard: null });
-  hub = createRenderHub({ server, W, sky, weather, classes, walkerVariants: (W.rig && W.rig.A ? W.rig.A.variants : []).map((v, i) => ({ index: i, body: v.body, id: v.id ?? null, age: v.age ?? null, build: v.build ?? null })),
-    apiVersion: readyInfo ? readyInfo.api_version : '0.1.0', geoOrigin: { lat: 40.7831, lon: -73.9712 }, publicDir: PUBLIC, log });
+  const hooks = initApi({ engine, streamer: W.streamer, traffic: W.traffic, peds: W.peds, signals: null, sky, weather, dresser: null, instancer: null, cam, spawnGuard: null, geoOrigin, mapName, transit: W.transit });
+  hub = W.traffic ? createRenderHub({ server, W, sky, weather, classes, walkerVariants: (W.rig && W.rig.A ? W.rig.A.variants : []).map((v, i) => ({ index: i, body: v.body, id: v.id ?? null, age: v.age ?? null, build: v.build ?? null })),
+    apiVersion: readyInfo ? readyInfo.api_version : '0.1.0', geoOrigin, publicDir: PUBLIC, log }) : null;
   // after the sims and bridge.js postStep (the cameras follow their parents there): the renderers' state of this step
-  W.hooks = { pre: hooks.preStep, post: (dt) => { hooks.postStep(dt); hub.afterStep(dt); } };
+  W.hooks = { pre: hooks.preStep, post: (dt) => { hooks.postStep(dt); hub?.afterStep(dt); } };
   if (!readyInfo || !onReq) throw new Error('bridge.js did not start');
 
   // the requests: sensor captures need a renderer client; server.info says what serves it; the rest is bridge.js
   server.attach((cid, msg) => {
     const m = msg.method, p = msg.params || {};
-    if (m.startsWith('render.')) return hub.handle(cid, msg);
-    if (m === 'sensor.listen' && !hub.count) {
+    if (m.startsWith('render.')) return hub ? hub.handle(cid, msg) : server.send(cid, { id: msg.id, error: { code: 'unavailable', message: 'Renderer protocol is not yet adapted to this map and transit source' } });
+    if (m === 'sensor.listen' && !hub?.count) {
       const a = window.__API.actors.get(p.id | 0);
       const what = a ? `${a.type_id} ${a.id}` : `sensor ${p.id}`;
       return server.send(cid, { id: msg.id, error: { code: NEEDS_RENDERER, message: `${what}: sensor data needs a renderer client; this server is the headless core (simulation, no pixels). See docs/specs/render-protocol.md` } });
     }
     if (m === 'server.info') {
-      return window.__API.call('server.info', p).then((r) => server.send(cid, { id: msg.id, result: { ...r, engine: 'valdrada-core', renderer: hub.count ? hub.info() : null, sensors: hub.count ? 'served by the renderer client' : 'need a renderer client' } }),
+      return window.__API.call('server.info', p).then((r) => server.send(cid, { id: msg.id, result: { ...r, engine: 'valdrada-core', renderer: hub?.count ? hub.info() : null, sensors: hub ? (hub.count ? 'served by the renderer client' : 'need a renderer client') : 'unavailable for this map' } }),
         (e) => server.send(cid, { id: msg.id, error: { code: e.code || 'internal', message: String(e.message || e) } }));
     }
     onReq({ cid, id: msg.id, method: m, params: p });
-  }, (cid) => { if (hub.bye(cid)) return; if (onBye) onBye(cid); });
+  }, (cid) => { if (hub?.bye(cid)) return; if (onBye) onBye(cid); });
   server.setReady();
   log(`ready: bridge.js API ${readyInfo.api_version} on the headless core (seed ${seed}, ${time}, ${RW}x${RH}${idleFps ? `, idle frames at ${idleFps} fps` : ''})`);
   return { W, cam, engine, close() { clearInterval(pump); } };

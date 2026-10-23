@@ -23,6 +23,7 @@ jobs:
       - run: git fetch --no-tags --depth=1 origin 3e73317d551fc2ddbd1d640ce2e4f795ca09016c
       - run: npm run test:nyc:core-parity
       - run: npm run test:toronto:sim
+      - run: npm run test:toronto:api
       - run: npm --prefix client run test:transit
       - run: npm --prefix client run test:toronto
       - run: npm --prefix client run test:toronto:delivery

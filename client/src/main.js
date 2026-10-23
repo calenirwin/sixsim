@@ -1,3 +1,4 @@
+import { applyIdentity } from './shared/identity.js';
 // ==== R1B tiers (client/src/lod/tiers.js, client/public/data/tiers.json): ?tier=low|medium|high|cinematic expands to its
 // flags before any module reads the URL; this import stays first
 import './lod/tiers.js';
@@ -26,6 +27,7 @@ import { compileSafe } from './core/compileSafe.js';
 const cityLamps = new CityLamps();
 if (typeof window !== 'undefined') window.__LAMPS = cityLamps;
 
+applyIdentity('NYC reference');
 const Q = new URLSearchParams(location.search);
 const engine = new Engine(document.getElementById('app'));
 initGTEX(engine.renderer); // async KTX2 texture bank (needs renderer for detectSupport)

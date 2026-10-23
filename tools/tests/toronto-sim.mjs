@@ -53,3 +53,15 @@ test('service-day midnight, lifecycle, missing shapes and stable trip identities
   const duplicate = structuredClone(data); duplicate.trips.push(duplicate.trips[0]);
   assert.throws(() => scheduledTransit(duplicate, { geoOrigin: PROFILE.geoOrigin }), /duplicate trip ID/);
 });
+
+test('geographic camera paths use Toronto manifest origin', async () => {
+  const { world: W } = await torontoWorld();
+  W.setPath({duration: 10, abs: true, keys: [
+    {p: [-79.397,43.65,20],look: [-79.396,43.65,0]},
+    {p: [-79.396,43.65,20],look: [-79.395,43.65,0]},
+  ]});
+  assert.deepEqual(W.cam.startXZ(), [0,0]);
+  await W.step(1);
+  assert.ok(W.camera.position.x > 0 && W.camera.position.x < 100);
+  assert.ok(Math.abs(W.camera.position.z) < 1e-8);
+});

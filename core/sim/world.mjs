@@ -9,6 +9,7 @@ import { signalState } from '../../client/src/sim/signals.js';
 import { HeadlessStreamer, TILES_DIR } from '../world/streamer.mjs';
 import path from 'node:path';
 import { PathCam } from './pathcam.mjs';
+import { localFrame } from '../../client/src/shared/localFrame.js';
 
 // world/sky.js PRESETS night factor per time of day (the only sim-visible effect of time: lamps on at night > 0.35)
 export const NIGHT_OF = { day: 0, golden: 0.05, dusk: 0.55, night: 1 };
@@ -53,7 +54,8 @@ export async function createWorld({ seed = 1, traffic: withTraffic = true, cityO
   }
   // campus walk lines arrive through fetch (peds.js constructor): let them land before the first step
   await new Promise((r) => setTimeout(r, 0));
-  const cam = new PathCam(camera, streamer);
+  const geoOrigin = streamer.manifest.profile?.geoOrigin;
+  const cam = new PathCam(camera, streamer, geoOrigin ? localFrame(geoOrigin).project : undefined);
   // the trains (sim/trains.js): closed-form timetabled runs on the sim clock ENV.time (world/sky.js advances it by the
   // frame's step); the drawing sets it builds are never updated here, only carsAt and the take cue are used
   const { initTrains } = withTrains ? await import('../../client/src/sim/trains.js') : {};
@@ -97,7 +99,6 @@ export async function createWorld({ seed = 1, traffic: withTraffic = true, cityO
     // the page's __SET_PATH as sim/trains.js wraps it: the camera path (a player take's body back in the sims, main.js
     // PathCam.setPath with src/game/control.js createReplay), then the trains' timetable phased for this path
     setPath(P) {
-      if (!cityOverrides) throw new Error("Geographic camera paths still use the NYC origin; use a local controller");
       if (P.takeData && !createReplay) throw new Error("Take replay requires traffic");
       cam.setPath(P);
       if (P.takeData) {

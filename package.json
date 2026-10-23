@@ -2,7 +2,7 @@
   "name": "valdrada",
   "version": "0.5.0",
   "private": true,
-  "description": "Valdrada: shared dependencies of the client (client/), the building generator (src/) and the render tools (tools/)",
+  "description": "Toronto city simulation using the Valdrada framework",
   "license": "MIT",
   "type": "module",
   "dependencies": {
@@ -17,6 +17,8 @@
   "scripts": {
     "sim:toronto": "node tools/toronto/simulate.mjs",
     "test:toronto:sim": "node --test tools/tests/toronto-sim.mjs",
-    "test:nyc:core-parity": "node --test tools/tests/nyc-world-parity.mjs"
+    "test:nyc:core-parity": "node --test tools/tests/nyc-world-parity.mjs",
+    "serve:toronto": "node tools/core/serve.mjs --city toronto",
+    "test:toronto:api": "node --test tools/tests/toronto-api.mjs"
   }
 }
