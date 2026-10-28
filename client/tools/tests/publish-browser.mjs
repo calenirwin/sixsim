@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { localFrame } from '../../src/shared/localFrame.js';
 import fs from 'node:fs';
 fs.mkdirSync('shots',{recursive:true});
 import { preview } from 'vite';
@@ -38,7 +39,19 @@ try {
  await page.locator('#about-demo').click();await page.waitForFunction(()=>document.querySelector('#demo-details').open);
  assert.match(await page.locator('#demo-details').innerText(),/not observed vehicles/);
  await page.keyboard.press('Escape');assert.equal(await page.locator('#about-demo').evaluate(e=>e===document.activeElement),true);
- await page.locator('#focus-district').click({noWaitAfter:true,timeout:60000});assert.ok(Math.abs(await page.evaluate(()=>window.__APP.controls.target.x))<150);
+ const pose=()=>page.evaluate(()=>({target:window.__APP.controls.target.toArray(),camera:window.__APP.engine.camera.position.toArray(),origin:window.__APP.profile.geoOrigin}));
+ const beforeFocus=await pose();
+ // This local camera action does not navigate. noWaitAfter avoids Playwright's
+ // navigation wait; it is not a rendering-performance optimization.
+ await page.locator('#focus-district').click({noWaitAfter:true,timeout:60000});
+ const focused=await pose();
+ assert.ok(Math.hypot(...focused.target.map((v,i)=>v-beforeFocus.target[i]))>100,'Shortcut must move the target');
+ assert.ok(Math.hypot(...focused.camera.map((v,i)=>v-beforeFocus.camera[i]))>100,'Shortcut must move the camera');
+ const [lon,lat]=localFrame(focused.origin).unproject(focused.target[0],focused.target[2]);
+ assert.ok(Math.abs(lon-(-79.3963))<1e-8 && Math.abs(lat-43.6488)<1e-8,'Target must be Queen/Spadina');
+ assert.equal(focused.target[1],0);
+ [550,800,1000].forEach((offset,i)=>assert.ok(Math.abs(focused.camera[i]-focused.target[i]-offset)<1e-6,'Camera must retain the district framing offset'));
+
  if(space){const card=await(await fetch(new URL('README.md',base))).text();assert.match(card,/sdk: static/);assert.match(card,/app_file: index.html/);}
 
  const before=await page.evaluate(()=>window.__APP.engine.camera.position.toArray());
