@@ -1,4 +1,5 @@
 // Directed GTFS service paths, not surveyed rails, legal turns or lane topology.
+import { validateServiceGraph } from './validateServiceGraph.js';
 import { localFrame } from '../shared/localFrame.js';
 function at(points,d) {
   for(let i=1;i<points.length;i++)if(d<=points[i].d){const a=points[i-1],b=points[i],u=b.d===a.d?0:(d-a.d)/(b.d-a.d);return {d,lon:a.lon+u*(b.lon-a.lon),lat:a.lat+u*(b.lat-a.lat)};}
@@ -20,6 +21,10 @@ export function buildServiceGraph(schedule,{geoOrigin,serviceDay,sourceSha256,ma
       if(i && t.d<=trip.times[i-1].d)reason='nonpositive-stop-link';
       if(i && t.a<=trip.times[i-1].b)reason='nonpositive-link-duration';
     }
+    if(!reason)for(let i=1;i<trip.times.length;i++){
+      const from=trip.times[i-1].d,to=trip.times[i].d,points=[at(trip.shape,from),...trip.shape.filter(p=>p.d>from&&p.d<to),at(trip.shape,to)];
+      if(points.every(p=>p.lon===points[0].lon&&p.lat===points[0].lat))reason='zero-geometric-extent';
+    }
     if(reason){omissions.push({tripId:trip.trip_id,reason});continue;}
     const key=JSON.stringify([trip.route_id,trip.direction_id,trip.shape_id,trip.times.map(t=>[t.stop_id,t.d])]);
     const group=groups.get(key)||[];group.push(trip);groups.set(key,group);
@@ -37,10 +42,11 @@ export function buildServiceGraph(schedule,{geoOrigin,serviceDay,sourceSha256,ma
       const edgeId=`${id}:link:${i-1}`;edgeIds.push(edgeId);
       edges.push({id:edgeId,patternId:id,from:nodeIds[i-1],to:nodeId,fromDistance:from,toDistance:t.d,lengthMeters,points});
     });
-    patterns.push({id,routeId:trip.route_id,directionId:trip.direction_id,shapeId:trip.shape_id,nodeIds,edgeIds});
+    patterns.push({id,routeId:trip.route_id,directionId:trip.direction_id,shapeId:trip.shape_id,tripIds:trips.map(t=>t.trip_id),nodeIds,edgeIds});
     for(const t of trips)bindings.set(t.trip_id,{trip:t,patternId:id,nodeIds,edgeIds});
   }
   const graph={version:1,basis:'GTFS directed service graph',coordinates:'EPSG:4326',sourceDistanceUnits:'GTFS shape_dist_traveled source units',lengthUnits:'metres in the local geographic frame',serviceDay,sourceSha256,geoOrigin,maxStopOffsetMeters,nodes,edges,patterns,limits:['No surveyed track or lane accuracy','No connections inferred at crossings or between patterns','No collision, capacity, signal or live-vehicle model']};
+  validateServiceGraph(graph);
   const nodeMap=new Map(nodes.map(n=>[n.id,n])),edgeMap=new Map(edges.map(e=>[e.id,e]));
   return {graph,bindings,omissions,nodeMap,edgeMap};
 }

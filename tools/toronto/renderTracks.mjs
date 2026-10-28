@@ -16,7 +16,7 @@ export async function exportTorontoTracks() {
       if(!ids.has(a.id)) {
         const id=ids.size+1; ids.set(a.id,id);
         actors.set(id,{id,type:'vehicle',kind:'scheduled-trip-marker',sourceId:a.id,tripId:a.tripId,
-          routeId:a.routeId,shapeId:a.shapeId,basis:a.basis,elevation:a.elevation,color:0xd78b39,seed:0});
+          patternId:a.graph.patternId,routeId:a.routeId,shapeId:a.shapeId,basis:a.basis,elevation:a.elevation,color:0xd78b39,seed:0});
       }
       return {id:ids.get(a.id),x:a.x,y:a.y,z:a.z,q:[0,0,0,1],v:0,spin:0,steer:0,bend:0,lamps:0,flags:0,kind:0};
     });

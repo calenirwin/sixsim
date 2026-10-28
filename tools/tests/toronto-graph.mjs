@@ -6,6 +6,7 @@ import { buildServiceGraph, graphPosition } from '../../client/src/toronto/servi
 import { scheduledTransit } from '../../core/sim/scheduledTransit.mjs';
 import { localFrame } from '../../client/src/shared/localFrame.js';
 import { addServiceGraph } from '../../client/src/toronto/serviceGraphScene.js';
+import { validateServiceGraph } from '../../client/src/toronto/validateServiceGraph.js';
 import * as THREE from 'three';
 const data=JSON.parse(fs.readFileSync(new URL('../../client/fixtures/transit/510-20261022.json',import.meta.url)));
 const options={geoOrigin:{lat:43.65,lon:-79.397},serviceDay:data.service_day,sourceSha256:data.source_sha256};
@@ -47,7 +48,8 @@ test('bad anchors, discontinuous distances and zero-duration links are explicitl
   [s=>s.trips[0].shape.splice(1,0,{d:0,lon:.0005,lat:0}),'discontinuous-shape-distance'],
   [s=>s.trips[0].times[1].a=86410,'nonpositive-link-duration'],
   [s=>s.trips[0].times[1].d=0,'nonpositive-stop-link'],
-  [s=>s.trips[0].shape=null,'missing-or-unusable-shape']]){
+  [s=>s.trips[0].shape=null,'missing-or-unusable-shape'],
+  [s=>{s.trips[0].shape.forEach(p=>p.lon=0);s.stops.get('b').stop_lon=0;},'zero-geometric-extent']]){
    const s=synthetic();mutate(s);const c=buildServiceGraph(s,syntheticOptions);
    assert.equal(c.bindings.size,0);assert.equal(c.omissions[0].reason,reason);assert.equal(graphPosition(c,'loop',86415),null);
  }
@@ -61,7 +63,16 @@ test('world occupancy partitions actors and is independent of step subdivision',
 });
 test('renderer fails closed on missing or malformed graph occupancy',()=>{
  const graph=compiled.graph,edge=graph.edges[0].id;
- const make=row=>({header:{transitGraph:graph,transitFrames:[row]},frames:[{veh:[{id:0}]}]});
+ const make=row=>({header:{transitGraph:graph,transitFrames:[row],actors:[{id:0,patternId:graph.patterns[0].id,tripId:graph.patterns[0].tripIds[0],routeId:graph.patterns[0].routeId,shapeId:graph.patterns[0].shapeId}]},frames:[{veh:[{id:0}]}]});
  for(const row of [[],[[0,null,'unknown',.5]],[[0,null,edge,NaN]],[[0,null,edge,.5],[0,null,edge,.5]]])assert.throws(()=>addServiceGraph(new THREE.Scene(),make(row),options),/occupancy/);
  const state=addServiceGraph(new THREE.Scene(),make([[0,null,edge,.5]]),options);state.update(0);assert.equal(state.group.children.filter(x=>x.visible).length,1);
+});
+
+test('external graph rejects corrupt geometry, adjacency, duplicates and pattern ownership',()=>{
+ for(const mutate of [g=>g.edges[0].points[0].lon=NaN,g=>g.edges[0].to=g.nodes[0].id,g=>g.nodes.push(g.nodes[0]),g=>g.patterns[0].edgeIds.reverse(),g=>g.edges[0].lengthMeters=0,g=>g.patterns[1].tripIds.push(g.patterns[0].tripIds[0])]){
+  const g=structuredClone(compiled.graph);mutate(g);assert.throws(()=>validateServiceGraph(g),/Invalid transit graph/);
+ }
+ const g=compiled.graph,p=g.patterns[0],wrong=g.patterns[1];
+ const tracks={header:{transitGraph:g,transitFrames:[[[0,null,wrong.edgeIds[0],.5]]],actors:[{id:0,patternId:p.id,tripId:p.tripIds[0],routeId:p.routeId,shapeId:p.shapeId}]},frames:[{veh:[{id:0}]}]};
+ assert.throws(()=>addServiceGraph(new THREE.Scene(),tracks,options),/actor occupancy pattern/);
 });

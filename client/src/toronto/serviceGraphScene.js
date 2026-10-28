@@ -1,14 +1,23 @@
 import * as THREE from 'three';
+import { validateServiceGraph } from './validateServiceGraph.js';
 import { localFrame } from '../shared/localFrame.js';
 // A replay of graph occupancy from the world, never a browser-side route inference.
 export function addServiceGraph(scene,tracks,profile) {
   const {transitGraph:g,transitFrames:frames}=tracks.header;
   if(g?.version!==1||g.coordinates!=='EPSG:4326'||g.geoOrigin.lat!==profile.geoOrigin.lat||g.geoOrigin.lon!==profile.geoOrigin.lon||frames?.length!==tracks.frames.length)throw new Error('Invalid transit graph replay');
-  const nodes=new Map(g.nodes.map(n=>[n.id,n])),edges=new Map(g.edges.map(e=>[e.id,e]));
+  const {nodes,edges,patterns}=validateServiceGraph(g);
+  const actors=new Map();
+  for(const actor of tracks.header.actors||[]){
+    const p=patterns.get(actor.patternId);
+    if(actors.has(actor.id)||!p||!p.tripIds.includes(actor.tripId)||p.routeId!==actor.routeId||p.shapeId!==actor.shapeId)throw new Error('Invalid transit actor pattern');
+    actors.set(actor.id,actor);
+  }
   for(let i=0;i<frames.length;i++) {
     const ids=new Set(tracks.frames[i].veh.map(a=>a.id)),seen=new Set();
     for(const [id,nodeId,edgeId,progress] of frames[i]) {
       if(!ids.has(id)||seen.has(id)||!Number.isFinite(progress)||progress<0||progress>1||Boolean(nodeId)===Boolean(edgeId)||nodeId&&!nodes.has(nodeId)||edgeId&&!edges.has(edgeId))throw new Error('Invalid transit graph occupancy');
+      const element=nodes.get(nodeId)||edges.get(edgeId),actor=actors.get(id);
+      if(!actor||actor.patternId!==element.patternId||nodeId&&progress!==0)throw new Error('Invalid transit actor occupancy pattern');
       seen.add(id);
     }
     if(seen.size!==ids.size)throw new Error('Incomplete transit graph occupancy');
