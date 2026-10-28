@@ -59,6 +59,8 @@ This opens the main application with `?city=toronto`. It renders the source buil
 
 `npm --prefix client run build` builds the application. The default browser profile and `node tools/core/serve.mjs --city nyc` retain the inherited NYC path, which requires its separately obtained assets and data. See [the upstream guide](UPSTREAM.md) for those requirements.
 
+A [fixed extra-dwell experiment](docs/toronto/vision.md#fixed-extra-dwell-experiment) can hold one scheduled trip for 60 additional seconds at a selected stop and propagate the delay downstream through the shared runtime. The baseline remains the default.
+
 ## Roadmap
 
 1. Carry explicit Toronto geography and source identity through the existing runtime, APIs and clients.

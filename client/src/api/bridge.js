@@ -1057,7 +1057,7 @@ export function initApi(ctx) {
       need(ctx.transit, 'unavailable', 'No scheduled transit source configured');
       const t = ctx.transit;
       return { basis: t.basis, service_day: t.serviceDay, timezone: t.timezone, service_seconds: t.serviceSeconds,
-        occupancy: t.occupancy, omissions: t.omissions, provenance: t.provenance || null, omitted_trips: [...t.omittedTrips], frame: 'ENU metres: x east, y north, z up',
+        scenario: t.scenario, deviations: t.deviations, occupancy: t.occupancy, omissions: t.omissions, provenance: t.provenance || null, omitted_trips: [...t.omittedTrips], frame: 'ENU metres: x east, y north, z up',
         actors: t.actors.map(({ x, y, z, ...a }) => ({ ...a, location: { x, y: -z, z: y } })) };
     },
     'world.get_settings': () => ({ ...settings }),

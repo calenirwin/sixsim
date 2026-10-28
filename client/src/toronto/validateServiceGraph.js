@@ -8,10 +8,10 @@ export function validateServiceGraph(g) {
   const nodes=map(g.nodes),edges=map(g.edges),patterns=map(g.patterns),usedNodes=new Set(),usedEdges=new Set(),trips=new Set();
   const same=(a,b)=>a.lon===b.lon&&a.lat===b.lat;
   for(const p of patterns.values()){
-    if(!Array.isArray(p.nodeIds)||p.nodeIds.length<2||!Array.isArray(p.edgeIds)||p.edgeIds.length!==p.nodeIds.length-1||!Array.isArray(p.tripIds)||!p.tripIds.length)fail();
+    if(typeof p.routeId!=='string'||!p.routeId||typeof p.shapeId!=='string'||!p.shapeId||!Array.isArray(p.nodeIds)||p.nodeIds.length<2||!Array.isArray(p.edgeIds)||p.edgeIds.length!==p.nodeIds.length-1||!Array.isArray(p.tripIds)||!p.tripIds.length)fail();
     for(const id of p.tripIds){if(typeof id!=='string'||trips.has(id))fail();trips.add(id);}
     p.nodeIds.forEach((id,i)=>{
-      const n=nodes.get(id);if(!n||usedNodes.has(id)||n.patternId!==p.id||n.occurrence!==i||!coord(n)||!finite(n.sourceDistance)||n.sourceDistance<0)fail();usedNodes.add(id);
+      const n=nodes.get(id);if(!n||usedNodes.has(id)||n.patternId!==p.id||n.occurrence!==i||typeof n.stopId!=='string'||!n.stopId||!coord(n)||!finite(n.sourceDistance)||n.sourceDistance<0)fail();usedNodes.add(id);
       if(!i)return;
       const a=nodes.get(p.nodeIds[i-1]),e=edges.get(p.edgeIds[i-1]);
       if(!e||usedEdges.has(e.id)||e.patternId!==p.id||e.from!==a.id||e.to!==n.id||e.fromDistance!==a.sourceDistance||e.toDistance!==n.sourceDistance||!(e.toDistance>e.fromDistance)||!Array.isArray(e.points)||e.points.length<2)fail();

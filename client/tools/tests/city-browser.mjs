@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { preview } from 'vite';
@@ -30,6 +31,20 @@ try {
  const pixels=PNG.sync.read(shot);let lit=0;
  for(let y=250;y<650;y++)for(let x=300;x<750;x++){const i=(y*pixels.width+x)*4;if(Math.max(...pixels.data.subarray(i,i+3))>85)lit++;}
  assert.ok(lit>1000,`Expected visible source geometry, got ${lit} lit pixels`);
+ // Replay a frozen experiment through the same built application and actor pools.
+ execFileSync(process.execPath,['../tools/toronto/renderTracks.mjs'],{env:{...process.env,TORONTO_TRANSIT_SCENARIO:'tools/toronto/scenarios/510-stop-dwell.json'},stdio:'pipe'});
+ const scenarioBytes=await fs.readFile('.generated/toronto/tracks.atrk');
+ execFileSync(process.execPath,['../tools/toronto/renderTracks.mjs'],{env:{...process.env,TORONTO_TRANSIT_SCENARIO:''},stdio:'pipe'});
+ await page.route('**/*.atrk',r=>r.fulfill({status:200,body:scenarioBytes}));
+ await page.goto(base+'?city=toronto&pr=1');
+ await page.waitForFunction(()=>window.__APP?.serviceGraph.scenario?.tripId==='122948020');
+ const dwell=await page.evaluate(()=>{const a=window.__APP;a.setPaused(true);a.seek(70);const d=a.serviceGraph.deviations[0];return {deviation:d,occupancy:a.serviceGraph.occupancy.find(r=>r[0]===d.actorId)};});
+ assert.equal(dwell.deviation.stopOccurrence,3);assert.equal(dwell.deviation.departureDelaySeconds,60);assert.ok(dwell.occupancy[1]);assert.equal(dwell.occupancy[2],null);
+ await page.waitForFunction(()=>document.querySelector('#stats').textContent.includes('+60s dwell experiment'));
+ await page.evaluate(()=>window.__APP.seek(120));
+ assert.ok(await page.evaluate(()=>{const a=window.__APP,id=a.serviceGraph.deviations[0].actorId;return a.serviceGraph.occupancy.find(r=>r[0]===id)[2];}));
+ assert.deepEqual(errors,[]);
+ await page.unroute('**/*.atrk');
  await page.goto(base+'?city=toronto&tiles=tiles');await page.waitForFunction(()=>document.querySelector('#loading p').textContent.includes('verified tile'));
  await page.route('**/*0_0*.bin',r=>r.fulfill({status:503,body:'unavailable'}));
  await page.goto(base+'?city=toronto&pr=1');

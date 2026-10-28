@@ -16,7 +16,7 @@
   },
   "scripts": {
     "sim:toronto": "node tools/toronto/simulate.mjs",
-    "test:toronto:sim": "node --test tools/tests/toronto-sim.mjs tools/tests/toronto-graph.mjs",
+    "test:toronto:sim": "node --test tools/tests/toronto-sim.mjs tools/tests/toronto-graph.mjs tools/tests/toronto-scenario.mjs",
     "test:nyc:core-parity": "node --test tools/tests/nyc-world-parity.mjs",
     "serve:toronto": "node tools/core/serve.mjs --city toronto",
     "test:toronto:api": "node --test tools/tests/toronto-api.mjs",

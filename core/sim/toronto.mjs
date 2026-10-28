@@ -10,7 +10,11 @@ import { compileDistrict } from '../../client/tools/toronto/compile.mjs';
 import { sourceNetwork } from '../../client/src/toronto/sourceNetwork.js';
 import { PROFILE } from '../../client/src/toronto/profile.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-export async function torontoWorld({ startSeconds = 28800, seed = 1 } = {}) {
+function environmentScenario() {
+  const file=process.env.TORONTO_TRANSIT_SCENARIO;
+  return file?JSON.parse(fs.readFileSync(path.resolve(root,file))):null;
+}
+export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = environmentScenario() } = {}) {
   const tilesDir = path.join(root, 'client/.generated/toronto');
   const massing=fs.readFileSync(path.join(root,'client/fixtures/toronto/district.geojson'));
   const massingProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/district-provenance.json')));
@@ -24,7 +28,7 @@ export async function torontoWorld({ startSeconds = 28800, seed = 1 } = {}) {
   const bytes = fs.readFileSync(path.join(root, 'client/fixtures/transit/510-20261022.json'));
   const provenance = JSON.parse(fs.readFileSync(path.join(root, 'client/fixtures/transit/provenance.json')));
   if (createHash('sha256').update(bytes).digest('hex') !== provenance.subset_sha256) throw new Error('GTFS provenance hash mismatch');
-  const transit = scheduledTransit(JSON.parse(bytes), { geoOrigin: PROFILE.geoOrigin, startSeconds });
+  const transit = scheduledTransit(JSON.parse(bytes), { geoOrigin: PROFILE.geoOrigin, startSeconds, scenario });
   transit.provenance = provenance;
   const world = await createWorld({ seed, tilesDir, renderCapabilities: TORONTO_RENDERING, traffic: false, peds: false, trains: false, cityOverrides: false, transit });
   world.sourceNetwork=network;

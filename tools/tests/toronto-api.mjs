@@ -4,8 +4,8 @@ import { spawn, execFileSync } from 'node:child_process';
 import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../../', import.meta.url));
-test('Toronto uses inherited TCP server, shared bridge and Python client', { timeout: 30000 }, async () => {
-  const server = spawn(process.execPath, ['--import','./tools/tests/helpers/offline-fetch.mjs','tools/core/serve.mjs','--city','toronto','--port','0'], { cwd:root, stdio:['ignore','pipe','pipe'] });
+for(const scenario of [false,true])test(`Toronto TCP/Python round trip (dwell scenario: ${scenario})`, { timeout: 30000 }, async () => {
+  const server = spawn(process.execPath, ['--import','./tools/tests/helpers/offline-fetch.mjs','tools/core/serve.mjs','--city','toronto','--port','0'], { cwd:root, env:{...process.env,TORONTO_TRANSIT_SCENARIO:scenario?'tools/toronto/scenarios/510-stop-dwell.json':''}, stdio:['ignore','pipe','pipe'] });
   let output='', port;
   server.stdout.on('data', b => { output+=b; port=Number(output.match(/listening on 127.0.0.1:(\d+)/)?.[1]); });
   server.stderr.on('data',b=>{output+=b;});
@@ -34,6 +34,11 @@ try:
  assert len(g['patterns'])==7 and len(g['edges'])==85
  t=w.get_transit_state()
  assert not t['omissions']
+ if ${scenario?'True':'False'}:
+  assert t['scenario']['tripId']=='122948020' and t['scenario']['extraDwellSeconds']==60
+  assert t['deviations'][3]['arrivalDelaySeconds']==0 and t['deviations'][3]['departureDelaySeconds']==60
+  assert all(d['arrivalDelaySeconds']==60 for d in t['deviations'][4:])
+ else: assert t['scenario'] is None and t['deviations']==[]
  assert sum(len(x['actorIds']) for k in ['nodes','edges'] for x in t['occupancy'][k])==10
  network=w.get_source_network()
  assert network['coordinates']=='EPSG:4326' and network['routing'] is False
