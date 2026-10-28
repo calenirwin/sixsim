@@ -8,6 +8,7 @@ import { PROFILE } from '../../client/src/toronto/profile.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 export async function exportTorontoTracks(options = {}) {
   const { world: W, provenance } = await torontoWorld(options);
+  const startSeconds=W.transit.serviceSeconds;
   const frames=[], actors=new Map(), ids=new Map(), simTime=[], transitFrames=[];
   for(let f=0;f<=300;f++) {
     if(f) await W.step(1);
@@ -25,7 +26,7 @@ export async function exportTorontoTracks(options = {}) {
   }
   const header={shot:'510-scheduled',seed:W.seed,dt:1,simTime,profile:PROFILE,rendering:W.renderCapabilities,
     transitGraph:W.transit.graph,transitFrames,transitScenario:W.transit.scenario,transitDeviations:W.transit.deviations,
-    basis:'schedule-derived',serviceDay:W.transit.serviceDay,timezone:W.transit.timezone,startSeconds:28800,
+    basis:'schedule-derived',serviceDay:W.transit.serviceDay,timezone:W.transit.timezone,startSeconds,
     vehicleKinds:['scheduled-trip-marker'],actors:[...actors.values()],parked:[],signals:[],
     provenance, massingProvenance:JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/district-provenance.json'))),
     unknownFields:['vehicleDimensions','heading','speed','animation'],

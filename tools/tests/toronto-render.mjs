@@ -10,6 +10,7 @@ import { localFrame } from '../../client/src/shared/localFrame.js';
 test('scheduled world -> ATRK -> browser reader preserves identity, coordinates and provenance',async()=>{
  const result=await exportTorontoTracks(), native=readTracks(result.file), bytes=fs.readFileSync(result.file);
  const browser=parseTracks(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength));
+ assert.equal(browser.header.startSeconds,28800);
  assert.equal(browser.frames.length,301);assert.equal(browser.header.basis,'schedule-derived');
  assert.deepEqual(browser.header.provenance,result.header.provenance);
  const {world:W}=await torontoWorld();
@@ -35,4 +36,23 @@ test('remote rendering is a map capability, independent of traffic',async()=>{
  assert.equal(supportsRemoteRenderer({traffic:null,renderCapabilities:NYC_RENDERING}),true);
  assert.equal(supportsRemoteRenderer({traffic:{},renderCapabilities:{remoteProtocol:'valdrada.render/0',assetProfile:'toronto-massing-scheduled'}}),false);
  assert.equal(supportsRemoteRenderer({traffic:{}}),false);
+});
+
+test('nondefault service start survives native and browser replay round trips',async()=>{
+ const startSeconds=90000;
+ const result=await exportTorontoTracks({startSeconds}),bytes=fs.readFileSync(result.file),native=readTracks(result.file);
+ const browser=parseTracks(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength));
+ assert.equal(native.header.startSeconds,startSeconds);assert.equal(browser.header.startSeconds,startSeconds);
+ const {world:W}=await torontoWorld({startSeconds});
+ for(const i of [0,60,300]){
+  if(i>W.simTime)await W.step(i-W.simTime);
+  assert.equal(browser.header.startSeconds+browser.header.simTime[i],W.transit.serviceSeconds);
+  assert.ok(W.transit.actors.length>0);assert.equal(browser.frames[i].veh.length,W.transit.actors.length);
+  for(const actor of W.transit.actors){
+   const id=browser.header.actors.find(a=>a.sourceId===actor.id).id,decoded=browser.frames[i].veh.find(a=>a.id===id);
+   assert.ok(Math.hypot(decoded.x-actor.x,decoded.z-actor.z)<.001);
+   assert.deepEqual(browser.header.transitFrames[i].find(r=>r[0]===id),[id,actor.graph.nodeId,actor.graph.edgeId,actor.graph.progress]);
+  }
+ }
+ await exportTorontoTracks();
 });
