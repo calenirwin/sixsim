@@ -1,9 +1,24 @@
 // Presentation controls for the existing world recording; no alternate simulator.
-export function addDemoControls({seek,setPaused,duration,geoFrame,controls,engine,header}) {
+export function addDemoControls({seek,setPaused,duration,geoFrame,controls,engine,header,mode,selectRecording,comparisonState}) {
   const help=document.querySelector('#help');
   const row=document.createElement('div');row.className='toronto-demo-controls';
   row.innerHTML='<button id="focus-district">Queen &amp; Spadina</button> <button id="about-demo">About &amp; sources</button><br><label for="playback-time">Playback time </label><input id="playback-time" type="range" min="0" step="1" aria-label="Playback time in seconds"><output id="playback-offset"></output>';
   help.append(row);
+  const variants=document.createElement('div');
+  variants.innerHTML='<label for="recording-mode">Recording </label><select id="recording-mode"><option value="baseline">Published timetable</option><option value="dwell">+60s dwell experiment</option></select><span id="recording-status" role="status"></span>';
+  row.prepend(variants);
+  const inspect=document.createElement('button');inspect.id='focus-comparison';inspect.textContent='Focus comparison trip';variants.append(inspect);
+  const detail=document.createElement('div');detail.id='comparison-detail';variants.append(detail);
+  inspect.onclick=()=>{const {vehicle:v}=comparisonState();if(!v)return;setPaused(true);controls.target.set(v.x,0,v.z);engine.camera.position.set(v.x+550,800,v.z+1000);controls.update();engine.wake();};
+  const select=variants.querySelector('select'),status=variants.querySelector('span');
+  if(mode==='custom')select.add(new Option('Build scenario','custom'));
+  select.value=mode;
+  select.onchange=async()=>{
+    select.disabled=true;status.textContent=' Loading recording…';
+    try{await selectRecording(select.value);mode=select.value;status.textContent=' Recording ready.';}
+    catch(error){select.value=mode;status.textContent=` Unable to switch: ${error.message}. Previous recording retained.`;}
+    finally{select.disabled=false;}
+  };
   const slider=row.querySelector('input');slider.max=String(duration);slider.value='0';
   slider.addEventListener('input',()=>{setPaused(true);seek(Number(slider.value));engine.wake();});
   document.querySelector('#focus-district').onclick=()=>{
@@ -19,8 +34,9 @@ export function addDemoControls({seek,setPaused,duration,geoFrame,controls,engin
 <p>Contains information licensed under the <a href="https://open.toronto.ca/open-data-licence/" target="_blank" rel="noopener">Open Government Licence – Toronto</a>. Framework: <a href="https://github.com/mkturkcan/valdrada" target="_blank" rel="noopener">Valdrada</a>, Mehmet Kerem Turkcan (MIT). SixSim is a working name.</p>
 <p><a href="https://github.com/calenirwin/sixsim" target="_blank" rel="noopener">Source and documentation</a> · <a href="https://github.com/calenirwin/sixsim/blob/main/docs/toronto/data-sources.md" target="_blank" rel="noopener">Data-source register</a></p>
 <form method="dialog"><button>Close</button></form>`;
-  dialog.querySelector('#demo-scenario').textContent=header.transitScenario?.extraDwellSeconds?'This recording includes an explicitly modeled +60-second dwell at one stop, propagated downstream without recovery. It is a what-if experiment, not an observed delay.':'This recording follows the published timetable. The shared runtime also supports a fixed extra-dwell experiment.';
+  const setHeader=value=>{header=value;dialog.querySelector('#demo-scenario').textContent=header.transitScenario?.extraDwellSeconds?'This recording includes an explicitly modeled +60-second dwell at one stop, propagated downstream without recovery. It is a what-if experiment, not an observed delay.':'This recording follows the published timetable. Choose the +60s dwell experiment to compare at the same time.';};
+  setHeader(header);
   document.body.append(dialog);
   document.querySelector('#about-demo').onclick=()=>dialog.showModal();
-  return {update(seconds){slider.value=String(Math.round(seconds));row.querySelector('output').textContent=`${Math.round(seconds)} / ${duration}s`;}};
+  return {setHeader,update(seconds){const state=comparisonState();inspect.disabled=!state.vehicle;detail.textContent=`Trip ${state.tripId}: ${state.phase} · departure deviation +${state.delay}s`;slider.value=String(Math.round(seconds));row.querySelector('output').textContent=`${Math.round(seconds)} / ${duration}s`;}};
 }

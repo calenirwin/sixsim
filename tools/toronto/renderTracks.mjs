@@ -6,7 +6,8 @@ import { torontoWorld } from '../../core/sim/toronto.mjs';
 import { writeTracks } from '../../core/tracks/format.mjs';
 import { PROFILE } from '../../client/src/toronto/profile.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-export async function exportTorontoTracks(options = {}) {
+export async function exportTorontoTracks(options = {}, outputName = 'tracks.atrk') {
+  if(!['tracks.atrk','tracks-baseline.atrk','tracks-dwell.atrk'].includes(outputName))throw new Error('Unsupported recording output');
   const { world: W, provenance } = await torontoWorld(options);
   const startSeconds=W.transit.serviceSeconds;
   const frames=[], actors=new Map(), ids=new Map(), simTime=[], transitFrames=[];
@@ -31,10 +32,16 @@ export async function exportTorontoTracks(options = {}) {
     provenance, massingProvenance:JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/district-provenance.json'))),
     unknownFields:['vehicleDimensions','heading','speed','animation'],
     marker:'Symbol only; no vehicle dimensions, heading, speed or fleet model inferred'};
-  const file=path.join(root,'client/.generated/toronto/tracks.atrk');
+  const file=path.join(root,'client/.generated/toronto',outputName);
   const bytes=writeTracks(file,header,frames);
   return {file,bytes,header,frames};
 }
+export async function exportTorontoComparison() {
+  const scenario=JSON.parse(fs.readFileSync(path.join(root,'tools/toronto/scenarios/510-stop-dwell.json')));
+  const baseline=await exportTorontoTracks({scenario:null},'tracks-baseline.atrk');
+  const dwell=await exportTorontoTracks({scenario},'tracks-dwell.atrk');
+  return {baseline,dwell};
+}
 if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
-  const r=await exportTorontoTracks();console.log(`Toronto ATRK: ${r.frames.length} frames, ${r.bytes} bytes`);
+  const r=await exportTorontoTracks();await exportTorontoComparison();console.log(`Toronto ATRK: ${r.frames.length} frames, ${r.bytes} bytes`);
 }

@@ -43,5 +43,6 @@ export function addServiceGraph(scene,tracks,profile) {
     const active=new Set(state.occupancy.map(r=>r[2]).filter(Boolean));
     for(const [id,mesh] of meshes)mesh.visible=active.has(id);
   }};
+  state.dispose=()=>{scene.remove(group);for(const mesh of meshes.values())mesh.geometry.dispose();material.dispose();};
   return state;
 }

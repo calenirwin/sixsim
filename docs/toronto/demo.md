@@ -11,7 +11,8 @@ The browser uses the same tiled geometry, geographic frame and recorded actors a
 1. Open the main application using the instructions below. Choose **Queen & Spadina** to focus on the district. Drag to orbit, right-drag or use two fingers to pan, and scroll/pinch to zoom.
 2. Watch the orange scheduled-trip symbols. Grey lines are City centrelines, ochre lines are GTFS service paths, blue points are stops, and teal links show occupied directed service links.
 3. **Pause** and move the **Playback time** slider from 0 to 120 seconds. The slider pauses playback so that positions and occupancy can be inspected at a fixed time. Arrow keys move it by one second. **Restart** returns to the beginning.
-4. Open **About & sources** for coverage, controls, source attribution and the distinction between measured records and modeled positions. Close it or press Escape to return to the city.
+4. Seek to **70 seconds** and choose **+60s dwell experiment** under **Recording**. Switching pauses at the same time and preserves the camera. Choose **Focus comparison trip**: the targeted trip holds at Willcocks Street while its baseline counterpart is already on a service link. Switch back to **Published timetable** to compare. The readout reports graph phase and modeled departure deviation; other trips are unchanged.
+5. Open **About & sources** for coverage, controls, source attribution and the distinction between measured records and modeled positions. Close it or press Escape to return to the city.
 
 The recording runs from 08:00 to 08:05 on the pinned **2026-10-22 service day**, in **America/Toronto**. It stops after five minutes. The source timetable includes service times after 24:00, even though this short recording shows the morning.
 
@@ -39,13 +40,15 @@ npm --prefix client run dev:city
 
 Open the URL printed by Vite with `?city=toronto`. This regenerates the five-minute recording from the inherited world and opens its main renderer; no bulk data download, new credentials or backend is needed.
 
-To inspect the extra-dwell experiment instead:
+The selector uses two world-generated recordings included in the static package. A failed or incompatible load retains the previous recording and displays an error. The comparison is finite playback, not a live connection to the API.
+
+To choose a different valid build-time scenario as the initial recording:
 
 ```sh
 TORONTO_TRANSIT_SCENARIO=tools/toronto/scenarios/510-stop-dwell.json npm --prefix client run dev:city
 ```
 
-The scenario adds 60 seconds at Spadina Avenue / Willcocks Street for one specified trip. It is labeled in the clock and source panel. Willcocks is just north of the building crop; transit coverage extends there. Other trips remain unchanged. See [the scenario contract](vision.md#fixed-extra-dwell-experiment) for exact inputs, timing and API access.
+The included comparison scenario adds 60 seconds at Spadina Avenue / Willcocks Street for one specified trip. It is labeled in the clock and source panel. Willcocks is just north of the building crop; transit coverage extends there. Other trips remain unchanged. See [the scenario contract](vision.md#fixed-extra-dwell-experiment) for exact inputs, timing and API access.
 
 ## A personal project page and a static Space
 
