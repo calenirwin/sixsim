@@ -265,6 +265,10 @@ class World:
         """Source centrelines, intersection IDs and GTFS context in EPSG:4326; not a routing graph."""
         return self._call("map.get_source_network")
 
+    def get_transit_graph(self) -> dict:
+        """Directed GTFS service paths in EPSG:4326, not surveyed track topology."""
+        return self._call("transit.get_graph")
+
     def get_transit_state(self) -> dict:
         """Pinned schedule-derived trip positions in API ENU coordinates; not live vehicles."""
         return self._call("transit.get_state")

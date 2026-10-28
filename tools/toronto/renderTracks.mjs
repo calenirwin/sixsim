@@ -8,7 +8,7 @@ import { PROFILE } from '../../client/src/toronto/profile.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 export async function exportTorontoTracks() {
   const { world: W, provenance } = await torontoWorld();
-  const frames=[], actors=new Map(), ids=new Map(), simTime=[];
+  const frames=[], actors=new Map(), ids=new Map(), simTime=[], transitFrames=[];
   for(let f=0;f<=300;f++) {
     if(f) await W.step(1);
     simTime.push(W.simTime);
@@ -20,9 +20,11 @@ export async function exportTorontoTracks() {
       }
       return {id:ids.get(a.id),x:a.x,y:a.y,z:a.z,q:[0,0,0,1],v:0,spin:0,steer:0,bend:0,lamps:0,flags:0,kind:0};
     });
+    transitFrames.push(W.transit.actors.map(a=>[ids.get(a.id),a.graph.nodeId,a.graph.edgeId,a.graph.progress]));
     frames.push({veh,walk:[],sig:new Uint8Array(),train:[]});
   }
   const header={shot:'510-scheduled',seed:W.seed,dt:1,simTime,profile:PROFILE,rendering:W.renderCapabilities,
+    transitGraph:W.transit.graph,transitFrames,
     basis:'schedule-derived',serviceDay:W.transit.serviceDay,timezone:W.transit.timezone,startSeconds:28800,
     vehicleKinds:['scheduled-trip-marker'],actors:[...actors.values()],parked:[],signals:[],
     provenance, massingProvenance:JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/district-provenance.json'))),

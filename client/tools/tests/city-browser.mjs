@@ -22,6 +22,8 @@ try {
  assert.equal(context.roads,841);assert.equal(context.stops,43);assert.ok(context.nodes>100);assert.equal(context.lines,3);
  await page.evaluate(()=>window.__APP.controls.target.set(0,0,-200));
  const moved=await page.evaluate(()=>{const a=window.__APP;a.seek(60);return {frame:a.replay.f,position:Array.from(a.traffic.pools['scheduled-trip-marker'].mb.instanceMatrix.array.slice(12,15)),expected:a.tracks.frames[60].veh[0]};});
+ assert.deepEqual(await page.evaluate(()=>window.__APP.serviceGraph.occupancy),await page.evaluate(()=>window.__APP.tracks.header.transitFrames[60]));
+ assert.ok(await page.evaluate(()=>window.__APP.serviceGraph.group.children.some(m=>m.visible)));
  assert.equal(moved.frame,60);assert.notDeepEqual(moved.position,first.position);assert.deepEqual(moved.position,[moved.expected.x,moved.expected.y,moved.expected.z]);
  assert.match(await page.locator('#stats').innerText(),/not live vehicles/);assert.ok(!requests.some(p=>/\/models\/|\/tiles\/|columbia|lf39|trains\.json/.test(p)),JSON.stringify(requests));assert.deepEqual(errors,[]);
  await fs.mkdir('shots',{recursive:true});const shot=await page.screenshot({path:'shots/toronto-city-runtime.png'});

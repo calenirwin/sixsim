@@ -34,7 +34,8 @@ test('real CTL1 tile and GTFS actors advance in inherited world before post-step
   assert.notDeepEqual(W.transit.actors, before);
   const actor = W.transit.actors[0], trip = prepare(data).trips.find(t => t.trip_id === actor.tripId);
   const expected = localFrame(PROFILE.geoOrigin).project(...position(trip, 28860));
-  assert.deepEqual([actor.x, actor.z], expected);
+  assert.ok(Math.hypot(actor.x-expected[0],actor.z-expected[1])<.001);
+  assert.ok(actor.graph.edgeId || actor.graph.nodeId);
   assert.equal(actor.y, 0); assert.equal(actor.basis, 'schedule-derived');
   for (const dt of [-1, NaN, Infinity]) await assert.rejects(W.step(dt), /Invalid simulation step/);
   assert.equal(W.simTime, 60);

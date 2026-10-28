@@ -23,6 +23,7 @@ test('scheduled world -> ATRK -> browser reader preserves identity, coordinates 
      const geo=frame.unproject(decoded.x,decoded.z),expected=frame.unproject(a.x,a.z);
      assert.ok(Math.abs(geo[0]-expected[0])<1e-7 && Math.abs(geo[1]-expected[1])<1e-7);
      assert.equal(decoded.y,0);
+     assert.deepEqual(browser.header.transitFrames[i].find(r=>r[0]===id),[id,a.graph.nodeId,a.graph.edgeId,a.graph.progress]);
    }
  }
  assert.deepEqual(browser.frames[60].veh,native.frames[60].veh);

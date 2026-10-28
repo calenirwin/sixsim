@@ -11,6 +11,7 @@ import { PROFILE } from './profile.js';
 import { clock } from './transit.js';
 import manifest from '../../.generated/toronto/manifest.json';
 import network from '../../.generated/toronto/network.json';
+import { addServiceGraph } from './serviceGraphScene.js';
 import { addSourceNetwork } from './networkScene.js';
 const tileUrls=Object.fromEntries(Object.entries(import.meta.glob('../../.generated/toronto/*.bin',{eager:true,query:'?url&no-inline',import:'default'})).map(([file,url])=>[file.split('/').at(-1),url]));
 import tracksUrl from '../../.generated/toronto/tracks.atrk?url';
@@ -35,6 +36,7 @@ export async function start() {
   const controls=new OrbitControls(engine.camera,engine.renderer.domElement);controls.target.set(0,0,-200);controls.maxDistance=2200;controls.minDistance=30;controls.update();
   const grid=new THREE.GridHelper(2560,80,0x607080,0x344454);grid.position.set(0,-0.1,-256);engine.scene.add(grid);
   const contextGroup=addSourceNetwork(engine.scene,network,PROFILE);
+  const serviceGraph=addServiceGraph(engine.scene,tracks,PROFILE);
   document.querySelector('#help').innerHTML='Drag to orbit · right-drag to pan · scroll/pinch to zoom<br><button id="pause-playback">Pause</button> <button id="restart-playback">Restart</button>';
   document.querySelector('#help').style.pointerEvents='auto';
   for(const id of ['cross','tethers'])document.getElementById(id).style.display='none';
@@ -43,12 +45,12 @@ export async function start() {
   controls.addEventListener('change',()=>engine.wake());
   const fail=e=>{if(failed)return;failed=true;engine.holdDraw=true;const l=document.querySelector('#loading');l.style.display='flex';l.style.opacity='1';l.querySelector('p').textContent=`Unable to load city: ${e.message}. Reload to retry.`;};
   engine.renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();fail(new Error('Graphics context lost'));});
-  const seek=t=>{if(!Number.isFinite(t)||t<0||t>h.simTime.at(-1))throw new Error('Time outside recorded schedule');elapsed=t;ENV.time.value=t;traffic.update(0);};
+  const seek=t=>{if(!Number.isFinite(t)||t<0||t>h.simTime.at(-1))throw new Error('Time outside recorded schedule');elapsed=t;ENV.time.value=t;traffic.update(0);serviceGraph.update(replay.f);};
   const togglePause=()=>{paused=!paused;engine.wake();document.querySelector('#pause-playback').textContent=paused?'Play':'Pause';};
   document.querySelector('#pause-playback').onclick=togglePause;
   document.querySelector('#restart-playback').onclick=()=>seek(0);
   addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();togglePause();}if(e.code==='KeyR')seek(0);});
-  window.__APP={engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,controls,tracks,seek,setPaused:value=>{paused=!!value;}};
+  window.__APP={engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,serviceGraph,controls,tracks,seek,setPaused:value=>{paused=!!value;}};
   engine.onFrame=dt=>{
     if(failed)return;
     if(streamer.error){fail(streamer.error);return;}
@@ -56,7 +58,7 @@ export async function start() {
     controls.target.z=Math.max(manifest.bounds[1],Math.min(manifest.bounds[3],controls.target.z));
     streamer.update(controls.target.x,controls.target.z);
     if(!paused)elapsed=Math.min(h.simTime.at(-1),elapsed+dt);
-    ENV.time.value=elapsed;traffic.update(dt);controls.update();
+    ENV.time.value=elapsed;traffic.update(dt);serviceGraph.update(replay.f);controls.update();
     document.querySelector('#stats').textContent=`${clock(h.startSeconds+elapsed)} · scheduled-trip markers, not live vehicles · flat ground`;
     if(streamer.tiles.get('0_0')?.state==='ready')document.querySelector('#loading').style.display='none';
   };

@@ -30,7 +30,11 @@ try:
  assert abs(p.x)<1e-6 and abs(p.y)<1e-6 and p.z==12
  q=m.transform_to_geolocation(p)
  assert q.latitude==43.65 and q.longitude==-79.397
+ g=w.get_transit_graph()
+ assert len(g['patterns'])==7 and len(g['edges'])==85
  t=w.get_transit_state()
+ assert not t['omissions']
+ assert sum(len(x['actorIds']) for k in ['nodes','edges'] for x in t['occupancy'][k])==10
  network=w.get_source_network()
  assert network['coordinates']=='EPSG:4326' and network['routing'] is False
  assert len(network['roads'])==841 and len(network['stops'])==43

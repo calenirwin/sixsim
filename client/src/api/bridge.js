@@ -1049,11 +1049,15 @@ export function initApi(ctx) {
       need(ctx.sourceNetwork, 'unavailable', 'No source network configured');
       return ctx.sourceNetwork;
     },
+    'transit.get_graph': () => {
+      need(ctx.transit?.graph, 'unavailable', 'No transit service graph configured');
+      return ctx.transit.graph;
+    },
     'transit.get_state': () => {
       need(ctx.transit, 'unavailable', 'No scheduled transit source configured');
       const t = ctx.transit;
       return { basis: t.basis, service_day: t.serviceDay, timezone: t.timezone, service_seconds: t.serviceSeconds,
-        provenance: t.provenance || null, omitted_trips: [...t.omittedTrips], frame: 'ENU metres: x east, y north, z up',
+        occupancy: t.occupancy, omissions: t.omissions, provenance: t.provenance || null, omitted_trips: [...t.omittedTrips], frame: 'ENU metres: x east, y north, z up',
         actors: t.actors.map(({ x, y, z, ...a }) => ({ ...a, location: { x, y: -z, z: y } })) };
     },
     'world.get_settings': () => ({ ...settings }),
