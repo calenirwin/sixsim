@@ -61,6 +61,8 @@ This opens the main application with `?city=toronto`. It renders the source buil
 
 A [fixed extra-dwell experiment](docs/toronto/vision.md#fixed-extra-dwell-experiment) can hold one scheduled trip for 60 additional seconds at a selected stop and propagate the delay downstream through the shared runtime. The baseline remains the default.
 
+For a concise presentation, source coverage and local Hugging Face static packaging, see the [Toronto demo walkthrough](docs/toronto/demo.md). The package uses this same application and requires no hosted backend.
+
 ## Roadmap
 
 1. Carry explicit Toronto geography and source identity through the existing runtime, APIs and clients.

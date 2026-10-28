@@ -8,6 +8,8 @@ import { parseTracks, createCoreReplay } from '../replay/coreReplay.js';
 import { scheduledMarkerPool } from '../replay/scheduledMarkers.js';
 import { applyIdentity } from '../shared/identity.js';
 import { PROFILE } from './profile.js';
+import { addDemoControls } from './demoControls.js';
+import { localFrame } from '../shared/localFrame.js';
 import { clock } from './transit.js';
 import manifest from '../../.generated/toronto/manifest.json';
 import network from '../../.generated/toronto/network.json';
@@ -45,12 +47,15 @@ export async function start() {
   controls.addEventListener('change',()=>engine.wake());
   const fail=e=>{if(failed)return;failed=true;engine.holdDraw=true;const l=document.querySelector('#loading');l.style.display='flex';l.style.opacity='1';l.querySelector('p').textContent=`Unable to load city: ${e.message}. Reload to retry.`;};
   engine.renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();fail(new Error('Graphics context lost'));});
-  const seek=t=>{if(!Number.isFinite(t)||t<0||t>h.simTime.at(-1))throw new Error('Time outside recorded schedule');elapsed=t;ENV.time.value=t;traffic.update(0);serviceGraph.update(replay.f);};
-  const togglePause=()=>{paused=!paused;engine.wake();document.querySelector('#pause-playback').textContent=paused?'Play':'Pause';};
+  let demoControls;
+  const setPaused=value=>{paused=!!value;engine.wake();document.querySelector('#pause-playback').textContent=paused?'Play':'Pause';};
+  const seek=t=>{if(!Number.isFinite(t)||t<0||t>h.simTime.at(-1))throw new Error('Time outside recorded schedule');elapsed=t;ENV.time.value=t;traffic.update(0);serviceGraph.update(replay.f);demoControls?.update(t);engine.wake();};
+  const togglePause=()=>setPaused(!paused);
   document.querySelector('#pause-playback').onclick=togglePause;
   document.querySelector('#restart-playback').onclick=()=>seek(0);
-  addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();togglePause();}if(e.code==='KeyR')seek(0);});
-  window.__APP={engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,serviceGraph,controls,tracks,seek,setPaused:value=>{paused=!!value;}};
+  addEventListener('keydown',e=>{if(document.querySelector('dialog[open]')||/INPUT|BUTTON|SELECT|TEXTAREA/.test(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();togglePause();}if(e.code==='KeyR')seek(0);});
+  demoControls=addDemoControls({seek,setPaused,duration:h.simTime.at(-1),geoFrame:localFrame(PROFILE.geoOrigin),controls,engine,header:h});
+  window.__APP={engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,serviceGraph,controls,tracks,seek,setPaused};
   engine.onFrame=dt=>{
     if(failed)return;
     if(streamer.error){fail(streamer.error);return;}
@@ -58,7 +63,7 @@ export async function start() {
     controls.target.z=Math.max(manifest.bounds[1],Math.min(manifest.bounds[3],controls.target.z));
     streamer.update(controls.target.x,controls.target.z);
     if(!paused)elapsed=Math.min(h.simTime.at(-1),elapsed+dt);
-    ENV.time.value=elapsed;traffic.update(dt);serviceGraph.update(replay.f);controls.update();
+    ENV.time.value=elapsed;traffic.update(dt);serviceGraph.update(replay.f);demoControls.update(elapsed);controls.update();
     document.querySelector('#stats').textContent=`${clock(h.startSeconds+elapsed)} · scheduled-trip markers, not live vehicles${h.transitScenario?.extraDwellSeconds ? " · +60s dwell experiment" : ""} · flat ground`;
     if(streamer.tiles.get('0_0')?.state==='ready')document.querySelector('#loading').style.display='none';
   };
