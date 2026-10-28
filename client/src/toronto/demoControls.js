@@ -13,7 +13,7 @@ export function addDemoControls({seek,setPaused,duration,geoFrame,controls,engin
   dialog.innerHTML=`<h2>Toronto: buildings, streets and scheduled transit</h2>
 <p>Explore the Spadina district using City building massing and centreline records, with TTC 510 scheduled-trip symbols on the same simulation clock.</p>
 <p><strong>Try it:</strong> focus Queen &amp; Spadina, pause, then move the time slider to see which directed service links are occupied. Drag to orbit; right-drag or use two fingers to pan; scroll or pinch to zoom.</p>
-<p><strong>What is measured?</strong> Source footprints, heights, centrelines, GTFS stops and paths. Orange symbols move from published times; teal links show scheduled occupancy. These are not observed vehicles or interacting road traffic. Ground elevation is assumed flat.</p>
+<p><strong>What comes from sources?</strong> Source footprints, heights, centrelines, GTFS stops and paths. Orange symbols move from published times; teal links show scheduled occupancy. These are not observed vehicles or interacting road traffic. Ground elevation is assumed flat.</p>
 <p>The recording covers five minutes of the pinned 2026-10-22 service day (America/Toronto). It stops at the end; Restart returns to its beginning. Buildings cover about 2.15 km²; route geometry continues beyond that crop.</p>
 <p id="demo-scenario"></p>
 <p>Contains information licensed under the <a href="https://open.toronto.ca/open-data-licence/" target="_blank" rel="noopener">Open Government Licence – Toronto</a>. Framework: <a href="https://github.com/mkturkcan/valdrada" target="_blank" rel="noopener">Valdrada</a>, Mehmet Kerem Turkcan (MIT). SixSim is a working name.</p>
