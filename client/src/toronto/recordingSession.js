@@ -1,3 +1,4 @@
+import { validateDepartures } from './departures.js';
 import * as THREE from 'three';
 import { createCoreReplay } from '../replay/coreReplay.js';
 import { scheduledMarkerPool } from '../replay/scheduledMarkers.js';
@@ -15,6 +16,7 @@ export function recordingSession(tracks,url,profile) {
   const serviceGraph=addServiceGraph(group,tracks,profile);
   let traffic;
   try {
+    validateDepartures(h.transitDepartures,h);
     const replay=createCoreReplay(tracks,url);traffic=scheduledMarkerPool(group,h.actors.length);replay.attachTraffic(traffic);
     return {group,tracks,h,replay,traffic,serviceGraph,dispose(){group.removeFromParent();traffic.dispose();serviceGraph.dispose();}};
   } catch(error){traffic?.dispose();serviceGraph.dispose();throw error;}

@@ -36,6 +36,8 @@ finally:
 PY
 ```
 
+The browser’s **Downstream departures & gaps** panel compares timetable and experiment departures for the included comparison trip, with gaps to the preceding same-pattern trip. These are schedule-derived events, not live service headways.
+
 The `valdrada` import and protocol identifiers remain stable for compatibility. `transit.get_state` returns schedule-derived trip positions in the API’s east/north/up coordinate frame. It does not report observed vehicles. For a deterministic JSON export without a server:
 
 ```sh

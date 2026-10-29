@@ -269,6 +269,10 @@ class World:
         """Directed GTFS service paths in EPSG:4326, not surveyed track topology."""
         return self._call("transit.get_graph")
 
+    def get_transit_departures(self, trip_id: str) -> dict:
+        """Baseline/selected departures and preceding same-pattern gaps; not live headways."""
+        return self._call("transit.get_departures", trip_id=trip_id)
+
     def get_transit_state(self) -> dict:
         """Pinned schedule-derived trip positions in API ENU coordinates; not live vehicles."""
         return self._call("transit.get_state")

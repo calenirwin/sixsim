@@ -1,12 +1,14 @@
 // Kinematic actors driven by a pinned service day, stepped by the inherited world clock.
 // No observed vehicles, collision response, speed calibration or inferred track elevation.
+import { departureComparison } from '../../client/src/toronto/departures.js';
 import { applyTransitScenario } from './transitScenario.mjs';
 import { prepare } from '../../client/src/toronto/transit.js';
 import { buildServiceGraph, graphPosition } from '../../client/src/toronto/serviceGraph.js';
 import { localFrame } from '../../client/src/shared/localFrame.js';
 export function scheduledTransit(data, { geoOrigin, startSeconds = 28800, scenario: scenarioInput = null } = {}) {
   if (!Number.isFinite(startSeconds) || startSeconds < 0) throw new Error('Invalid service start');
-  const {schedule,scenario,deviations} = applyTransitScenario(prepare(data),data.service_day,scenarioInput), frame = localFrame(geoOrigin);
+  const baseline=prepare(data);
+  const {schedule,scenario,deviations} = applyTransitScenario(baseline,data.service_day,scenarioInput), frame = localFrame(geoOrigin);
   const ids = new Set();
   for (const t of schedule.trips) {
     if (!t.trip_id || ids.has(t.trip_id)) throw new Error('Missing or duplicate trip ID');
@@ -16,6 +18,7 @@ export function scheduledTransit(data, { geoOrigin, startSeconds = 28800, scenar
   if(scenario && !compiled.bindings.has(scenario.tripId))throw new Error('Dwell target omitted from service graph');
   const model = {
     scenario, deviations,
+    departures: tripId=>departureComparison(baseline,schedule,compiled.graph,tripId),
     graph: compiled.graph, omissions: compiled.omissions, occupancy: {edges:[],nodes:[]},
     basis: 'schedule-derived', serviceDay: data.service_day, timezone: data.timezone,
     omittedTrips: compiled.omissions.map(t => t.tripId),

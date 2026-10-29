@@ -48,8 +48,14 @@ try {
  assert.deepEqual(delayed.actors.filter(a=>a.tripId!=='122948020'),baseline.actors.filter(a=>a.tripId!=='122948020'));
  assert.notDeepEqual(delayed.actors.find(a=>a.tripId==='122948020'),baseline.actors.find(a=>a.tripId==='122948020'));
  assert.match(await page.locator('#comparison-detail').innerText(),/at stop.*\+60s/);
+ await page.locator('#departure-comparison summary').click({noWaitAfter:true});
+ const departureText=await page.locator('#departure-comparison tbody').innerText();
+ assert.match(departureText,/08:00:36 → 08:01:36/);assert.match(departureText,/720 → 780/);assert.match(departureText,/41623020 → 41623020/);
+ if(!live)await page.screenshot({path:'shots/toronto-publish-departures.png',timeout:30000});
+ await page.locator('#departure-comparison summary').click({noWaitAfter:true});
  await page.locator('#recording-mode').selectOption('baseline');await page.waitForFunction(()=>!window.__APP.tracks.header.transitScenario && !document.querySelector('#recording-mode').disabled);
  assert.deepEqual(await recordingState(),baseline);
+ assert.match(await page.locator('#departure-comparison tbody').textContent(),/720 → 720/);
  await page.locator('#focus-comparison').click({noWaitAfter:true,timeout:60000});
  const comparisonTarget=await page.evaluate(()=>window.__APP.controls.target.toArray()),vehicle=baseline.actors.find(a=>a.tripId==='122948020');
  assert.ok(Math.hypot(comparisonTarget[0]-vehicle.x,comparisonTarget[2]-vehicle.z)<.001);
@@ -88,6 +94,11 @@ try {
  const layout=await page.evaluate(()=>{const box=id=>document.querySelector(id).getBoundingClientRect();return {topClear:box('#help').top>=box('#loc').bottom,bottomClear:box('#stats').bottom<=box('#credits').top};});
  assert.deepEqual(layout,{topClear:true,bottomClear:true});
  console.log('Verified mobile layout');
+ await page.locator('#departure-comparison summary').click({noWaitAfter:true});
+ assert.match(await page.locator('#departure-comparison tbody').innerText(),/720 → 720/);
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Expanded comparison must not overflow mobile viewport');
+ if(!live)await page.screenshot({path:'shots/toronto-publish-departures-mobile.png',timeout:30000});
+ await page.locator('#departure-comparison summary').click({noWaitAfter:true});
  const restart=await page.locator('#restart-playback').boundingBox();await page.touchscreen.tap(restart.x+restart.width/2,restart.y+restart.height/2);
  assert.equal(await page.evaluate(()=>window.__APP.replay.f),0);
  await page.locator('#pause-playback').click();await page.locator('#pause-playback').click();

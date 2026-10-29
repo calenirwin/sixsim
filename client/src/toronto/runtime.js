@@ -78,7 +78,7 @@ export async function start() {
     const row=serviceGraph.occupancy.find(r=>r[0]===actor?.id),deviation=serviceGraph.deviations.find(d=>d.actorId===actor?.id);
     return {tripId:comparison.tripId,vehicle,phase:row?(row[1]?'at stop':'on link'):'outside recording time',delay:deviation?.departureDelaySeconds||0};
   };
-  demoControls=addDemoControls({seek,setPaused,duration:h.simTime.at(-1),geoFrame:localFrame(PROFILE.geoOrigin),controls,engine,header:h,mode,selectRecording,comparisonState});
+  demoControls=addDemoControls({seek,setPaused,duration:h.simTime.at(-1),geoFrame:localFrame(PROFILE.geoOrigin),controls,engine,header:h,mode,selectRecording,comparisonState,comparisonStart:comparison.stopOccurrence});
   window.__APP={engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,serviceGraph,controls,tracks,seek,setPaused};
   engine.onFrame=dt=>{
     if(failed)return;

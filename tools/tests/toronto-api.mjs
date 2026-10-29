@@ -18,6 +18,7 @@ for(const scenario of [false,true])test(`Toronto TCP/Python round trip (dwell sc
     const script=`
 import valdrada
 from valdrada.transport import ValdradaError
+import json, subprocess
 c=valdrada.Client(port=${port},timeout=5)
 try:
  w=c.get_world()
@@ -32,6 +33,14 @@ try:
  assert q.latitude==43.65 and q.longitude==-79.397
  g=w.get_transit_graph()
  assert len(g['patterns'])==7 and len(g['edges'])==85
+ d=w.get_transit_departures('122948020')
+ expected=json.loads(subprocess.check_output(['node','--input-type=module','-e',"import {torontoWorld} from './core/sim/toronto.mjs'; const {world}=await torontoWorld(); console.log(JSON.stringify(world.transit.departures('122948020')));"],text=True))
+ assert d==expected
+ assert d['rows'][3]['baseline']['gapSeconds']==720
+ assert d['rows'][3]['selected']['gapSeconds']==${scenario?'780':'720'}
+ try: w.get_transit_departures('missing')
+ except ValdradaError: pass
+ else: raise AssertionError('Unknown trip accepted')
  t=w.get_transit_state()
  assert not t['omissions']
  if ${scenario?'True':'False'}:
@@ -58,7 +67,7 @@ try:
  print('Python TCP Toronto round-trip passed')
 finally: c.close()
 `;
-    const python=spawn('python3',['-c',script],{cwd:root,env:{...process.env,PYTHONPATH:root+'/PythonAPI'},stdio:['ignore','pipe','pipe']});
+    const python=spawn('python3',['-c',script],{cwd:root,env:{...process.env,PYTHONPATH:root+'/PythonAPI',TORONTO_TRANSIT_SCENARIO:scenario?'tools/toronto/scenarios/510-stop-dwell.json':''},stdio:['ignore','pipe','pipe']});
     let result=''; python.stdout.on('data',b=>{result+=b;});python.stderr.on('data',b=>{result+=b;});
     const [code]=await once(python,'exit');assert.equal(code,0,result);
   } finally { server.kill('SIGTERM'); if(server.exitCode===null) await once(server,'exit'); }

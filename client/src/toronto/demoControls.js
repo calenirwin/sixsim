@@ -1,5 +1,6 @@
+import { clock } from './transit.js';
 // Presentation controls for the existing world recording; no alternate simulator.
-export function addDemoControls({seek,setPaused,duration,geoFrame,controls,engine,header,mode,selectRecording,comparisonState}) {
+export function addDemoControls({seek,setPaused,duration,geoFrame,controls,engine,header,mode,selectRecording,comparisonState,comparisonStart}) {
   const help=document.querySelector('#help');
   const row=document.createElement('div');row.className='toronto-demo-controls';
   row.innerHTML='<button id="focus-district">Queen &amp; Spadina</button> <button id="about-demo">About &amp; sources</button><br><label for="playback-time">Playback time </label><input id="playback-time" type="range" min="0" step="1" aria-label="Playback time in seconds"><output id="playback-offset"></output>';
@@ -24,6 +25,20 @@ export function addDemoControls({seek,setPaused,duration,geoFrame,controls,engin
   document.querySelector('#focus-district').onclick=()=>{
     const [x,z]=geoFrame.project(-79.3963,43.6488);controls.target.set(x,0,z);engine.camera.position.set(x+550,800,z+1000);controls.update();engine.wake();
   };
+  const departures=document.createElement('details');departures.id='departure-comparison';
+  departures.innerHTML='<summary>Downstream departures &amp; gaps</summary><p>Fixed service-day events, independent of the playback cursor. First three stops from the experiment. Timetable → selected recording, in Toronto service-day time. Gap: seconds since the preceding trip on this same pattern/stop occurrence; not route-wide headway or live reliability. Equal departures are ordered by trip ID. — means no predecessor in this service day.</p><div style="overflow:auto;max-height:180px"><table><thead><tr><th>Stop</th><th>Departure</th><th>Gap (s)</th></tr></thead><tbody></tbody></table></div>';
+  row.append(departures);
+  const renderDepartures=()=>{
+    const body=departures.querySelector('tbody');body.replaceChildren();
+    const rows=header.transitDepartures?.rows.slice(comparisonStart,comparisonStart+3)||[];
+    departures.hidden=!rows.length;
+    for(const r of rows){
+      const tr=document.createElement('tr');
+      const values=[`${r.stopOccurrence}: ${r.stopName}`,`${clock(r.baseline.departure)} → ${clock(r.selected.departure)}`,`${r.baseline.gapSeconds??'—'} → ${r.selected.gapSeconds??'—'}`];
+      for(const value of values){const td=document.createElement('td');td.textContent=value;tr.append(td);}
+      const previous=document.createElement('small');previous.style.display='block';previous.textContent=`Preceding trip: ${r.baseline.previous?.tripId??'none'} → ${r.selected.previous?.tripId??'none'}`;tr.lastChild.append(previous);body.append(tr);
+    }
+  };
   const dialog=document.createElement('dialog');dialog.id='demo-details';
   dialog.innerHTML=`<h2>Toronto: buildings, streets and scheduled transit</h2>
 <p>Explore the Spadina district using City building massing and centreline records, with TTC 510 scheduled-trip symbols on the same simulation clock.</p>
@@ -34,7 +49,7 @@ export function addDemoControls({seek,setPaused,duration,geoFrame,controls,engin
 <p>Contains information licensed under the <a href="https://open.toronto.ca/open-data-licence/" target="_blank" rel="noopener">Open Government Licence – Toronto</a>. Framework: <a href="https://github.com/mkturkcan/valdrada" target="_blank" rel="noopener">Valdrada</a>, Mehmet Kerem Turkcan (MIT). SixSim is a working name.</p>
 <p><a href="https://github.com/calenirwin/sixsim" target="_blank" rel="noopener">Source and documentation</a> · <a href="https://github.com/calenirwin/sixsim/blob/main/docs/toronto/data-sources.md" target="_blank" rel="noopener">Data-source register</a></p>
 <form method="dialog"><button>Close</button></form>`;
-  const setHeader=value=>{header=value;dialog.querySelector('#demo-scenario').textContent=header.transitScenario?.extraDwellSeconds?'This recording includes an explicitly modeled +60-second dwell at one stop, propagated downstream without recovery. It is a what-if experiment, not an observed delay.':'This recording follows the published timetable. Choose the +60s dwell experiment to compare at the same time.';};
+  const setHeader=value=>{header=value;renderDepartures();dialog.querySelector('#demo-scenario').textContent=header.transitScenario?.extraDwellSeconds?'This recording includes an explicitly modeled +60-second dwell at one stop, propagated downstream without recovery. It is a what-if experiment, not an observed delay.':'This recording follows the published timetable. Choose the +60s dwell experiment to compare at the same time.';};
   setHeader(header);
   document.body.append(dialog);
   document.querySelector('#about-demo').onclick=()=>dialog.showModal();

@@ -1053,6 +1053,10 @@ export function initApi(ctx) {
       need(ctx.transit?.graph, 'unavailable', 'No transit service graph configured');
       return ctx.transit.graph;
     },
+    'transit.get_departures': ({trip_id}) => {
+      need(ctx.transit, 'unavailable', 'No scheduled transit source configured');
+      return ctx.transit.departures(trip_id);
+    },
     'transit.get_state': () => {
       need(ctx.transit, 'unavailable', 'No scheduled transit source configured');
       const t = ctx.transit;
