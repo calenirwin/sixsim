@@ -36,6 +36,13 @@ try:
  d=w.get_transit_departures('122948020')
  expected=json.loads(subprocess.check_output(['node','--input-type=module','-e',"import {torontoWorld} from './core/sim/toronto.mjs'; const {world}=await torontoWorld(); console.log(JSON.stringify(world.transit.departures('122948020')));"],text=True))
  assert d==expected
+ assert d['version']==2
+ assert d['rows'][3]['baseline']['following']=={'tripId':'18005020','departure':29556}
+ assert d['rows'][3]['selected']['following']==d['rows'][3]['baseline']['following']
+ assert d['rows'][3]['selected']['followingGapSeconds']==${scenario?'660':'720'}
+ f=w.get_transit_departures('18005020')
+ assert f['rows'][3]['selected']['departure']==f['rows'][3]['baseline']['departure']==29556
+ assert f['rows'][3]['selected']['gapSeconds']==d['rows'][3]['selected']['followingGapSeconds']
  assert d['rows'][3]['baseline']['gapSeconds']==720
  assert d['rows'][3]['selected']['gapSeconds']==${scenario?'780':'720'}
  try: w.get_transit_departures('missing')

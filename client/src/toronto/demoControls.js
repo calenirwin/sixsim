@@ -26,7 +26,7 @@ export function addDemoControls({seek,setPaused,duration,geoFrame,controls,engin
     const [x,z]=geoFrame.project(-79.3963,43.6488);controls.target.set(x,0,z);engine.camera.position.set(x+550,800,z+1000);controls.update();engine.wake();
   };
   const departures=document.createElement('details');departures.id='departure-comparison';
-  departures.innerHTML='<summary>Downstream departures &amp; gaps</summary><p>Fixed service-day events, independent of the playback cursor. First three stops from the experiment. Timetable → selected recording, in Toronto service-day time. Gap: seconds since the preceding trip on this same pattern/stop occurrence; not route-wide headway or live reliability. Equal departures are ordered by trip ID. — means no predecessor in this service day.</p><div style="overflow:auto;max-height:180px"><table><thead><tr><th>Stop</th><th>Departure</th><th>Gap (s)</th></tr></thead><tbody></tbody></table></div>';
+  departures.innerHTML='<summary>Downstream departures &amp; gaps</summary><p>Fixed service-day events, independent of the playback cursor. First three stops from the experiment. Timetable → selected recording, in Toronto service-day time. Target gap: seconds from the preceding trip. Following gap: seconds from target to its next departure on the same pattern/stop occurrence. These are time gaps, not distances or route-wide headways. Following IDs are recomputed in each recording; a smaller gap does not imply a delayed following trip. Equal departures are ordered by trip ID. — means no adjacent departure in this service day.</p><div style="overflow:auto;max-height:180px"><table><thead><tr><th>Stop / trip</th><th>Departure</th><th>Gap (s)</th></tr></thead><tbody></tbody></table></div>';
   row.append(departures);
   const renderDepartures=()=>{
     const body=departures.querySelector('tbody');body.replaceChildren();
@@ -34,9 +34,15 @@ export function addDemoControls({seek,setPaused,duration,geoFrame,controls,engin
     departures.hidden=!rows.length;
     for(const r of rows){
       const tr=document.createElement('tr');
-      const values=[`${r.stopOccurrence}: ${r.stopName}`,`${clock(r.baseline.departure)} → ${clock(r.selected.departure)}`,`${r.baseline.gapSeconds??'—'} → ${r.selected.gapSeconds??'—'}`];
+      const values=[`${r.stopOccurrence}: ${r.stopName} · Target ${header.transitDepartures.tripId}`,`${clock(r.baseline.departure)} → ${clock(r.selected.departure)}`,`${r.baseline.gapSeconds??'—'} → ${r.selected.gapSeconds??'—'}`];
       for(const value of values){const td=document.createElement('td');td.textContent=value;tr.append(td);}
       const previous=document.createElement('small');previous.style.display='block';previous.textContent=`Preceding trip: ${r.baseline.previous?.tripId??'none'} → ${r.selected.previous?.tripId??'none'}`;tr.lastChild.append(previous);body.append(tr);
+      if(header.transitDepartures.version>=2){
+        const next=document.createElement('tr');next.className='following-departure';
+        const b=r.baseline.following,a=r.selected.following;
+        const fields=[`Following ${b?.tripId??'none'} → ${a?.tripId??'none'}`,`${b?clock(b.departure):'—'} → ${a?clock(a.departure):'—'}`,`${r.baseline.followingGapSeconds??'—'} → ${r.selected.followingGapSeconds??'—'}`];
+        for(const value of fields){const td=document.createElement('td');td.textContent=value;next.append(td);}body.append(next);
+      }
     }
   };
   const dialog=document.createElement('dialog');dialog.id='demo-details';

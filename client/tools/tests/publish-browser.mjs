@@ -51,11 +51,15 @@ try {
  await page.locator('#departure-comparison summary').click({noWaitAfter:true});
  const departureText=await page.locator('#departure-comparison tbody').innerText();
  assert.match(departureText,/08:00:36 → 08:01:36/);assert.match(departureText,/720 → 780/);assert.match(departureText,/41623020 → 41623020/);
+ assert.equal(await page.locator('.following-departure').count(),3);
+ const followingText=await page.locator('.following-departure').first().innerText();
+ assert.match(followingText,/18005020 → 18005020/);assert.match(followingText,/08:12:36 → 08:12:36/);assert.match(followingText,/720 → 660/);
  if(!live)await page.screenshot({path:'shots/toronto-publish-departures.png',timeout:30000});
  await page.locator('#departure-comparison summary').click({noWaitAfter:true});
  await page.locator('#recording-mode').selectOption('baseline');await page.waitForFunction(()=>!window.__APP.tracks.header.transitScenario && !document.querySelector('#recording-mode').disabled);
  assert.deepEqual(await recordingState(),baseline);
  assert.match(await page.locator('#departure-comparison tbody').textContent(),/720 → 720/);
+ assert.match(await page.locator('.following-departure').first().textContent(),/720 → 720/);
  await page.locator('#focus-comparison').click({noWaitAfter:true,timeout:60000});
  const comparisonTarget=await page.evaluate(()=>window.__APP.controls.target.toArray()),vehicle=baseline.actors.find(a=>a.tripId==='122948020');
  assert.ok(Math.hypot(comparisonTarget[0]-vehicle.x,comparisonTarget[2]-vehicle.z)<.001);

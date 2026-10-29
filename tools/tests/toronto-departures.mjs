@@ -19,16 +19,34 @@ test('source, world and paired replay share departure events and same-pattern pr
  }
  assert.deepEqual(actual.rows.slice(3,6).map(r=>[r.baseline.gapSeconds,r.selected.gapSeconds]),[[720,780],[720,780],[720,780]]);
  const previous=actual.rows[3].baseline.previous.tripId;
- assert.deepEqual(model.departures(previous),baseline.departures(previous));
+ for(const [i,r] of model.departures(previous).rows.entries()){
+  const original=baseline.departures(previous).rows[i];
+  assert.equal(r.selected.departure,original.selected.departure);
+  assert.equal(r.selected.gapSeconds,original.selected.gapSeconds);
+  assert.equal(r.selected.followingGapSeconds,original.selected.followingGapSeconds+(i>=3?60:0));
+ }
  const next=model.graph.patterns.find(p=>p.id===actual.patternId).tripIds.find(id=>model.departures(id).rows[3].baseline.previous?.tripId===scenario.tripId);
- assert.ok(next);assert.equal(model.departures(next).rows[3].selected.gapSeconds,baseline.departures(next).rows[3].baseline.gapSeconds-60);
+ assert.ok(next);assert.equal(next,'18005020');
+ assert.deepEqual(actual.rows.slice(3,6).map(r=>[r.baseline.followingGapSeconds,r.selected.followingGapSeconds]),[[720,660],[720,660],[720,660]]);
+ for(const r of actual.rows){
+  assert.deepEqual(r.selected.following,r.baseline.following);
+  if(r.selected.following){
+   const t=source.trips.find(t=>t.trip_id===r.selected.following.tripId);
+   assert.equal(r.selected.following.departure,t.times[r.stopOccurrence].b);
+   assert.equal(model.departures(t.trip_id).rows[r.stopOccurrence].selected.gapSeconds,r.selected.followingGapSeconds);
+  }
+ }
+assert.equal(model.departures(next).rows[3].selected.gapSeconds,baseline.departures(next).rows[3].baseline.gapSeconds-60);
  model.update(12345);assert.deepEqual(model.departures(scenario.tripId),actual);
  assert.throws(()=>model.departures('missing'),/unavailable/);
  const pair=await exportTorontoComparison();
  assert.deepEqual(pair.dwell.header.transitDepartures,actual);
  assert.deepEqual(pair.baseline.header.transitDepartures,baseline.departures(scenario.tripId));
  validateDepartures(actual,pair.dwell.header);
- for(const mutate of [v=>v.rows[3].selected.gapSeconds++,v=>v.rows[3].stopId='bad',v=>v.rows[3].baseline.departure='',v=>v.rows[3].selected.departure++,v=>v.rows[3].selected.previous.tripId=v.tripId]){
+ const legacy=structuredClone(actual);legacy.version=1;
+ for(const row of legacy.rows)for(const key of ['baseline','selected']){delete row[key].following;delete row[key].followingGapSeconds;}
+ validateDepartures(legacy,pair.dwell.header);
+ for(const mutate of [v=>v.rows[3].selected.followingGapSeconds++,v=>v.rows[3].selected.following.departure++,v=>v.rows[3].selected.following.tripId=v.tripId,v=>v.rows[3].selected.following.departure='',v=>v.rows[3].selected.gapSeconds++,v=>v.rows[3].stopId='bad',v=>v.rows[3].baseline.departure='',v=>v.rows[3].selected.departure++,v=>v.rows[3].selected.previous.tripId=v.tripId]){
   const bad=structuredClone(actual);mutate(bad);assert.throws(()=>validateDepartures(bad,pair.dwell.header),/departure comparison/);
  }
 });
@@ -36,8 +54,8 @@ test('chronological predecessors handle overtaking, ties, midnight and loop occu
  const trips=[['a',86400],['b',86430],['c',86430]].map(([trip_id,b])=>({trip_id,times:[{stop_id:'loop',b},{stop_id:'loop',b:b+100}]}));
  const base={trips,stops:new Map()},graph={serviceDay:'20261022',patterns:[{id:'p',tripIds:['c','b','a']}]};
  const changed={...base,trips:trips.map(t=>t.trip_id==='a'?{...t,times:t.times.map(s=>({...s,b:s.b+60}))}:t)};
- const a=departureComparison(base,changed,graph,'a');assert.equal(a.rows[0].baseline.gapSeconds,null);assert.equal(a.rows[0].selected.previous.tripId,'c');assert.equal(a.rows[0].selected.gapSeconds,30);
+ const a=departureComparison(base,changed,graph,'a');assert.equal(a.rows[0].baseline.gapSeconds,null);assert.equal(a.rows[0].selected.previous.tripId,'c');assert.equal(a.rows[0].selected.gapSeconds,30);assert.equal(a.rows[0].baseline.following.tripId,'b');assert.equal(a.rows[0].selected.following,null);assert.equal(a.rows[0].selected.followingGapSeconds,null);
  assert.equal(clock(a.rows[1].selected.departure),'24:02:40');assert.equal(a.rows[1].stopOccurrence,1);
- const c=departureComparison(base,changed,graph,'c');assert.equal(c.rows[0].baseline.previous.tripId,'b');assert.equal(c.rows[0].baseline.gapSeconds,0);
+ const c=departureComparison(base,changed,graph,'c');assert.equal(c.rows[0].baseline.previous.tripId,'b');assert.equal(c.rows[0].baseline.gapSeconds,0);assert.equal(c.rows[0].selected.following.tripId,'a');assert.equal(c.rows[0].selected.followingGapSeconds,30);
  const b=departureComparison(base,changed,graph,'b');assert.equal(b.rows[0].selected.previous,null);
 });
