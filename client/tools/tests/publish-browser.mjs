@@ -26,6 +26,7 @@ try {
  page.setDefaultTimeout(30000);
  if(!live)await page.route('**/*',r=>{if(new URL(r.request().url()).origin!==new URL(base).origin){errors.push('Unexpected external asset '+r.request().url());return r.abort();}return r.continue();});
  let expectedRecordingFailure=false;
+ page.on('console',m=>{if(m.type()==='error'&&/Shader Error|WebGLProgram/.test(m.text()))errors.push(m.text());});
  page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400&&!expectedRecordingFailure)errors.push(`${r.status()} ${r.url()}`);});
  await page.goto(base,{waitUntil:'networkidle'});
  await page.waitForFunction(()=>window.__APP?.streamer.tiles.get('0_0')?.state==='ready' && window.__APP.engine.frames>3,{}, {timeout:90000});
@@ -91,6 +92,20 @@ try {
  await page.mouse.move(600,350);await page.mouse.down();await page.mouse.move(700,400,{steps:1});await page.mouse.up();
  assert.notDeepEqual(await page.evaluate(()=>window.__APP.engine.camera.position.toArray()),before);
  console.log('Verified orbit');
+ await page.locator('#focus-north').click({noWaitAfter:true,timeout:60000});
+ await page.waitForFunction(()=>{const a=window.__APP;return a.streamer.tiles.get('-2_-3')?.state==='ready'&&a.streamer.pz===a.controls.target.z&&a.streamer.outstanding===0;},{}, {timeout:90000});
+ const north=await page.evaluate(()=>{const a=window.__APP;return {target:a.controls.target.toArray(),parts:a.streamer.tiles.get('-2_-3').data.records.length,ground:!!a.scene.getObjectByName('illustratedFlatGround')};});
+ assert.ok(north.target[2]<-1300 && north.parts===395 && north.ground);
+ const budget=await page.evaluate(()=>{const a=window.__APP;return {triangles:[...a.streamer.tiles.values()].filter(t=>t.state==='ready').reduce((n,t)=>n+t.data.group.children.reduce((n,m)=>n+(m.geometry?.index?.count||m.geometry?.attributes.position?.count||0)/3,0),0),textures:a.renderer.info.memory.textures};});
+ assert.ok(budget.triangles<600000 && budget.textures<64,'Bounded loaded geometry and texture budget');
+ console.log('Verified expanded northern coverage',JSON.stringify({...north,...budget}));
+ const rendering=await page.evaluate(()=>{const a=window.__APP,t=performance.now();a.renderer.info.autoReset=false;a.renderer.info.reset();a.engine.composer.render();a.renderer.getContext().finish();const result={softwareFrameMs:performance.now()-t,drawCalls:a.renderer.info.render.calls,triangles:a.renderer.info.render.triangles};a.renderer.info.autoReset=true;return result;});
+ assert.ok(Number.isFinite(rendering.softwareFrameMs)&&rendering.drawCalls>0);
+ console.log('Software renderer frame measurement (not native-device FPS)',JSON.stringify(rendering));
+
+ if(!live)await page.screenshot({path:'shots/toronto-publish-north.png',timeout:30000});
+ await page.locator('#focus-district').click({noWaitAfter:true,timeout:60000});
+
  await page.setViewportSize({width:390,height:844});
  await page.waitForFunction(()=>Math.abs(window.__APP.engine.camera.aspect-390/844)<0.01);
  assert.equal(await page.evaluate(()=>window.__APP.renderer.getContext().isContextLost()),false);

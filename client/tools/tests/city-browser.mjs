@@ -20,7 +20,7 @@ try {
  await page.waitForFunction(()=>window.__APP.streamer.error || window.__APP.streamer.tiles.get('0_-3')?.state==='ready',{}, {timeout:90000});
  assert.equal(await page.evaluate(()=>window.__APP.streamer.error?.message||null),null);
  const context=await page.evaluate(()=>({roads:window.__APP.network.roads.length,stops:window.__APP.network.stops.length,nodes:window.__APP.network.nodes.length,lines:window.__APP.contextGroup.children.length}));
- assert.equal(context.roads,841);assert.equal(context.stops,43);assert.ok(context.nodes>100);assert.equal(context.lines,3);
+ assert.equal(context.roads,1589);assert.equal(context.stops,81);assert.ok(context.nodes>100);assert.equal(context.lines,3);
  await page.evaluate(()=>window.__APP.controls.target.set(0,0,-200));
  const moved=await page.evaluate(()=>{const a=window.__APP;a.seek(60);return {frame:a.replay.f,position:Array.from(a.traffic.pools['scheduled-trip-marker'].mb.instanceMatrix.array.slice(12,15)),expected:a.tracks.frames[60].veh[0]};});
  assert.deepEqual(await page.evaluate(()=>window.__APP.serviceGraph.occupancy),await page.evaluate(()=>window.__APP.tracks.header.transitFrames[60]));

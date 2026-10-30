@@ -7,6 +7,7 @@ import { assembleMassingTile } from '../world/massingTile.js';
 import { parseTracks } from '../replay/coreReplay.js';
 import { recordingSession, assertComparable } from './recordingSession.js';
 import { applyIdentity } from '../shared/identity.js';
+import { addIllustratedGround } from './appearance.js';
 import { PROFILE } from './profile.js';
 import { addDemoControls } from './demoControls.js';
 import { localFrame } from '../shared/localFrame.js';
@@ -33,12 +34,13 @@ export async function start() {
   let tracks=parseTracks(await response.arrayBuffer()), h=tracks.header;
   let session=recordingSession(tracks,tracksUrl,PROFILE);
   const engine=new Engine(document.querySelector('#app'));
-  engine.scene.background=new THREE.Color(0x182330);
+  engine.scene.background=new THREE.Color(0x8a9ca8);
   const streamer=await new Streamer(engine.scene,{manifest,profile:PROFILE,cityOverrides:false,assembleTile:assembleMassingTile,assetUrls:tileUrls}).init();
   let {replay,traffic,serviceGraph}=session;engine.scene.add(session.group);
   engine.camera.position.set(550,800,800);engine.camera.lookAt(0,0,-200);
   const controls=new OrbitControls(engine.camera,engine.renderer.domElement);controls.target.set(0,0,-200);controls.maxDistance=2200;controls.minDistance=30;controls.update();
-  const grid=new THREE.GridHelper(2560,80,0x607080,0x344454);grid.position.set(0,-0.1,-256);engine.scene.add(grid);
+  const local=localFrame(PROFILE.geoOrigin),sw=local.project(manifest.coverage[0],manifest.coverage[1]),ne=local.project(manifest.coverage[2],manifest.coverage[3]);
+  addIllustratedGround(engine.scene,[sw[0],ne[1],ne[0],sw[1]]);
   const contextGroup=addSourceNetwork(engine.scene,network,PROFILE);
 
   document.querySelector('#help').innerHTML='Drag to orbit · right-drag to pan · scroll/pinch to zoom<br><button id="pause-playback">Pause</button> <button id="restart-playback">Restart</button>';
@@ -88,7 +90,7 @@ export async function start() {
     streamer.update(controls.target.x,controls.target.z);
     if(!paused)elapsed=Math.min(h.simTime.at(-1),elapsed+dt);
     ENV.time.value=elapsed;traffic.update(dt);serviceGraph.update(replay.f);demoControls.update(elapsed);controls.update();
-    document.querySelector('#stats').textContent=`${clock(h.startSeconds+elapsed)} · scheduled-trip markers, not live vehicles${h.transitScenario?.extraDwellSeconds ? " · +60s dwell experiment" : ""} · flat ground`;
+    document.querySelector('#stats').textContent=`${clock(h.startSeconds+elapsed)} · scheduled-trip markers, not live vehicles${h.transitScenario?.extraDwellSeconds ? " · +60s dwell experiment" : ""} · procedural materials · flat ground`;
     if(streamer.tiles.get('0_0')?.state==='ready')document.querySelector('#loading').style.display='none';
   };
 }

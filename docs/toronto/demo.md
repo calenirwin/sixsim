@@ -20,9 +20,9 @@ The recording runs from 08:00 to 08:05 on the pinned **2026-10-22 service day**,
 
 | Layer | Included | Boundary |
 | --- | --- | --- |
-| Buildings | 2,344 City massing records, 2,531 polygon parts, 19 streamed tiles | About 2.15 km² around Spadina; source heights on flat ground, not complete Toronto or detailed facades |
-| Streets | 841 City centreline segments and intersection identifiers | Source context, not a lane or walkable-routing model |
-| Transit context | Paths and 43 stops for 501, 505, 506 and 510 | GTFS geometry, not surveyed tracks |
+| Buildings | 5,587 City massing records, 5,774 polygon parts, 29 streamed tiles | About 5.14 km² around Spadina; source heights on flat ground, not complete Toronto or detailed facades |
+| Streets | 1,589 City centreline segments and intersection identifiers | Source context, not a lane or walkable-routing model |
+| Transit context | Paths and 81 stops for 501, 505, 506 and 510 | GTFS geometry, not surveyed tracks |
 | Moving transit | 378 route-510 trips across seven validated service patterns | Scheduled symbolic positions, not observed vehicles or interacting traffic |
 | Experiment | One fixed +60-second stop dwell propagated downstream | An explicit what-if input, without recovery, passenger, signal or collision modeling |
 
@@ -82,3 +82,7 @@ Open **Downstream departures & gaps** in the main renderer. The table compares t
 A gap is measured from the chronologically preceding departure at the same directed GTFS pattern and stop occurrence. It excludes other patterns, directions and service days; it is not route-wide headway, passenger waiting time or observed reliability. Equal departures use trip-ID order deterministically and can have a zero gap. No predecessor is shown as —, without wrapping to yesterday. Times retain hours beyond 24:00 in America/Toronto service-day notation. This is a schedule perturbation without vehicle conflicts or recovery.
 
 Each stop also lists the chronologically following trip and its departure beside the target. At Willcocks, following trip `18005020` departs at 08:12:36 in both recordings, while its gap after the target changes from 720 to 660 seconds. The target's own gap from its predecessor grows to 780 seconds. These are temporal gaps at a stop, not spatial separation or a simulated response by the following vehicle. Following IDs are chosen independently in each recording and may differ if departure order changes; the final departure has no following trip, without wrapping to the next service day.
+
+### District navigation and appearance
+
+Use **Harbord & Spadina** to inspect the northern extension, then **Queen & Spadina** to return to the transit comparison. Panning streams the same 512 m source tiles; near detail remains bounded around the camera target, with no invented far-city buildings. The crop is 5.14 km², not all of Toronto. Original procedural window patterns, palette and flat ground texture improve depth and surface readability but do not represent measured facades, floor counts or terrain. Source heights, footprints and holes remain unchanged.

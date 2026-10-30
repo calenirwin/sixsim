@@ -14,8 +14,8 @@ const area = ring => ring.reduce((a, p, i) => {
 
 export function compileBlock(collection, out, { tx=0, tz=0, district=false } = {}) {
   const origin=[tx*512,tz*512];
-  if (collection.type !== 'FeatureCollection' || !collection.features.length || collection.features.length > (district ? 5000 : 50)) {
-    throw new Error('Expected 1–50 source features');
+  if (collection.type !== 'FeatureCollection' || !collection.features.length || collection.features.length > (district ? 10000 : 50)) {
+    throw new Error(district?'Expected 1–10000 district parts':'Expected 1–50 source features');
   }
   const positions = [], records = [], holes = [], identities = [], ids = new Set();
   function addRing(coordinates, exterior) {
@@ -37,7 +37,7 @@ export function compileBlock(collection, out, { tx=0, tz=0, district=false } = {
     if (typeof feature.id !== 'string' || ids.has(feature.id)) throw new Error('Missing/duplicate source ID');
     ids.add(feature.id);
     const height = feature.properties?.[PROFILE.heightField];
-    if (!Number.isFinite(height) || height <= 0 || height >= 300) throw new Error('Missing/invalid observed height');
+    if (!Number.isFinite(height) || height <= 0 || height >= 600) throw new Error('Missing/invalid observed height');
     const geom = feature.geometry;
     const polygons = geom?.type === 'Polygon' ? [geom.coordinates] : geom?.type === 'MultiPolygon' ? geom.coordinates : null;
     if (!polygons?.length) throw new Error('Expected Polygon/MultiPolygon');
@@ -86,7 +86,7 @@ export function compileBlock(collection, out, { tx=0, tz=0, district=false } = {
 // Whole polygon parts belong to their bounding-box centre tile. Boundary-crossing
 // vertices remain intact in local float coordinates; no clipping or duplication.
 export function compileDistrict(collection, out) {
-  if(collection.type!=='FeatureCollection' || !collection.features.length || collection.features.length>5000) throw new Error('District source budget exceeded');
+  if(collection.type!=='FeatureCollection' || !collection.features.length || collection.features.length>10000) throw new Error('District source budget exceeded');
   const groups=new Map(), seen=new Set();
   for(const feature of collection.features) {
     if(typeof feature.id!=='string' || seen.has(feature.id))throw new Error('Missing/duplicate source ID');

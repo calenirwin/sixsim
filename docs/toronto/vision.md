@@ -14,7 +14,7 @@ Display branding is configurable and independent of dataset IDs, geographic prof
 | World simulation | Fixed-step clock, streamed spatial data, model updates, post-step hooks | Scheduled trip positions advance with the inherited clock; traffic and pedestrians require a Toronto navigation graph |
 | Control API | Existing framed TCP transport and shared bridge | Map metadata and geographic conversion use the selected origin; Python clients query scheduled transit and advance the world |
 | Cameras | Geographic path keys projected into the world frame | Headless camera paths use the tile manifest’s origin; legacy manifests retain the inherited NYC frame |
-| Rendering and recording | Browser engine, tile streamer, ATRK actor replay; remote renderer protocol | Main browser selects neutral source massing and scheduled-trip symbols. NYC assembly is loaded only for its profile. Remote sensors, Electron and Unreal require further adaptation |
+| Rendering and recording | Browser engine, tile streamer, ATRK actor replay; remote renderer protocol | Main browser selects source massing with explicitly illustrative procedural materials and scheduled-trip symbols. NYC assembly is loaded only for its profile. Remote sensors, Electron and Unreal require further adaptation |
 
 ## Dataset and motion contracts
 
@@ -42,7 +42,7 @@ Start with stop/link occupancy and travel-time diagnostics. Add movement constra
 
 ### Toronto rendering
 
-Extend the existing browser profile from neutral source massing and scheduled-trip symbols to neighbourhood geometry and appropriate licensed assets. Remove operational dependence on NYC landmarks, street dressing, station details and facade overrides without deleting their attribution or historical implementations. Preserve neutral geometry where source data cannot justify detailed appearance.
+Expand the existing browser profile through bounded neighbourhood geometry and appropriate licensed assets, keeping measured geometry separate from illustrative materials. Remove operational dependence on NYC landmarks, street dressing, station details and facade overrides without deleting their attribution or historical implementations. Preserve neutral geometry where source data cannot justify detailed appearance.
 
 ### Scenarios and validation
 
@@ -82,3 +82,7 @@ The shared scheduled-transit model computes baseline and selected departures for
 Departure ordering is recomputed independently for baseline and selected schedules; changing order can change the predecessor. Ties use trip ID, the first departure has no predecessor, and there is no service-day wrapping. Replay validates topology identity, service day, finite event times, gap arithmetic and scenario departure deviations before replacing the displayed recording. Published GTFS times remain the source; no live observations or physical conflict resolution are inferred.
 
 Departure-comparison schema version 2 adds `following` (trip ID and departure seconds, or null) and `followingGapSeconds` to each baseline/selected event. The gap is from the requested trip to the immediately following same-pattern departure at that occurrence. Version 1 recordings remain readable without following rows. The API, world export and browser share the same chronological selection; following-trip service times remain unchanged unless that trip is itself the configured dwell target. No car-following, collision or passenger interaction is inferred from these gaps.
+
+### Coverage and visual materials
+
+The pinned district extraction uses longitude −79.410 to −79.385 and latitude 43.642 to 43.665 (about 5.14 km²), retaining whole source geometry without clipping or repair. The 512 m tile pipeline supports bounded adjacent extracts; raw archives remain outside Git. Near-detail streaming is retained rather than loading the whole archive. Original procedural colours, window patterns and ground texture are illustrative, independently replaceable from source geometry. They do not supply measured facade textures, floors, land cover or elevation. Further expansion must keep explicit source coverage, omission provenance and byte/rendering budgets.

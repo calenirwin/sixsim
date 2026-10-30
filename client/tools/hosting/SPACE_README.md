@@ -14,7 +14,7 @@ Explore real City building massing and streets around Spadina with TTC 510 sched
 
 This is a bounded Toronto adaptation of [Valdrada](https://github.com/mkturkcan/valdrada), created by Mehmet Kerem Turkcan. [SixSim](https://github.com/calenirwin/sixsim) is the fork's provisional working name, maintained by Calen Irwin.
 
-The five-minute recording uses the pinned 2026-10-22 service day in America/Toronto. Buildings cover about 2.15 km²; route coverage extends beyond them. Moving symbols are scheduled positions, not live vehicle observations, surveyed track positions or interacting traffic. Ground is flat. The included extra-dwell comparison is explicitly labeled; it changes one trip and is a what-if model, not an observed delay.
+The five-minute recording uses the pinned 2026-10-22 service day in America/Toronto. Buildings cover about 5.14 km²; route coverage extends beyond them. Moving symbols are scheduled positions, not live vehicle observations, surveyed track positions or interacting traffic. Ground is flat. The included extra-dwell comparison is explicitly labeled; it changes one trip and is a what-if model, not an observed delay.
 
 Code is MIT; documentation and data retain their separate terms in [component licensing](LICENSING.md.txt). Contains information licensed under the Open Government Licence – Toronto. [Source provenance](DATA_SOURCES.json), [upstream acknowledgements](ACKNOWLEDGEMENTS.md.txt), and the [code licence](LICENSE.txt) accompany this package. No City or TTC endorsement is implied.
 
