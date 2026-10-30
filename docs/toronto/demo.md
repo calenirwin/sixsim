@@ -48,7 +48,7 @@ To choose a different valid build-time scenario as the initial recording:
 TORONTO_TRANSIT_SCENARIO=tools/toronto/scenarios/510-stop-dwell.json npm --prefix client run dev:city
 ```
 
-The included comparison scenario adds 60 seconds at Spadina Avenue / Willcocks Street for one specified trip. It is labeled in the clock and source panel. Willcocks is just north of the building crop; transit coverage extends there. Other trips remain unchanged. See [the scenario contract](vision.md#fixed-extra-dwell-experiment) for exact inputs, timing and API access.
+The included comparison scenario adds 60 seconds at Spadina Avenue / Willcocks Street for one specified trip. It is labeled in the clock and source panel. Willcocks is within the Spadina district building crop. Other trips remain unchanged. See [the scenario contract](vision.md#fixed-extra-dwell-experiment) for exact inputs, timing and API access.
 
 ## A personal project page and a static Space
 
@@ -90,3 +90,7 @@ Use **Harbord & Spadina** to inspect the northern extension, then **Queen & Spad
 ### Official green-space designations
 
 Use **Grange Park** to focus a named source polygon, and **Green-space designations: on/off** to compare against the neutral ground. The overlay contains 44 generalized City park/open-space records clipped to the same district. Green represents Park/Open Green Space, tan represents civic squares and grey represents other designations. Colours are illustrative: a designation can contain paving or private land and does not establish vegetation or public access. Source holes and boundaries are retained, with district-edge clipping explicitly recorded. The ground remains flat; transit and routing behavior are unchanged.
+
+### Historical classified cover
+
+At **Grange Park**, enable **2018 classified cover** to compare mapped canopy, grass, shrub and impervious classes with the surrounding buildings and streets. Expand the class legend for colours and limits. This replaces the green-space designation overlay; toggling it off restores the neutral ground, while selecting designations restores that separate layer. The 512 × 640 display grid samples the City's 2018 classification at approximately 4 m. Canopy can obscure streets and other ground surfaces. Source dates differ from the building and designation layers; colours are illustrative, elevation remains flat, and no current vegetation, public access or physical traffic parameters are inferred. Both recordings use the same source context.

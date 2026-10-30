@@ -53,8 +53,9 @@ try {
  await page.locator('#focus-district').click({noWaitAfter:true,timeout:60000});
  console.log('Verified official green-space overlay, toggle and source-derived focus');
 
+ await page.locator('#toggle-land-cover').click({noWaitAfter:true,timeout:60000});
  await page.evaluate(()=>{window.__APP.setPaused(true);window.__APP.seek(70);});
- const recordingState=()=>page.evaluate(()=>{const a=window.__APP;return {frame:a.replay.f,camera:a.engine.camera.position.toArray(),target:a.controls.target.toArray(),actors:a.tracks.frames[a.replay.f].veh.map(v=>({tripId:a.tracks.header.actors.find(r=>r.id===v.id).tripId,x:v.x,z:v.z})).sort((a,b)=>a.tripId.localeCompare(b.tripId)),groups:a.scene.children.filter(g=>g.name==='scheduledRecording').length};});
+ const recordingState=()=>page.evaluate(()=>{const a=window.__APP;return {cover:a.landCover.visible,frame:a.replay.f,camera:a.engine.camera.position.toArray(),target:a.controls.target.toArray(),actors:a.tracks.frames[a.replay.f].veh.map(v=>({tripId:a.tracks.header.actors.find(r=>r.id===v.id).tripId,x:v.x,z:v.z})).sort((a,b)=>a.tripId.localeCompare(b.tripId)),groups:a.scene.children.filter(g=>g.name==='scheduledRecording').length};});
  const baseline=await recordingState();
  expectedRecordingFailure=true;
  await page.route('**/*tracks-dwell*.atrk',r=>r.fulfill({status:503,body:'unavailable'}));
@@ -64,7 +65,7 @@ try {
  await page.unroute('**/*tracks-dwell*.atrk');expectedRecordingFailure=false;
  await page.locator('#recording-mode').selectOption('dwell');
  await page.waitForFunction(()=>window.__APP.tracks.header.transitScenario?.extraDwellSeconds===60 && !document.querySelector('#recording-mode').disabled);
- const delayed=await recordingState();assert.equal(delayed.frame,70);assert.deepEqual(delayed.camera,baseline.camera);assert.deepEqual(delayed.target,baseline.target);assert.equal(delayed.groups,1);
+ const delayed=await recordingState();assert.equal(delayed.cover,true);assert.equal(delayed.frame,70);assert.deepEqual(delayed.camera,baseline.camera);assert.deepEqual(delayed.target,baseline.target);assert.equal(delayed.groups,1);
  assert.deepEqual(delayed.actors.filter(a=>a.tripId!=='122948020'),baseline.actors.filter(a=>a.tripId!=='122948020'));
  assert.notDeepEqual(delayed.actors.find(a=>a.tripId==='122948020'),baseline.actors.find(a=>a.tripId==='122948020'));
  assert.match(await page.locator('#comparison-detail').innerText(),/at stop.*\+60s/);
@@ -83,7 +84,9 @@ try {
  await page.locator('#focus-comparison').click({noWaitAfter:true,timeout:60000});
  const comparisonTarget=await page.evaluate(()=>window.__APP.controls.target.toArray()),vehicle=baseline.actors.find(a=>a.tripId==='122948020');
  assert.ok(Math.hypot(comparisonTarget[0]-vehicle.x,comparisonTarget[2]-vehicle.z)<.001);
- console.log('Verified baseline/dwell comparison, retained state on failure, and trip focus');
+ await page.locator('#toggle-green-spaces').click({noWaitAfter:true,timeout:60000});
+ assert.equal(await page.evaluate(()=>window.__APP.landCover.visible),false);
+ console.log('Verified baseline/dwell comparison, cover persistence, retained state on failure, and trip focus');
 
  await page.locator('#playback-time').evaluate(e=>{e.value='120';e.dispatchEvent(new Event('input',{bubbles:true}));});
  assert.equal(await page.evaluate(()=>window.__APP.replay.f),120);

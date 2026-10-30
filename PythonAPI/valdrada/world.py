@@ -262,7 +262,7 @@ class World:
 
     # ---- content
     def get_source_network(self) -> dict:
-        """Source centrelines, GTFS and green-space designations in EPSG:4326; not routing or access rights."""
+        """Source centrelines, GTFS, green-space designations and 2018 classified cover in EPSG:4326; not routing or access rights."""
         return self._call("map.get_source_network")
 
     def get_transit_graph(self) -> dict:
