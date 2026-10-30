@@ -199,3 +199,18 @@ Ontario/NRCan elevation products are alternatives if City TIN cannot provide a b
 
 1. A street/walkway crop around the existing massing block: validate CRS, source IDs, feature filtering and connectivity against the source before rendering it.
 2. One TTC corridor and one service day from merged static GTFS: validate referential integrity, calendars, shapes and after-midnight timing offline. Live tracking and Metrolinx access are unnecessary for this experiment.
+
+## Green Spaces ground context
+
+[Official dataset](https://open.toronto.ca/dataset/green-spaces/) · [Official metadata](https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_show?id=green-spaces) · [Licence](https://open.toronto.ca/open-data-licence/)
+
+| Field | Source / integration |
+| --- | --- |
+| Owner / geography | City Parks, Forestry & Recreation with Geospatial Competency Centre; Toronto |
+| Format / coordinates | Official 8,896,512-byte GeoPackage, EPSG:4326 verified from geometry metadata; no elevation |
+| Update / snapshot | Monthly; resource modified 2026-10-27, retrieved 2026-10-30; hash and URL pinned in green-spaces-provenance.json |
+| Licence / access | Dataset page and CKAN explicitly identify OGL–Toronto; attribution retained in app and package. Public download, no authentication; no API quota dependency at runtime |
+| Source versus derived | Raw archive ignored; 44 polygons clipped to the existing 5.14 km² district, with holes retained and no repair/simplification. GeoJSON and provenance committed; deterministic offline extraction |
+| Meaning / limits | Generalized parks/open-space designations, not exhaustive land cover. Includes potentially private and paved areas. No inferred vegetation, public access, land title, terrain height or navigation |
+| Integration | Shared source-network API context and a merged flat browser overlay; illustrative class colours, toggle and Grange Park focus. Does not alter roads, actors or routing |
+| Next step | Compare appropriately licensed actual land-cover/elevation observations before assigning physical surfaces or terrain heights |

@@ -8,6 +8,7 @@ import { createWorld } from './world.mjs';
 import { scheduledTransit } from './scheduledTransit.mjs';
 import { compileDistrict } from '../../client/tools/toronto/compile.mjs';
 import { sourceNetwork } from '../../client/src/toronto/sourceNetwork.js';
+import { validateGreenSpaces } from '../../client/src/toronto/greenSpaces.js';
 import { PROFILE } from '../../client/src/toronto/profile.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 function environmentScenario() {
@@ -24,6 +25,10 @@ export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = 
   const networkProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/network-provenance.json')));
   if(createHash('sha256').update(networkBytes).digest('hex')!==networkProvenance.subset_sha256)throw new Error('Network provenance hash mismatch');
   const network={...sourceNetwork(JSON.parse(networkBytes)),provenance:networkProvenance};
+  const greenBytes=fs.readFileSync(path.join(root,'client/fixtures/toronto/green-spaces.geojson'));
+  const greenProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/green-spaces-provenance.json')));
+  if(createHash('sha256').update(greenBytes).digest('hex')!==greenProvenance.subset_sha256)throw new Error('Green-space provenance hash mismatch');
+  network.greenSpaces={...validateGreenSpaces(JSON.parse(greenBytes)),provenance:greenProvenance};
   fs.writeFileSync(path.join(tilesDir,'network.json'),JSON.stringify(network));
   const bytes = fs.readFileSync(path.join(root, 'client/fixtures/transit/510-20261022.json'));
   const provenance = JSON.parse(fs.readFileSync(path.join(root, 'client/fixtures/transit/provenance.json')));

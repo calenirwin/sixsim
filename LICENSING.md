@@ -91,3 +91,7 @@ above are unchanged; combining additional datasets/assets needs their terms too.
 ## Toronto static transit study
 
 The separate `client/fixtures/transit/` subset derives from TTC merged GTFS and carries the Toronto Open Government Licence notice. Its source evidence, metadata discrepancy and exact hashes are recorded in [the transit fixture documentation](client/fixtures/transit/README.md). It contains schedules, not live observations, and does not change inherited asset or OSM data terms.
+
+## Toronto Green Spaces
+
+The district's green-space context is derived from the City's [Green Spaces dataset](https://open.toronto.ca/dataset/green-spaces/), licensed under [OGL–Toronto](https://open.toronto.ca/open-data-licence/). Both the official dataset page and CKAN metadata identify that licence. Attribution and pinned source/derived hashes are retained in `client/fixtures/toronto/green-spaces-provenance.json` and the static package. These generalized designations may include private or paved areas; they confer no public-access permission and are not a surveyed land-cover or terrain product. Rendering colours are original illustration, not City imagery or endorsement.

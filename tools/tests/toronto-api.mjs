@@ -58,6 +58,8 @@ try:
  assert sum(len(x['actorIds']) for k in ['nodes','edges'] for x in t['occupancy'][k])==10
  network=w.get_source_network()
  assert network['coordinates']=='EPSG:4326' and network['routing'] is False
+ assert len(network['greenSpaces']['features'])==44
+ assert network['greenSpaces']['provenance']['source_sha256']=='9e57e8341042903f44e50a1589b1a393eb2dd331261f3b60e1d64ba41ec2162c'
  assert len(network['roads'])==1589 and len(network['stops'])==81
  assert t['provenance']['subset_sha256']=='6fbce770e767f802f088bd152974d32a4ed7ec319efc1fc5b9cdeed45b8a7f1f'
  assert t['basis']=='schedule-derived' and len(t['actors'])==10

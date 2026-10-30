@@ -19,3 +19,5 @@ The five-minute recording uses the pinned 2026-10-22 service day in America/Toro
 Code is MIT; documentation and data retain their separate terms in [component licensing](LICENSING.md.txt). Contains information licensed under the Open Government Licence – Toronto. [Source provenance](DATA_SOURCES.json), [upstream acknowledgements](ACKNOWLEDGEMENTS.md.txt), and the [code licence](LICENSE.txt) accompany this package. No City or TTC endorsement is implied.
 
 This prebuilt static package needs no server process, API key, GPU instance or external asset CDN. Its commit identity is recorded in `deployment.json`.
+
+The optional ground overlay shows 44 official City Green Spaces designations. Use the toggle or Grange Park focus in the main renderer. These generalized polygons include potentially paved/private areas and are not vegetation, public-access, terrain or routing measurements. Source attribution and provenance are included in DATA_SOURCES.json.

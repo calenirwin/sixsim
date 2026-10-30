@@ -34,6 +34,17 @@ try {
  const result=await page.evaluate(()=>{const a=window.__APP;a.setPaused(true);a.seek(0);const initial=Array.from(a.traffic.pools['scheduled-trip-marker'].mb.instanceMatrix.array);a.seek(60);const changed=Array.from(a.traffic.pools['scheduled-trip-marker'].mb.instanceMatrix.array).some((v,i)=>v!==initial[i]);return {masses:a.streamer.tiles.get('0_0').data.records.length,actors:a.traffic.cars.length,changed,frame:a.replay.f,commitProfile:a.profile.id};});
  assert.equal(result.masses,360);assert.ok(result.actors>0);assert.equal(result.changed,true);assert.equal(result.frame,60);
  console.log('Verified playback');
+ assert.equal(await page.evaluate(()=>window.__APP.greenSpaces.userData.records),44);
+ const groundCost=await page.evaluate(()=>{const g=window.__APP.greenSpaces;return {meshes:g.children.length,triangles:g.children[0].geometry.attributes.position.count/3};});assert.deepEqual(groundCost,{meshes:1,triangles:3072});console.log('Green-space render cost',JSON.stringify(groundCost));
+ await page.locator('#toggle-green-spaces').click({noWaitAfter:true,timeout:60000});assert.equal(await page.evaluate(()=>window.__APP.greenSpaces.visible),false);
+ await page.locator('#toggle-green-spaces').click({noWaitAfter:true,timeout:60000});assert.equal(await page.evaluate(()=>window.__APP.greenSpaces.visible),true);
+ await page.locator('#focus-green-space').click({noWaitAfter:true,timeout:60000});
+ const greenTarget=await page.evaluate(()=>window.__APP.controls.target.toArray());
+ const [greenLon,greenLat]=localFrame({lat:43.65,lon:-79.397}).unproject(greenTarget[0],greenTarget[2]);assert.ok(greenLon>-79.394&&greenLon<-79.39&&greenLat>43.65&&greenLat<43.654);
+ if(!live)await page.screenshot({path:'shots/toronto-publish-green-spaces.png',timeout:30000});
+ await page.locator('#focus-district').click({noWaitAfter:true,timeout:60000});
+ console.log('Verified official green-space overlay, toggle and source-derived focus');
+
  await page.evaluate(()=>{window.__APP.setPaused(true);window.__APP.seek(70);});
  const recordingState=()=>page.evaluate(()=>{const a=window.__APP;return {frame:a.replay.f,camera:a.engine.camera.position.toArray(),target:a.controls.target.toArray(),actors:a.tracks.frames[a.replay.f].veh.map(v=>({tripId:a.tracks.header.actors.find(r=>r.id===v.id).tripId,x:v.x,z:v.z})).sort((a,b)=>a.tripId.localeCompare(b.tripId)),groups:a.scene.children.filter(g=>g.name==='scheduledRecording').length};});
  const baseline=await recordingState();
@@ -113,6 +124,7 @@ try {
  const layout=await page.evaluate(()=>{const box=id=>document.querySelector(id).getBoundingClientRect();return {topClear:box('#help').top>=box('#loc').bottom,bottomClear:box('#stats').bottom<=box('#credits').top};});
  assert.deepEqual(layout,{topClear:true,bottomClear:true});
  console.log('Verified mobile layout');
+ await page.locator('#toggle-green-spaces').click({noWaitAfter:true,timeout:60000});assert.equal(await page.evaluate(()=>window.__APP.greenSpaces.visible),false);await page.locator('#toggle-green-spaces').click({noWaitAfter:true,timeout:60000});
  await page.locator('#departure-comparison summary').click({noWaitAfter:true});
  assert.match(await page.locator('#departure-comparison tbody').innerText(),/720 → 720/);
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Expanded comparison must not overflow mobile viewport');

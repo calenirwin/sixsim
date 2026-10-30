@@ -86,3 +86,7 @@ Each stop also lists the chronologically following trip and its departure beside
 ### District navigation and appearance
 
 Use **Harbord & Spadina** to inspect the northern extension, then **Queen & Spadina** to return to the transit comparison. Panning streams the same 512 m source tiles; near detail remains bounded around the camera target, with no invented far-city buildings. The crop is 5.14 km², not all of Toronto. Original procedural window patterns, palette and flat ground texture improve depth and surface readability but do not represent measured facades, floor counts or terrain. Source heights, footprints and holes remain unchanged.
+
+### Official green-space designations
+
+Use **Grange Park** to focus a named source polygon, and **Green-space designations: on/off** to compare against the neutral ground. The overlay contains 44 generalized City park/open-space records clipped to the same district. Green represents Park/Open Green Space, tan represents civic squares and grey represents other designations. Colours are illustrative: a designation can contain paving or private land and does not establish vegetation or public access. Source holes and boundaries are retained, with district-edge clipping explicitly recorded. The ground remains flat; transit and routing behavior are unchanged.

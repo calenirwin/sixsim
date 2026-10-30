@@ -52,3 +52,9 @@ The extractor is offline, verifies input hashes and emits deterministic source s
 ## Illustrative materials
 
 The main renderer uses original deterministic procedural colours and anti-aliased window patterns on the source extrusions, with darker roof surfaces and a neutral textured flat ground plane bounded by the source crop. These are visual conventions, not observed facades, floor counts, roof materials, land use or elevation. No texture library, aerial imagery or new licence dependency is required. `AVG_HEIGHT` values up to the bounded 600 m import limit are retained; the selected maximum is 443 m. Whole invalid geometries and rings below the documented minimum area remain excluded, with snapshot IDs recorded in provenance.
+
+## Green-space context
+
+`green-spaces.geojson` contains 44 clipped official [Green Spaces](https://open.toronto.ca/dataset/green-spaces/) polygons; `green-spaces-provenance.json` pins the GeoPackage hash, CRS, licence evidence and clipping IDs. Reproduce with `python client/tools/toronto/extract_green_spaces.py client/data/toronto/green-spaces-20261030.gpkg` after installing the existing extraction requirements. The raw 8.9 MB GeoPackage stays ignored. The extractor verifies the exact source hash and EPSG:4326, preserves holes, and records invalid geometries rather than repairing them.
+
+These generalized designations include potentially paved/private areas; they are not exhaustive land cover, access permissions or terrain. The renderer's class colours and flat elevation are illustrative. The same records are carried in `world.get_source_network()['greenSpaces']`; display clipping creates no routing edges.
