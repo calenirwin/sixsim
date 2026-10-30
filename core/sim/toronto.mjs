@@ -8,6 +8,7 @@ import { createWorld } from './world.mjs';
 import { scheduledTransit } from './scheduledTransit.mjs';
 import { compileDistrict } from '../../client/tools/toronto/compile.mjs';
 import { sourceNetwork } from '../../client/src/toronto/sourceNetwork.js';
+import {decodeLandCover} from '../../client/src/toronto/landCover.js';
 import { validateGreenSpaces } from '../../client/src/toronto/greenSpaces.js';
 import { PROFILE } from '../../client/src/toronto/profile.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -29,6 +30,10 @@ export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = 
   const greenProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/green-spaces-provenance.json')));
   if(createHash('sha256').update(greenBytes).digest('hex')!==greenProvenance.subset_sha256)throw new Error('Green-space provenance hash mismatch');
   network.greenSpaces={...validateGreenSpaces(JSON.parse(greenBytes)),provenance:greenProvenance};
+  const coverBytes=fs.readFileSync(path.join(root,'client/fixtures/toronto/land-cover-2018.json'));
+  const coverProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/land-cover-provenance.json')));
+  if(createHash('sha256').update(coverBytes).digest('hex')!==coverProvenance.subset_sha256)throw Error('Land-cover provenance hash mismatch');
+  const cover=JSON.parse(coverBytes);decodeLandCover(cover);network.landCover={...cover,provenance:coverProvenance};
   fs.writeFileSync(path.join(tilesDir,'network.json'),JSON.stringify(network));
   const bytes = fs.readFileSync(path.join(root, 'client/fixtures/transit/510-20261022.json'));
   const provenance = JSON.parse(fs.readFileSync(path.join(root, 'client/fixtures/transit/provenance.json')));

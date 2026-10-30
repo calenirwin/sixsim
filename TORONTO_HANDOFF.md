@@ -32,7 +32,7 @@ The included source crop is approximately 5.14 km² around Spadina: longitude
 context stops for routes 501/505/506/510. Only pinned route 510 schedules drive
 moving symbols, on service day 2026-10-22 in America/Toronto.
 
-A toggleable ground layer adds 44 generalized City green-space designations, also available in the source-network API; it does not establish vegetation, access rights or routing. Ground is flat. Source footprints, holes and average heights are retained;
+A toggleable ground layer adds 44 generalized City green-space designations, also available in the source-network API; it does not establish vegetation, access rights or routing. An optional 2018 City classified-cover layer distinguishes historical canopy, grass, shrub and impervious classes at approximately 4 m display resolution. It replaces the designation overlay when enabled; canopy does not reveal the surface underneath, and neither layer supplies elevation. Ground is flat. Source footprints, holes and average heights are retained;
 procedural colours/window patterns and ground texture are original illustration,
 not measured facades, floor counts, land cover or terrain. GTFS links are service
 geometry, not surveyed rails. No live tracking, collision response, interacting

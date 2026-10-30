@@ -1,6 +1,6 @@
 import { clock } from './transit.js';
 // Presentation controls for the existing world recording; no alternate simulator.
-export function addDemoControls({seek,setPaused,duration,geoFrame,controls,engine,header,mode,selectRecording,comparisonState,comparisonStart,greenSpaces,greenFocus}) {
+export function addDemoControls({seek,setPaused,duration,geoFrame,controls,engine,header,mode,selectRecording,comparisonState,comparisonStart,greenSpaces,landCover,greenFocus}) {
   const help=document.querySelector('#help');
   const row=document.createElement('div');row.className='toronto-demo-controls';
   row.innerHTML='<button id="focus-district">Queen &amp; Spadina</button> <button id="about-demo">About &amp; sources</button><br><label for="playback-time">Playback time </label><input id="playback-time" type="range" min="0" step="1" aria-label="Playback time in seconds"><output id="playback-offset"></output>';
@@ -9,7 +9,12 @@ export function addDemoControls({seek,setPaused,duration,geoFrame,controls,engin
   variants.innerHTML='<label for="recording-mode">Recording </label><select id="recording-mode"><option value="baseline">Published timetable</option><option value="dwell">+60s dwell experiment</option></select><span id="recording-status" role="status"></span>';
   row.prepend(variants);
   const green=document.createElement('button');green.id='toggle-green-spaces';green.textContent='Green-space designations: on';green.setAttribute('aria-pressed','true');row.append(green);
-  green.onclick=()=>{greenSpaces.visible=!greenSpaces.visible;green.textContent=`Green-space designations: ${greenSpaces.visible?'on':'off'}`;green.setAttribute('aria-pressed',String(greenSpaces.visible));engine.wake();};
+  const cover=document.createElement('button');cover.id='toggle-land-cover';row.append(cover);
+  const legend=document.createElement('details');legend.id='land-cover-legend';legend.style.maxWidth='400px';legend.style.marginLeft='auto';const summary=document.createElement('summary');summary.textContent='2018 cover · historical top-down classes';legend.append(summary);const legendText=document.createElement('p');legendText.textContent='2018 top-down classification: dark green tree canopy, light green grass, olive shrub, tan bare, blue water, warm grey buildings, dark grey roads, pale grey other paving. Unknown cells are transparent. Canopy can cover roads; this is not current ground truth.';legend.append(legendText);row.append(legend);
+  const syncCover=()=>{for(const [button,layer,label] of [[green,greenSpaces,'Green-space designations'],[cover,landCover,'2018 classified cover']]){button.textContent=`${label}: ${layer.visible?'on':'off'}`;button.setAttribute('aria-pressed',String(layer.visible));}legend.hidden=!landCover.visible;engine.wake();};
+  green.onclick=()=>{greenSpaces.visible=!greenSpaces.visible;if(greenSpaces.visible)landCover.visible=false;syncCover();};
+  cover.onclick=()=>{landCover.visible=!landCover.visible;if(landCover.visible)greenSpaces.visible=false;syncCover();};syncCover();
+
   const park=document.createElement('button');park.id='focus-green-space';park.textContent='Grange Park';row.append(park);
   park.onclick=()=>{const [x,z]=greenFocus;controls.target.set(x,0,z);engine.camera.position.set(x+280,420,z+500);controls.update();engine.wake();};
   const north=document.createElement('button');north.id='focus-north';north.textContent='Harbord & Spadina';row.prepend(north);
@@ -58,6 +63,7 @@ export function addDemoControls({seek,setPaused,duration,geoFrame,controls,engin
 <p><strong>What comes from sources?</strong> Source footprints, heights, centrelines, GTFS stops and paths. Orange symbols move from published times; teal links show scheduled occupancy. These are not observed vehicles or interacting road traffic. Ground elevation is assumed flat. Building colours, window patterns and ground material are original procedural illustration, not measured facades, floors or imagery.</p>
 <p>The recording covers five minutes of the pinned 2026-10-22 service day (America/Toronto). It stops at the end; Restart returns to its beginning. Buildings cover about 5.14 km²; route geometry continues beyond that crop.</p>
 <p>Coloured ground overlays are 44 City Green Spaces designations: generalized parks/open spaces, including paved and potentially private areas. They do not establish vegetation, public access or walkable routes. Green marks Park/Open Green Space; tan marks civic squares; grey marks other designations. Ground remains flat. <a href="https://open.toronto.ca/dataset/green-spaces/" target="_blank" rel="noopener">Official source</a>.</p>
+<p>The optional 2018 classified-cover layer comes from the City <a href="https://open.toronto.ca/dataset/forest-and-land-cover/">Forest and Land Cover study</a>, sampled to an approximately 4 m display grid. It shows historical top-down classes, not current vegetation or the surface beneath canopy. Colours are illustrative; ground remains flat. It replaces the designation overlay when enabled.</p>
 <p id="demo-scenario"></p>
 <p>Contains information licensed under the <a href="https://open.toronto.ca/open-data-licence/" target="_blank" rel="noopener">Open Government Licence – Toronto</a>. Framework: <a href="https://github.com/mkturkcan/valdrada" target="_blank" rel="noopener">Valdrada</a>, Mehmet Kerem Turkcan (MIT). SixSim is a working name.</p>
 <p><a href="https://github.com/calenirwin/sixsim" target="_blank" rel="noopener">Source and documentation</a> · <a href="https://github.com/calenirwin/sixsim/blob/main/docs/toronto/data-sources.md" target="_blank" rel="noopener">Data-source register</a></p>

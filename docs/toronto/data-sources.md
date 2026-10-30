@@ -156,13 +156,23 @@ The existing subset relies on the affirmative official portal and dataset-note e
 | Field | Record |
 |---|---|
 | Owner / geography | City of Toronto — Parks, Forestry & Recreation; Toronto |
-| Status | Catalogue verified, not imported |
-| Format / coordinates | ZIP/RAR study products; 2008 and 2018 vintages. Older study describes NAD27/MTM; inspect selected version, not one global CRS. |
-| Update evidence | Catalogue cadence: As available; last refresh: 2022-08-17 19:46:56.327429. These describe publication, not accuracy or measurement date. |
-| Terms / attribution / redistribution | Toronto portal licence evidence as above; CKAN licence: missing, id: missing. Preserve source-specific limitations; verify selected resource terms before redistribution. |
-| Access / quotas | Public metadata read without authentication; resource/service requirements and quotas not verified. No credential supplied or requested. |
-| Source versus derived storage | Preserve study vintage and original classification; separate canopy from ground/land-use inference. |
-| Next integration step | Choose a small current-enough crop after format/size/terms verification; canopy can obscure underlying features. |
+| Status | Integrated historical 2018 classified-cover grid over the 5.14 km² district; available in the source-network API and renderer, separately from green-space designations |
+| Format / coordinates | Selected 2018 OpenFileGDB layer `LandCover2018`, verified EPSG:2952. Derived 512 × 640 grid is EPSG:4326, north-first rows, approximately 4 m cells. The older 2008 NAD27 metadata does not apply. |
+| Update evidence | Study vintage 2018; selected archive published 2022-08-17; cadence “As available”. Not current vegetation. |
+| Terms / attribution / redistribution | Official catalogue and CKAN `license_id=open-government-licence-toronto` identify OGL–Toronto. Contains information licensed under the Open Government Licence – Toronto. Keep attribution, original class meanings and transformations with derived data; no City endorsement. |
+| Access / quotas | Public archive downloaded without authentication; no stated quota verified. 436,398,730-byte ZIP, 650,677,998 bytes expanded; not a runtime dependency. No matching bounded land-cover layer was found in the inspected official GIS directory. |
+| Source versus derived storage | Raw archive/GDB stay in ignored `client/data/toronto`; source SHA, URL, vintage, selected feature IDs and derived SHA are in `land-cover-provenance.json`. Commit only the 397 KB categorical RLE grid and provenance. |
+| Processing / uncertainty | 91 spatially selected source features; 751 self-touching polygon parts normalized using GEOS `make_valid`, accepting only valid polygonal output with area change ≤0.01 m² (observed maximum 2.1e-9 m²). No parts omitted. Rasterize pixel centers without simplification; cross-class conflicts become unknown, never an arbitrary winning class. This crop has no unknown/conflicting cells. This policy does not alter the massing importer. |
+| Meaning / next integration | Tree, grass, bare, water, building, road, other paving and shrub are historical top-down classes. Canopy can cover streets; do not infer ground under it, walkability, hydrology or current vegetation. Mixed-vintage massing/designations can disagree. Seek a newer comparable source before physical-surface simulation. |
+
+Reproduce with the pinned packages in `client/tools/toronto/land-cover-requirements.txt`, the exact archive linked by the provenance file, and its extracted `LandCover2018.gdb` in the ignored raw directory:
+
+```sh
+python client/tools/toronto/extract_land_cover.py client/data/toronto
+python client/tools/toronto/check_land_cover.py client/data/toronto
+```
+
+The [official 2018 methodology](https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/61642048-56bb-4050-b7c3-f569fcf94527/resource/0b1a8fa1-3a3a-4dd2-a10c-2a1022207de2/download/2018-land-cover-documentation.docx) explains the top-down classification and differences between study vintages. Display colours are illustrative; geometry remains flat.
 
 ### Traffic Volumes - Multimodal Intersection Turning Movement Counts
 

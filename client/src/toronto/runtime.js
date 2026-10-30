@@ -7,6 +7,7 @@ import { assembleMassingTile } from '../world/massingTile.js';
 import { parseTracks } from '../replay/coreReplay.js';
 import { recordingSession, assertComparable } from './recordingSession.js';
 import { applyIdentity } from '../shared/identity.js';
+import {addLandCover} from './landCover.js';
 import { addGreenSpaces,greenSpaceFocus } from './greenSpaces.js';
 import { addIllustratedGround } from './appearance.js';
 import { PROFILE } from './profile.js';
@@ -43,6 +44,7 @@ export async function start() {
   const local=localFrame(PROFILE.geoOrigin),sw=local.project(manifest.coverage[0],manifest.coverage[1]),ne=local.project(manifest.coverage[2],manifest.coverage[3]);
   addIllustratedGround(engine.scene,[sw[0],ne[1],ne[0],sw[1]]);
   const contextGroup=addSourceNetwork(engine.scene,network,PROFILE);
+  const landCover=addLandCover(engine.scene,network.landCover,PROFILE);
   const greenSpaces=addGreenSpaces(engine.scene,network.greenSpaces,PROFILE);
 
   document.querySelector('#help').innerHTML='Drag to orbit · right-drag to pan · scroll/pinch to zoom<br><button id="pause-playback">Pause</button> <button id="restart-playback">Restart</button>';
@@ -82,8 +84,8 @@ export async function start() {
     const row=serviceGraph.occupancy.find(r=>r[0]===actor?.id),deviation=serviceGraph.deviations.find(d=>d.actorId===actor?.id);
     return {tripId:comparison.tripId,vehicle,phase:row?(row[1]?'at stop':'on link'):'outside recording time',delay:deviation?.departureDelaySeconds||0};
   };
-  demoControls=addDemoControls({seek,setPaused,duration:h.simTime.at(-1),geoFrame:localFrame(PROFILE.geoOrigin),controls,engine,header:h,mode,selectRecording,comparisonState,comparisonStart:comparison.stopOccurrence,greenSpaces,greenFocus:greenSpaceFocus(network.greenSpaces,'GRANGE PARK',PROFILE)});
-  window.__APP={engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,greenSpaces,serviceGraph,controls,tracks,seek,setPaused};
+  demoControls=addDemoControls({seek,setPaused,duration:h.simTime.at(-1),geoFrame:localFrame(PROFILE.geoOrigin),controls,engine,header:h,mode,selectRecording,comparisonState,comparisonStart:comparison.stopOccurrence,greenSpaces,landCover,greenFocus:greenSpaceFocus(network.greenSpaces,'GRANGE PARK',PROFILE)});
+  window.__APP={engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,greenSpaces,landCover,serviceGraph,controls,tracks,seek,setPaused};
   engine.onFrame=dt=>{
     if(failed)return;
     if(streamer.error){fail(streamer.error);return;}

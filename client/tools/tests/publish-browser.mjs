@@ -42,6 +42,14 @@ try {
  const greenTarget=await page.evaluate(()=>window.__APP.controls.target.toArray());
  const [greenLon,greenLat]=localFrame({lat:43.65,lon:-79.397}).unproject(greenTarget[0],greenTarget[2]);assert.ok(greenLon>-79.394&&greenLon<-79.39&&greenLat>43.65&&greenLat<43.654);
  if(!live)await page.screenshot({path:'shots/toronto-publish-green-spaces.png',timeout:30000});
+ await page.locator('#toggle-land-cover').click({noWaitAfter:true,timeout:60000});
+ assert.deepEqual(await page.evaluate(()=>[window.__APP.landCover.visible,window.__APP.greenSpaces.visible]),[true,false]);
+ assert.equal(await page.locator('#land-cover-legend').isVisible(),true);
+ console.log('Classified-cover texture bytes',await page.evaluate(()=>window.__APP.landCover.material.map.image.data.length));
+ if(!live)await page.screenshot({path:'shots/toronto-publish-land-cover.png',timeout:30000});
+ await page.locator('#toggle-green-spaces').click({noWaitAfter:true,timeout:60000});
+ assert.deepEqual(await page.evaluate(()=>[window.__APP.landCover.visible,window.__APP.greenSpaces.visible]),[false,true]);
+
  await page.locator('#focus-district').click({noWaitAfter:true,timeout:60000});
  console.log('Verified official green-space overlay, toggle and source-derived focus');
 
@@ -128,6 +136,9 @@ try {
  await page.locator('#departure-comparison summary').click({noWaitAfter:true});
  assert.match(await page.locator('#departure-comparison tbody').innerText(),/720 → 720/);
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Expanded comparison must not overflow mobile viewport');
+ await page.locator('#toggle-land-cover').click({noWaitAfter:true,timeout:60000});assert.equal(await page.evaluate(()=>window.__APP.landCover.visible),true);
+ if(!live)await page.screenshot({path:'shots/toronto-publish-land-cover-mobile.png',timeout:30000});
+ await page.locator('#toggle-green-spaces').click({noWaitAfter:true,timeout:60000});
  if(!live)await page.screenshot({path:'shots/toronto-publish-departures-mobile.png',timeout:30000});
  await page.locator('#departure-comparison summary').click({noWaitAfter:true});
  const restart=await page.locator('#restart-playback').boundingBox();await page.touchscreen.tap(restart.x+restart.width/2,restart.y+restart.height/2);
