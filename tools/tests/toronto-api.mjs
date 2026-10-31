@@ -67,6 +67,19 @@ try:
  except ValdradaError: pass
  else: raise AssertionError('Blank longitude accepted')
  network=w.get_source_network()
+ assert network['cityRoads']['counts']['graphEdges']==42877
+ path=w.find_source_road_path(13441580,13441580)
+ assert path['status']=='found' and path['distance_m']==0 and path['navigation_ready'] is False
+ road_graph=json.load(open('client/fixtures/toronto/city-roads/graph.json'))
+ edge=road_graph['edges'][0]
+ a,b=(edge[2],edge[1]) if edge[3]==-1 else (edge[1],edge[2])
+ actual=w.find_source_road_path(a,b)
+ expected_path=json.loads(subprocess.check_output(['node','--input-type=module','-e',f"import {{torontoWorld}} from './core/sim/toronto.mjs'; import {{sourceRoadPath}} from './client/src/toronto/roadGraph.js'; const {{world}}=await torontoWorld(); console.log(JSON.stringify(sourceRoadPath(world.cityRoadGraph,{a},{b})));"],text=True))
+ assert actual==expected_path and actual['status']=='found'
+ assert actual['traffic_interactions'] is False and actual['geometry_included'] is False
+ try: w.find_source_road_path('',1)
+ except ValdradaError: pass
+ else: raise AssertionError('Blank intersection accepted')
  assert network['coordinates']=='EPSG:4326' and network['routing'] is False
  assert network['cityBuildings']['counts']['retainedParts']==427946
  assert network['cityCover']['year']==2018 and network['cityCover']['step']==16

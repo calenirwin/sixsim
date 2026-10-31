@@ -109,3 +109,7 @@ Footprints and relative source heights are preserved; terrain-relative level fou
 ## Municipal 2018 classified cover
 
 The municipal `client/fixtures/toronto/city-cover/` tiles derive from the same official [Forest and Land Cover](https://open.toronto.ca/dataset/forest-and-land-cover/) archive as the district classification. Contains information licensed under the Open Government Licence – Toronto. Its provenance retains the pinned source, 2018 observation year, normalization and sampling rules, hashes and independent terrain/boundary lineage. Palette colours and draping are illustrative transformations, not City imagery, endorsement or current ground truth. Unknown/conflicting classifications are retained explicitly.
+
+### Municipal street derivatives
+
+`client/fixtures/toronto/city-roads/` derives from the official [Toronto Centreline](https://open.toronto.ca/dataset/toronto-centreline-tcl/) under the [Open Government Licence – Toronto](https://open.toronto.ca/open-data-licence/). Contains information licensed under the Open Government Licence – Toronto. Provenance records source retrieval/hash, selected classes, clipping, exclusions and direction rules. Terrain draping is illustrative cartography; topology experiments are not City-endorsed driving guidance. Existing framework copyright and licences remain unchanged.

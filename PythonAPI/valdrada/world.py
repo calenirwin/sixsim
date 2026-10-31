@@ -261,6 +261,10 @@ class World:
         return WorldSnapshot(self._call("world.get_snapshot"))
 
     # ---- content
+    def find_source_road_path(self, from_intersection: int, to_intersection: int) -> dict:
+        """Directed source-length topology experiment; not driving directions or physical routing."""
+        return self._call("map.find_source_road_path", from_intersection=from_intersection, to_intersection=to_intersection)
+
     def get_source_network(self) -> dict:
         """Source centrelines, GTFS, green-space designations and 2018 classified cover in EPSG:4326; not routing or access rights."""
         return self._call("map.get_source_network")

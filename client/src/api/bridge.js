@@ -1,3 +1,4 @@
+import {sourceRoadPath} from '../toronto/roadGraph.js';
 import {cityBuildingTiles} from '../toronto/cityBuildings.js';
 // Valdrada EXTERNAL CONTROL API — the in-page half (loaded by main.js under ?api=1).
 //
@@ -1055,6 +1056,11 @@ export function initApi(ctx) {
       need(Number.isFinite(longitude)&&Number.isFinite(latitude)&&Math.abs(longitude)<=180&&Math.abs(latitude)<=90,'invalid_argument','Expected finite longitude/latitude');
       const height=ctx.terrain.sampleGeographic(longitude,latitude);
       return {height_m:height,missing:height===null,vertical_datum:'CGVD2013',source_year:2023,basis:'Bilinear 64 m grid sampled from original bare-earth TIN triangles',simulation_ground:false};
+    },
+    'map.find_source_road_path': ({from_intersection,to_intersection}) => {
+      need(ctx.cityRoadGraph,'unavailable','No source street topology configured');
+      need(Number.isSafeInteger(from_intersection)&&Number.isSafeInteger(to_intersection)&&ctx.cityRoadGraph.nodes.has(from_intersection)&&ctx.cityRoadGraph.nodes.has(to_intersection),'invalid_argument','Expected known source intersection IDs');
+      return sourceRoadPath(ctx.cityRoadGraph,from_intersection,to_intersection);
     },
     'map.get_source_network': () => {
       need(ctx.sourceNetwork, 'unavailable', 'No source network configured');
