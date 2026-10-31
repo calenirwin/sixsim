@@ -7,7 +7,8 @@ permissions:
 jobs:
   web-fixture:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Software-rendered browser coverage plus fixture checks can exceed 15 minutes.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -89,7 +90,8 @@ jobs:
 
   city-terrain:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Four municipal neighbourhoods, missing-data recovery and mobile restoration.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
