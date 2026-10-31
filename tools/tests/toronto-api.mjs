@@ -48,6 +48,9 @@ try:
  try: w.get_transit_departures('missing')
  except ValdradaError: pass
  else: raise AssertionError('Unknown trip accepted')
+ probe=w.get_road_probe()
+ assert probe['state']['seconds']==0 and probe['state']['status']=='moving'
+ assert probe['state']['navigationReady'] is False and probe['definition']['policy']['junctionCrossings']==0
  t=w.get_transit_state()
  assert not t['omissions']
  if ${scenario?'True':'False'}:
@@ -99,6 +102,8 @@ try:
  assert t['basis']=='schedule-derived' and len(t['actors'])==10
  assert t['service_day']=='20261022' and t['service_seconds']==28800
  w.tick()
+ assert abs(w.get_road_probe()['state']['seconds']-.05)<1e-8
+ assert abs(w.get_road_probe()['state']['distanceM']-10.25)<1e-8
  assert abs(w.get_transit_state()['service_seconds']-28800.05)<1e-8
  assert w.get_snapshot().frame>=1
  assert w._call('map.get_spawn_points')==[]

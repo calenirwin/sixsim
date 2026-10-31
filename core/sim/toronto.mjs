@@ -1,3 +1,4 @@
+import {roadProbe} from '../../client/src/toronto/roadProbe.js';
 import {roadGraph} from '../../client/src/toronto/roadGraph.js';
 import {validateCityCover,validateCoverTerrain} from '../../client/src/toronto/cityCover.js';
 // Toronto dataset assembly for the inherited headless world and API.
@@ -53,7 +54,8 @@ export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = 
   if (createHash('sha256').update(bytes).digest('hex') !== provenance.subset_sha256) throw new Error('GTFS provenance hash mismatch');
   const transit = scheduledTransit(JSON.parse(bytes), { geoOrigin: PROFILE.geoOrigin, startSeconds, scenario });
   transit.provenance = provenance;
-  const world = await createWorld({ seed, tilesDir, renderCapabilities: TORONTO_RENDERING, traffic: false, peds: false, trains: false, cityOverrides: false, transit });
+  const probe=roadProbe(JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/road-corridor.json'))));
+  const world = await createWorld({ seed, tilesDir, renderCapabilities: TORONTO_RENDERING, traffic: false, peds: false, trains: false, cityOverrides: false, transit, roadProbe:probe });
   const municipalCoverBytes=fs.readFileSync(path.join(root,'client/fixtures/toronto/city-cover/manifest.json')),municipalCoverProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/city-cover/provenance.json')));
   if(createHash('sha256').update(municipalCoverBytes).digest('hex')!==municipalCoverProvenance.manifest_sha256)throw Error('City cover manifest hash mismatch');
   const municipalCover=validateCityCover(JSON.parse(municipalCoverBytes));validateCoverTerrain(municipalCover,terrainMeta);
@@ -62,6 +64,8 @@ export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = 
   if(createHash('sha256').update(roadBytes).digest('hex')!==roadProvenance.graph_sha256)throw Error('Source street graph hash mismatch');
   if(roadProvenance.terrain_sha256!==terrainMeta.heightSha256||roadProvenance.boundary_sha256!==terrainMeta.boundarySha256)throw Error('Source street frame mismatch');
   world.cityRoadGraph=roadGraph(JSON.parse(roadBytes));network.cityRoads={counts:roadProvenance.counts,provenance:roadProvenance,navigation_ready:false,traffic_interactions:false};
+  for(const e of probe.definition.edges){const source=world.cityRoadGraph.edges.get(e.id);if(!source||source[1]!==e.fromNode||source[2]!==e.toNode||source[3]!==e.direction||source[4]!==e.sourceLengthM)throw Error('Corridor source graph mismatch');}
+  network.cityRoads.sourceEdgeRecords=world.cityRoadGraph.edges.size;network.cityRoads.directedTraversalArcs=[...world.cityRoadGraph.adj.values()].reduce((n,a)=>n+a.length,0);
   world.sourceNetwork=network;world.cityBuildings=cityBuildings;
   const sampledTerrain=terrainGrid(terrainMeta,terrainBytes.buffer.slice(terrainBytes.byteOffset,terrainBytes.byteOffset+terrainBytes.byteLength)),terrainFrame=localFrame(PROFILE.geoOrigin);
   world.terrain={sampleGeographic:(lon,lat)=>sampledTerrain.sample(...terrainFrame.project(lon,lat)),meta:terrainMeta};

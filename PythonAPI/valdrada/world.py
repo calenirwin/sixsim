@@ -261,6 +261,10 @@ class World:
         return WorldSnapshot(self._call("world.get_snapshot"))
 
     # ---- content
+    def get_road_probe(self) -> dict:
+        """Prescribed geometric probe; stops before its first unverified junction."""
+        return self._call("experimental.get_road_probe")
+
     def find_source_road_path(self, from_intersection: int, to_intersection: int) -> dict:
         """Directed source-length topology experiment; not driving directions or physical routing."""
         return self._call("map.find_source_road_path", from_intersection=from_intersection, to_intersection=to_intersection)

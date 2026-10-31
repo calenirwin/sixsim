@@ -1057,6 +1057,10 @@ export function initApi(ctx) {
       const height=ctx.terrain.sampleGeographic(longitude,latitude);
       return {height_m:height,missing:height===null,vertical_datum:'CGVD2013',source_year:2023,basis:'Bilinear 64 m grid sampled from original bare-earth TIN triangles',simulation_ground:false};
     },
+    'experimental.get_road_probe': () => {
+      need(ctx.roadProbe,'unavailable','No constrained road probe configured');
+      return {definition:ctx.roadProbe.definition,state:ctx.roadProbe.state};
+    },
     'map.find_source_road_path': ({from_intersection,to_intersection}) => {
       need(ctx.cityRoadGraph,'unavailable','No source street topology configured');
       need(Number.isSafeInteger(from_intersection)&&Number.isSafeInteger(to_intersection)&&ctx.cityRoadGraph.nodes.has(from_intersection)&&ctx.cityRoadGraph.nodes.has(to_intersection),'invalid_argument','Expected known source intersection IDs');

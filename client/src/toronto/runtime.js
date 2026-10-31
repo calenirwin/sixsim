@@ -39,7 +39,7 @@ export async function start() {
   const engine=new Engine(document.querySelector('#app'));
   engine.scene.background=new THREE.Color(0x8a9ca8);
   const streamer=await new Streamer(engine.scene,{manifest,profile:PROFILE,cityOverrides:false,assembleTile:assembleMassingTile,assetUrls:tileUrls}).init();
-  let {replay,traffic,serviceGraph}=session;engine.scene.add(session.group);
+  let {replay,traffic,serviceGraph,roadProbe}=session;engine.scene.add(session.group);
   engine.camera.position.set(550,800,800);engine.camera.lookAt(0,0,-200);
   const controls=new OrbitControls(engine.camera,engine.renderer.domElement);controls.target.set(0,0,-200);controls.maxDistance=2200;controls.minDistance=30;controls.update();
   const local=localFrame(PROFILE.geoOrigin),sw=local.project(manifest.coverage[0],manifest.coverage[1]),ne=local.project(manifest.coverage[2],manifest.coverage[3]);
@@ -58,7 +58,7 @@ export async function start() {
   engine.renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();fail(new Error('Graphics context lost'));});
   let demoControls;
   const setPaused=value=>{paused=!!value;engine.wake();document.querySelector('#pause-playback').textContent=paused?'Play':'Pause';};
-  const seek=t=>{if(!Number.isFinite(t)||t<0||t>h.simTime.at(-1))throw new Error('Time outside recorded schedule');elapsed=t;ENV.time.value=t;traffic.update(0);serviceGraph.update(replay.f);demoControls?.update(t);engine.wake();};
+  const seek=t=>{if(!Number.isFinite(t)||t<0||t>h.simTime.at(-1))throw new Error('Time outside recorded schedule');elapsed=t;ENV.time.value=t;traffic.update(0);serviceGraph.update(replay.f);roadProbe.update(replay.f);demoControls?.update(t);engine.wake();};
   const togglePause=()=>setPaused(!paused);
   document.querySelector('#pause-playback').onclick=togglePause;
   document.querySelector('#restart-playback').onclick=()=>seek(0);
@@ -74,11 +74,11 @@ export async function start() {
     if(token!==request)return;
     assertComparable(reference,candidate.header);setPaused(true);
     const replacement=recordingSession(candidate,urls[next],PROFILE);
-    try {ENV.time.value=elapsed;replacement.traffic.update(0);replacement.serviceGraph.update(replacement.replay.f);}
+    try {ENV.time.value=elapsed;replacement.traffic.update(0);replacement.serviceGraph.update(replacement.replay.f);replacement.roadProbe.update(replacement.replay.f);}
     catch(error){replacement.dispose();throw error;}
     engine.scene.add(replacement.group);session.dispose();session=replacement;
-    ({tracks,h,replay,traffic,serviceGraph}=session);mode=next;cache.set(next,tracks);
-    Object.assign(window.__APP,{tracks,replay,traffic,serviceGraph});demoControls.setHeader(h);engine.wake();
+    ({tracks,h,replay,traffic,serviceGraph,roadProbe}=session);mode=next;cache.set(next,tracks);
+    Object.assign(window.__APP,{tracks,replay,traffic,serviceGraph,roadProbe});demoControls.setHeader(h);engine.wake();
   };
   const comparisonState=()=>{
     const actor=h.actors.find(a=>a.tripId===comparison.tripId),vehicle=tracks.frames[replay.f]?.veh.find(v=>v.id===actor?.id);
@@ -86,8 +86,11 @@ export async function start() {
     return {tripId:comparison.tripId,vehicle,phase:row?(row[1]?'at stop':'on link'):'outside recording time',delay:deviation?.departureDelaySeconds||0};
   };
   demoControls=addDemoControls({seek,setPaused,duration:h.simTime.at(-1),geoFrame:localFrame(PROFILE.geoOrigin),controls,engine,header:h,mode,selectRecording,comparisonState,comparisonStart:comparison.stopOccurrence,greenSpaces,landCover,greenFocus:greenSpaceFocus(network.greenSpaces,'GRANGE PARK',PROFILE)});
+  const probeButton=document.createElement('button');probeButton.id='focus-road-probe';probeButton.textContent='Wellington geometric probe';probeButton.hidden=!roadProbe.current;document.querySelector('.toronto-demo-controls').append(probeButton);
+  const probeStatus=document.createElement('div');probeStatus.id='road-probe-status';document.querySelector('.toronto-demo-controls').append(probeStatus);
+  probeButton.onclick=()=>{setPaused(true);seek(0);const p=roadProbe.current;controls.target.set(p.x,0,p.z);engine.camera.position.set(p.x+120,180,p.z+220);controls.update();engine.wake();};
   const cityTerrain=cityTerrainControls({engine,controls,setPaused,profile:PROFILE});
-  window.__APP={cityTerrain,engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,greenSpaces,landCover,serviceGraph,controls,tracks,seek,setPaused};
+  window.__APP={cityTerrain,engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,greenSpaces,landCover,serviceGraph,roadProbe,controls,tracks,seek,setPaused};
   engine.onFrame=dt=>{
     if(failed)return;
     if(cityTerrain.active){controls.update();cityTerrain.update();document.querySelector('#stats').textContent='2023 municipal terrain · CGVD2013 metres · simulation paused';return;}
@@ -96,7 +99,7 @@ export async function start() {
     controls.target.z=Math.max(manifest.bounds[1],Math.min(manifest.bounds[3],controls.target.z));
     streamer.update(controls.target.x,controls.target.z);
     if(!paused)elapsed=Math.min(h.simTime.at(-1),elapsed+dt);
-    ENV.time.value=elapsed;traffic.update(dt);serviceGraph.update(replay.f);demoControls.update(elapsed);controls.update();
+    ENV.time.value=elapsed;traffic.update(dt);serviceGraph.update(replay.f);roadProbe.update(replay.f);demoControls.update(elapsed);probeStatus.textContent=roadProbe.current?`Wellington probe: ${roadProbe.current.status} · prescribed 5 m/s · stops before junction · flat illustrative height; not traffic or legal navigation`:'';controls.update();
     document.querySelector('#stats').textContent=`${clock(h.startSeconds+elapsed)} · scheduled-trip markers, not live vehicles${h.transitScenario?.extraDwellSeconds ? " · +60s dwell experiment" : ""} · procedural materials · flat ground`;
     if(streamer.tiles.get('0_0')?.state==='ready')document.querySelector('#loading').style.display='none';
   };

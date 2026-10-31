@@ -275,3 +275,15 @@ python client/tools/toronto/extract_city_roads.py client/data/toronto /tmp/city-
 ```
 
 The extractor requires Shapely and pyproj, verifies source CRS/hash and official boundary, and emits deterministic files. Selected feature codes and direction interpretation are retained in provenance. Trails, laneways, busways, railway, pending roads and other feature classes are excluded from this street increment. Cartographic geometry clips to the municipality; the source-ID graph requires whole contained edges, selected City/Province jurisdiction and endpoint consistency within 0.5 m. Jurisdiction is not proof of public access. The graph excludes 126 boundary-crossing edges, 30 unselected-jurisdiction edges and three edges incident to an inconsistent intersection. It does not invent intersections at crossings. Source-derived distance is WGS84 geodesic polyline length; display coordinates use the existing local frame and coarse CGVD2013 terrain. Structural road elevations and access/turn restrictions remain separate integration needs.
+
+### Wellington source corridor
+
+`client/fixtures/toronto/road-corridor.json` retains original EPSG:4326 vertices for Centreline IDs 30130361, 30058205, 30058206, 14025464 and 8491785 from the same pinned municipal street archive. All five have source forward-direction code 1 and City jurisdiction; four joins share identical endpoint coordinates and source node IDs. These facts establish source geometry/direction, not access, turn permissions or structural heights. No new download, credential or licence is required. Contains information licensed under the Open Government Licence – Toronto.
+
+Reproduce the derivative with Python's standard library:
+
+```sh
+python client/tools/toronto/extract_road_corridor.py client/data/toronto/centreline-20261023.gpkg /tmp/road-corridor.json
+```
+
+The extractor verifies archive hash, CRS, graph membership and original endpoint continuity. It rejects unsupported geometry encoding and inserts no connector or snapped vertex. The record includes its parent graph hash, source URL/retrieval date and experimental movement policy. Runtime distances use the existing local planar frame; graph weights remain geodesic source lengths. The prescribed probe remains on its first edge and stops before the unverified junction. Unknown access/turn permissions and flat illustrative elevation are explicit rather than inferred from the Centreline.
