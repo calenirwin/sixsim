@@ -8,6 +8,7 @@ import { createWorld } from './world.mjs';
 import { scheduledTransit } from './scheduledTransit.mjs';
 import { compileDistrict } from '../../client/tools/toronto/compile.mjs';
 import { sourceNetwork } from '../../client/src/toronto/sourceNetwork.js';
+import {validateCityBuildings} from '../../client/src/toronto/cityBuildings.js';
 import {terrainGrid} from '../../client/src/toronto/cityTerrain.js';
 import {localFrame} from '../../client/src/shared/localFrame.js';
 import {decodeLandCover} from '../../client/src/toronto/landCover.js';
@@ -40,6 +41,10 @@ export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = 
   const terrainBytes=fs.readFileSync(path.join(root,'client/fixtures/toronto/city-terrain/heights.f32'));
   if(createHash('sha256').update(terrainBytes).digest('hex')!==terrainMeta.heightSha256)throw Error('City terrain hash mismatch');
   network.cityTerrain={...terrainMeta,provenance:JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/city-terrain/provenance.json'))),integration:'Terrain inspection; simulation actors and district buildings retain flat vertical model'};
+  const cityBuildingBytes=fs.readFileSync(path.join(root,'client/fixtures/toronto/city-buildings/manifest.json')),cityBuildingProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/city-buildings/provenance.json')));
+  if(createHash('sha256').update(cityBuildingBytes).digest('hex')!==cityBuildingProvenance.manifest_sha256)throw Error('City building manifest hash mismatch');
+  const cityBuildings=validateCityBuildings(JSON.parse(cityBuildingBytes));if(cityBuildings.terrainSha256!==terrainMeta.heightSha256)throw Error('City building terrain mismatch');
+  network.cityBuildings={counts:cityBuildings.counts,placement:cityBuildings.placement,selection:cityBuildings.selection,provenance:cityBuildingProvenance,simulation_ground:false};
   fs.writeFileSync(path.join(tilesDir,'network.json'),JSON.stringify(network));
   const bytes = fs.readFileSync(path.join(root, 'client/fixtures/transit/510-20261022.json'));
   const provenance = JSON.parse(fs.readFileSync(path.join(root, 'client/fixtures/transit/provenance.json')));
@@ -47,7 +52,7 @@ export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = 
   const transit = scheduledTransit(JSON.parse(bytes), { geoOrigin: PROFILE.geoOrigin, startSeconds, scenario });
   transit.provenance = provenance;
   const world = await createWorld({ seed, tilesDir, renderCapabilities: TORONTO_RENDERING, traffic: false, peds: false, trains: false, cityOverrides: false, transit });
-  world.sourceNetwork=network;
+  world.sourceNetwork=network;world.cityBuildings=cityBuildings;
   const sampledTerrain=terrainGrid(terrainMeta,terrainBytes.buffer.slice(terrainBytes.byteOffset,terrainBytes.byteOffset+terrainBytes.byteLength)),terrainFrame=localFrame(PROFILE.geoOrigin);
   world.terrain={sampleGeographic:(lon,lat)=>sampledTerrain.sample(...terrainFrame.project(lon,lat)),meta:terrainMeta};
   world.camera.position.set(128, 100, 128);

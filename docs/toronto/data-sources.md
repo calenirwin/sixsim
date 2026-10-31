@@ -1,6 +1,6 @@
 # Toronto data-source register
 
-Source evidence and retrieval dates are recorded per resource. “Catalogue verified” means official metadata was read; it does not imply that an archive was downloaded, parsed or integrated. The included inputs are Spadina district massing, Toronto Centreline and route 510 schedules, with 501/505/506/510 path-and-stop context for a pinned service day; see the [transit provenance](https://github.com/calenirwin/sixsim/blob/pilot/toronto-readiness/client/fixtures/transit/provenance.json). No live feed is configured.
+Source evidence and retrieval dates are recorded per resource. “Catalogue verified” means official metadata was read; it does not imply that an archive was downloaded, parsed or integrated. The included inputs are municipal massing and terrain, district classified cover and Toronto Centreline, and route 510 schedules, with 501/505/506/510 path-and-stop context for a pinned service day; see the [transit provenance](https://github.com/calenirwin/sixsim/blob/pilot/toronto-readiness/client/fixtures/transit/provenance.json). No live feed is configured.
 
 For City entries below, the primary catalogue and CKAN metadata links identify the exact source. Catalogue pages present the [Open Government Licence – Toronto](https://open.toronto.ca/open-data-licence/); metadata fields can be missing or contradictory. Before adding a source, retain its specific terms and exemptions, attribution and resource evidence. The licence permits adaptation and redistribution subject to its conditions, excludes rights the City cannot grant and does not imply endorsement. Use the required notice: **Contains information licensed under the Open Government Licence – Toronto.** Do not treat all Toronto-related data as City-licensed.
 
@@ -8,9 +8,9 @@ Public catalogue/API metadata was accessible without credentials. Resource acces
 
 ## Massing licence evidence
 
-The [official massing page](https://open.toronto.ca/dataset/3d-massing/) presents the Toronto licence link. The [dataset API](https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_show?id=3d-massing) notes explicitly refer to the Open Government Licence and restrict the model’s suitability to illustrative information, requiring verification for official uses. However, on the audit date its structured fields remain `license_id: notspecified`, `license_title: License not specified`, `isopen: false`. These fields have **not** been corrected or confirmed by the City.
+The [official massing page](https://open.toronto.ca/dataset/3d-massing/) presents the Toronto licence link. The [dataset API](https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_show?id=3d-massing) notes explicitly refer to the Open Government Licence and restrict the model’s suitability to illustrative information, requiring verification for official uses. The official API checked on 2026-10-31 identifies `license_id` and `license_title` as `open-government-licence-toronto`. Earlier district provenance retains the previously observed `notspecified` discrepancy as historical evidence; it is not the current massing licence tag.
 
-The existing subset relies on the affirmative official portal and dataset-note evidence, preserves attribution and records the conflict. This is a documented interpretation, not a legal assurance or written City confirmation. Do not silently extend it to third-party content or broader redistribution when additional restrictions emerge. The [sample provenance](https://github.com/calenirwin/sixsim/blob/pilot/toronto-readiness/client/fixtures/toronto/provenance.json) pins resource `667237d6-4d3c-4cf3-8cb7-e91c48d59375`, source checksum, crop and conversion. The 2025 archive filename does not establish that all underlying measurements are from 2025. No MPAC data or OSM geometry was added to this subset.
+The derived massing preserves attribution and the affirmative official portal, dataset-note and current API evidence. This is a documented interpretation, not a legal assurance or written City confirmation. Do not silently extend it to third-party content or broader redistribution when additional restrictions emerge. The [sample provenance](https://github.com/calenirwin/sixsim/blob/pilot/toronto-readiness/client/fixtures/toronto/provenance.json) pins resource `667237d6-4d3c-4cf3-8cb7-e91c48d59375`, source checksum, crop and conversion. The 2025 archive filename does not establish that all underlying measurements are from 2025. No MPAC data or OSM geometry was added to this subset.
 
 ## City source records
 
@@ -21,13 +21,13 @@ The existing subset relies on the affirmative official portal and dataset-note e
 | Field | Record |
 |---|---|
 | Owner / geography | City of Toronto — City Planning; Toronto |
-| Status | Integrated bounded subset |
+| Status | Municipal streamed building context plus separate flat simulation district |
 | Format / coordinates | SHP archive; actual .prj Web Mercator metres despite WGS84 filename; converted to EPSG:4326, then local east/up/south metres. Heights are AVG_HEIGHT, not terrain elevations. |
 | Update evidence | Catalogue cadence: Annually; last refresh: 2025-12-05 13:38:35. These describe publication, not accuracy or measurement date. |
-| Terms / attribution / redistribution | Toronto portal licence evidence as above; CKAN licence: License not specified, id: notspecified. Preserve source-specific limitations; verify selected resource terms before redistribution. |
+| Terms / attribution / redistribution | Official portal, dataset notes and 2026-10-31 CKAN metadata identify OGL–Toronto. Preserve illustrative-use limits and attribution. |
 | Access / quotas | Public metadata read without authentication; resource/service requirements and quotas not verified. No credential supplied or requested. |
-| Source versus derived storage | Pinned 81,415,175-byte archive outside Git; 5,587 source records / 5,774 polygon parts in district GeoJSON; 29 CTL1 tiles derived during build. The original 15-record regression fixture is retained. |
-| Next integration step | Validate elevations and source updates before increasing detail. Provenance lists 126 boundary exclusions, one invalid geometry and one tiny-ring record; no repair or clipping. |
+| Source versus derived storage | Pinned 81,415,175-byte archive outside Git; 427,584 records / 427,946 parts in 2,469 committed municipal CTL1 tiles (95,550,876 bytes). Separate district GeoJSON/29 tiles and original 15-record regression fixture remain. |
+| Next integration step | Municipal omissions: 17 invalid source records; 580 missing-terrain-anchor, 124 tiny/invalid-ring and 3 outside-boundary parts. No repair or clipping. Resolve source vertical datum/structural heights before physical foundation/road/actor alignment. |
 
 ### Toronto Centreline (TCL)
 
@@ -236,3 +236,17 @@ Ontario/NRCan elevation products are alternatives if City TIN cannot provide a b
 | Meaning / limits | Generalized parks/open-space designations, not exhaustive land cover. Includes potentially private and paved areas. No inferred vegetation, public access, land title, terrain height or navigation |
 | Integration | Shared source-network API context and a merged flat browser overlay; illustrative class colours, toggle and Grange Park focus. Does not alter roads, actors or routing |
 | Next step | Compare appropriately licensed actual land-cover/elevation observations before assigning physical surfaces or terrain heights |
+
+## Municipal building reproduction
+
+Install the pinned optional GIS requirements above. Keep `massing-2025.zip` and its extracted `3DMassingShapefile_2025_WGS84` SHP/SHX/DBF/PRJ components in the ignored raw directory. The extractor verifies archive and extracted-member hashes, terrain and boundary before streaming bounded per-tile spools. Normal browser builds use committed derived tiles and do not download archives.
+
+```sh
+python client/tools/toronto/extract_city_buildings.py client/data/toronto
+node client/tools/toronto/compile_city.mjs
+python client/tools/toronto/check_city_buildings.py client/data/toronto
+```
+
+`city-buildings/provenance.json`, `omissions.json` and `checks.json` record placement, exclusions and independent source checks. Bases use CGVD2013 terrain samples plus unchanged relative `AVG_HEIGHT`; source `SURF_ELEV` and `HEIGHT_MSL` are never datum-converted. Archive metadata describes ground sampling but does not establish its vertical datum. Level bases can intersect slopes and do not determine foundations, bridges, tunnels or physical collisions. CTL1 compatibility terrain fields are not a physical surface; query the terrain API instead. The existing uint16 footprint-area field saturates at 65,535 m² for larger footprints, with exact area retained in the city tile header.
+
+The 2018 classified-cover grid remains district-scoped. Citywide cover requires tiled normalization of that source, preserving observation date, unknown/conflict cells and independently bounded browser resources.

@@ -265,6 +265,10 @@ class World:
         """Source centrelines, GTFS, green-space designations and 2018 classified cover in EPSG:4326; not routing or access rights."""
         return self._call("map.get_source_network")
 
+    def get_city_building_tiles(self, longitude: float, latitude: float, radius_tiles: int = 1) -> dict:
+        """Municipal CTL1 tile metadata; illustrative terrain-relative context, not collision geometry."""
+        return self._call("map.get_city_building_tiles", longitude=longitude, latitude=latitude, radius_tiles=radius_tiles)
+
     def get_elevation(self, longitude: float, latitude: float) -> dict:
         """Historical bare-earth CGVD2013 metres; missing is explicit, not actor/road elevation."""
         return self._call("map.get_elevation", longitude=longitude, latitude=latitude)

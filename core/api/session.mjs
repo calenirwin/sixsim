@@ -146,7 +146,7 @@ export async function createApiSession({ server, seed = 1, time = 'day', start, 
     ready(info) { readyInfo = info; },
   };
   const { initApi } = await import('../../client/src/api/bridge.js');
-  const hooks = initApi({ engine, streamer: W.streamer, traffic: W.traffic, peds: W.peds, signals: null, sky, weather, dresser: null, instancer: null, cam, spawnGuard: null, geoOrigin, mapName, sourceNetwork: W.sourceNetwork, terrain: W.terrain, transit: W.transit });
+  const hooks = initApi({ engine, streamer: W.streamer, traffic: W.traffic, peds: W.peds, signals: null, sky, weather, dresser: null, instancer: null, cam, spawnGuard: null, geoOrigin, mapName, sourceNetwork: W.sourceNetwork, terrain: W.terrain, cityBuildings: W.cityBuildings, transit: W.transit });
   hub = supportsRemoteRenderer(W) ? createRenderHub({ server, W, sky, weather, classes, walkerVariants: (W.rig && W.rig.A ? W.rig.A.variants : []).map((v, i) => ({ index: i, body: v.body, id: v.id ?? null, age: v.age ?? null, build: v.build ?? null })),
     apiVersion: readyInfo ? readyInfo.api_version : '0.1.0', geoOrigin, publicDir: PUBLIC, log }) : null;
   // after the sims and bridge.js postStep (the cameras follow their parents there): the renderers' state of this step

@@ -1,0 +1,52 @@
+{
+  "dataset_url": "https://open.toronto.ca/dataset/3d-massing/",
+  "archive_url": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/387b2e3b-2a76-4199-8b3b-0b7d22e2ec10/resource/667237d6-4d3c-4cf3-8cb7-e91c48d59375/download/3dmassingshapefile_2025_wgs84.zip",
+  "source_archive_sha256": "9617089710518f1a24f70ca11b4a7c20ae45ab8e52a6fbed1bc088192efe6285",
+  "source_crs": "EPSG:3857 verified from .prj, despite WGS84 filename",
+  "source_records": 428184,
+  "counts": {
+    "invalidRecords": 17,
+    "missing-terrain-anchor": 580,
+    "outsideParts": 3,
+    "retainedParts": 427946,
+    "small-or-invalid-ring": 124,
+    "sourceRecords": 428184,
+    "sourceValidParts": 428653,
+    "retainedRecords": 427584,
+    "tiles": 2469,
+    "bytes": 95550876,
+    "maxTileBytes": 151492
+  },
+  "selection": "Whole valid polygon parts with representative point inside the official municipality. Boundary-crossing footprints remain whole and are recorded. No geometry repair, synthetic height, lake fill or missing-anchor extrapolation.",
+  "placement": "Illustrative level base sampled bilinearly at source footprint representative point on the 64 m CGVD2013 terrain grid. Source AVG_HEIGHT retained unchanged. SURF_ELEV and HEIGHT_MSL are not used or datum-converted. Flat foundations may intersect local slopes; no bridge/actor/collision changes.",
+  "terrain_sha256": "aa3d66e880dd3c35d9f8e4dd973ddc6021a166d69cf92503125d345a5e5f4021",
+  "boundary_sha256": "f64b0245d68b88e375a8e1f94a06e36acd2a97e2959c2b3a8967d90643ebb0bc",
+  "manifest_sha256": "ec14c33bd7f9696dce056002ee30f980ce827a6f0408d1f60ab7c3903628e15f",
+  "omissions_sha256": "c20b783b3fbf2a7bfbf695d646afd69c7d5fd13f18eed4db3230cbc4c431971a",
+  "attribution": "Contains information licensed under the Open Government Licence \u2013 Toronto.",
+  "license_url": "https://open.toronto.ca/open-data-licence/",
+  "license_evidence": {
+    "checked": "2026-10-31",
+    "metadata_url": "https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_show?id=3d-massing",
+    "ckan_license_id": "open-government-licence-toronto",
+    "ckan_license_title": "open-government-licence-toronto",
+    "portal_label": "Open Government Licence - Toronto",
+    "package_notes_excerpt": "Further to the Open Government Licence",
+    "history": "Earlier district provenance records notspecified structured metadata. The 2026-10-31 official metadata now identifies OGL\u2013Toronto; no City staff confirmation is implied."
+  },
+  "limits": [
+    "Relative source AVG_HEIGHT is unchanged; no assumption that source SURF_ELEV or HEIGHT_MSL is CGVD2013.",
+    "Source footprints and holes retained without repair; whole municipal-anchor polygon parts can cross boundary and are recorded.",
+    "Terrain-relative level bases are illustrative, may intersect slopes and do not establish surveyed foundations or structural/collision clearances.",
+    "Buildings are near-detail context, not citywide interacting traffic. Existing 510 replay and flat district remain separate.",
+    "CTL1 compatibility terrain section is not a physical surface; use the independently sourced terrain API."
+  ],
+  "budgets": {
+    "distribution_bytes": 120000000,
+    "static_package_bytes": 150000000,
+    "loaded_tiles": 9,
+    "concurrent_requests": 2,
+    "loaded_tile_bytes": 12000000,
+    "loaded_vertices": 1200000
+  }
+}

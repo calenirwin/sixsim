@@ -20,7 +20,7 @@ The recording runs from 08:00 to 08:05 on the pinned **2026-10-22 service day**,
 
 | Layer | Included | Boundary |
 | --- | --- | --- |
-| Buildings | 5,587 City massing records, 5,774 polygon parts, 29 streamed tiles | About 5.14 km² around Spadina; source heights on flat ground, not complete Toronto or detailed facades |
+| Buildings | Municipal: 427,584 source records, 427,946 parts, 2,469 streamed tiles; simulation district: 5,587 records / 29 tiles | Municipal level bases are illustrative terrain-relative placement; district stays flat. Neither has measured facades or verified foundations |
 | Streets | 1,589 City centreline segments and intersection identifiers | Source context, not a lane or walkable-routing model |
 | Transit context | Paths and 81 stops for 501, 505, 506 and 510 | GTFS geometry, not surveyed tracks |
 | Moving transit | 378 route-510 trips across seven validated service patterns | Scheduled symbolic positions, not observed vehicles or interacting traffic |
@@ -71,7 +71,7 @@ For a personal blog, use this page's explanation and screenshot, then link to th
 
 The Toronto adaptation is maintained by Calen Irwin; **SixSim is a working name**. The simulation framework is [Valdrada](https://github.com/mkturkcan/valdrada), by Mehmet Kerem Turkcan, with its original copyright and licence preserved.
 
-Contains information licensed under the Open Government Licence – Toronto. City building massing and centreline records and TTC GTFS retain source URLs, retrieval dates, checksums and transformation details in the [source register](data-sources.md). The register records the conflicting CKAN licence metadata alongside the official licence evidence; no City clarification or endorsement is implied. Code, documentation and source data have separate [licensing terms](../licensing.md).
+Contains information licensed under the Open Government Licence – Toronto. City building massing and centreline records and TTC GTFS retain source URLs, retrieval dates, checksums and transformation details in the [source register](data-sources.md). The register retains per-source licence evidence and historical metadata discrepancies; no City endorsement is implied. Code, documentation and source data have separate [licensing terms](../licensing.md).
 
 Next development layers are explained in the [architecture and roadmap](vision.md): richer network topology, explicit behavioral assumptions and comparisons of reproducible scenarios. Photorealistic NYC footage, upstream sensors, traffic interaction and full-city coverage should not be presented as Toronto results.
 
@@ -97,6 +97,6 @@ At **Grange Park**, enable **2018 classified cover** to compare mapped canopy, g
 
 ### Municipal elevation
 
-Select **City terrain · 2023** to inspect the municipal bare-earth surface in the same renderer. Overview shows the full boundary at 512 m display spacing; Etobicoke, North York and Scarborough controls select bounded 64 m near patches. These are display resolutions, not the original LiDAR resolution. Colours indicate elevation, not vegetation. CGVD2013 heights retain true vertical scale. Missing cells are not filled.
+Select **Municipal buildings & terrain** to inspect the municipal bare-earth surface in the same renderer. Overview shows the full boundary at 512 m display spacing; Etobicoke, North York and Scarborough controls select bounded 64 m near patches. These are display resolutions, not the original LiDAR resolution. Colours indicate elevation, not vegetation. CGVD2013 heights retain true vertical scale. Missing cells are not filled.
 
-The district recording pauses and its flat geometry is hidden while inspecting terrain. **Return to district simulation** restores the previous camera and recording position. Terrain does not imply citywide buildings, cover, routing or transit interactions; their coverage is unchanged. Mobile evidence from automated checks represents resized desktop Chromium with touch, not native iOS/Android performance.
+The district recording pauses and its flat geometry is hidden while inspecting terrain. **Return to district simulation** restores the previous camera and recording position. Municipal buildings stream in near the camera target: choose Downtown, Etobicoke, North York or Scarborough to inspect source footprints and average heights. Nine nearby owner tiles are retained, with explicit retry on failure; zoomed-out views omit building detail. Bases are illustrative terrain samples, not surveyed foundations, and may intersect slopes. Cover, routing and transit interaction coverage remain unchanged. Mobile evidence from automated checks represents resized desktop Chromium with touch, not native iOS/Android performance.

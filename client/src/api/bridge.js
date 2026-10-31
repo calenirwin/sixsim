@@ -1,3 +1,4 @@
+import {cityBuildingTiles} from '../toronto/cityBuildings.js';
 // Valdrada EXTERNAL CONTROL API — the in-page half (loaded by main.js under ?api=1).
 //
 // A client (PythonAPI/valdrada, or anything that speaks docs/api/protocol.md) sends requests to the host process
@@ -1044,6 +1045,10 @@ export function initApi(ctx) {
         vehicles: vehicleKinds.length, walker_variants: variants.length,
         capabilities: { road_navigation: !!traffic, pedestrians: !!peds, scheduled_transit: !!ctx.transit },
       };
+    },
+    'map.get_city_building_tiles': ({longitude,latitude,radius_tiles=1}) => {
+      need(ctx.cityBuildings,'unavailable','No municipal building layer configured');
+      return {tiles:cityBuildingTiles(ctx.cityBuildings,longitude,latitude,radius_tiles),placement:ctx.cityBuildings.placement,simulation_ground:false};
     },
     'map.get_elevation': ({longitude,latitude}) => {
       need(ctx.terrain, 'unavailable', 'No source terrain configured');

@@ -104,4 +104,6 @@ jobs:
         if: always()
         with:
           name: city-terrain-screenshots
-          path: client/shots/toronto-city-terrain-*.png
+          path: |
+            client/shots/toronto-city-terrain-*.png
+            client/shots/toronto-city-buildings-*.png

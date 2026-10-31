@@ -56,6 +56,10 @@ try:
   assert all(d['arrivalDelaySeconds']==60 for d in t['deviations'][4:])
  else: assert t['scenario'] is None and t['deviations']==[]
  assert sum(len(x['actorIds']) for k in ['nodes','edges'] for x in t['occupancy'][k])==10
+ buildings=w.get_city_building_tiles(-79.25,43.77)
+ assert len(buildings['tiles'])==9 and sum(t['b'] for t in buildings['tiles'])>100
+ assert buildings['simulation_ground'] is False
+ assert w.get_city_building_tiles(-80,44)['tiles']==[]
  e=w.get_elevation(-79.3963,43.6488)
  assert 60<e['height_m']<230 and e['vertical_datum']=='CGVD2013' and e['simulation_ground'] is False
  assert w.get_elevation(-80,44)['missing'] is True
@@ -64,6 +68,7 @@ try:
  else: raise AssertionError('Blank longitude accepted')
  network=w.get_source_network()
  assert network['coordinates']=='EPSG:4326' and network['routing'] is False
+ assert network['cityBuildings']['counts']['retainedParts']==427946
  assert network['cityTerrain']['verticalDatum']=='CGVD2013'
  assert network['cityTerrain']['validNodes']==156647
  assert network['cityTerrain']['missingInsideNodes']==0

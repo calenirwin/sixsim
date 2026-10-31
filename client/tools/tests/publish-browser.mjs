@@ -11,8 +11,9 @@ let browser;
 try {
  if(!live){
    const files=fs.readdirSync(dist,{recursive:true}).filter(f=>fs.statSync(`${dist}/${f}`).isFile());
-   assert.ok(files.reduce((n,f)=>n+fs.statSync(`${dist}/${f}`).size,0)<=24_000_000,'Publication byte budget');
-   assert.ok(files.filter(f=>f.endsWith('.bin')).reduce((n,f)=>n+fs.statSync(`${dist}/${f}`).size,0)<=1_500_000,'Building tile byte budget');
+   assert.ok(files.reduce((n,f)=>n+fs.statSync(`${dist}/${f}`).size,0)<=150_000_000,'Publication byte budget');
+   assert.ok(files.filter(f=>f.endsWith('.bin')&&!f.startsWith('city-buildings/')).reduce((n,f)=>n+fs.statSync(`${dist}/${f}`).size,0)<=1_500_000,'District building tile byte budget');
+   assert.ok(files.filter(f=>f.startsWith('city-buildings/')&&f.endsWith('.bin')).reduce((n,f)=>n+fs.statSync(`${dist}/${f}`).size,0)<=120_000_000,'City building distribution budget');
  }
  const initialHtml=await(await fetch(base)).text();
  assert.doesNotMatch(initialHtml,/New York City|inherited NYC scene|NYC Open Data/);
