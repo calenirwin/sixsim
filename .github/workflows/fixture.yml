@@ -89,7 +89,7 @@ jobs:
 
   city-terrain:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -98,8 +98,10 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm --prefix client ci --ignore-scripts
       - run: npx playwright install --with-deps chromium
-      - run: npm --prefix client run build:space
+      - run: npm --prefix client run build:publish
       - run: npm --prefix client run test:city-terrain
+        env:
+          CITY_CONTEXT_PUBLISH: 1
       - uses: actions/upload-artifact@v4
         if: always()
         with:

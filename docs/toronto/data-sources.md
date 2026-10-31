@@ -1,6 +1,6 @@
 # Toronto data-source register
 
-Source evidence and retrieval dates are recorded per resource. “Catalogue verified” means official metadata was read; it does not imply that an archive was downloaded, parsed or integrated. The included inputs are municipal massing and terrain, district classified cover and Toronto Centreline, and route 510 schedules, with 501/505/506/510 path-and-stop context for a pinned service day; see the [transit provenance](https://github.com/calenirwin/sixsim/blob/pilot/toronto-readiness/client/fixtures/transit/provenance.json). No live feed is configured.
+Source evidence and retrieval dates are recorded per resource. “Catalogue verified” means official metadata was read; it does not imply that an archive was downloaded, parsed or integrated. The included inputs are municipal massing, terrain and historical classified cover and Toronto Centreline, and route 510 schedules, with 501/505/506/510 path-and-stop context for a pinned service day; see the [transit provenance](https://github.com/calenirwin/sixsim/blob/pilot/toronto-readiness/client/fixtures/transit/provenance.json). No live feed is configured.
 
 For City entries below, the primary catalogue and CKAN metadata links identify the exact source. Catalogue pages present the [Open Government Licence – Toronto](https://open.toronto.ca/open-data-licence/); metadata fields can be missing or contradictory. Before adding a source, retain its specific terms and exemptions, attribution and resource evidence. The licence permits adaptation and redistribution subject to its conditions, excludes rights the City cannot grant and does not imply endorsement. Use the required notice: **Contains information licensed under the Open Government Licence – Toronto.** Do not treat all Toronto-related data as City-licensed.
 
@@ -168,7 +168,7 @@ The checker independently samples original TIN triangles and compares the distri
 | Field | Record |
 |---|---|
 | Owner / geography | City of Toronto — Parks, Forestry & Recreation; Toronto |
-| Status | Integrated historical 2018 classified-cover grid over the 5.14 km² district; available in the source-network API and renderer, separately from green-space designations |
+| Status | Integrated historical 2018 classified cover: municipal 16 m tiles plus the finer 5.14 km² district grid; source-network API metadata and renderer overlay, separately from green-space designations |
 | Format / coordinates | Selected 2018 OpenFileGDB layer `LandCover2018`, verified EPSG:2952. Derived 512 × 640 grid is EPSG:4326, north-first rows, approximately 4 m cells. The older 2008 NAD27 metadata does not apply. |
 | Update evidence | Study vintage 2018; selected archive published 2022-08-17; cadence “As available”. Not current vegetation. |
 | Terms / attribution / redistribution | Official catalogue and CKAN `license_id=open-government-licence-toronto` identify OGL–Toronto. Contains information licensed under the Open Government Licence – Toronto. Keep attribution, original class meanings and transformations with derived data; no City endorsement. |
@@ -249,4 +249,17 @@ python client/tools/toronto/check_city_buildings.py client/data/toronto
 
 `city-buildings/provenance.json`, `omissions.json` and `checks.json` record placement, exclusions and independent source checks. Bases use CGVD2013 terrain samples plus unchanged relative `AVG_HEIGHT`; source `SURF_ELEV` and `HEIGHT_MSL` are never datum-converted. Archive metadata describes ground sampling but does not establish its vertical datum. Level bases can intersect slopes and do not determine foundations, bridges, tunnels or physical collisions. CTL1 compatibility terrain fields are not a physical surface; query the terrain API instead. The existing uint16 footprint-area field saturates at 65,535 m² for larger footprints, with exact area retained in the city tile header.
 
-The 2018 classified-cover grid remains district-scoped. Citywide cover requires tiled normalization of that source, preserving observation date, unknown/conflict cells and independently bounded browser resources.
+The municipal 2018 classification uses 16 m cell-centre sampling, alongside the finer district grid. The original source includes class-zero records with blank descriptions: these remain unknown. Overlapping distinct classes, including unknown plus a known class, remain explicit conflicts. The overlay shares the coarse terrain triangles without assigning ground/traffic properties.
+
+## Municipal classified-cover reproduction
+
+Install `client/tools/toronto/land-cover-requirements.txt` in an optional GIS environment. Use the existing pinned `landcover2018_gdb.zip` and its extracted `LandCover2018.gdb` in the ignored raw directory. No additional archive is required. The extractor verifies the archive SHA and every used GDB member against it, reads bounded source batches, and retains the established normalization rule: `make_valid` only for invalid individual parts, accepting only valid polygonal results with area difference at most 0.01 m². Rejected parts are recorded, with no buffer/simplification or class reassignment.
+
+```sh
+python client/tools/toronto/extract_city_cover.py client/data/toronto
+python client/tools/toronto/check_city_cover.py client/data/toronto
+```
+
+`client/fixtures/toronto/city-cover/` contains the source/terrain/boundary hashes, normalization record, independent point checks and per-tile checksums/counts. Each tile is 64 × 64 unsigned-byte categories in north-to-south row order, on a 1,024 m tile in the shared local frame. Runtime pixels use nearest sampling; unknown and conflict codes remain transparent. Sampling and draping are display operations, not evidence of present vegetation, measured foundations or traffic surfaces. The normal build uses committed derived tiles and does not require GIS libraries or raw archives.
+
+The municipal derivative retains 694 tiles (2,842,624 categorical bytes) and 2,506,339 inside-boundary cell centres. Of these, 24,203 are unknown and zero are multi-class conflicts in the pinned source. The format retains a distinct conflict code for future reproductions. All 1,812 source features / 6,594,240 polygon parts were processed; 65,581 parts met the normalization rule, zero were omitted, and the maximum area change was 0.0000001751 m². These are processing counts, not accuracy or present-day canopy estimates.

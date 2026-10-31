@@ -1,3 +1,4 @@
+import {validateCityCover,validateCoverTerrain} from '../../client/src/toronto/cityCover.js';
 // Toronto dataset assembly for the inherited headless world and API.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -52,6 +53,10 @@ export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = 
   const transit = scheduledTransit(JSON.parse(bytes), { geoOrigin: PROFILE.geoOrigin, startSeconds, scenario });
   transit.provenance = provenance;
   const world = await createWorld({ seed, tilesDir, renderCapabilities: TORONTO_RENDERING, traffic: false, peds: false, trains: false, cityOverrides: false, transit });
+  const municipalCoverBytes=fs.readFileSync(path.join(root,'client/fixtures/toronto/city-cover/manifest.json')),municipalCoverProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/city-cover/provenance.json')));
+  if(createHash('sha256').update(municipalCoverBytes).digest('hex')!==municipalCoverProvenance.manifest_sha256)throw Error('City cover manifest hash mismatch');
+  const municipalCover=validateCityCover(JSON.parse(municipalCoverBytes));validateCoverTerrain(municipalCover,terrainMeta);
+  network.cityCover={year:2018,classes:municipalCover.classes,step:municipalCover.step,counts:municipalCover.counts,insideCells:municipalCover.insideCells,tiles:Object.keys(municipalCover.tiles).length,provenance:municipalCoverProvenance,simulation_ground:false};
   world.sourceNetwork=network;world.cityBuildings=cityBuildings;
   const sampledTerrain=terrainGrid(terrainMeta,terrainBytes.buffer.slice(terrainBytes.byteOffset,terrainBytes.byteOffset+terrainBytes.byteLength)),terrainFrame=localFrame(PROFILE.geoOrigin);
   world.terrain={sampleGeographic:(lon,lat)=>sampledTerrain.sample(...terrainFrame.project(lon,lat)),meta:terrainMeta};

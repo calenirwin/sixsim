@@ -1,4 +1,4 @@
-import {cityAssetServer} from './tools/hosting/city-assets.mjs';
+import {cityAssetServer,coverAssetServer} from './tools/hosting/city-assets.mjs';
 import { defineConfig } from 'vite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +19,7 @@ if (process.env.NYC_NOHMR === '1') {
 // a SUBPROJECT consumed through the `@nyc` alias — see src/world/nycDress.js.
 export default defineConfig({
   base: './',
-  plugins:[cityAssetServer()],
+  plugins:[cityAssetServer(),coverAssetServer()],
   resolve: {
     alias: { '@nyc': path.resolve(here, '../src') },
   },

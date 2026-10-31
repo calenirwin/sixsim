@@ -69,6 +69,10 @@ try:
  network=w.get_source_network()
  assert network['coordinates']=='EPSG:4326' and network['routing'] is False
  assert network['cityBuildings']['counts']['retainedParts']==427946
+ assert network['cityCover']['year']==2018 and network['cityCover']['step']==16
+ assert network['cityCover']['insideCells']>2400000
+ assert network['cityCover']['classes']['0']=='unknown' and network['cityCover']['classes']['9']=='conflict'
+ assert network['cityCover']['simulation_ground'] is False
  assert network['cityTerrain']['verticalDatum']=='CGVD2013'
  assert network['cityTerrain']['validNodes']==156647
  assert network['cityTerrain']['missingInsideNodes']==0
