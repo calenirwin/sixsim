@@ -1,0 +1,137 @@
+{
+  "sourceGridSha256": "aa3d66e880dd3c35d9f8e4dd973ddc6021a166d69cf92503125d345a5e5f4021",
+  "independentSourceSamples": [
+    {
+      "column": 560,
+      "row": 25,
+      "height_m": 157.16018676757812
+    },
+    {
+      "column": 380,
+      "row": 95,
+      "height_m": 190.42312622070312
+    },
+    {
+      "column": 470,
+      "row": 95,
+      "height_m": 174.1490936279297
+    },
+    {
+      "column": 560,
+      "row": 95,
+      "height_m": 139.25607299804688
+    },
+    {
+      "column": 110,
+      "row": 165,
+      "height_m": 157.15469360351562
+    },
+    {
+      "column": 200,
+      "row": 165,
+      "height_m": 194.27716064453125
+    },
+    {
+      "column": 290,
+      "row": 165,
+      "height_m": 172.97315979003906
+    },
+    {
+      "column": 380,
+      "row": 165,
+      "height_m": 166.3035125732422
+    },
+    {
+      "column": 470,
+      "row": 165,
+      "height_m": 161.34075927734375
+    },
+    {
+      "column": 560,
+      "row": 165,
+      "height_m": 129.23837280273438
+    },
+    {
+      "column": 110,
+      "row": 235,
+      "height_m": 137.03237915039062
+    },
+    {
+      "column": 200,
+      "row": 235,
+      "height_m": 174.73605346679688
+    },
+    {
+      "column": 290,
+      "row": 235,
+      "height_m": 164.54234313964844
+    },
+    {
+      "column": 380,
+      "row": 235,
+      "height_m": 128.14508056640625
+    },
+    {
+      "column": 470,
+      "row": 235,
+      "height_m": 156.06007385253906
+    },
+    {
+      "column": 110,
+      "row": 305,
+      "height_m": 160.85728454589844
+    },
+    {
+      "column": 200,
+      "row": 305,
+      "height_m": 109.37709045410156
+    },
+    {
+      "column": 290,
+      "row": 305,
+      "height_m": 152.99783325195312
+    },
+    {
+      "column": 380,
+      "row": 305,
+      "height_m": 114.7210922241211
+    },
+    {
+      "column": 110,
+      "row": 375,
+      "height_m": 138.5592803955078
+    },
+    {
+      "column": 200,
+      "row": 375,
+      "height_m": 74.67859649658203
+    },
+    {
+      "column": 290,
+      "row": 375,
+      "height_m": 85.30486297607422
+    },
+    {
+      "column": 380,
+      "row": 375,
+      "height_m": 76.3953628540039
+    },
+    {
+      "column": 110,
+      "row": 445,
+      "height_m": 102.95791625976562
+    }
+  ],
+  "massingSamplePosition": "Source footprint representative point, not potentially stale latitude/longitude attributes",
+  "districtMassingRecords": 5587,
+  "comparedSurfaceElevations": 4859,
+  "missing": 0,
+  "zeroSurfaceRowsExcluded": 728,
+  "tinMinusMassingSurfaceMetres": {
+    "median": -0.5727929687499937,
+    "p95Absolute": 35.736357807373004,
+    "min": -46.6451216928711,
+    "max": 6.947291658203127
+  },
+  "conclusion": "Descriptive comparison only. Massing SURF_ELEV vertical datum is not established by its inspected catalogue notes. Do not equate it to CGVD2013 or silently replace actor/bridge elevations. 64 m sampling smooths local relief. Road and GTFS geometries do not establish elevated/underground structural clearance."
+}

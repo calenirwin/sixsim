@@ -1,3 +1,5 @@
+import {roadGraph} from '../../client/src/toronto/roadGraph.js';
+import {validateCityCover,validateCoverTerrain} from '../../client/src/toronto/cityCover.js';
 // Toronto dataset assembly for the inherited headless world and API.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -8,9 +10,18 @@ import { createWorld } from './world.mjs';
 import { scheduledTransit } from './scheduledTransit.mjs';
 import { compileDistrict } from '../../client/tools/toronto/compile.mjs';
 import { sourceNetwork } from '../../client/src/toronto/sourceNetwork.js';
+import {validateCityBuildings} from '../../client/src/toronto/cityBuildings.js';
+import {terrainGrid} from '../../client/src/toronto/cityTerrain.js';
+import {localFrame} from '../../client/src/shared/localFrame.js';
+import {decodeLandCover} from '../../client/src/toronto/landCover.js';
+import { validateGreenSpaces } from '../../client/src/toronto/greenSpaces.js';
 import { PROFILE } from '../../client/src/toronto/profile.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-export async function torontoWorld({ startSeconds = 28800, seed = 1 } = {}) {
+function environmentScenario() {
+  const file=process.env.TORONTO_TRANSIT_SCENARIO;
+  return file?JSON.parse(fs.readFileSync(path.resolve(root,file))):null;
+}
+export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = environmentScenario() } = {}) {
   const tilesDir = path.join(root, 'client/.generated/toronto');
   const massing=fs.readFileSync(path.join(root,'client/fixtures/toronto/district.geojson'));
   const massingProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/district-provenance.json')));
@@ -20,14 +31,40 @@ export async function torontoWorld({ startSeconds = 28800, seed = 1 } = {}) {
   const networkProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/network-provenance.json')));
   if(createHash('sha256').update(networkBytes).digest('hex')!==networkProvenance.subset_sha256)throw new Error('Network provenance hash mismatch');
   const network={...sourceNetwork(JSON.parse(networkBytes)),provenance:networkProvenance};
+  const greenBytes=fs.readFileSync(path.join(root,'client/fixtures/toronto/green-spaces.geojson'));
+  const greenProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/green-spaces-provenance.json')));
+  if(createHash('sha256').update(greenBytes).digest('hex')!==greenProvenance.subset_sha256)throw new Error('Green-space provenance hash mismatch');
+  network.greenSpaces={...validateGreenSpaces(JSON.parse(greenBytes)),provenance:greenProvenance};
+  const coverBytes=fs.readFileSync(path.join(root,'client/fixtures/toronto/land-cover-2018.json'));
+  const coverProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/land-cover-provenance.json')));
+  if(createHash('sha256').update(coverBytes).digest('hex')!==coverProvenance.subset_sha256)throw Error('Land-cover provenance hash mismatch');
+  const cover=JSON.parse(coverBytes);decodeLandCover(cover);network.landCover={...cover,provenance:coverProvenance};
+  const terrainMeta=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/city-terrain/manifest.json')));
+  const terrainBytes=fs.readFileSync(path.join(root,'client/fixtures/toronto/city-terrain/heights.f32'));
+  if(createHash('sha256').update(terrainBytes).digest('hex')!==terrainMeta.heightSha256)throw Error('City terrain hash mismatch');
+  network.cityTerrain={...terrainMeta,provenance:JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/city-terrain/provenance.json'))),integration:'Terrain inspection; simulation actors and district buildings retain flat vertical model'};
+  const cityBuildingBytes=fs.readFileSync(path.join(root,'client/fixtures/toronto/city-buildings/manifest.json')),cityBuildingProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/city-buildings/provenance.json')));
+  if(createHash('sha256').update(cityBuildingBytes).digest('hex')!==cityBuildingProvenance.manifest_sha256)throw Error('City building manifest hash mismatch');
+  const cityBuildings=validateCityBuildings(JSON.parse(cityBuildingBytes));if(cityBuildings.terrainSha256!==terrainMeta.heightSha256)throw Error('City building terrain mismatch');
+  network.cityBuildings={counts:cityBuildings.counts,placement:cityBuildings.placement,selection:cityBuildings.selection,provenance:cityBuildingProvenance,simulation_ground:false};
   fs.writeFileSync(path.join(tilesDir,'network.json'),JSON.stringify(network));
   const bytes = fs.readFileSync(path.join(root, 'client/fixtures/transit/510-20261022.json'));
   const provenance = JSON.parse(fs.readFileSync(path.join(root, 'client/fixtures/transit/provenance.json')));
   if (createHash('sha256').update(bytes).digest('hex') !== provenance.subset_sha256) throw new Error('GTFS provenance hash mismatch');
-  const transit = scheduledTransit(JSON.parse(bytes), { geoOrigin: PROFILE.geoOrigin, startSeconds });
+  const transit = scheduledTransit(JSON.parse(bytes), { geoOrigin: PROFILE.geoOrigin, startSeconds, scenario });
   transit.provenance = provenance;
   const world = await createWorld({ seed, tilesDir, renderCapabilities: TORONTO_RENDERING, traffic: false, peds: false, trains: false, cityOverrides: false, transit });
-  world.sourceNetwork=network;
+  const municipalCoverBytes=fs.readFileSync(path.join(root,'client/fixtures/toronto/city-cover/manifest.json')),municipalCoverProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/city-cover/provenance.json')));
+  if(createHash('sha256').update(municipalCoverBytes).digest('hex')!==municipalCoverProvenance.manifest_sha256)throw Error('City cover manifest hash mismatch');
+  const municipalCover=validateCityCover(JSON.parse(municipalCoverBytes));validateCoverTerrain(municipalCover,terrainMeta);
+  network.cityCover={year:2018,classes:municipalCover.classes,step:municipalCover.step,counts:municipalCover.counts,insideCells:municipalCover.insideCells,tiles:Object.keys(municipalCover.tiles).length,provenance:municipalCoverProvenance,simulation_ground:false};
+  const roadBytes=fs.readFileSync(path.join(root,'client/fixtures/toronto/city-roads/graph.json')),roadProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/city-roads/provenance.json')));
+  if(createHash('sha256').update(roadBytes).digest('hex')!==roadProvenance.graph_sha256)throw Error('Source street graph hash mismatch');
+  if(roadProvenance.terrain_sha256!==terrainMeta.heightSha256||roadProvenance.boundary_sha256!==terrainMeta.boundarySha256)throw Error('Source street frame mismatch');
+  world.cityRoadGraph=roadGraph(JSON.parse(roadBytes));network.cityRoads={counts:roadProvenance.counts,provenance:roadProvenance,navigation_ready:false,traffic_interactions:false};
+  world.sourceNetwork=network;world.cityBuildings=cityBuildings;
+  const sampledTerrain=terrainGrid(terrainMeta,terrainBytes.buffer.slice(terrainBytes.byteOffset,terrainBytes.byteOffset+terrainBytes.byteLength)),terrainFrame=localFrame(PROFILE.geoOrigin);
+  world.terrain={sampleGeographic:(lon,lat)=>sampledTerrain.sample(...terrainFrame.project(lon,lat)),meta:terrainMeta};
   world.camera.position.set(128, 100, 128);
   await world.step(0);
   return { world, provenance };

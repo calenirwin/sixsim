@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "width": 661,
+  "height": 478,
+  "step": 64,
+  "origin": [
+    -19520,
+    -22848
+  ],
+  "frame": {
+    "lat": 43.65,
+    "lon": -79.397,
+    "metresPerLatitude": 111132.0,
+    "metresPerLongitude": 80547.78781925818
+  },
+  "encoding": "little-endian float32; NaN means outside boundary or missing/conflicting TIN coverage",
+  "verticalDatum": "CGVD2013",
+  "units": "metres",
+  "sourceYear": 2023,
+  "bbox": [
+    -79.63926826,
+    43.58100456,
+    -79.11524635,
+    43.85546581
+  ],
+  "boundaryNodes": 156647,
+  "validNodes": 156647,
+  "missingInsideNodes": 0,
+  "conflictNodes": 0,
+  "min": 66.2206039428711,
+  "max": 212.48329162597656,
+  "sourceTriangleCount": 2628358,
+  "sampleMatches": 156647,
+  "maxSharedEdgeDifferenceMetres": 0,
+  "heightSha256": "aa3d66e880dd3c35d9f8e4dd973ddc6021a166d69cf92503125d345a5e5f4021",
+  "boundarySha256": "f64b0245d68b88e375a8e1f94a06e36acd2a97e2959c2b3a8967d90643ebb0bc"
+}

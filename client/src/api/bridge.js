@@ -1,3 +1,5 @@
+import {sourceRoadPath} from '../toronto/roadGraph.js';
+import {cityBuildingTiles} from '../toronto/cityBuildings.js';
 // Valdrada EXTERNAL CONTROL API — the in-page half (loaded by main.js under ?api=1).
 //
 // A client (PythonAPI/valdrada, or anything that speaks docs/api/protocol.md) sends requests to the host process
@@ -1045,15 +1047,38 @@ export function initApi(ctx) {
         capabilities: { road_navigation: !!traffic, pedestrians: !!peds, scheduled_transit: !!ctx.transit },
       };
     },
+    'map.get_city_building_tiles': ({longitude,latitude,radius_tiles=1}) => {
+      need(ctx.cityBuildings,'unavailable','No municipal building layer configured');
+      return {tiles:cityBuildingTiles(ctx.cityBuildings,longitude,latitude,radius_tiles),placement:ctx.cityBuildings.placement,simulation_ground:false};
+    },
+    'map.get_elevation': ({longitude,latitude}) => {
+      need(ctx.terrain, 'unavailable', 'No source terrain configured');
+      need(Number.isFinite(longitude)&&Number.isFinite(latitude)&&Math.abs(longitude)<=180&&Math.abs(latitude)<=90,'invalid_argument','Expected finite longitude/latitude');
+      const height=ctx.terrain.sampleGeographic(longitude,latitude);
+      return {height_m:height,missing:height===null,vertical_datum:'CGVD2013',source_year:2023,basis:'Bilinear 64 m grid sampled from original bare-earth TIN triangles',simulation_ground:false};
+    },
+    'map.find_source_road_path': ({from_intersection,to_intersection}) => {
+      need(ctx.cityRoadGraph,'unavailable','No source street topology configured');
+      need(Number.isSafeInteger(from_intersection)&&Number.isSafeInteger(to_intersection)&&ctx.cityRoadGraph.nodes.has(from_intersection)&&ctx.cityRoadGraph.nodes.has(to_intersection),'invalid_argument','Expected known source intersection IDs');
+      return sourceRoadPath(ctx.cityRoadGraph,from_intersection,to_intersection);
+    },
     'map.get_source_network': () => {
       need(ctx.sourceNetwork, 'unavailable', 'No source network configured');
       return ctx.sourceNetwork;
+    },
+    'transit.get_graph': () => {
+      need(ctx.transit?.graph, 'unavailable', 'No transit service graph configured');
+      return ctx.transit.graph;
+    },
+    'transit.get_departures': ({trip_id}) => {
+      need(ctx.transit, 'unavailable', 'No scheduled transit source configured');
+      return ctx.transit.departures(trip_id);
     },
     'transit.get_state': () => {
       need(ctx.transit, 'unavailable', 'No scheduled transit source configured');
       const t = ctx.transit;
       return { basis: t.basis, service_day: t.serviceDay, timezone: t.timezone, service_seconds: t.serviceSeconds,
-        provenance: t.provenance || null, omitted_trips: [...t.omittedTrips], frame: 'ENU metres: x east, y north, z up',
+        scenario: t.scenario, deviations: t.deviations, occupancy: t.occupancy, omissions: t.omissions, provenance: t.provenance || null, omitted_trips: [...t.omittedTrips], frame: 'ENU metres: x east, y north, z up',
         actors: t.actors.map(({ x, y, z, ...a }) => ({ ...a, location: { x, y: -z, z: y } })) };
     },
     'world.get_settings': () => ({ ...settings }),

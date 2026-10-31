@@ -261,9 +261,29 @@ class World:
         return WorldSnapshot(self._call("world.get_snapshot"))
 
     # ---- content
+    def find_source_road_path(self, from_intersection: int, to_intersection: int) -> dict:
+        """Directed source-length topology experiment; not driving directions or physical routing."""
+        return self._call("map.find_source_road_path", from_intersection=from_intersection, to_intersection=to_intersection)
+
     def get_source_network(self) -> dict:
-        """Source centrelines, intersection IDs and GTFS context in EPSG:4326; not a routing graph."""
+        """Source centrelines, GTFS, green-space designations and 2018 classified cover in EPSG:4326; not routing or access rights."""
         return self._call("map.get_source_network")
+
+    def get_city_building_tiles(self, longitude: float, latitude: float, radius_tiles: int = 1) -> dict:
+        """Municipal CTL1 tile metadata; illustrative terrain-relative context, not collision geometry."""
+        return self._call("map.get_city_building_tiles", longitude=longitude, latitude=latitude, radius_tiles=radius_tiles)
+
+    def get_elevation(self, longitude: float, latitude: float) -> dict:
+        """Historical bare-earth CGVD2013 metres; missing is explicit, not actor/road elevation."""
+        return self._call("map.get_elevation", longitude=longitude, latitude=latitude)
+
+    def get_transit_graph(self) -> dict:
+        """Directed GTFS service paths in EPSG:4326, not surveyed track topology."""
+        return self._call("transit.get_graph")
+
+    def get_transit_departures(self, trip_id: str) -> dict:
+        """Baseline/selected departures and preceding same-pattern gaps; not live headways."""
+        return self._call("transit.get_departures", trip_id=trip_id)
 
     def get_transit_state(self) -> dict:
         """Pinned schedule-derived trip positions in API ENU coordinates; not live vehicles."""

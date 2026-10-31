@@ -4,13 +4,13 @@ Contains information licensed under the [Open Government Licence – Toronto](ht
 
 ## Coverage and contracts
 
-`district.geojson` retains 2,344 massing records, comprising 2,531 polygon parts, within `[west,south,east,north] = [-79.405,43.644,-79.390,43.660]`. This is approximately 2.15 km² around Spadina, from the College area toward the rail corridor. Source parts are assigned once to the 512 m tile containing their bounding-box centre; vertices crossing internal tile boundaries remain intact. There are 19 near-detail tiles, with no fabricated far-distance macros. Panning streams neighbouring tiles through the inherited renderer.
+`district.geojson` retains 5,587 massing records, comprising 5,774 polygon parts, within `[west,south,east,north] = [-79.410,43.642,-79.385,43.665]`. This is approximately 5.14 km² around Spadina, from Harbord toward the rail corridor. Source parts are assigned once to the 512 m tile containing their bounding-box centre; vertices crossing internal tile boundaries remain intact. There are 29 near-detail tiles, with no fabricated far-distance macros. Panning streams neighbouring tiles through the inherited renderer.
 
 Extraction retains whole records covered by the geographic crop. The provenance records 126 outer-boundary exclusions, invalid source record 137520 and tiny-ring record 137415. Any record containing a ring below 0.011 m² in the local metric approximation is omitted whole; geometry is not repaired, clipped or deduplicated. Source records can be parts of one physical building, so record counts are not building counts.
 
-`district-network.json` retains 841 City centreline segments and 632 source intersection IDs. Whole lines intersecting the crop are retained, including endpoints outside it. Selected source classes cover roads, railways, trails and walkways; names, feature codes, intersection IDs and one-way attributes remain explicit. Connectivity uses official endpoint IDs, never geometric snapping. It does not establish lane connections, legal turns, surveyed streetcar tracks, signal phases, widths or traffic behavior.
+`district-network.json` retains 1,589 City centreline segments and 1,146 source intersection IDs. Whole lines intersecting the crop are retained, including endpoints outside it. Selected source classes cover roads, railways, trails and walkways; names, feature codes, intersection IDs and one-way attributes remain explicit. Connectivity uses official endpoint IDs, never geometric snapping. It does not establish lane connections, legal turns, surveyed streetcar tracks, signal phases, widths or traffic behavior.
 
-GTFS context includes 25 clipped service shapes and 43 stops for routes 501, 505, 506 and 510 active on service day 2026-10-22, America/Toronto. Clipping creates display endpoints only, not network junctions. Paths are not surveyed rails; stop proximity does not establish a pedestrian transfer. Only the separately pinned route 510 schedule drives moving actors.
+GTFS context includes 25 clipped service shapes and 81 stops for routes 501, 505, 506 and 510 active on service day 2026-10-22, America/Toronto. Clipping creates display endpoints only, not network junctions. Paths are not surveyed rails; stop proximity does not establish a pedestrian transfer. Only the separately pinned route 510 schedule drives moving actors.
 
 The original `block.geojson` / `provenance.json` pair remains a 15-record import regression fixture. It is separate from the procedural NYC building fixture and the district runtime.
 
@@ -48,3 +48,13 @@ node --test client/tools/tests/district.mjs
 ```
 
 The extractor is offline, verifies input hashes and emits deterministic source subsets. Raw archives and working files stay outside Git. The separate `extract.py` retains the original small-fixture extraction contract.
+
+## Illustrative materials
+
+The main renderer uses original deterministic procedural colours and anti-aliased window patterns on the source extrusions, with darker roof surfaces and a neutral textured flat ground plane bounded by the source crop. These are visual conventions, not observed facades, floor counts, roof materials, land use or elevation. No texture library, aerial imagery or new licence dependency is required. `AVG_HEIGHT` values up to the bounded 600 m import limit are retained; the selected maximum is 443 m. Whole invalid geometries and rings below the documented minimum area remain excluded, with snapshot IDs recorded in provenance.
+
+## Green-space context
+
+`green-spaces.geojson` contains 44 clipped official [Green Spaces](https://open.toronto.ca/dataset/green-spaces/) polygons; `green-spaces-provenance.json` pins the GeoPackage hash, CRS, licence evidence and clipping IDs. Reproduce with `python client/tools/toronto/extract_green_spaces.py client/data/toronto/green-spaces-20261030.gpkg` after installing the existing extraction requirements. The raw 8.9 MB GeoPackage stays ignored. The extractor verifies the exact source hash and EPSG:4326, preserves holes, and records invalid geometries rather than repairing them.
+
+These generalized designations include potentially paved/private areas; they are not exhaustive land cover, access permissions or terrain. The renderer's class colours and flat elevation are illustrative. The same records are carried in `world.get_source_network()['greenSpaces']`; display clipping creates no routing edges.

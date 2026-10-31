@@ -1,0 +1,23 @@
+---
+title: Toronto city simulation
+emoji: 🚋
+colorFrom: blue
+colorTo: gray
+sdk: static
+app_file: index.html
+short_description: Toronto source geometry and scheduled transit in the Valdrada framework
+---
+
+# Toronto city simulation
+
+Explore real City building massing and streets around Spadina with TTC 510 schedule-derived transit playback. Compare **Published timetable** and **+60s dwell experiment** at the same time using the Recording selector and **Focus comparison trip**. Use **Queen & Spadina**, **About & sources**, Pause/Play, Restart and the time slider. Drag to orbit and scroll/pinch to zoom. WebGL2 is required; all rendering runs on your device.
+
+This is a bounded Toronto adaptation of [Valdrada](https://github.com/mkturkcan/valdrada), created by Mehmet Kerem Turkcan. [SixSim](https://github.com/calenirwin/sixsim) is the fork's provisional working name, maintained by Calen Irwin.
+
+The five-minute recording uses the pinned 2026-10-22 service day in America/Toronto. Buildings cover about 5.14 km²; route coverage extends beyond them. Moving symbols are scheduled positions, not live vehicle observations, surveyed track positions or interacting traffic. Ground is flat. The included extra-dwell comparison is explicitly labeled; it changes one trip and is a what-if model, not an observed delay.
+
+Code is MIT; documentation and data retain their separate terms in [component licensing](LICENSING.md.txt). Contains information licensed under the Open Government Licence – Toronto. [Source provenance](DATA_SOURCES.json), [upstream acknowledgements](ACKNOWLEDGEMENTS.md.txt), and the [code licence](LICENSE.txt) accompany this package. No City or TTC endorsement is implied.
+
+This prebuilt static package needs no server process, API key, GPU instance or external asset CDN. Its commit identity is recorded in `deployment.json`.
+
+The optional ground overlay shows 44 official City Green Spaces designations. Use the toggle or Grange Park focus in the main renderer. These generalized polygons include potentially paved/private areas and are not vegetation, public-access, terrain or routing measurements. Source attribution and provenance are included in DATA_SOURCES.json.

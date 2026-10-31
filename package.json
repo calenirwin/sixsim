@@ -16,7 +16,7 @@
   },
   "scripts": {
     "sim:toronto": "node tools/toronto/simulate.mjs",
-    "test:toronto:sim": "node --test tools/tests/toronto-sim.mjs",
+    "test:toronto:sim": "node --test --test-concurrency=1 tools/tests/toronto-sim.mjs tools/tests/toronto-graph.mjs tools/tests/toronto-scenario.mjs tools/tests/toronto-departures.mjs tools/tests/toronto-green-spaces.mjs tools/tests/toronto-land-cover.mjs tools/tests/toronto-city-terrain.mjs tools/tests/toronto-city-buildings.mjs tools/tests/toronto-city-cover.mjs tools/tests/toronto-city-roads.mjs",
     "test:nyc:core-parity": "node --test tools/tests/nyc-world-parity.mjs",
     "serve:toronto": "node tools/core/serve.mjs --city toronto",
     "test:toronto:api": "node --test tools/tests/toronto-api.mjs",

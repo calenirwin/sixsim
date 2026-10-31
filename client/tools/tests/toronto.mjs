@@ -90,7 +90,7 @@ test('synthetic hole/multipart regression stays in the existing bholes contract'
 });
 
 test('bad/missing heights, duplicate IDs and out-of-tile footprints fail closed', () => {
-  for (const value of [null, NaN, 0, -1]) {
+  for (const value of [null, NaN, 0, -1, 600]) {
     const data = structuredClone(source); data.features[0].properties.AVG_HEIGHT = value;
     assert.throws(() => compiled(data), /observed height/);
   }

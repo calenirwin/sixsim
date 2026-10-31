@@ -11,7 +11,7 @@ from extract import extract, mercator
 import importlib.util
 spec=importlib.util.spec_from_file_location('gtfs_extract',Path(__file__).resolve().parents[1]/'transit/extract.py')
 gtfs=importlib.util.module_from_spec(spec);spec.loader.exec_module(gtfs)
-BBOX=[-79.405,43.644,-79.390,43.660]
+BBOX=[-79.410,43.642,-79.385,43.665]
 ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'fixtures/toronto'
 TCL_SHA='f6cafbd260232c4f14a844fa89c342d5b173931362b195f2784c24a995e1756a'
@@ -19,7 +19,7 @@ GTFS_SHA='5e0191d59cb991b6c88ba9c1a5f2ca93a5a064a4d258dbc7ba93801d15f3dfca'
 def digest(p): return hashlib.sha256(p.read_bytes()).hexdigest()
 def save(p,data): p.write_text(json.dumps(data,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n')
 def run(raw):
-    extract(raw/'massing-2025.zip',bbox=BBOX,out=OUT/'district.geojson',max_features=5000,strict=False)
+    extract(raw/'massing-2025.zip',bbox=BBOX,out=OUT/'district.geojson',max_features=10000,strict=False)
     masses=json.loads((OUT/'district.geojson').read_text())
     small=[]; kept=[]
     for f in masses['features']:
@@ -31,6 +31,8 @@ def run(raw):
     save(OUT/'district.geojson',masses)
     provenance=json.loads((OUT/'provenance.json').read_text())
     provenance.update(bbox=BBOX,records=len(masses['features']),boundary_exclusions=len(masses['excluded_boundary_record_indices']),invalid_geometry_exclusions=masses['excluded_invalid_record_indices'],subset_sha256=digest(OUT/'district.geojson'))
+    provenance['height_exclusions']=masses['excluded_height_records']
+    provenance['height_rule']='Require finite source AVG_HEIGHT > 0 and < 600 metres; exclude unsupported records, never replace their height.'
     provenance['small_geometry_exclusions']=small
     provenance['small_geometry_rule']='Omit entire source record if any ring has area below 0.011 square metres in the local metric approximation; no sliver repair.'
     provenance['geometry']+=' Invalid source geometries are omitted and their snapshot IDs listed; no repair is applied.'

@@ -19,9 +19,9 @@ test('real CTL1 tile and GTFS actors advance in inherited world before post-step
   const { world: W } = await torontoWorld();
   assert.ok(W.streamer.tiles.size>10);
   assert.ok(W.streamer.stats.bytes<2_000_000);
-  assert.equal(W.sourceNetwork.roads.length,841);
+  assert.equal(W.sourceNetwork.roads.length,1589);
   assert.equal(W.sourceNetwork.routing,false);
-  assert.equal(Object.keys(W.streamer.manifest.tiles).length,19);
+  assert.equal(Object.keys(W.streamer.manifest.tiles).length,29);
   assert.equal(W.traffic, null); assert.equal(W.peds, null); assert.equal(W.trains, null);
   assert.equal(W.streamer.cityOverrides, false);
   assert.deepEqual(W.fetches, []); // only local shim requests; external guard is asserted separately
@@ -34,7 +34,8 @@ test('real CTL1 tile and GTFS actors advance in inherited world before post-step
   assert.notDeepEqual(W.transit.actors, before);
   const actor = W.transit.actors[0], trip = prepare(data).trips.find(t => t.trip_id === actor.tripId);
   const expected = localFrame(PROFILE.geoOrigin).project(...position(trip, 28860));
-  assert.deepEqual([actor.x, actor.z], expected);
+  assert.ok(Math.hypot(actor.x-expected[0],actor.z-expected[1])<.001);
+  assert.ok(actor.graph.edgeId || actor.graph.nodeId);
   assert.equal(actor.y, 0); assert.equal(actor.basis, 'schedule-derived');
   for (const dt of [-1, NaN, Infinity]) await assert.rejects(W.step(dt), /Invalid simulation step/);
   assert.equal(W.simTime, 60);

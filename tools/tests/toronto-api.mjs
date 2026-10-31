@@ -4,8 +4,8 @@ import { spawn, execFileSync } from 'node:child_process';
 import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../../', import.meta.url));
-test('Toronto uses inherited TCP server, shared bridge and Python client', { timeout: 30000 }, async () => {
-  const server = spawn(process.execPath, ['--import','./tools/tests/helpers/offline-fetch.mjs','tools/core/serve.mjs','--city','toronto','--port','0'], { cwd:root, stdio:['ignore','pipe','pipe'] });
+for(const scenario of [false,true])test(`Toronto TCP/Python round trip (dwell scenario: ${scenario})`, { timeout: 30000 }, async () => {
+  const server = spawn(process.execPath, ['--import','./tools/tests/helpers/offline-fetch.mjs','tools/core/serve.mjs','--city','toronto','--port','0'], { cwd:root, env:{...process.env,TORONTO_TRANSIT_SCENARIO:scenario?'tools/toronto/scenarios/510-stop-dwell.json':''}, stdio:['ignore','pipe','pipe'] });
   let output='', port;
   server.stdout.on('data', b => { output+=b; port=Number(output.match(/listening on 127.0.0.1:(\d+)/)?.[1]); });
   server.stderr.on('data',b=>{output+=b;});
@@ -18,6 +18,7 @@ test('Toronto uses inherited TCP server, shared bridge and Python client', { tim
     const script=`
 import valdrada
 from valdrada.transport import ValdradaError
+import json, subprocess
 c=valdrada.Client(port=${port},timeout=5)
 try:
  w=c.get_world()
@@ -30,10 +31,70 @@ try:
  assert abs(p.x)<1e-6 and abs(p.y)<1e-6 and p.z==12
  q=m.transform_to_geolocation(p)
  assert q.latitude==43.65 and q.longitude==-79.397
+ g=w.get_transit_graph()
+ assert len(g['patterns'])==7 and len(g['edges'])==85
+ d=w.get_transit_departures('122948020')
+ expected=json.loads(subprocess.check_output(['node','--input-type=module','-e',"import {torontoWorld} from './core/sim/toronto.mjs'; const {world}=await torontoWorld(); console.log(JSON.stringify(world.transit.departures('122948020')));"],text=True))
+ assert d==expected
+ assert d['version']==2
+ assert d['rows'][3]['baseline']['following']=={'tripId':'18005020','departure':29556}
+ assert d['rows'][3]['selected']['following']==d['rows'][3]['baseline']['following']
+ assert d['rows'][3]['selected']['followingGapSeconds']==${scenario?'660':'720'}
+ f=w.get_transit_departures('18005020')
+ assert f['rows'][3]['selected']['departure']==f['rows'][3]['baseline']['departure']==29556
+ assert f['rows'][3]['selected']['gapSeconds']==d['rows'][3]['selected']['followingGapSeconds']
+ assert d['rows'][3]['baseline']['gapSeconds']==720
+ assert d['rows'][3]['selected']['gapSeconds']==${scenario?'780':'720'}
+ try: w.get_transit_departures('missing')
+ except ValdradaError: pass
+ else: raise AssertionError('Unknown trip accepted')
  t=w.get_transit_state()
+ assert not t['omissions']
+ if ${scenario?'True':'False'}:
+  assert t['scenario']['tripId']=='122948020' and t['scenario']['extraDwellSeconds']==60
+  assert t['deviations'][3]['arrivalDelaySeconds']==0 and t['deviations'][3]['departureDelaySeconds']==60
+  assert all(d['arrivalDelaySeconds']==60 for d in t['deviations'][4:])
+ else: assert t['scenario'] is None and t['deviations']==[]
+ assert sum(len(x['actorIds']) for k in ['nodes','edges'] for x in t['occupancy'][k])==10
+ buildings=w.get_city_building_tiles(-79.25,43.77)
+ assert len(buildings['tiles'])==9 and sum(t['b'] for t in buildings['tiles'])>100
+ assert buildings['simulation_ground'] is False
+ assert w.get_city_building_tiles(-80,44)['tiles']==[]
+ e=w.get_elevation(-79.3963,43.6488)
+ assert 60<e['height_m']<230 and e['vertical_datum']=='CGVD2013' and e['simulation_ground'] is False
+ assert w.get_elevation(-80,44)['missing'] is True
+ try: w.get_elevation('',43.65)
+ except ValdradaError: pass
+ else: raise AssertionError('Blank longitude accepted')
  network=w.get_source_network()
+ assert network['cityRoads']['counts']['graphEdges']==42877
+ path=w.find_source_road_path(13441580,13441580)
+ assert path['status']=='found' and path['distance_m']==0 and path['navigation_ready'] is False
+ road_graph=json.load(open('client/fixtures/toronto/city-roads/graph.json'))
+ edge=road_graph['edges'][0]
+ a,b=(edge[2],edge[1]) if edge[3]==-1 else (edge[1],edge[2])
+ actual=w.find_source_road_path(a,b)
+ expected_path=json.loads(subprocess.check_output(['node','--input-type=module','-e',f"import {{torontoWorld}} from './core/sim/toronto.mjs'; import {{sourceRoadPath}} from './client/src/toronto/roadGraph.js'; const {{world}}=await torontoWorld(); console.log(JSON.stringify(sourceRoadPath(world.cityRoadGraph,{a},{b})));"],text=True))
+ assert actual==expected_path and actual['status']=='found'
+ assert actual['traffic_interactions'] is False and actual['geometry_included'] is False
+ try: w.find_source_road_path('',1)
+ except ValdradaError: pass
+ else: raise AssertionError('Blank intersection accepted')
  assert network['coordinates']=='EPSG:4326' and network['routing'] is False
- assert len(network['roads'])==841 and len(network['stops'])==43
+ assert network['cityBuildings']['counts']['retainedParts']==427946
+ assert network['cityCover']['year']==2018 and network['cityCover']['step']==16
+ assert network['cityCover']['insideCells']>2400000
+ assert network['cityCover']['classes']['0']=='unknown' and network['cityCover']['classes']['9']=='conflict'
+ assert network['cityCover']['simulation_ground'] is False
+ assert network['cityTerrain']['verticalDatum']=='CGVD2013'
+ assert network['cityTerrain']['validNodes']==156647
+ assert network['cityTerrain']['missingInsideNodes']==0
+ assert network['landCover']['provenance']['study_year']==2018
+ assert network['landCover']['counts']==[0,46095,6237,14395,0,122260,48680,86848,3165]
+ assert network['landCover']['width']==512 and network['landCover']['height']==640
+ assert len(network['greenSpaces']['features'])==44
+ assert network['greenSpaces']['provenance']['source_sha256']=='9e57e8341042903f44e50a1589b1a393eb2dd331261f3b60e1d64ba41ec2162c'
+ assert len(network['roads'])==1589 and len(network['stops'])==81
  assert t['provenance']['subset_sha256']=='6fbce770e767f802f088bd152974d32a4ed7ec319efc1fc5b9cdeed45b8a7f1f'
  assert t['basis']=='schedule-derived' and len(t['actors'])==10
  assert t['service_day']=='20261022' and t['service_seconds']==28800
@@ -49,7 +110,7 @@ try:
  print('Python TCP Toronto round-trip passed')
 finally: c.close()
 `;
-    const python=spawn('python3',['-c',script],{cwd:root,env:{...process.env,PYTHONPATH:root+'/PythonAPI'},stdio:['ignore','pipe','pipe']});
+    const python=spawn('python3',['-c',script],{cwd:root,env:{...process.env,PYTHONPATH:root+'/PythonAPI',TORONTO_TRANSIT_SCENARIO:scenario?'tools/toronto/scenarios/510-stop-dwell.json':''},stdio:['ignore','pipe','pipe']});
     let result=''; python.stdout.on('data',b=>{result+=b;});python.stderr.on('data',b=>{result+=b;});
     const [code]=await once(python,'exit');assert.equal(code,0,result);
   } finally { server.kill('SIGTERM'); if(server.exitCode===null) await once(server,'exit'); }

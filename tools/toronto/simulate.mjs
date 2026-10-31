@@ -15,7 +15,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     frames.push({ frame: W.frame, elapsed: W.simTime, serviceSeconds: W.transit.serviceSeconds, actors: W.transit.actors });
   }
   console.log(JSON.stringify({ version: 1, basis: 'schedule-derived', profile: PROFILE,
-    serviceDay: W.transit.serviceDay, timezone: W.transit.timezone, provenance,
+    scenario: W.transit.scenario, deviations: W.transit.deviations, serviceDay: W.transit.serviceDay, timezone: W.transit.timezone, provenance,
     massingProvenance: JSON.parse(fs.readFileSync(path.join(root, 'client/fixtures/toronto/provenance.json'))),
     omittedTrips: W.transit.omittedTrips, loadedTiles: [...W.streamer.tiles.keys()], frames }, null, 2));
 }

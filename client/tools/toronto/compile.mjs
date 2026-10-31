@@ -12,12 +12,12 @@ const area = ring => ring.reduce((a, p, i) => {
   return a + p[0] * q[1] - q[0] * p[1];
 }, 0) / 2;
 
-export function compileBlock(collection, out, { tx=0, tz=0, district=false } = {}) {
+export function compileBlock(collection, out, { tx=0, tz=0, district=false, city=false } = {}) {
   const origin=[tx*512,tz*512];
-  if (collection.type !== 'FeatureCollection' || !collection.features.length || collection.features.length > (district ? 5000 : 50)) {
-    throw new Error('Expected 1–50 source features');
+  if (collection.type !== 'FeatureCollection' || !collection.features.length || collection.features.length > (district ? 10000 : 50)) {
+    throw new Error(district?'Expected 1–10000 district parts':'Expected 1–50 source features');
   }
-  const positions = [], records = [], holes = [], identities = [], ids = new Set();
+  const positions = [], records = [], holes = [], identities = [], anchors = [], ids = new Set();
   function addRing(coordinates, exterior) {
     if (coordinates.length < 4 || coordinates[0].some((v, i) => v !== coordinates.at(-1)[i])) {
       throw new Error('Expected a closed source ring');
@@ -37,7 +37,7 @@ export function compileBlock(collection, out, { tx=0, tz=0, district=false } = {
     if (typeof feature.id !== 'string' || ids.has(feature.id)) throw new Error('Missing/duplicate source ID');
     ids.add(feature.id);
     const height = feature.properties?.[PROFILE.heightField];
-    if (!Number.isFinite(height) || height <= 0 || height >= 300) throw new Error('Missing/invalid observed height');
+    if (!Number.isFinite(height) || height <= 0 || height >= 600) throw new Error('Missing/invalid observed height');
     const geom = feature.geometry;
     const polygons = geom?.type === 'Polygon' ? [geom.coordinates] : geom?.type === 'MultiPolygon' ? geom.coordinates : null;
     if (!polygons?.length) throw new Error('Expected Polygon/MultiPolygon');
@@ -54,24 +54,27 @@ export function compileBlock(collection, out, { tx=0, tz=0, district=false } = {
         bytes.writeUInt16LE(hole.len, 8); bytes.writeUInt8(Math.min(255, Math.round(hole.area / 4)), 11);
         holes.push(bytes);
       }
-      if (footprintArea <= 0 || footprintArea > 65535) throw new Error('Unsupported footprint area');
+      if (footprintArea <= 0 || (!city && footprintArea > 65535)) throw new Error('Unsupported footprint area');
       const bytes = Buffer.alloc(44);
       bytes.writeUInt32LE(outer.start, 0); bytes.writeUInt16LE(outer.len, 4);
       bytes.writeInt16LE(-1, 6); // no landmark
-      bytes.writeFloatLE(height, 12); // base is explicitly flat, not an observed elevation
+      if(city){const base=feature.properties.terrain_base;if(!Number.isFinite(base)||base<=-10||base>=400)throw Error('Invalid city terrain anchor');bytes.writeFloatLE(base,8);}
+      bytes.writeFloatLE(height, 12); // source height unchanged; city base is explicitly illustrative terrain-relative placement
       bytes.writeUInt8(255, 17); // unclassified: never invent a NYC facade family
       bytes.set([180, 191, 202], 18);
-      bytes.writeUInt16LE(Math.round(footprintArea), 40);
-      records.push(bytes);
-      identities.push({ sourceId: feature.sourceId ?? feature.id, part: feature.sourcePart ?? part, sourceRecordIndex: feature.properties.source_record_index });
+      bytes.writeUInt16LE(Math.min(65535,Math.round(footprintArea)), 40);
+      records.push(bytes);if(city)anchors.push(...feature.properties.anchor);
+      identities.push({ sourceId: feature.sourceId ?? feature.id, part: feature.sourcePart ?? part, sourceRecordIndex: feature.properties.source_record_index, ...(city&&footprintArea>65535?{footprintArea}: {}) });
     }
   }
   const header = { v: 1, tx, tz, origin, res: 1, names: [], nodes: [],
-    profile: PROFILE, sourceArchiveSha256: collection.source_archive_sha256,
+    profile: city?{...PROFILE,verticalDatum:'Illustrative level foundation sampled from 64 m CGVD2013 bare earth; not source surface datum'}:PROFILE, sourceArchiveSha256: collection.source_archive_sha256,
+    ...(city?{terrainSourceSha256:collection.terrain_sha256,baseRule:'Illustrative level foundation at representative-point 64 m TIN sample; not source SURF_ELEV',areaEncoding:'uint16 saturated at 65535; exact larger area retained in record metadata'}:{}),
     records: identities, unknownFields: ['floors', 'facadeStyle', 'use', 'roof', 'terrain', 'roads'] };
   fs.mkdirSync(out, { recursive: true });
   writeTile(path.join(out, `${tx}_${tz}.bin`), header, [
     { name: 'bldgXZ', array: new Float32Array(positions) },
+    ...(city?[{name:'bAnchorXZ',array:new Float32Array(anchors)}]:[]),
     { name: 'bldg', array: new Uint8Array(Buffer.concat(records)) },
     { name: 'bholes', array: new Uint8Array(Buffer.concat(holes)) },
     { name: 'roads', array: new Uint8Array() }, { name: 'furn', array: new Uint8Array() },
@@ -86,7 +89,7 @@ export function compileBlock(collection, out, { tx=0, tz=0, district=false } = {
 // Whole polygon parts belong to their bounding-box centre tile. Boundary-crossing
 // vertices remain intact in local float coordinates; no clipping or duplication.
 export function compileDistrict(collection, out) {
-  if(collection.type!=='FeatureCollection' || !collection.features.length || collection.features.length>5000) throw new Error('District source budget exceeded');
+  if(collection.type!=='FeatureCollection' || !collection.features.length || collection.features.length>10000) throw new Error('District source budget exceeded');
   const groups=new Map(), seen=new Set();
   for(const feature of collection.features) {
     if(typeof feature.id!=='string' || seen.has(feature.id))throw new Error('Missing/duplicate source ID');

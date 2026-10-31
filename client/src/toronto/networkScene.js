@@ -10,7 +10,7 @@ export function addSourceNetwork(scene,network,profile) {
     const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
     const mesh=new THREE.LineSegments(geometry,new THREE.LineBasicMaterial({color}));mesh.name=name;group.add(mesh);
   }
-  lines(network.roads.flatMap(r=>r.geometry.type==='LineString'?[r.geometry.coordinates]:r.geometry.coordinates),0x708591,.15,'officialCentrelines');
+  lines(network.roads.flatMap(r=>r.geometry.type==='LineString'?[r.geometry.coordinates]:r.geometry.coordinates),0xc9c4b6,.15,'officialCentrelines');
   lines(network.shapes.flatMap(s=>s.lines),0xbb8840,.3,'gtfsServicePaths');
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(network.stops.flatMap(s=>xyz([Number(s.stop_lon),Number(s.stop_lat)],.6)),3));
   const stops=new THREE.Points(geometry,new THREE.PointsMaterial({color:0x63c6d2,size:5,sizeAttenuation:false}));stops.name='gtfsStops';group.add(stops);

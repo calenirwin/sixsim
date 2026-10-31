@@ -31,7 +31,7 @@ def extract(archive, bbox=BBOX, out=OUT, max_features=50, strict=True):
     assert archive.stat().st_size == 81415175, 'Unexpected source size'
     assert hashlib.sha256(archive.read_bytes()).hexdigest() == SHA256, 'Unexpected source revision'
     extent = box(*mercator(*bbox[:2]), *mercator(*bbox[2:]))
-    features, excluded, invalid = [], [], []
+    features, excluded, invalid, heights = [], [], [], []
     with zipfile.ZipFile(archive) as z, tempfile.TemporaryDirectory(dir=archive.parent) as temp:
         prj = z.read(STEM + '.prj').decode()
         assert 'WGS_1984_Web_Mercator_Auxiliary_Sphere' in prj and 'UNIT["Meter",1.0]' in prj
@@ -52,7 +52,10 @@ def extract(archive, bbox=BBOX, out=OUT, max_features=50, strict=True):
                 excluded.append(record_index)
                 continue
             props = row.record.as_dict()
-            assert math.isfinite(props['AVG_HEIGHT']) and 0 < props['AVG_HEIGHT'] < 300
+            if not (isinstance(props['AVG_HEIGHT'], (int,float)) and math.isfinite(props['AVG_HEIGHT']) and 0 < props['AVG_HEIGHT'] < 600):
+                if strict: raise ValueError(f'Unsupported source height at record {record_index}')
+                heights.append({'source_record_index': record_index, 'height': props['AVG_HEIGHT'] if isinstance(props['AVG_HEIGHT'], (int,float)) and math.isfinite(props['AVG_HEIGHT']) else None})
+                continue
             geom = transform(lonlat, geom)
             assert geom.is_valid
             features.append({'type': 'Feature', 'id': f'2025:record:{record_index}',
@@ -65,7 +68,9 @@ def extract(archive, bbox=BBOX, out=OUT, max_features=50, strict=True):
             'selection': 'Whole polygons fully covered by bbox; boundary intersections excluded, no clipping.',
             'excluded_boundary_record_indices': sorted(excluded),
             'features': features}
-    if not strict: data['excluded_invalid_record_indices'] = sorted(invalid)
+    if not strict:
+        data['excluded_invalid_record_indices'] = sorted(invalid)
+        data['excluded_height_records'] = sorted(heights,key=lambda r:r['source_record_index'])
     out.write_text(json.dumps(data, indent=2, allow_nan=False) + '\n')
     print(f'{len(features)} records, {len(excluded)} boundary exclusions, {out.stat().st_size} bytes -> {out}')
 
