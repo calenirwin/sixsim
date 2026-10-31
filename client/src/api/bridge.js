@@ -1045,6 +1045,12 @@ export function initApi(ctx) {
         capabilities: { road_navigation: !!traffic, pedestrians: !!peds, scheduled_transit: !!ctx.transit },
       };
     },
+    'map.get_elevation': ({longitude,latitude}) => {
+      need(ctx.terrain, 'unavailable', 'No source terrain configured');
+      need(Number.isFinite(longitude)&&Number.isFinite(latitude)&&Math.abs(longitude)<=180&&Math.abs(latitude)<=90,'invalid_argument','Expected finite longitude/latitude');
+      const height=ctx.terrain.sampleGeographic(longitude,latitude);
+      return {height_m:height,missing:height===null,vertical_datum:'CGVD2013',source_year:2023,basis:'Bilinear 64 m grid sampled from original bare-earth TIN triangles',simulation_ground:false};
+    },
     'map.get_source_network': () => {
       need(ctx.sourceNetwork, 'unavailable', 'No source network configured');
       return ctx.sourceNetwork;

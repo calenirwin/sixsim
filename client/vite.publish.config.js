@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import config from './vite.config.js';
 const commit=process.env.GITHUB_SHA || execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
 if(!/^[a-f0-9]{40}$/.test(commit))throw new Error('Publication requires a full commit SHA');
-const sources=['toronto/district-provenance.json','toronto/network-provenance.json','toronto/green-spaces-provenance.json','toronto/land-cover-provenance.json','transit/provenance.json'].map(name=>JSON.parse(fs.readFileSync(new URL(`./fixtures/${name}`,import.meta.url))));
+const sources=['toronto/district-provenance.json','toronto/network-provenance.json','toronto/green-spaces-provenance.json','toronto/land-cover-provenance.json','toronto/city-terrain/provenance.json','transit/provenance.json'].map(name=>JSON.parse(fs.readFileSync(new URL(`./fixtures/${name}`,import.meta.url))));
 export default mergeConfig(config,defineConfig({
   base:'/sixsim/',publicDir:false,
   define:{'import.meta.env.VITE_PUBLISHED_CITY':JSON.stringify('toronto')},

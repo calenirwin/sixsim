@@ -31,6 +31,7 @@
     "build:publish": "npm run prepare:toronto-renderer && vite build --config vite.publish.config.js",
     "test:publish": "node tools/tests/publish-browser.mjs",
     "build:space": "npm run prepare:toronto-renderer && vite build --config vite.space.config.js",
+    "test:city-terrain": "node tools/tests/city-terrain-browser.mjs",
     "test:space": "STATIC_SPACE=1 node tools/tests/publish-browser.mjs"
   },
   "keywords": [],

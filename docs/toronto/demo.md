@@ -26,7 +26,7 @@ The recording runs from 08:00 to 08:05 on the pinned **2026-10-22 service day**,
 | Moving transit | 378 route-510 trips across seven validated service patterns | Scheduled symbolic positions, not observed vehicles or interacting traffic |
 | Experiment | One fixed +60-second stop dwell propagated downstream | An explicit what-if input, without recovery, passenger, signal or collision modeling |
 
-The moving route continues beyond the building crop. The absence of a building or terrain tile beyond that crop is not evidence that a location is empty.
+The moving route continues beyond the building crop. The absence of a building tile beyond that crop is not evidence that a location is empty.
 
 ## Run the existing application
 
@@ -94,3 +94,9 @@ Use **Grange Park** to focus a named source polygon, and **Green-space designati
 ### Historical classified cover
 
 At **Grange Park**, enable **2018 classified cover** to compare mapped canopy, grass, shrub and impervious classes with the surrounding buildings and streets. Expand the class legend for colours and limits. This replaces the green-space designation overlay; toggling it off restores the neutral ground, while selecting designations restores that separate layer. The 512 × 640 display grid samples the City's 2018 classification at approximately 4 m. Canopy can obscure streets and other ground surfaces. Source dates differ from the building and designation layers; colours are illustrative, elevation remains flat, and no current vegetation, public access or physical traffic parameters are inferred. Both recordings use the same source context.
+
+### Municipal elevation
+
+Select **City terrain · 2023** to inspect the municipal bare-earth surface in the same renderer. Overview shows the full boundary at 512 m display spacing; Etobicoke, North York and Scarborough controls select bounded 64 m near patches. These are display resolutions, not the original LiDAR resolution. Colours indicate elevation, not vegetation. CGVD2013 heights retain true vertical scale. Missing cells are not filled.
+
+The district recording pauses and its flat geometry is hidden while inspecting terrain. **Return to district simulation** restores the previous camera and recording position. Terrain does not imply citywide buildings, cover, routing or transit interactions; their coverage is unchanged. Mobile evidence from automated checks represents resized desktop Chromium with touch, not native iOS/Android performance.

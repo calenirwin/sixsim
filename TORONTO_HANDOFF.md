@@ -56,3 +56,5 @@ source-specific notes link OGL–Toronto; inconsistent CKAN licence tags remain
 recorded in provenance, without claiming City clarification or legal assurance.
 Code permission and data terms remain separate. Preserve [upstream attribution](ACKNOWLEDGEMENTS.md)
 and [licensing notes](LICENSING.md).
+
+The main renderer also exposes **City terrain · 2023**, a lazy-loaded municipal bare-earth inspection mode with CGVD2013 heights, 64 m near detail and a 512 m overview. It pauses/hides the flat district and restores it on return. Terrain coverage follows the official Toronto boundary; building, cover and interaction coverage do not become citywide with it. `world.get_elevation(longitude, latitude)` queries the same coarse surface and returns explicit missing status. Vertical alignment remains separate from terrain availability.

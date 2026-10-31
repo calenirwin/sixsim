@@ -265,6 +265,10 @@ class World:
         """Source centrelines, GTFS, green-space designations and 2018 classified cover in EPSG:4326; not routing or access rights."""
         return self._call("map.get_source_network")
 
+    def get_elevation(self, longitude: float, latitude: float) -> dict:
+        """Historical bare-earth CGVD2013 metres; missing is explicit, not actor/road elevation."""
+        return self._call("map.get_elevation", longitude=longitude, latitude=latitude)
+
     def get_transit_graph(self) -> dict:
         """Directed GTFS service paths in EPSG:4326, not surveyed track topology."""
         return self._call("transit.get_graph")

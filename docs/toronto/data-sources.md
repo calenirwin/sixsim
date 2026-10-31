@@ -66,13 +66,25 @@ The existing subset relies on the affirmative official portal and dataset-note e
 | Field | Record |
 |---|---|
 | Owner / geography | City of Toronto — Information & Technology; Toronto |
-| Status | Catalogue verified, not imported |
-| Format / coordinates | SHP polygons from 2023 LiDAR-derived 2.5 m bare-earth source; horizontal EPSG:2952; vertical CGVD2013. |
-| Update evidence | Catalogue cadence: As available; last refresh: 2024-09-04 19:27:22. These describe publication, not accuracy or measurement date. |
-| Terms / attribution / redistribution | Toronto portal licence evidence as above; CKAN licence: License not specified, id: notspecified. Preserve source-specific limitations; verify selected resource terms before redistribution. |
-| Access / quotas | Public metadata read without authentication; resource/service requirements and quotas not verified. No credential supplied or requested. |
-| Source versus derived storage | Do not fetch citywide archive by default; first establish small extract availability and size. Keep source elevation separate from building height. |
-| Next integration step | Confirm vertex elevation representation versus polygon Avg_Elev before terrain reconstruction; reconcile vertical datum. |
+| Status | Municipal terrain grid and existing-renderer inspection mode; separate from flat actor/building heights |
+| Format / coordinates | Actual source is PolygonZ SHP: 2,628,358 triangles with vertex Z, horizontal EPSG:2952, vertical CGVD2013 metres. 2023 LiDAR-derived 2.5 m bare earth is sampled to a coarser 64 m display grid; `Avg_Elev` is not used to invent vertices. |
+| Update evidence | Source vintage 2023; archive published 2024-09-04. Cadence: As available. |
+| Terms / attribution / redistribution | Official portal and current CKAN `open-government-licence-toronto` identify OGL–Toronto. Contains information licensed under the Open Government Licence – Toronto. Preserve source-specific limits and derived processing. |
+| Access / storage | Public 188,200,285-byte ZIP, no credentials; raw archive/extracted files stay ignored. Commit the 1,263,832-byte height grid, manifest, boundary and provenance. No GIS download during normal builds. |
+| Processing / missing data | Barycentric interpolation within original triangles, not reconstructed Delaunay geometry. 156,647 inside-boundary nodes have source coverage. Conflicts exceeding 0.01 m become missing; none occur in this extract. No lake fill or extrapolation. Bilinear grid queries require four finite surrounding nodes. |
+| Alignment limits | CGVD2013 is established for TIN, not for the inspected massing `SURF_ELEV` metadata. Zero surface values and large differences prevent a blind offset. Road/GTFS source geometry does not establish bridge/tunnel elevations. `city-terrain/alignment.json` records the comparison basis and exclusions; it is not datum proof. |
+| Integration step | Reconcile building bases and structural road/transit levels before changing their vertical contracts; retain separate terrain inspection and explicit missing responses meanwhile. |
+
+The [official municipal boundary](https://open.toronto.ca/dataset/regional-municipal-boundary/) supplies one Toronto administrative feature in WGS84, not a GTA extent. Its 195,966-byte archive is under OGL–Toronto according to the portal and CKAN; publication date is 2019-07-23. The original boundary is retained and hash-pinned, with approximately 641.57 km² measured in EPSG:2952. Grid-node masking and conservative render cells do not reproduce every narrow shoreline feature. Source URLs, hashes, dates, formats and limits are in `client/fixtures/toronto/city-terrain/provenance.json`.
+
+Reproduction uses `client/tools/toronto/terrain-requirements.txt`. Download the exact provenance URLs into the ignored raw directory, keeping `tin-2023.zip` / extracted `tin-2023/2023_TIN.shp` and `municipal-boundary.zip` / extracted `municipal-boundary/` shapefile components:
+
+```sh
+python client/tools/toronto/extract_city_terrain.py client/data/toronto
+python client/tools/toronto/check_city_terrain.py client/data/toronto
+```
+
+The checker independently samples original TIN triangles and compares the district massing surface fields at source footprint representative points. [NRCan's height-reference explanation](https://natural-resources.canada.ca/science-data/science-research/geomatics/geodetic-reference-systems/canadian-spatial-reference-system-csrs) distinguishes CGVD2013 orthometric heights from ellipsoidal heights and legacy CGVD28; no interchangeable-datum assumption is made.
 
 ### Merged GTFS - TTC Routes and Schedules
 

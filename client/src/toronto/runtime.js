@@ -1,3 +1,4 @@
+import {cityTerrainControls} from './cityTerrainControls.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Engine } from '../core/engine.js';
@@ -85,9 +86,11 @@ export async function start() {
     return {tripId:comparison.tripId,vehicle,phase:row?(row[1]?'at stop':'on link'):'outside recording time',delay:deviation?.departureDelaySeconds||0};
   };
   demoControls=addDemoControls({seek,setPaused,duration:h.simTime.at(-1),geoFrame:localFrame(PROFILE.geoOrigin),controls,engine,header:h,mode,selectRecording,comparisonState,comparisonStart:comparison.stopOccurrence,greenSpaces,landCover,greenFocus:greenSpaceFocus(network.greenSpaces,'GRANGE PARK',PROFILE)});
-  window.__APP={engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,greenSpaces,landCover,serviceGraph,controls,tracks,seek,setPaused};
+  const cityTerrain=cityTerrainControls({engine,controls,setPaused,profile:PROFILE});
+  window.__APP={cityTerrain,engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,greenSpaces,landCover,serviceGraph,controls,tracks,seek,setPaused};
   engine.onFrame=dt=>{
     if(failed)return;
+    if(cityTerrain.active){controls.update();cityTerrain.update();document.querySelector('#stats').textContent='2023 municipal terrain · CGVD2013 metres · simulation paused';return;}
     if(streamer.error){fail(streamer.error);return;}
     controls.target.x=Math.max(manifest.bounds[0],Math.min(manifest.bounds[2],controls.target.x));
     controls.target.z=Math.max(manifest.bounds[1],Math.min(manifest.bounds[3],controls.target.z));

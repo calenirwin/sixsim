@@ -56,8 +56,17 @@ try:
   assert all(d['arrivalDelaySeconds']==60 for d in t['deviations'][4:])
  else: assert t['scenario'] is None and t['deviations']==[]
  assert sum(len(x['actorIds']) for k in ['nodes','edges'] for x in t['occupancy'][k])==10
+ e=w.get_elevation(-79.3963,43.6488)
+ assert 60<e['height_m']<230 and e['vertical_datum']=='CGVD2013' and e['simulation_ground'] is False
+ assert w.get_elevation(-80,44)['missing'] is True
+ try: w.get_elevation('',43.65)
+ except ValdradaError: pass
+ else: raise AssertionError('Blank longitude accepted')
  network=w.get_source_network()
  assert network['coordinates']=='EPSG:4326' and network['routing'] is False
+ assert network['cityTerrain']['verticalDatum']=='CGVD2013'
+ assert network['cityTerrain']['validNodes']==156647
+ assert network['cityTerrain']['missingInsideNodes']==0
  assert network['landCover']['provenance']['study_year']==2018
  assert network['landCover']['counts']==[0,46095,6237,14395,0,122260,48680,86848,3165]
  assert network['landCover']['width']==512 and network['landCover']['height']==640

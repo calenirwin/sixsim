@@ -86,3 +86,22 @@ jobs:
             client/shots/toronto-publish-*.png
             client/shots/toronto-demo.jpg
           if-no-files-found: ignore
+
+  city-terrain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts
+      - run: npm --prefix client ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - run: npm --prefix client run build:space
+      - run: npm --prefix client run test:city-terrain
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: city-terrain-screenshots
+          path: client/shots/toronto-city-terrain-*.png
