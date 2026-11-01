@@ -1059,7 +1059,7 @@ export function initApi(ctx) {
     },
     'experimental.get_road_probe': () => {
       need(ctx.roadProbe,'unavailable','No constrained road probe configured');
-      return {definition:ctx.roadProbe.definition,state:ctx.roadProbe.state};
+      return {coordinateFrame:'local-east-up-south-metres',definition:ctx.roadProbe.definition,admission:ctx.roadProbe.admission,state:ctx.roadProbe.state};
     },
     'map.find_source_road_path': ({from_intersection,to_intersection}) => {
       need(ctx.cityRoadGraph,'unavailable','No source street topology configured');

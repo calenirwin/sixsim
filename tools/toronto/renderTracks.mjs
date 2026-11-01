@@ -26,7 +26,7 @@ export async function exportTorontoTracks(options = {}, outputName = 'tracks.atr
     frames.push({veh,walk:[],sig:new Uint8Array(),train:[]});
   }
   const comparison=JSON.parse(fs.readFileSync(path.join(root,'tools/toronto/scenarios/510-stop-dwell.json')));
-  const header={roadProbe:W.roadProbe.definition,roadProbeFrames,transitDepartures:W.transit.departures(comparison.tripId),shot:'510-scheduled',seed:W.seed,dt:1,simTime,profile:PROFILE,rendering:W.renderCapabilities,
+  const header={roadAdmission:W.roadProbe.admission,roadProbe:W.roadProbe.definition,roadProbeFrames,transitDepartures:W.transit.departures(comparison.tripId),shot:'510-scheduled',seed:W.seed,dt:1,simTime,profile:PROFILE,rendering:W.renderCapabilities,
     transitGraph:W.transit.graph,transitFrames,transitScenario:W.transit.scenario,transitDeviations:W.transit.deviations,
     basis:'schedule-derived',serviceDay:W.transit.serviceDay,timezone:W.transit.timezone,startSeconds,
     vehicleKinds:['scheduled-trip-marker'],actors:[...actors.values()],parked:[],signals:[],

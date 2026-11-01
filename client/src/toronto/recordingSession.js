@@ -5,7 +5,7 @@ import { createCoreReplay } from '../replay/coreReplay.js';
 import { scheduledMarkerPool } from '../replay/scheduledMarkers.js';
 import { addServiceGraph } from './serviceGraphScene.js';
 export function assertComparable(reference,candidate) {
-  for(const key of ['roadProbe','roadProbeFrames','serviceDay','timezone','startSeconds','profile','rendering','simTime','transitGraph','massingProvenance','provenance']) {
+  for(const key of ['roadAdmission','roadProbe','roadProbeFrames','serviceDay','timezone','startSeconds','profile','rendering','simTime','transitGraph','massingProvenance','provenance']) {
     if(JSON.stringify(reference[key])!==JSON.stringify(candidate[key]))throw new Error(`Recording comparison mismatch: ${key}`);
   }
 }

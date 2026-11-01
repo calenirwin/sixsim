@@ -262,7 +262,7 @@ class World:
 
     # ---- content
     def get_road_probe(self) -> dict:
-        """Prescribed geometric probe; stops before its first unverified junction."""
+        """Prescribed probe and illustrative admission; x/east, y/up, z/south metres."""
         return self._call("experimental.get_road_probe")
 
     def find_source_road_path(self, from_intersection: int, to_intersection: int) -> dict:

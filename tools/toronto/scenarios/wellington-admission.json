@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "basis": "illustrative-reservation",
+  "nodeId": 30058201,
+  "incomingEdgeId": 30130361,
+  "outgoingEdgeId": 30058205,
+  "maxCrossings": 1,
+  "realPermissions": "unverified",
+  "windows": [[30, 40]],
+  "interruptions": []
+}

@@ -50,6 +50,9 @@ try:
  else: raise AssertionError('Unknown trip accepted')
  probe=w.get_road_probe()
  assert probe['state']['seconds']==0 and probe['state']['status']=='moving'
+ assert probe['coordinateFrame']=='local-east-up-south-metres'
+ assert probe['admission']['basis']=='illustrative-reservation'
+ assert probe['state']['admission']['grantSeconds']==30
  assert probe['state']['navigationReady'] is False and probe['definition']['policy']['junctionCrossings']==0
  t=w.get_transit_state()
  assert not t['omissions']
@@ -112,6 +115,11 @@ try:
   try: w._call(method)
   except ValdradaError as e: assert 'unavailable' in str(e),str(e)
   else: raise AssertionError(method+' should fail explicitly')
+ for _ in range(700): w.tick()
+ admitted=w.get_road_probe()
+ assert admitted['state']['status']=='held-before-next-junction' and admitted['state']['edgeId']==30058205
+ assert admitted['state']['junctionCrossings']==1 and admitted['state']['admission']['realPermissions']=='unverified'
+ assert admitted['state']['navigationReady'] is False and admitted['state']['trafficInteractions'] is False
  print('Python TCP Toronto round-trip passed')
 finally: c.close()
 `;

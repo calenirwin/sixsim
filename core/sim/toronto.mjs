@@ -22,7 +22,7 @@ function environmentScenario() {
   const file=process.env.TORONTO_TRANSIT_SCENARIO;
   return file?JSON.parse(fs.readFileSync(path.resolve(root,file))):null;
 }
-export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = environmentScenario() } = {}) {
+export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = environmentScenario(), roadAdmission = JSON.parse(fs.readFileSync(path.join(root,'tools/toronto/scenarios/wellington-admission.json'))) } = {}) {
   const tilesDir = path.join(root, 'client/.generated/toronto');
   const massing=fs.readFileSync(path.join(root,'client/fixtures/toronto/district.geojson'));
   const massingProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/district-provenance.json')));
@@ -54,7 +54,7 @@ export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = 
   if (createHash('sha256').update(bytes).digest('hex') !== provenance.subset_sha256) throw new Error('GTFS provenance hash mismatch');
   const transit = scheduledTransit(JSON.parse(bytes), { geoOrigin: PROFILE.geoOrigin, startSeconds, scenario });
   transit.provenance = provenance;
-  const probe=roadProbe(JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/road-corridor.json'))));
+  const probe=roadProbe(JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/road-corridor.json'))),{admission:roadAdmission});
   const world = await createWorld({ seed, tilesDir, renderCapabilities: TORONTO_RENDERING, traffic: false, peds: false, trains: false, cityOverrides: false, transit, roadProbe:probe });
   const municipalCoverBytes=fs.readFileSync(path.join(root,'client/fixtures/toronto/city-cover/manifest.json')),municipalCoverProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/city-cover/provenance.json')));
   if(createHash('sha256').update(municipalCoverBytes).digest('hex')!==municipalCoverProvenance.manifest_sha256)throw Error('City cover manifest hash mismatch');

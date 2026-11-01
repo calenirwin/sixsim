@@ -99,7 +99,7 @@ export async function start() {
     controls.target.z=Math.max(manifest.bounds[1],Math.min(manifest.bounds[3],controls.target.z));
     streamer.update(controls.target.x,controls.target.z);
     if(!paused)elapsed=Math.min(h.simTime.at(-1),elapsed+dt);
-    ENV.time.value=elapsed;traffic.update(dt);serviceGraph.update(replay.f);roadProbe.update(replay.f);demoControls.update(elapsed);probeStatus.textContent=roadProbe.current?`Wellington probe: ${roadProbe.current.status} · prescribed 5 m/s · stops before junction · flat illustrative height; not traffic or legal navigation`:'';controls.update();
+    ENV.time.value=elapsed;traffic.update(dt);serviceGraph.update(replay.f);roadProbe.update(replay.f);demoControls.update(elapsed);probeStatus.textContent=roadProbe.current?`Wellington probe: ${roadProbe.current.status} ${roadProbe.current.admission?` · grant ${roadProbe.current.admission.grantSeconds===null?'none':roadProbe.current.admission.grantSeconds+'s'}`:''} · prescribed 5 m/s · illustrative admission · flat height; not verified traffic permission`:'';controls.update();
     document.querySelector('#stats').textContent=`${clock(h.startSeconds+elapsed)} · scheduled-trip markers, not live vehicles${h.transitScenario?.extraDwellSeconds ? " · +60s dwell experiment" : ""} · procedural materials · flat ground`;
     if(streamer.tiles.get('0_0')?.state==='ready')document.querySelector('#loading').style.display='none';
   };
