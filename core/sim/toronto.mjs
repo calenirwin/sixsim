@@ -23,7 +23,7 @@ function environmentScenario() {
   const file=process.env.TORONTO_TRANSIT_SCENARIO;
   return file?JSON.parse(fs.readFileSync(path.resolve(root,file))):null;
 }
-export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = environmentScenario(), roadAdmission = JSON.parse(fs.readFileSync(path.join(root,'tools/toronto/scenarios/wellington-admission.json'))), sharedAdmission = JSON.parse(fs.readFileSync(path.join(root,'tools/toronto/scenarios/shared-junction-queue.json'))) } = {}) {
+export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = environmentScenario(), roadAdmission = JSON.parse(fs.readFileSync(path.join(root,'tools/toronto/scenarios/wellington-admission.json'))), sharedAdmission = JSON.parse(fs.readFileSync(path.join(root,'tools/toronto/scenarios/shared-junction-arrivals.json'))) } = {}) {
   const tilesDir = path.join(root, 'client/.generated/toronto');
   const massing=fs.readFileSync(path.join(root,'client/fixtures/toronto/district.geojson'));
   const massingProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/district-provenance.json')));
