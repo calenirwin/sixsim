@@ -91,3 +91,25 @@ above are unchanged; combining additional datasets/assets needs their terms too.
 ## Toronto static transit study
 
 The separate `client/fixtures/transit/` subset derives from TTC merged GTFS and carries the Toronto Open Government Licence notice. Its source evidence, metadata discrepancy and exact hashes are recorded in [the transit fixture documentation](client/fixtures/transit/README.md). It contains schedules, not live observations, and does not change inherited asset or OSM data terms.
+
+## Toronto Green Spaces
+
+The district's green-space context is derived from the City's [Green Spaces dataset](https://open.toronto.ca/dataset/green-spaces/), licensed under [OGL–Toronto](https://open.toronto.ca/open-data-licence/). Both the official dataset page and CKAN metadata identify that licence. Attribution and pinned source/derived hashes are retained in `client/fixtures/toronto/green-spaces-provenance.json` and the static package. These generalized designations may include private or paved areas; they confer no public-access permission and are not a surveyed land-cover or terrain product. Rendering colours are original illustration, not City imagery or endorsement.
+
+The historical classified-cover overlay derives from Toronto's [Forest and Land Cover 2018 study](https://open.toronto.ca/dataset/forest-and-land-cover/), under OGL–Toronto as identified by the official catalogue and CKAN licence field. Contains information licensed under the Open Government Licence – Toronto. `client/fixtures/toronto/land-cover-provenance.json` retains source/derived hashes, vintage, coordinate system and polygon normalization/rasterization details. Colours are original illustration, not imagery; top-down classification does not imply current conditions or the surface beneath tree canopy.
+
+Municipal elevation derives from the City's [Triangular Irregular Network](https://open.toronto.ca/dataset/triangular-irregular-network-tin/) and [Regional Municipal Boundary](https://open.toronto.ca/dataset/regional-municipal-boundary/), both identified as OGL–Toronto by their official catalogue and CKAN records. Contains information licensed under the Open Government Licence – Toronto. The retained provenance identifies source hashes, publication dates, 2023 terrain vintage, CGVD2013 datum and sampling/coverage limits. The derived surface is illustrative/coarse, not a surveyed replacement or a claim of City endorsement.
+
+## Municipal Toronto massing
+
+The `client/fixtures/toronto/city-buildings/` tiles derive from the same pinned official massing archive, selected against the official municipality. The official catalogue, dataset notes and CKAN metadata checked on 2026-10-31 identify OGL–Toronto. Older district provenance retains its historical unspecified metadata tag; the municipal provenance records the current evidence. Contains information licensed under the Open Government Licence – Toronto.
+
+Footprints and relative source heights are preserved; terrain-relative level foundations are original illustrative placement, not surveyed City foundations or a claimed source-datum conversion. Raw archives remain separate from derived tiles. See municipal provenance for source hashes, omissions, terrain/boundary lineage and limitations. Upstream licences and attribution remain unchanged.
+
+## Municipal 2018 classified cover
+
+The municipal `client/fixtures/toronto/city-cover/` tiles derive from the same official [Forest and Land Cover](https://open.toronto.ca/dataset/forest-and-land-cover/) archive as the district classification. Contains information licensed under the Open Government Licence – Toronto. Its provenance retains the pinned source, 2018 observation year, normalization and sampling rules, hashes and independent terrain/boundary lineage. Palette colours and draping are illustrative transformations, not City imagery, endorsement or current ground truth. Unknown/conflicting classifications are retained explicitly.
+
+### Municipal street derivatives
+
+`client/fixtures/toronto/city-roads/` derives from the official [Toronto Centreline](https://open.toronto.ca/dataset/toronto-centreline-tcl/) under the [Open Government Licence – Toronto](https://open.toronto.ca/open-data-licence/). Contains information licensed under the Open Government Licence – Toronto. Provenance records source retrieval/hash, selected classes, clipping, exclusions and direction rules. Terrain draping is illustrative cartography; topology experiments are not City-endorsed driving guidance. Existing framework copyright and licences remain unchanged.

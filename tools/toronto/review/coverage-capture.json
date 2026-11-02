@@ -1,0 +1,35 @@
+{
+  "baseline_commit": "cbdffc7f19d8eda49ad604584d6caaa31e22d981",
+  "viewport": [
+    1100,
+    750
+  ],
+  "camera": [
+    550,
+    800,
+    800
+  ],
+  "target": [
+    0,
+    0,
+    -200
+  ],
+  "playback_seconds": 70,
+  "renderer": "headless Chromium with software WebGL; not a native-device FPS benchmark",
+  "before": {
+    "tiles_ready": 19,
+    "geometry_objects": 37,
+    "textures": 38,
+    "loadedTriangles": 145396,
+    "triangle_measurement": "Reconstructed from all 19 baseline tiles using the unchanged extrusion geometry; postprocessing render counters are not scene triangle totals."
+  },
+  "after": {
+    "tiles": 20,
+    "loadedTriangles": 338448,
+    "geometries": 39,
+    "textures": 38,
+    "loadAndCaptureMs": 95839,
+    "errors": []
+  },
+  "limits": "Capture elapsed time includes browser startup, tile loading, automation and screenshot. It is not frame time. The renderer streams near the camera target; these images do not show every packaged tile."
+}

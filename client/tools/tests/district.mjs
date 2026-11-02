@@ -16,11 +16,11 @@ const source=JSON.parse(read('district.geojson')), frame=localFrame(PROFILE.geoO
 test('district provenance, multi-tile geometry, whole-part ownership and deterministic bytes',()=>{
  const p=JSON.parse(read('district-provenance.json'));
  assert.equal(createHash('sha256').update(read('district.geojson')).digest('hex'),p.subset_sha256);
- assert.equal(source.features.length,2344);assert.deepEqual(p.invalid_geometry_exclusions,[137520]);assert.deepEqual(p.small_geometry_exclusions,[137415]);
+ assert.equal(source.features.length,5587);assert.deepEqual(p.invalid_geometry_exclusions,[137520]);assert.deepEqual(p.small_geometry_exclusions,[137415]);
  const out=fs.mkdtempSync(path.join(os.tmpdir(),'district-'));
  try {
   const m=compileDistrict(source,out), originals=new Map(source.features.map(f=>[f.id,f]));
-  assert.equal(Object.keys(m.tiles).length,19);assert.deepEqual(m.macros,{});
+  assert.equal(Object.keys(m.tiles).length,29);assert.deepEqual(m.macros,{});
   const expected=new Set(source.features.flatMap(f=>(f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates).map((_,i)=>`${f.id}:${i}`))), seen=new Set(), bytes=new Map();let overflow=0,total=0;
   for(const [key,meta] of Object.entries(m.tiles)) {
    const b=fs.readFileSync(path.join(out,meta.f));bytes.set(key,b);total+=b.length;
@@ -37,7 +37,7 @@ test('district provenance, multi-tile geometry, whole-part ownership and determi
     assert.ok(Math.abs(building.height-f.properties.AVG_HEIGHT)<.0001);
    }
   }
-  assert.deepEqual(seen,expected);assert.equal(seen.size,2531);assert.ok(overflow>0);assert.ok(total<1_500_000);
+  assert.deepEqual(seen,expected);assert.equal(seen.size,5774);assert.ok(overflow>0);assert.ok(total<1_500_000);
   assert.deepEqual(compileDistrict(source,out),m);
   for(const [key,b] of bytes)assert.deepEqual(fs.readFileSync(path.join(out,m.tiles[key].f)),b);
  } finally {fs.rmSync(out,{recursive:true,force:true});}
@@ -45,7 +45,7 @@ test('district provenance, multi-tile geometry, whole-part ownership and determi
 test('network preserves source connectivity and coordinates without invented routing',()=>{
  const bytes=read('district-network.json'),p=JSON.parse(read('network-provenance.json'));
  assert.equal(createHash('sha256').update(bytes).digest('hex'),p.subset_sha256);
- const raw=JSON.parse(bytes),n=sourceNetwork(raw);assert.equal(n.roads.length,841);assert.equal(n.stops.length,43);assert.equal(n.routing,false);
+ const raw=JSON.parse(bytes),n=sourceNetwork(raw);assert.equal(n.roads.length,1589);assert.equal(n.stops.length,81);assert.equal(n.routing,false);
  const junction=n.nodes.find(node=>node.id===13466982);
  const names=junction.edge_ids.map(id=>n.roads.find(r=>r.id===id).properties.LINEAR_NAME_FULL);
  assert.ok(names.includes('Queen St W') && names.includes('Spadina Ave'),'Source Queen/Spadina intersection connectivity');
@@ -70,4 +70,13 @@ test('profiled macro loading uses mapped assets and suppresses NYC corrections a
   assert.deepEqual(requests,['/mapped/macro.bin']);const macro=streamer.macros.get('0_0');assert.equal(macro.state,'ready');assert.equal(macro.cMesh,null);assert.equal(macro.mesh.geometry.attributes.position.count,pos.length/3);assert.equal(macro.mesh.geometry.attributes.uv,undefined);
   macro.mesh.geometry.dispose();mat.dispose();
  } finally {globalThis.fetch=oldFetch;fs.rmSync(dir,{recursive:true,force:true});}
+});
+test('expanded coverage retains source heights and original procedural styling is deterministic',async()=>{
+ const {massingColor,illustratedMaterial,addIllustratedGround}=await import('../../src/toronto/appearance.js');
+ assert.deepEqual(source.bbox,[-79.410,43.642,-79.385,43.665]);
+ assert.equal(Math.max(...source.features.map(f=>f.properties.AVG_HEIGHT)),443);
+ for(const f of source.features)for(const polygon of f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates)for(const ring of polygon)for(const [lon,lat] of ring)assert.ok(lon>=source.bbox[0]-1e-9&&lon<=source.bbox[2]+1e-9&&lat>=source.bbox[1]-1e-9&&lat<=source.bbox[3]+1e-9);
+ assert.equal(massingColor('2025:record:123').getHex(),massingColor('2025:record:123').getHex());
+ const material=illustratedMaterial();assert.equal(material.vertexColors,true);assert.match(material.userData.basis,/not measured/);material.dispose();
+ const scene=new THREE.Scene(),ground=addIllustratedGround(scene,[-100,-200,300,400]);ground.geometry.computeBoundingBox();assert.deepEqual(ground.geometry.boundingBox.min.toArray().map(v=>Math.round(v*100)/100),[-100,-.08,-200]);ground.geometry.dispose();ground.material.dispose();
 });

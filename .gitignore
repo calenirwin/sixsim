@@ -65,3 +65,6 @@ site/
 
 # Bounded Toronto fixture: generated from the committed attributed subset
 client/.generated/
+
+# Prebuilt static Space package
+client/dist-space/

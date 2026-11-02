@@ -7,7 +7,8 @@ permissions:
 jobs:
   web-fixture:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Software-rendered browser coverage plus fixture checks can exceed 15 minutes.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -55,3 +56,58 @@ jobs:
           name: toronto-static-demo
           path: client/dist-toronto/
           if-no-files-found: error
+
+  static-space:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm --prefix client ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - run: npm --prefix client run build:space
+      - run: npm --prefix client run test:space
+      - uses: actions/upload-artifact@v4
+        with:
+          name: toronto-space-package
+          path: client/dist-space/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: toronto-space-screenshots
+          path: |
+            client/shots/toronto-publish-*.png
+            client/shots/toronto-demo.jpg
+          if-no-files-found: ignore
+
+  city-terrain:
+    runs-on: ubuntu-latest
+    # Four municipal neighbourhoods, missing-data recovery and mobile restoration.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts
+      - run: npm --prefix client ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - run: npm --prefix client run build:publish
+      - run: npm --prefix client run test:city-terrain
+        env:
+          CITY_CONTEXT_PUBLISH: 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: city-terrain-screenshots
+          path: |
+            client/shots/toronto-city-terrain-*.png
+            client/shots/toronto-city-buildings-*.png

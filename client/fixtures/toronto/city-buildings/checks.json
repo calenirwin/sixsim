@@ -1,0 +1,334 @@
+{
+  "manifest_sha256": "ec14c33bd7f9696dce056002ee30f980ce827a6f0408d1f60ab7c3903628e15f",
+  "source_archive_sha256": "9617089710518f1a24f70ca11b4a7c20ae45ab8e52a6fbed1bc088192efe6285",
+  "checkedParts": [
+    {
+      "tile": "-10_-1",
+      "sourceRecordIndex": 63805,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-10_-1",
+      "sourceRecordIndex": 81344,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-10_-1",
+      "sourceRecordIndex": 84327,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-13_-2",
+      "sourceRecordIndex": 69113,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-13_-2",
+      "sourceRecordIndex": 69746,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-13_-2",
+      "sourceRecordIndex": 72040,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-16_-18",
+      "sourceRecordIndex": 339126,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-16_-18",
+      "sourceRecordIndex": 339917,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-16_-18",
+      "sourceRecordIndex": 341117,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-19_-1",
+      "sourceRecordIndex": 32943,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-19_-1",
+      "sourceRecordIndex": 33381,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-19_-1",
+      "sourceRecordIndex": 51917,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-20_2",
+      "sourceRecordIndex": 28129,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-20_2",
+      "sourceRecordIndex": 28436,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-20_2",
+      "sourceRecordIndex": 31626,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-23_-7",
+      "sourceRecordIndex": 34534,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-23_-7",
+      "sourceRecordIndex": 38565,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-23_-7",
+      "sourceRecordIndex": 40065,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-26_-25",
+      "sourceRecordIndex": 331859,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-26_-25",
+      "sourceRecordIndex": 331962,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-26_-25",
+      "sourceRecordIndex": 332806,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-29_4",
+      "sourceRecordIndex": 317599,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-29_4",
+      "sourceRecordIndex": 317686,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-29_4",
+      "sourceRecordIndex": 321209,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-32_0",
+      "sourceRecordIndex": 314763,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-32_0",
+      "sourceRecordIndex": 314815,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-4_-28",
+      "sourceRecordIndex": 162473,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-4_-28",
+      "sourceRecordIndex": 162728,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-4_-28",
+      "sourceRecordIndex": 169062,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-7_-29",
+      "sourceRecordIndex": 167580,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-7_-29",
+      "sourceRecordIndex": 168477,
+      "sourcePart": 0
+    },
+    {
+      "tile": "-7_-29",
+      "sourceRecordIndex": 169396,
+      "sourcePart": 1
+    },
+    {
+      "tile": "0_-6",
+      "sourceRecordIndex": 356512,
+      "sourcePart": 0
+    },
+    {
+      "tile": "0_-6",
+      "sourceRecordIndex": 356876,
+      "sourcePart": 0
+    },
+    {
+      "tile": "0_-6",
+      "sourceRecordIndex": 360363,
+      "sourcePart": 0
+    },
+    {
+      "tile": "12_-34",
+      "sourceRecordIndex": 280137,
+      "sourcePart": 0
+    },
+    {
+      "tile": "12_-34",
+      "sourceRecordIndex": 281602,
+      "sourcePart": 0
+    },
+    {
+      "tile": "12_-34",
+      "sourceRecordIndex": 282344,
+      "sourcePart": 0
+    },
+    {
+      "tile": "15_-39",
+      "sourceRecordIndex": 384868,
+      "sourcePart": 0
+    },
+    {
+      "tile": "15_-39",
+      "sourceRecordIndex": 385504,
+      "sourcePart": 0
+    },
+    {
+      "tile": "15_-39",
+      "sourceRecordIndex": 385641,
+      "sourcePart": 0
+    },
+    {
+      "tile": "18_-9",
+      "sourceRecordIndex": 266618,
+      "sourcePart": 0
+    },
+    {
+      "tile": "18_-9",
+      "sourceRecordIndex": 267372,
+      "sourcePart": 0
+    },
+    {
+      "tile": "18_-9",
+      "sourceRecordIndex": 269258,
+      "sourcePart": 0
+    },
+    {
+      "tile": "21_-12",
+      "sourceRecordIndex": 379692,
+      "sourcePart": 0
+    },
+    {
+      "tile": "21_-12",
+      "sourceRecordIndex": 380158,
+      "sourcePart": 0
+    },
+    {
+      "tile": "21_-12",
+      "sourceRecordIndex": 381298,
+      "sourcePart": 0
+    },
+    {
+      "tile": "24_-31",
+      "sourceRecordIndex": 396372,
+      "sourcePart": 0
+    },
+    {
+      "tile": "24_-31",
+      "sourceRecordIndex": 396671,
+      "sourcePart": 0
+    },
+    {
+      "tile": "24_-31",
+      "sourceRecordIndex": 398046,
+      "sourcePart": 0
+    },
+    {
+      "tile": "28_-33",
+      "sourceRecordIndex": 305789,
+      "sourcePart": 0
+    },
+    {
+      "tile": "28_-33",
+      "sourceRecordIndex": 306171,
+      "sourcePart": 0
+    },
+    {
+      "tile": "28_-33",
+      "sourceRecordIndex": 409116,
+      "sourcePart": 0
+    },
+    {
+      "tile": "31_-39",
+      "sourceRecordIndex": 419147,
+      "sourcePart": 0
+    },
+    {
+      "tile": "31_-39",
+      "sourceRecordIndex": 419150,
+      "sourcePart": 0
+    },
+    {
+      "tile": "31_-39",
+      "sourceRecordIndex": 419152,
+      "sourcePart": 0
+    },
+    {
+      "tile": "37_-32",
+      "sourceRecordIndex": 313202,
+      "sourcePart": 0
+    },
+    {
+      "tile": "37_-32",
+      "sourceRecordIndex": 313454,
+      "sourcePart": 0
+    },
+    {
+      "tile": "37_-32",
+      "sourceRecordIndex": 424963,
+      "sourcePart": 0
+    },
+    {
+      "tile": "4_-35",
+      "sourceRecordIndex": 242748,
+      "sourcePart": 0
+    },
+    {
+      "tile": "4_-35",
+      "sourceRecordIndex": 244651,
+      "sourcePart": 0
+    },
+    {
+      "tile": "4_-35",
+      "sourceRecordIndex": 244784,
+      "sourcePart": 0
+    },
+    {
+      "tile": "7_-3",
+      "sourceRecordIndex": 198612,
+      "sourcePart": 0
+    },
+    {
+      "tile": "7_-3",
+      "sourceRecordIndex": 202217,
+      "sourcePart": 0
+    },
+    {
+      "tile": "7_-3",
+      "sourceRecordIndex": 203499,
+      "sourcePart": 0
+    }
+  ],
+  "maxRingQuantizationErrorMetres": 3.02392290905118e-05,
+  "maxBaseQuantizationErrorMetres": 2.3898339577499428e-05,
+  "meaning": "Processing consistency with source geometry and illustrative terrain anchor, not survey/foundation accuracy."
+}

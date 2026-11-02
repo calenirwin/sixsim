@@ -1,0 +1,220 @@
+{
+  "checked": [
+    {
+      "class": 5,
+      "column": 33,
+      "latitude": 43.74955728323075,
+      "longitude": -79.63268617480344,
+      "row": 32,
+      "sourceClasses": [
+        5
+      ],
+      "tile": "0_11"
+    },
+    {
+      "class": 5,
+      "column": 5,
+      "latitude": 43.720762696613036,
+      "longitude": -79.60010924040162,
+      "row": 40,
+      "sourceClasses": [
+        5
+      ],
+      "tile": "3_14"
+    },
+    {
+      "class": 5,
+      "column": 62,
+      "latitude": 43.75992333441313,
+      "longitude": -79.53793496925668,
+      "row": 24,
+      "sourceClasses": [
+        5
+      ],
+      "tile": "7_10"
+    },
+    {
+      "class": 5,
+      "column": 13,
+      "latitude": 43.76021128027931,
+      "longitude": -79.53495537159797,
+      "row": 22,
+      "sourceClasses": [
+        5
+      ],
+      "tile": "8_10"
+    },
+    {
+      "class": 5,
+      "column": 1,
+      "latitude": 43.79577259475219,
+      "longitude": -79.42292249963073,
+      "row": 31,
+      "sourceClasses": [
+        5
+      ],
+      "tile": "17_6"
+    },
+    {
+      "class": 5,
+      "column": 24,
+      "latitude": 43.76740992693374,
+      "longitude": -79.36750198317884,
+      "row": 36,
+      "sourceClasses": [
+        5
+      ],
+      "tile": "21_9"
+    },
+    {
+      "class": 5,
+      "column": 6,
+      "latitude": 43.77777597811611,
+      "longitude": -79.34565160034835,
+      "row": 28,
+      "sourceClasses": [
+        5
+      ],
+      "tile": "23_8"
+    },
+    {
+      "class": 5,
+      "column": 34,
+      "latitude": 43.77388870892272,
+      "longitude": -79.32737673470831,
+      "row": 55,
+      "sourceClasses": [
+        5
+      ],
+      "tile": "24_8"
+    },
+    {
+      "class": 3,
+      "column": 8,
+      "latitude": 43.78986970449555,
+      "longitude": -79.31982842063958,
+      "row": 8,
+      "sourceClasses": [
+        3
+      ],
+      "tile": "25_7"
+    },
+    {
+      "class": 5,
+      "column": 61,
+      "latitude": 43.76985746679624,
+      "longitude": -79.2965875589017,
+      "row": 19,
+      "sourceClasses": [
+        5
+      ],
+      "tile": "26_9"
+    },
+    {
+      "class": 5,
+      "column": 24,
+      "latitude": 43.80426699780441,
+      "longitude": -79.24037248307417,
+      "row": 36,
+      "sourceClasses": [
+        5
+      ],
+      "tile": "31_5"
+    },
+    {
+      "class": 7,
+      "column": 2,
+      "latitude": 43.79404491955512,
+      "longitude": -79.11761305953559,
+      "row": 43,
+      "sourceClasses": [
+        7
+      ],
+      "tile": "41_6"
+    }
+  ],
+  "excluded": [
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "4_21"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "6_9"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "9_11"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "10_11"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "11_12"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "12_13"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "13_15"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "14_17"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "15_22"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "18_7"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "19_8"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "20_8"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "22_8"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "27_12"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "28_15"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "29_18"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "32_11"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "34_1"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "35_9"
+    },
+    {
+      "reason": "within 1 m of boundary or invalid original part; not used as an independent assertion",
+      "tile": "37_6"
+    }
+  ],
+  "manifest_sha256": "af18456d13f36a8cad92e3fef995d238ad04cf51498652688dcd687f2fb42b7a",
+  "meaning": "Direct point-in-original-valid-source-polygon classification after independent coordinate conversion. Boundary/invalid-part probes excluded explicitly; not a claim of current ground truth."
+}

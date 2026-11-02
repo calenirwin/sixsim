@@ -1,0 +1,50 @@
+{
+  "sources": [
+    {
+      "dataset_url": "https://open.toronto.ca/dataset/triangular-irregular-network-tin/",
+      "url": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/4ab91af6-6b08-4318-aee0-87f163891e53/resource/6877e492-e416-4ce0-bff1-37ffbcc53409/download/triangular-irregular-network.zip",
+      "sha256": "268bf5094437d942ecca5e521368affa58623427a22ff1e4c4bcebbf9f4a1cb6",
+      "bytes": 188200285,
+      "resource_modified": "2024-09-04T19:27:22",
+      "retrieved": "2026-10-31",
+      "license_id": "open-government-licence-toronto"
+    },
+    {
+      "dataset_url": "https://open.toronto.ca/dataset/regional-municipal-boundary/",
+      "url": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/841fb820-46d0-46ac-8dcb-d20f27e57bcc/resource/41bf97f0-da1a-46a9-ac25-5ce0078d6760/download/toronto-boundary-wgs84.zip",
+      "sha256": "7c4b32f9d4532eedcb5f533973d6b55f27370dad7b2fa91b03cfb7942e8d0a4f",
+      "bytes": 195966,
+      "resource_modified": "2019-07-23T17:56:39.415158",
+      "retrieved": "2026-10-31",
+      "license_id": "open-government-licence-toronto"
+    }
+  ],
+  "municipalBoundaryAreaKm2": 641.5672583838633,
+  "attribution": "Contains information licensed under the Open Government Licence \u2013 Toronto.",
+  "license_url": "https://open.toronto.ca/open-data-licence/",
+  "terrain": {
+    "source": "2023 bare-earth LiDAR-derived PolygonZ TIN",
+    "horizontal": "EPSG:2952",
+    "vertical": "CGVD2013",
+    "units": "metres",
+    "method": "Barycentric interpolation inside original source triangles at 64 m grid nodes; masked by official municipal boundary. No retriangulation, elevation averaging, water fill or extrapolation. Multiple inconsistent hits (>0.01 m) become missing.",
+    "height_sha256": "aa3d66e880dd3c35d9f8e4dd973ddc6021a166d69cf92503125d345a5e5f4021",
+    "boundary_sha256": "f64b0245d68b88e375a8e1f94a06e36acd2a97e2959c2b3a8967d90643ebb0bc"
+  },
+  "limits": [
+    "Coarse derived display surface, not the original 2.5 m LiDAR resolution or survey-grade heights.",
+    "Triangle edges at render boundary conservatively omit any cell containing missing nodes; narrow coastal/island features may disappear at overview resolution.",
+    "Citywide means the official municipal boundary, not GTA; all inside-boundary grid nodes have source coverage, not every physical point or structure.",
+    "Buildings, land cover, roads and scheduled transit remain the existing district scope; terrain inspection does not upgrade their flat vertical contracts.",
+    "Building AVG_HEIGHT is height above its base, not CGVD2013 elevation. Roads, bridges and underground transit cannot blindly follow bare earth."
+  ],
+  "budget": {
+    "initialTerrainFetch": false,
+    "gridBytes": 1263832,
+    "nearPatchesMax": 25,
+    "nearResolutionMetres": 64,
+    "overviewResolutionMetres": 512,
+    "staticPackageCapBytes": 24000000,
+    "futureCitywideBuildingStorage": "Not allocated or published; revisit separately before bulk assets enter Git or hosting."
+  }
+}

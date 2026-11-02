@@ -1,0 +1,5 @@
+# Optional pinned offline extraction; no raster/GIS dependency in build or runtime.
+pyogrio==0.11.1
+shapely==2.1.2
+pyproj==3.7.2
+rasterio==1.4.3

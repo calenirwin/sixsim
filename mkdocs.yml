@@ -96,6 +96,7 @@ validation:
 nav:
   - Home: index.md
   - Toronto:
+      - Demo walkthrough: toronto/demo.md
       - Vision and roadmap: toronto/vision.md
       - Data-source register: toronto/data-sources.md
   - Upstream NYC media: media.md
