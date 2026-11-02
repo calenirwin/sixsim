@@ -261,6 +261,10 @@ class World:
         return WorldSnapshot(self._call("world.get_snapshot"))
 
     # ---- content
+    def get_shared_junction(self) -> dict:
+        """Two prescribed probes sharing an illustrative slot; local east/up/south metres."""
+        return self._call("experimental.get_shared_junction")
+
     def get_road_probe(self) -> dict:
         """Prescribed probe and illustrative admission; x/east, y/up, z/south metres."""
         return self._call("experimental.get_road_probe")

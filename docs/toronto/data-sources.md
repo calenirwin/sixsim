@@ -287,3 +287,13 @@ python client/tools/toronto/extract_road_corridor.py client/data/toronto/centrel
 ```
 
 The extractor verifies archive hash, CRS, graph membership and original endpoint continuity. It rejects unsupported geometry encoding and inserts no connector or snapped vertex. The record includes its parent graph hash, source URL/retrieval date and experimental movement policy. Runtime distances use the existing local planar frame; graph weights remain geodesic source lengths. The base probe remains on its first edge. A separate original scenario in `tools/toronto/scenarios/wellington-admission.json` may grant one illustrative source-node transition; its time windows and interruptions are authored model inputs, not City signal/access data. Unknown access/turn permissions and flat illustrative elevation are explicit rather than inferred from the Centreline.
+
+### Wellington/Bathurst branching-node fixture
+
+`client/fixtures/toronto/shared-junction.json` derives four original City Centreline records at node `13467884` from the same pinned GeoPackage and parent graph: 1146640 and 8457361 (Bathurst), 8491785 and 14025464 (Wellington). The extractor checks source hash, EPSG:4326, graph membership, direction and exact shared endpoints. Original vertices are retained without snapping or connector invention. Its provenance includes the official source URL, retrieval date, graph hash and Open Government Licence – Toronto attribution.
+
+```sh
+python client/tools/toronto/extract_shared_junction.py client/data/toronto/centreline-20261023.gpkg /tmp/shared-junction.json
+```
+
+The distinct `tools/toronto/scenarios/shared-junction.json` contains authored timing, spacing, ordering and exclusive-resource assumptions. These are not City signal timings, surveyed conflict zones or verified access/turn rights. Source direction constrains the chosen traversal, while the model's admission rule is explicitly illustrative. The archive remains outside Git; no new source download or credential is required.

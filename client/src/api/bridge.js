@@ -1057,6 +1057,10 @@ export function initApi(ctx) {
       const height=ctx.terrain.sampleGeographic(longitude,latitude);
       return {height_m:height,missing:height===null,vertical_datum:'CGVD2013',source_year:2023,basis:'Bilinear 64 m grid sampled from original bare-earth TIN triangles',simulation_ground:false};
     },
+    'experimental.get_shared_junction': () => {
+      need(ctx.junctionProbes,'unavailable','No shared junction experiment configured');
+      return {definition:ctx.junctionProbes.definition,policy:ctx.junctionProbes.policy,reservations:ctx.junctionProbes.reservations,state:ctx.junctionProbes.state};
+    },
     'experimental.get_road_probe': () => {
       need(ctx.roadProbe,'unavailable','No constrained road probe configured');
       return {coordinateFrame:'local-east-up-south-metres',definition:ctx.roadProbe.definition,admission:ctx.roadProbe.admission,state:ctx.roadProbe.state};

@@ -10,10 +10,10 @@ export async function exportTorontoTracks(options = {}, outputName = 'tracks.atr
   if(!['tracks.atrk','tracks-baseline.atrk','tracks-dwell.atrk'].includes(outputName))throw new Error('Unsupported recording output');
   const { world: W, provenance } = await torontoWorld(options);
   const startSeconds=W.transit.serviceSeconds;
-  const frames=[], actors=new Map(), ids=new Map(), simTime=[], transitFrames=[], roadProbeFrames=[];
+  const frames=[], actors=new Map(), ids=new Map(), simTime=[], transitFrames=[], roadProbeFrames=[], sharedJunctionFrames=[];
   for(let f=0;f<=300;f++) {
     if(f) await W.step(1);
-    simTime.push(W.simTime);roadProbeFrames.push(W.roadProbe.state);
+    simTime.push(W.simTime);roadProbeFrames.push(W.roadProbe.state);if(W.junctionProbes)sharedJunctionFrames.push(W.junctionProbes.state);
     const veh=W.transit.actors.map(a=>{
       if(!ids.has(a.id)) {
         const id=ids.size+1; ids.set(a.id,id);
@@ -33,6 +33,7 @@ export async function exportTorontoTracks(options = {}, outputName = 'tracks.atr
     provenance, massingProvenance:JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/district-provenance.json'))),
     unknownFields:['vehicleDimensions','heading','speed','animation'],
     marker:'Symbol only; no vehicle dimensions, heading, speed or fleet model inferred'};
+  if(W.junctionProbes){header.sharedJunction={definition:W.junctionProbes.definition,policy:W.junctionProbes.policy,reservations:W.junctionProbes.reservations};header.sharedJunctionFrames=sharedJunctionFrames;}
   const file=path.join(root,'client/.generated/toronto',outputName);
   const bytes=writeTracks(file,header,frames);
   return {file,bytes,header,frames};

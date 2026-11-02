@@ -48,6 +48,9 @@ try:
  try: w.get_transit_departures('missing')
  except ValdradaError: pass
  else: raise AssertionError('Unknown trip accepted')
+ shared=w.get_shared_junction()
+ assert shared['state']['ownerId'] is None and len(shared['state']['probes'])==2
+ assert [(r['id'],r['grantSeconds'],r['clearSeconds']) for r in shared['reservations']]==[('bathurst-probe',10,14),('wellington-probe',14,18)]
  probe=w.get_road_probe()
  assert probe['state']['seconds']==0 and probe['state']['status']=='moving'
  assert probe['coordinateFrame']=='local-east-up-south-metres'
@@ -115,7 +118,14 @@ try:
   try: w._call(method)
   except ValdradaError as e: assert 'unavailable' in str(e),str(e)
   else: raise AssertionError(method+' should fail explicitly')
- for _ in range(700): w.tick()
+ for index in range(700):
+  w.tick()
+  if index in (199,279,359):
+   shared=w.get_shared_junction()['state']
+   expected={199:'bathurst-probe',279:'wellington-probe',359:None}[index]
+   assert shared['ownerId']==expected
+   assert len([a for a in shared['probes'] if a['phase']=='reserved'])<=1
+   assert shared['navigationReady'] is False and shared['physicalCollisions'] is False
  admitted=w.get_road_probe()
  assert admitted['state']['status']=='held-before-next-junction' and admitted['state']['edgeId']==30058205
  assert admitted['state']['junctionCrossings']==1 and admitted['state']['admission']['realPermissions']=='unverified'

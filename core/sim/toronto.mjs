@@ -1,3 +1,4 @@
+import {sharedJunction} from '../../client/src/toronto/sharedJunction.js';
 import {roadProbe} from '../../client/src/toronto/roadProbe.js';
 import {roadGraph} from '../../client/src/toronto/roadGraph.js';
 import {validateCityCover,validateCoverTerrain} from '../../client/src/toronto/cityCover.js';
@@ -22,7 +23,7 @@ function environmentScenario() {
   const file=process.env.TORONTO_TRANSIT_SCENARIO;
   return file?JSON.parse(fs.readFileSync(path.resolve(root,file))):null;
 }
-export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = environmentScenario(), roadAdmission = JSON.parse(fs.readFileSync(path.join(root,'tools/toronto/scenarios/wellington-admission.json'))) } = {}) {
+export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = environmentScenario(), roadAdmission = JSON.parse(fs.readFileSync(path.join(root,'tools/toronto/scenarios/wellington-admission.json'))), sharedAdmission = JSON.parse(fs.readFileSync(path.join(root,'tools/toronto/scenarios/shared-junction.json'))) } = {}) {
   const tilesDir = path.join(root, 'client/.generated/toronto');
   const massing=fs.readFileSync(path.join(root,'client/fixtures/toronto/district.geojson'));
   const massingProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/district-provenance.json')));
@@ -55,7 +56,8 @@ export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = 
   const transit = scheduledTransit(JSON.parse(bytes), { geoOrigin: PROFILE.geoOrigin, startSeconds, scenario });
   transit.provenance = provenance;
   const probe=roadProbe(JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/road-corridor.json'))),{admission:roadAdmission});
-  const world = await createWorld({ seed, tilesDir, renderCapabilities: TORONTO_RENDERING, traffic: false, peds: false, trains: false, cityOverrides: false, transit, roadProbe:probe });
+  const junction=sharedAdmission===null?null:sharedJunction(JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/shared-junction.json'))),sharedAdmission);
+  const world = await createWorld({ seed, tilesDir, renderCapabilities: TORONTO_RENDERING, traffic: false, peds: false, trains: false, cityOverrides: false, transit, roadProbe:probe, junctionProbes:junction });
   const municipalCoverBytes=fs.readFileSync(path.join(root,'client/fixtures/toronto/city-cover/manifest.json')),municipalCoverProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/city-cover/provenance.json')));
   if(createHash('sha256').update(municipalCoverBytes).digest('hex')!==municipalCoverProvenance.manifest_sha256)throw Error('City cover manifest hash mismatch');
   const municipalCover=validateCityCover(JSON.parse(municipalCoverBytes));validateCoverTerrain(municipalCover,terrainMeta);
@@ -65,6 +67,7 @@ export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = 
   if(roadProvenance.terrain_sha256!==terrainMeta.heightSha256||roadProvenance.boundary_sha256!==terrainMeta.boundarySha256)throw Error('Source street frame mismatch');
   world.cityRoadGraph=roadGraph(JSON.parse(roadBytes));network.cityRoads={counts:roadProvenance.counts,provenance:roadProvenance,navigation_ready:false,traffic_interactions:false};
   for(const e of probe.definition.edges){const source=world.cityRoadGraph.edges.get(e.id);if(!source||source[1]!==e.fromNode||source[2]!==e.toNode||source[3]!==e.direction||source[4]!==e.sourceLengthM)throw Error('Corridor source graph mismatch');}
+  if(junction)for(const e of junction.definition.edges){const r=world.cityRoadGraph.edges.get(e.id);if(!r||JSON.stringify(r.slice(1))!==JSON.stringify([e.fromNode,e.toNode,e.direction,e.sourceLengthM]))throw Error('Shared junction source graph mismatch');}
   network.cityRoads.sourceEdgeRecords=world.cityRoadGraph.edges.size;network.cityRoads.directedTraversalArcs=[...world.cityRoadGraph.adj.values()].reduce((n,a)=>n+a.length,0);
   world.sourceNetwork=network;world.cityBuildings=cityBuildings;
   const sampledTerrain=terrainGrid(terrainMeta,terrainBytes.buffer.slice(terrainBytes.byteOffset,terrainBytes.byteOffset+terrainBytes.byteLength)),terrainFrame=localFrame(PROFILE.geoOrigin);

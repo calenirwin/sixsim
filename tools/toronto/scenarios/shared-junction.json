@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "basis": "illustrative-shared-admission",
+  "nodeId": 13467884,
+  "capacity": 1,
+  "order": "ready-time-then-id",
+  "realPermissions": "unverified",
+  "speedMps": 5,
+  "approachM": 20,
+  "holdM": 10,
+  "exitM": 10,
+  "starts": {"bathurst-probe": 0, "wellington-probe": 0},
+  "windows": [[10, 30]],
+  "interruptions": []
+}

@@ -15,7 +15,7 @@ import { localFrame } from '../../client/src/shared/localFrame.js';
 // world/sky.js PRESETS night factor per time of day (the only sim-visible effect of time: lamps on at night > 0.35)
 export const NIGHT_OF = { day: 0, golden: 0.05, dusk: 0.55, night: 1 };
 
-export async function createWorld({ seed = 1, traffic: withTraffic = true, cityOverrides = true, transit = null, roadProbe = null, renderCapabilities = null, peds: withPeds = true, trains: withTrains = true, pedTarget = null, carTarget = null, aspect = 16 / 9, fov = 58, nearR, obstaclesDir = null, night = 0, tilesDir = null } = {}) {
+export async function createWorld({ seed = 1, traffic: withTraffic = true, cityOverrides = true, transit = null, roadProbe = null, junctionProbes = null, renderCapabilities = null, peds: withPeds = true, trains: withTrains = true, pedTarget = null, carTarget = null, aspect = 16 / 9, fov = 58, nearR, obstaclesDir = null, night = 0, tilesDir = null } = {}) {
   if (!withTraffic && withPeds) throw new Error("Pedestrians require traffic/navigation");
   const { Traffic, PK34_TABLES } = withTraffic ? await import('../../client/src/sim/traffic.js') : {};
   const { Peds } = withPeds ? await import('../../client/src/sim/peds.js') : {};
@@ -69,7 +69,7 @@ export async function createWorld({ seed = 1, traffic: withTraffic = true, cityO
   // which the traffic model updates) and lamp states follow it, as in the page
   if (ENV.night) ENV.night.value = night;
   const W = {
-    scene, streamer, traffic, peds, rig, camera, cam, trains, transit, roadProbe, ENV, kinds, fleetKinds: names, seed,
+    scene, streamer, traffic, peds, rig, camera, cam, trains, transit, roadProbe, junctionProbes, ENV, kinds, fleetKinds: names, seed,
     frame: 0, simTime: 0,
     renderCapabilities: Object.freeze({ ...(renderCapabilities || (streamer.manifest.profile ? {} : NYC_RENDERING)) }),
     // the API's camera and hooks (core/api/session.mjs): an ApiCam in place of the shot's PathCam, and src/api/bridge.js's
@@ -91,6 +91,7 @@ export async function createWorld({ seed = 1, traffic: withTraffic = true, cityO
       if (traffic) traffic.update(dt, p.x, p.z);
       if (transit) transit.update(ENV.time.value);
       if (roadProbe) roadProbe.update(ENV.time.value);
+      if (junctionProbes) junctionProbes.update(ENV.time.value);
       b = performance.now(); W.prof.traffic += b - a; a = b;
       if (peds) peds.update(dt, p.x, p.z);
       W.prof.peds += performance.now() - a;

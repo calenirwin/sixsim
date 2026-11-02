@@ -7,6 +7,7 @@ const commit=process.env.GITHUB_SHA || execFileSync('git',['rev-parse','HEAD'],{
 if(!/^[a-f0-9]{40}$/.test(commit))throw new Error('Publication requires a full commit SHA');
 const sources=['toronto/district-provenance.json','toronto/network-provenance.json','toronto/green-spaces-provenance.json','toronto/land-cover-provenance.json','toronto/city-terrain/provenance.json','toronto/city-buildings/provenance.json','toronto/city-cover/provenance.json','toronto/city-roads/provenance.json','transit/provenance.json'].map(name=>JSON.parse(fs.readFileSync(new URL(`./fixtures/${name}`,import.meta.url))));
 sources.push(JSON.parse(fs.readFileSync(new URL('./fixtures/toronto/road-corridor.json',import.meta.url))).provenance);
+sources.push(JSON.parse(fs.readFileSync(new URL('./fixtures/toronto/shared-junction.json',import.meta.url))).provenance);
 export default mergeConfig(config,defineConfig({
   base:'/sixsim/',publicDir:false,
   define:{'import.meta.env.VITE_PUBLISHED_CITY':JSON.stringify('toronto')},
