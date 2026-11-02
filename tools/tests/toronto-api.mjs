@@ -50,7 +50,7 @@ try:
  else: raise AssertionError('Unknown trip accepted')
  shared=w.get_shared_junction()
  assert shared['state']['ownerId'] is None and len(shared['state']['probes'])==2
- assert [(r['id'],r['grantSeconds'],r['clearSeconds']) for r in shared['reservations']]==[('bathurst-probe',10,14),('wellington-probe',14,18)]
+ assert [(r['id'],r['grantSeconds'],r['clearSeconds']) for r in shared['reservations']]==[('bathurst-probe',20,24),('wellington-probe',24,28)]
  probe=w.get_road_probe()
  assert probe['state']['seconds']==0 and probe['state']['status']=='moving'
  assert probe['coordinateFrame']=='local-east-up-south-metres'
@@ -120,10 +120,14 @@ try:
   else: raise AssertionError(method+' should fail explicitly')
  for index in range(700):
   w.tick()
-  if index in (199,279,359):
+  if index in (199,399,479,559):
    shared=w.get_shared_junction()['state']
-   expected={199:'bathurst-probe',279:'wellington-probe',359:None}[index]
+   expected={199:None,399:'bathurst-probe',479:'wellington-probe',559:None}[index]
    assert shared['ownerId']==expected
+   if index==199:
+    assert [q['reason'] for q in shared['queue']]==['downstream-full','queue-order']
+   for exit in shared['downstream']:
+    assert exit['available']+int(exit['initialOccupied'])+len(exit['reservedIds'])+len(exit['occupiedIds'])==1
    assert len([a for a in shared['probes'] if a['phase']=='reserved'])<=1
    assert shared['navigationReady'] is False and shared['physicalCollisions'] is False
  admitted=w.get_road_probe()
