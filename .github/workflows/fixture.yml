@@ -59,7 +59,8 @@ jobs:
 
   static-space:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Software-rendered browser checks plus package upload need bounded headroom.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
