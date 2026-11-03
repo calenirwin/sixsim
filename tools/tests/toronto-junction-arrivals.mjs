@@ -22,9 +22,9 @@ test('invalid demand/discharge inputs fail closed and legacy v2 snapshots stay s
  const legacy=make(read('tools/toronto/scenarios/shared-junction-queue.json'));assert.deepEqual(legacy.reservations.map(r=>[r.grantSeconds,r.clearSeconds]),[[20,24],[24,28]]);assert.ok(legacy.at(300).probes.every(a=>a.present&&a.phase==='cleared'));assert.equal(legacy.at(300).probes[0].dischargeSeconds,undefined);
 });
 test('world, API-shaped snapshots, replay markers, seeking and transit variants agree',async()=>{
- const {world:a}=await torontoWorld(),{world:b}=await torontoWorld({startSeconds:90000});for(let i=0;i<264;i++)await a.step(.125);await b.step(33);assert.deepEqual(a.junctionProbes.state,b.junctionProbes.state);
- const r=await exportTorontoTracks(),scene=new THREE.Scene(),replay=addSharedJunction(scene,r);assert.equal(replay.markers.size,6);
+ const {world:a}=await torontoWorld({sharedAdmission:p}),{world:b}=await torontoWorld({startSeconds:90000,sharedAdmission:p});for(let i=0;i<264;i++)await a.step(.125);await b.step(33);assert.deepEqual(a.junctionProbes.state,b.junctionProbes.state);
+ const r=await exportTorontoTracks({sharedAdmission:p}),scene=new THREE.Scene(),replay=addSharedJunction(scene,r);assert.equal(replay.markers.size,6);
  for(const t of [0,10,20,28,32,36,60,300,32,0]){replay.update(t);assert.deepEqual(replay.current,a.junctionProbes.at(t));for(const probe of replay.current.probes)assert.equal(replay.markers.get(probe.id).visible,probe.present);}replay.dispose();assert.equal(scene.children.length,0);
  const bad=structuredClone(r.header);bad.sharedJunctionFrames[32].probes[0].present=true;assert.throws(()=>addSharedJunction(scene,{header:bad,frames:r.frames}),/state mismatch/);
- const scenario=read('tools/toronto/scenarios/510-stop-dwell.json'),{world:c}=await torontoWorld({scenario});await c.step(33);assert.deepEqual(c.junctionProbes.state,a.junctionProbes.state);
+ const scenario=read('tools/toronto/scenarios/510-stop-dwell.json'),{world:c}=await torontoWorld({scenario,sharedAdmission:p});await c.step(33);assert.deepEqual(c.junctionProbes.state,a.junctionProbes.state);
 });

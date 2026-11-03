@@ -18,7 +18,7 @@ for(const scenario of [false,true])test(`Toronto TCP/Python round trip (dwell sc
     const script=`
 import valdrada
 from valdrada.transport import ValdradaError
-import json, subprocess
+import json, subprocess, math
 c=valdrada.Client(port=${port},timeout=5)
 try:
  w=c.get_world()
@@ -50,7 +50,10 @@ try:
  else: raise AssertionError('Unknown trip accepted')
  shared=w.get_shared_junction()
  assert shared['state']['ownerId'] is None and len(shared['state']['probes'])==6
- assert [(r['id'],r['grantSeconds'],r['clearSeconds']) for r in shared['reservations']]==[('bathurst-probe',20,24),('wellington-probe',24,28),('bathurst-probe-2',32,36),('wellington-probe-2',36,40),('bathurst-probe-3',44,48),('wellington-probe-3',48,52)]
+ assert [r['holdingSlot'] for r in shared['reservations']]==[1,1,2,2,3,3]
+ for r,expected in zip(shared['reservations'],[20,24,32.832716000738536,67.34301836568939,71.34301836568939,108.68603673137878]):
+  assert math.isclose(r['grantSeconds'],expected,abs_tol=1e-8)
+  assert r['segmentReleaseSeconds']>r['clearSeconds']
  probe=w.get_road_probe()
  assert probe['state']['seconds']==0 and probe['state']['status']=='moving'
  assert probe['coordinateFrame']=='local-east-up-south-metres'
@@ -118,17 +121,18 @@ try:
   try: w._call(method)
   except ValdradaError as e: assert 'unavailable' in str(e),str(e)
   else: raise AssertionError(method+' should fail explicitly')
- for index in range(1240):
+ for index in range(3060):
   w.tick()
-  if index in (199,399,479,559,639,1199):
+  if index in (199,399,479,559,659,1359,2199,3039):
    shared=w.get_shared_junction()['state']
-   expected={199:None,399:'bathurst-probe',479:'wellington-probe',559:None,639:'bathurst-probe-2',1199:None}[index]
+   expected={199:None,399:'bathurst-probe',479:'wellington-probe',559:None,659:'bathurst-probe-2',1359:'wellington-probe-2',2199:'wellington-probe-3',3039:None}[index]
    assert shared['ownerId']==expected
-   if index==1199: assert all(a['phase']=='discharged' and not a['present'] for a in shared['probes'])
+   if index==3039: assert all(a['phase']=='held-before-next-junction' and a['present'] for a in shared['probes'])
    if index==199:
     assert [q['reason'] for q in shared['queue']]==['downstream-full']+['queue-order']*5
    for exit in shared['downstream']:
     assert exit['available']+int(exit['initialOccupied'])+len(exit['reservedIds'])+len(exit['occupiedIds'])==1
+    h=exit['holding'];assert h['available']+len(h['reservedIds'])+len(h['heldIds'])==h['capacity']
    assert len([a for a in shared['probes'] if a['phase']=='reserved'])<=1
    assert shared['navigationReady'] is False and shared['physicalCollisions'] is False
  admitted=w.get_road_probe()
