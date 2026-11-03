@@ -297,3 +297,7 @@ python client/tools/toronto/extract_shared_junction.py client/data/toronto/centr
 ```
 
 The distinct `tools/toronto/scenarios/shared-junction.json` contains authored timing, spacing, ordering and exclusive-resource assumptions. These are not City signal timings, surveyed conflict zones or verified access/turn rights. Source direction constrains the chosen traversal, while the model's admission rule is explicitly illustrative. The archive remains outside Git; no new source download or credential is required.
+
+### Terminal-node movement evidence
+
+`client/tools/toronto/extract_next_node_access.py` extracts all seven incident centreline records for nodes `13467820` and `13467949` from the same pinned official [Toronto Centreline source](https://open.toronto.ca/dataset/toronto-centreline-tcl/). Run it with the locally retained `client/data/toronto/centreline-20261023.gpkg`; the raw archive stays outside Git. The 3 KB derived fixture retains source hash, retrieval date, graph hash, EPSG:4326 coordinates and Open Government Licence – Toronto attribution. It includes original vertices and raw one-way descriptions, but no addresses or invented turn restrictions. Missing turn/access/signal evidence is explicit; this snapshot is not a current traffic-permission feed.

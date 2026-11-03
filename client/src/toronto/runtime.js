@@ -92,6 +92,15 @@ export async function start() {
   const sharedButton=document.createElement('button');sharedButton.id='focus-shared-junction';sharedButton.textContent='Wellington & Bathurst admission';sharedButton.hidden=!junctionProbes.current;document.querySelector('.toronto-demo-controls').append(sharedButton);
   const sharedStatus=document.createElement('div');sharedStatus.id='shared-junction-status';document.querySelector('.toronto-demo-controls').append(sharedStatus);
   sharedButton.onclick=()=>{setPaused(true);seek(0);const p=junctionProbes.current.probes[0];controls.target.set(p.x,0,p.z);engine.camera.position.set(p.x+120,180,p.z+220);controls.update();engine.wake();};
+  const accessDetails=document.createElement('details');accessDetails.id='next-node-access';accessDetails.hidden=!junctionProbes.access;
+  const accessSummary=document.createElement('summary');accessSummary.textContent='Next-node movements · permissions unknown';accessDetails.append(accessSummary);
+  for(const node of junctionProbes.access?.nodes||[]){
+    const focus=document.createElement('button');focus.id=`focus-access-${node.nodeId}`;focus.textContent=`Inspect node ${node.nodeId}`;
+    focus.onclick=()=>{setPaused(true);seek(150);const [x,z]=local.project(...node.coordinate);controls.target.set(x,0,z);engine.camera.position.set(x+120,180,z+220);controls.update();engine.wake();};accessDetails.append(focus);
+    const note=document.createElement('p');note.textContent=`Incoming edge ${node.incomingEdgeId}: held — turn/access permissions and signal control are unverified. Source-compatible connections do not authorize admission.`;accessDetails.append(note);
+    const list=document.createElement('ul');for(const m of node.movements){const row=document.createElement('li');row.dataset.edgeId=m.edgeId;row.textContent=`${m.name} (${m.edgeId}), ${m.orientation} to ${m.toNode}: ${m.topologyCandidate?'source direction/connectivity supported; turn/access unknown':m.reason}. Held.`;list.append(row);}accessDetails.append(list);
+  }
+  document.querySelector('.toronto-demo-controls').append(accessDetails);
   const cityTerrain=cityTerrainControls({engine,controls,setPaused,profile:PROFILE});
   window.__APP={cityTerrain,engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,greenSpaces,landCover,serviceGraph,roadProbe,junctionProbes,controls,tracks,seek,setPaused};
   engine.onFrame=dt=>{

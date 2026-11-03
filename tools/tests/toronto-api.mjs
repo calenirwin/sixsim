@@ -49,6 +49,10 @@ try:
  except ValdradaError: pass
  else: raise AssertionError('Unknown trip accepted')
  shared=w.get_shared_junction()
+ access=shared['nextNodeAccess']
+ assert access['permission']=='unknown' and access['mayAdvance'] is False
+ assert [[m['edgeId'] for m in n['movements'] if m['topologyCandidate']] for n in access['nodes']]==[[8457327,8457366],[7553950,20053388]]
+ assert all(not m['mayAdvance'] for n in access['nodes'] for m in n['movements'])
  assert shared['state']['ownerId'] is None and len(shared['state']['probes'])==6
  assert [r['holdingSlot'] for r in shared['reservations']]==[1,1,2,2,3,3]
  for r,expected in zip(shared['reservations'],[20,24,32.832716000738536,67.34301836568939,71.34301836568939,108.68603673137878]):

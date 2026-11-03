@@ -33,7 +33,7 @@ export async function exportTorontoTracks(options = {}, outputName = 'tracks.atr
     provenance, massingProvenance:JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/district-provenance.json'))),
     unknownFields:['vehicleDimensions','heading','speed','animation'],
     marker:'Symbol only; no vehicle dimensions, heading, speed or fleet model inferred'};
-  if(W.junctionProbes){header.sharedJunction={definition:W.junctionProbes.definition,policy:W.junctionProbes.policy,reservations:W.junctionProbes.reservations};header.sharedJunctionFrames=sharedJunctionFrames;}
+  if(W.junctionProbes){header.sharedJunction={definition:W.junctionProbes.definition,policy:W.junctionProbes.policy,reservations:W.junctionProbes.reservations,...(W.nextNodeAccess?{nextNodeAccess:W.nextNodeAccess}:{})};header.sharedJunctionFrames=sharedJunctionFrames;}
   const file=path.join(root,'client/.generated/toronto',outputName);
   const bytes=writeTracks(file,header,frames);
   return {file,bytes,header,frames};
