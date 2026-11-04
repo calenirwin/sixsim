@@ -301,3 +301,13 @@ The distinct `tools/toronto/scenarios/shared-junction.json` contains authored ti
 ### Terminal-node movement evidence
 
 `client/tools/toronto/extract_next_node_access.py` extracts all seven incident centreline records for nodes `13467820` and `13467949` from the same pinned official [Toronto Centreline source](https://open.toronto.ca/dataset/toronto-centreline-tcl/). Run it with the locally retained `client/data/toronto/centreline-20261023.gpkg`; the raw archive stays outside Git. The 3 KB derived fixture retains source hash, retrieval date, graph hash, EPSG:4326 coordinates and Open Government Licence – Toronto attribution. It includes original vertices and raw one-way descriptions, but no addresses or invented turn restrictions. Missing turn/access/signal evidence is explicit; this snapshot is not a current traffic-permission feed.
+
+### Neighbourhood and landmark discovery — StrollTO
+
+[Official dataset](https://open.toronto.ca/dataset/strollto/) · [Official metadata](https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_show?id=strollto) · [Licence](https://open.toronto.ca/open-data-licence/)
+
+The City of Toronto Visitor Economy Office supplies StrollTO starting points and points of interest. The pinned EPSG:4326/CRS84 GeoJSON resources were retrieved on 2026-11-03: starting points last modified 2026-09-20; POIs last modified 2026-10-20. Update cadence is not assumed. No credentials or external runtime calls are required. The compact derived index retains source IDs, names, neighbourhood associations and coordinates, with source URLs, byte counts and SHA-256 hashes in `client/fixtures/toronto/discovery/places.json`. Photographs, descriptions, external destination links and accessibility prose are excluded.
+
+There are 159 StrollTO starting-point groups (including the separate Toronto Island entry) and 1,838 POIs. These groups are not a new neighbourhood-boundary dataset. All starting points have sampled terrain; 23 POIs lack a valid sample in the pinned municipal surface. Selecting those points explicitly retains the camera rather than substituting elevation or moving to a different location. The index is for discovery, not entrances, opening hours, access permissions, routing or landmark-specific geometry.
+
+Redistribution follows Open Government Licence–Toronto with the existing required attribution; no City endorsement is implied. Raw downloads remain outside Git. To reproduce, retrieve the two resource URLs in the index and run `python3 client/tools/toronto/extract_discovery.py STARTS.geojson POIS.geojson OUTPUT.json`; mismatched hashes fail closed. Data refreshes require reviewing source changes and regenerating the index and coverage tests.

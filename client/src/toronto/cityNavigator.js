@@ -1,3 +1,4 @@
+import {addDiscovery} from './discovery.js';
 // A locator derived from the same municipal elevation grid, not a street basemap.
 export function locatorTransform(meta, width=280, height=170) {
  const scale=Math.min(width/((meta.width-1)*meta.step),height/((meta.height-1)*meta.step));
@@ -10,7 +11,7 @@ export function cityNavigator({parent,grid,frame,controls,focus}) {
  const canvas=document.createElement('canvas');canvas.id='city-locator';canvas.width=280;canvas.height=170;canvas.tabIndex=0;canvas.setAttribute('role','application');canvas.setAttribute('aria-label','Toronto locator. Tap to explore. Arrow keys move one kilometre north, south, east or west.');box.append(canvas);
  const note=document.createElement('div');note.textContent='N ↑ · Tap land to explore · Arrow keys move 1 km';box.append(note);
  const position=document.createElement('div');position.id='city-position';box.append(position);
- const notice=document.createElement('div');notice.id='city-navigation-notice';notice.setAttribute('role','status');box.append(notice);parent.append(box);
+ const notice=document.createElement('div');notice.id='city-navigation-notice';notice.setAttribute('role','status');box.append(notice);parent.append(box);addDiscovery({parent:box,grid,frame,focus});
  const tx=locatorTransform(grid.meta),background=document.createElement('canvas');background.width=280;background.height=170;const bg=background.getContext('2d');bg.fillStyle='#152935';bg.fillRect(0,0,280,170);bg.fillStyle='#8caa92';
  for(let j=0;j<grid.meta.height-1;j+=4)for(let i=0;i<grid.meta.width-1;i+=4){if(!Number.isFinite(grid.at(i,j)))continue;const [x,y]=tx.toPixel(grid.meta.origin[0]+i*grid.meta.step,grid.meta.origin[1]+j*grid.meta.step);bg.fillRect(x,y,4*grid.meta.step*tx.scale,4*grid.meta.step*tx.scale);}
  const go=(x,z)=>{if(grid.sample(x,z)===null){notice.textContent='No terrain at this point. Choose land inside Toronto.';return;}notice.textContent='';const [lon,lat]=frame.unproject(x,z);focus(lon,lat);};

@@ -9,6 +9,7 @@ const sources=['toronto/district-provenance.json','toronto/network-provenance.js
 sources.push(JSON.parse(fs.readFileSync(new URL('./fixtures/toronto/road-corridor.json',import.meta.url))).provenance);
 sources.push(JSON.parse(fs.readFileSync(new URL('./fixtures/toronto/shared-junction.json',import.meta.url))).provenance);
 sources.push(JSON.parse(fs.readFileSync(new URL('./fixtures/toronto/next-node-access.json',import.meta.url))).provenance);
+sources.push(...JSON.parse(fs.readFileSync(new URL('./fixtures/toronto/discovery/places.json',import.meta.url))).sources);
 export default mergeConfig(config,defineConfig({
   base:'/sixsim/',publicDir:false,
   define:{'import.meta.env.VITE_PUBLISHED_CITY':JSON.stringify('toronto')},
