@@ -135,3 +135,23 @@ jobs:
           path: |
             client/shots/toronto-city-terrain-*.png
             client/shots/toronto-city-buildings-*.png
+
+  waterfront-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts
+      - run: npm --prefix client ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - run: npm --prefix client run build:publish
+      - run: npm --prefix client run test:waterfront
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: waterfront-screenshots
+          path: client/shots/toronto-waterfront-*.png
+          if-no-files-found: ignore

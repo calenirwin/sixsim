@@ -17,7 +17,7 @@ export async function assembleMassingTile(key, buf, ctx) {
     geometry.rotateX(-Math.PI/2);geometry.translate(tile.header.origin[0],b.baseY,tile.header.origin[1]);
     const color=massingColor(tile.header.records[b.i].sourceId),colors=new Float32Array(geometry.attributes.position.count*3);
     for(let i=0;i<colors.length;i+=3)color.toArray(colors,i);
-    geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));geometries.push(geometry);
+    geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));geometry.setAttribute('torontoBase',new THREE.Float32BufferAttribute(new Float32Array(geometry.attributes.position.count).fill(b.baseY),1));geometries.push(geometry);
   }
   const merged=mergeGeometries(geometries,false);
   for(const g of geometries)g.dispose();

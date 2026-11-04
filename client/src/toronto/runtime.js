@@ -48,7 +48,7 @@ export async function start() {
   const landCover=addLandCover(engine.scene,network.landCover,PROFILE);
   const greenSpaces=addGreenSpaces(engine.scene,network.greenSpaces,PROFILE);
 
-  document.querySelector('#help').innerHTML='Drag to orbit · right-drag to pan · scroll/pinch to zoom<br><button id="pause-playback">Pause</button> <button id="restart-playback">Restart</button>';
+  document.querySelector('#help').innerHTML='<span id="city-navigation-hint">Drag to orbit · right-drag to pan · scroll/pinch to zoom</span><br><button id="pause-playback">Pause</button> <button id="restart-playback">Restart</button>';
   document.querySelector('#help').style.pointerEvents='auto';
   for(const id of ['cross','tethers'])document.getElementById(id).style.display='none';
   let elapsed=0,paused=false,failed=false;
@@ -62,7 +62,7 @@ export async function start() {
   const togglePause=()=>setPaused(!paused);
   document.querySelector('#pause-playback').onclick=togglePause;
   document.querySelector('#restart-playback').onclick=()=>seek(0);
-  addEventListener('keydown',e=>{if(document.querySelector('dialog[open]')||/INPUT|BUTTON|SELECT|TEXTAREA/.test(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();togglePause();}if(e.code==='KeyR')seek(0);});
+  addEventListener('keydown',e=>{if(window.__APP?.cityTerrain?.active)return;if(document.querySelector('dialog[open]')||/INPUT|BUTTON|SELECT|TEXTAREA/.test(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();togglePause();}if(e.code==='KeyR')seek(0);});
   const reference=h, urls={baseline:baselineUrl,dwell:dwellUrl,custom:tracksUrl},cache=new Map();
   let mode=h.transitScenario?'custom':'baseline',request=0;
   cache.set(mode,tracks);
@@ -105,7 +105,7 @@ export async function start() {
   window.__APP={cityTerrain,engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,greenSpaces,landCover,serviceGraph,roadProbe,junctionProbes,controls,tracks,seek,setPaused};
   engine.onFrame=dt=>{
     if(failed)return;
-    if(cityTerrain.active){controls.update();cityTerrain.update();document.querySelector('#stats').textContent='2023 municipal terrain · CGVD2013 metres · simulation paused';return;}
+    if(cityTerrain.active){if(!cityTerrain.waterfront?.active)controls.update();cityTerrain.update(dt);document.querySelector('#stats').textContent=cityTerrain.waterfront?.active?'Source-aligned virtual waterfront walk · simulation paused':'2023 municipal terrain · CGVD2013 metres · simulation paused';return;}
     if(streamer.error){fail(streamer.error);return;}
     controls.target.x=Math.max(manifest.bounds[0],Math.min(manifest.bounds[2],controls.target.x));
     controls.target.z=Math.max(manifest.bounds[1],Math.min(manifest.bounds[3],controls.target.z));
