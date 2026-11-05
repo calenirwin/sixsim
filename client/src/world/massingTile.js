@@ -29,7 +29,7 @@ export async function assembleMassingTile(key, buf, ctx) {
   mesh.userData={records:tile.header.records,source:'City of Toronto massing'};group.add(mesh);
   return {key,group,records,roads:[],nodes:[],
     setGroundJoin(sample,maxVertices=100000){
-      clearGroundJoin();if(!sample)return {vertices:0};
+      material.userData.streetDetail.value=sample?1:0;clearGroundJoin();if(!sample)return {vertices:0};
       const positions=[],stats={segments:0,missing:0,excessive:0,budget:0};
       for(const f of footprints){const r=buildingGroundJoins(f.rings,f.baseY,sample,{maxVertices:maxVertices-positions.length/3});for(const v of r.positions)positions.push(v);for(const k of Object.keys(stats))stats[k]+=r.stats[k];}
       if(positions.length){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.computeVertexNormals();joinMesh=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0x77766e,roughness:1,side:THREE.DoubleSide}));joinMesh.name='illustrativeGroundPlinths';joinMesh.receiveShadow=true;group.add(joinMesh);}

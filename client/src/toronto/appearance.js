@@ -7,11 +7,13 @@ export function massingColor(sourceId) {
 export function illustratedMaterial({ground=false}={}) {
   const material=new THREE.MeshStandardMaterial({color:ground?0x777b73:0xffffff,vertexColors:!ground,roughness:.94});
   material.userData.basis='original procedural illustration; not measured material';
-  material.customProgramCacheKey=()=>`toronto-illustration-2-${ground}`;
+  const streetDetail={value:0};material.userData.streetDetail=streetDetail;
+  material.customProgramCacheKey=()=>`toronto-illustration-3-${ground}`;
   material.onBeforeCompile=shader=>{
+    shader.uniforms.torStreetDetail=streetDetail;
     shader.vertexShader=`varying vec3 torPosition; varying vec3 torNormal; ${ground?'':'attribute float torontoBase; varying float torHeight;'}\n`+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>\ntorPosition=position; torNormal=normal; ${ground?'':'torHeight=position.y-torontoBase;'}`);
-    shader.fragmentShader=`varying vec3 torPosition; varying vec3 torNormal; ${ground?'':'varying float torHeight;'}\n`+shader.fragmentShader;
+    shader.fragmentShader=`uniform float torStreetDetail; varying vec3 torPosition; varying vec3 torNormal; ${ground?'':'varying float torHeight;'}\n`+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
       ${ground?`float grain=fract(sin(dot(floor(torPosition.xz*1.5),vec2(12.9898,78.233)))*43758.5453);
       diffuseColor.rgb*=.96+.08*grain;`:`
@@ -28,8 +30,19 @@ export function illustratedMaterial({ground=false}={}) {
       diffuseColor.rgb*=.95+.07*grain-.12*joint;
       vec3 glass=mix(vec3(.16,.23,.27),vec3(.37,.48,.54),smoothstep(.1,.9,fract(cells.y)));
       diffuseColor.rgb=mix(diffuseColor.rgb,glass,max(window*.78,groundGlass*.86));
-      diffuseColor.rgb*=mix(.70,1.0,side);`}
+      diffuseColor.rgb*=mix(.70,1.0,side);
+      if(torStreetDetail>.5){
+        vec2 outer=1.-smoothstep(vec2(.30)-aa,vec2(.30)+aa,edge);
+        vec2 inner=1.-smoothstep(vec2(.235)-aa,vec2(.235)+aa,edge);
+        float frame=side*fade*step(3.4,torHeight)*(outer.x*outer.y-inner.x*inner.y);
+        float sill=side*fade*step(3.4,torHeight)*outer.x*(smoothstep(.18-aa.y,.18+aa.y,fract(cells.y))-smoothstep(.23-aa.y,.23+aa.y,fract(cells.y)));
+        float mullion=groundGlass*(1.-smoothstep(.025,.025+aa.x,abs(fract(horizontal/1.6)-.5)));
+        float transom=groundGlass*(1.-smoothstep(.035,.035+aa.y*3.4,abs(torHeight-2.25)));
+        diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.17,.19,.18),max(frame,max(mullion,transom))*.8);
+        diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.64,.62,.56),sill*.65);
+      }`}
     `);
+    if(!ground)shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.3,torStreetDetail*max(window,groundGlass));');
   };
   return material;
 }

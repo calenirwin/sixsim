@@ -33,11 +33,16 @@ test('cancelled/late requests cannot attach stale tiles; corrupt payloads fail c
 test('walking plinths leave source mesh unchanged and restore exactly on exit',async()=>{
  const {assembleMassingTile}=await import('../../client/src/world/massingTile.js');const key='0_-3',raw=fs.readFileSync(root+key+'.bin'),tile=await assembleMassingTile(key,raw.buffer.slice(raw.byteOffset,raw.byteOffset+raw.byteLength),{profile:manifest.profile});
  const base=tile.group.children[0],positions=base.geometry.attributes.position.array.slice(),height=tile.records[0].baseY;
- const joined=tile.setGroundJoin(()=>height-1,12000);assert.ok(joined.vertices>0&&joined.vertices<=12000);assert.deepEqual(base.geometry.attributes.position.array,positions);assert.ok(tile.group.getObjectByName('illustrativeGroundPlinths'));
- tile.setGroundJoin(null);assert.equal(tile.group.children.length,1);assert.deepEqual(base.geometry.attributes.position.array,positions);tile.dispose(new THREE.Scene());
+ const joined=tile.setGroundJoin(()=>height-1,12000);assert.ok(joined.vertices>0&&joined.vertices<=12000);assert.equal(base.material.userData.streetDetail.value,1);assert.deepEqual(base.geometry.attributes.position.array,positions);assert.ok(tile.group.getObjectByName('illustrativeGroundPlinths'));
+ tile.setGroundJoin(null);assert.equal(base.material.userData.streetDetail.value,0);assert.equal(tile.group.children.length,1);assert.deepEqual(base.geometry.attributes.position.array,positions);tile.dispose(new THREE.Scene());
 });
 test('late building assembly uses current walking mode and shared join budget',async()=>{
  const waits=[],calls=[];const loader=new CityBuildings(new THREE.Scene(),mock(),{base:'http://localhost/',fetcher:async()=>response(),assemble:()=>new Promise(resolve=>waits.push(()=>{const t=assembled();t.setGroundJoin=(sample,budget)=>{calls.push(sample);return {vertices:sample?Math.min(60000,budget):0};};resolve(t);}))});
  const sample=()=>75;loader.setGroundJoin(sample);loader.update({x:1,z:1},100);for(let i=0;i<100&&waits.length<2;i++)await tick();loader.setGroundJoin(null);for(const resolve of waits)resolve();await tick();assert.ok(calls.every(c=>c===null));assert.equal(loader.state.joinVertices,0);
  loader.setGroundJoin(sample);assert.equal(loader.state.joinVertices,100000);loader.setGroundJoin(null);assert.equal(loader.state.joinVertices,0);loader.dispose();
+});
+
+test('Frontage detail is a reversible shader uniform without textures or extra geometry',async()=>{
+ const {illustratedMaterial}=await import('../../client/src/toronto/appearance.js');const a=illustratedMaterial(),b=illustratedMaterial();const shader={uniforms:{},vertexShader:'#include <begin_vertex>',fragmentShader:'#include <color_fragment>\n#include <roughnessmap_fragment>'};a.onBeforeCompile(shader);
+ assert.equal(shader.uniforms.torStreetDetail.value,0);a.userData.streetDetail.value=1;assert.equal(shader.uniforms.torStreetDetail.value,1);assert.equal(b.userData.streetDetail.value,0);assert.equal(a.map,null);assert.equal(a.roughness,.94);a.userData.streetDetail.value=0;assert.equal(shader.uniforms.torStreetDetail.value,0);a.dispose();b.dispose();
 });
