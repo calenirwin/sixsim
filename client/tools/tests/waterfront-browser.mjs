@@ -15,8 +15,10 @@ try{
  assert.ok(await page.evaluate(()=>window.__APP.cityTerrain.waterfront.group.getObjectByName('terrainDrapedRoads')?.geometry.attributes.position.count>1000));
  console.log('Terrain-draped roads, sidewalks and illustrative plinths loaded');const start=await state();assert.equal(start.walk.distance,0);assert.equal(start.orbit,false);assert.equal(start.terrain,false);assert.equal(start.near,.4);assert.equal(start.frame,60);
  await page.locator('#walk-forward').click({noWaitAfter:true,timeout:60000});assert.equal((await state()).walk.distance,10);await page.locator('#walk-left').click({noWaitAfter:true,timeout:60000});const turned=await state();assert.equal(turned.walk.distance,10);assert.notDeepEqual(turned.t,start.t);await page.locator('#walk-face').click({noWaitAfter:true,timeout:60000});assert.equal((await state()).walk.yaw,0);
+ await page.keyboard.down('KeyW');await page.waitForFunction(()=>window.__APP.cityTerrain.waterfront.state.distance>10);await page.evaluate(()=>dispatchEvent(new Event('blur')));await page.keyboard.up('KeyW');const interrupted=(await state()).walk.distance;await page.waitForTimeout(150);assert.equal((await state()).walk.distance,interrupted);await page.keyboard.press('Escape');assert.equal(await page.evaluate(()=>window.__APP.cityTerrain.waterfront.active),false);await page.locator('#walk-waterfront').click({noWaitAfter:true,timeout:60000});assert.equal((await state()).walk.distance,0);assert.equal((await state()).frame,60);
+ assert.ok(await page.evaluate(()=>window.__APP.cityTerrain.waterfront.group.getObjectByName('terrainDrapedCrossings').geometry.attributes.position.count>0));
  fs.mkdirSync('shots',{recursive:true});
- for(const [name,distance,yaw] of [['street',420,0],['shoreline',1100,0]]){
+ for(const [name,distance,yaw] of [['crossing-after',330,0],['street',420,0],['shoreline',1100,0]]){
   await page.locator('#waterfront-distance').evaluate((e,v)=>{e.value=String(v);e.dispatchEvent(new Event('input',{bubbles:true}));},distance);if(yaw)for(let i=0;i<3;i++)await page.locator('#walk-right').click({noWaitAfter:true,timeout:60000});
   await page.waitForFunction(()=>{const b=window.__APP.cityTerrain.buildings;return b.state.pending===0&&b.state.errors.length===0;},{},{timeout:90000});await page.screenshot({path:`shots/toronto-waterfront-${name}.png`,timeout:60000});console.log('Captured',name);
  }

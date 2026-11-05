@@ -3,7 +3,7 @@ import json,hashlib,math,sys
 from pathlib import Path
 import numpy as np,pyogrio,pyogrio.raw,pyproj,shapely
 from shapely.geometry import box,LineString,Point
-from shapely.ops import transform,unary_union
+from shapely.ops import transform,unary_union,substring
 RAW=Path(sys.argv[1]);OUT=Path(sys.argv[2]);OUT.mkdir(parents=True,exist_ok=True)
 BBOX=[-79.404,43.632,-79.378,43.647];extent=box(*BBOX);X=111320*math.cos(math.radians(43.65));R=111132
 local=lambda lon,lat:((lon+79.397)*X,(43.65-lat)*R)
@@ -81,8 +81,6 @@ pavingRegions=[]
 for path in paths:
  line=LineString([to.transform(p[0]/X-79.397,43.65-p[2]/R) for p in path['points']])
  pavingRegions.append(line.buffer(2 if path['type']=='Trail' else 1.3,quad_segs=4).intersection(metric).difference(waterMask))
-pavingVertices=groundMesh(pavingRegions,.06)
-assert len(pavingVertices)<1500000
 # Source street centrelines provide plan alignment only; visual widths are authored.
 roads=[]
 m,f,w,a=pyogrio.raw.read(RAW/'centreline-20261023.gpkg',bbox=tuple(BBOX),columns=['CENTRELINE_ID','FEATURE_CODE_DESC'],return_fids=True)
@@ -104,6 +102,21 @@ for road in roads:
  roadRegions.append(line.buffer(roadWidths[road['type']]/2,quad_segs=4).intersection(metric).difference(waterMask))
 roadVertices=groundMesh(roadRegions,.035)
 assert len(roadVertices)<1500000
+# Source-flagged crossings remain road-coloured; authored paint only overlaps roads.
+roadMask=unary_union(roadRegions);crossingRegions=[];stripeRegions=[];crossingSourceIds=[]
+for path in paths:
+ if not path['crosswalk']:continue
+ line=LineString([to.transform(p[0]/X-79.397,43.65-p[2]/R) for p in path['points']])
+ area=line.buffer(1.3,cap_style=2,quad_segs=4).intersection(roadMask)
+ if area.is_empty:continue
+ crossingSourceIds.append(path['id']);crossingRegions.append(area)
+ for start in np.arange(0,line.length,1.2):
+  stripe=substring(line,float(start),min(float(start)+.6,line.length))
+  if stripe.geom_type=='LineString':stripeRegions.append(stripe.buffer(1.3,cap_style=2).intersection(area.buffer(-.005)))
+crossingMask=unary_union(crossingRegions)
+pavingVertices=groundMesh([p.difference(crossingMask) for p in pavingRegions],.06)
+crossingVertices=groundMesh(stripeRegions,.045)
+assert len(crossingVertices)<500000 and len(pavingVertices)<1500000
 ids=[5398,62298,20086,340,20841,68366,55432,40725,16478,77672,56059,54894,75229,55583,78258];route=[];sourceRoute=[];previous=(-79.3961584,43.6383186);maxJoin=0
 for ident in ids:
  line=byid[ident]['geometry']['coordinates'][0];dist=lambda a,b:math.hypot((a[0]-b[0])*X,(a[1]-b[1])*R)
@@ -122,11 +135,11 @@ for x in range(math.ceil(metric.bounds[0]/14)*14,int(metric.bounds[2]),14):
   lon,lat=back.transform(x,y);lx,lz=local(lon,lat);h=height(lon,lat)
   if h is not None and loc.distance(Point(lx,lz))>4:trees.append([round(lx,3),round(h,3),round(lz,3)])
 assert len(trees)<2000 and len(verts)<500000 and len(paths)<1000
-out={'version':1,'bbox':BBOX,'frame':{'lon':-79.397,'lat':43.65},'groundVertices':verts,'grassVertices':grassVertices,'pavingVertices':pavingVertices,'roadVertices':roadVertices,'water':water,'waterLevel':74.5,'trees':trees,'paths':paths,'roads':roads,'walk':walk,'sourceRoute':sourceRoute,'lengthM':loc.length,'maxJoinM':maxJoin,'limits':['Guided virtual walk on source pedestrian alignments; not verified present access, crossing permission or collision simulation.','Original 2023 CGVD2013 bare-earth triangles; no bridge or structural road elevations inferred.','Water footprint follows City topographic mapping; constant 74.5 scene-metre water level is illustrative, not a measured level or datum conversion.','Pedestrian ribbon widths, paving, crossing stripes, facades and tree shapes are original illustration. Trees sample 2018 canopy, not individual inventory locations.','Municipal massing bases remain coarse terrain-relative illustrations; fine ground may intersect them.']}
+out={'version':1,'bbox':BBOX,'frame':{'lon':-79.397,'lat':43.65},'groundVertices':verts,'grassVertices':grassVertices,'pavingVertices':pavingVertices,'roadVertices':roadVertices,'crossingVertices':crossingVertices,'crossingSourceIds':sorted(set(crossingSourceIds)),'water':water,'waterLevel':74.5,'trees':trees,'paths':paths,'roads':roads,'walk':walk,'sourceRoute':sourceRoute,'lengthM':loc.length,'maxJoinM':maxJoin,'limits':['Guided virtual walk on source pedestrian alignments; not verified present access, crossing permission or collision simulation.','Original 2023 CGVD2013 bare-earth triangles; no bridge or structural road elevations inferred.','Water footprint follows City topographic mapping; constant 74.5 scene-metre water level is illustrative, not a measured level or datum conversion.','Pedestrian ribbon widths, paving, crossing stripes, facades and tree shapes are original illustration. Trees sample 2018 canopy, not individual inventory locations.','Municipal massing bases remain coarse terrain-relative illustrations; fine ground may intersect them.']}
 (OUT/'scene.json').write_text(json.dumps(out,separators=(',',':'),allow_nan=False)+'\n');print({'triangles':len(verts)//9,'waterParts':len(water),'trees':len(trees),'paths':len(paths),'walkLength':loc.length,'maxJoinM':maxJoin,'bytes':(OUT/'scene.json').stat().st_size})
 F=Path(__file__).resolve().parents[2]/'fixtures/toronto'
 ped={'dataset_url':'https://open.toronto.ca/dataset/pedestrian-network/','source_url':'https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/4b5c7a84-dea1-4137-875d-71d7f662c83f/resource/33835def-35f2-4705-a348-b7983e8e66a1/download/pedestrian-network-data-4326.geojson','source_sha256':sha(RAW/'pedestrian-20261104.geojson'),'source_bytes':36736103,'resource_last_modified':'2026-02-20T20:56:49.912115','retrieved_utc':'2026-11-04','crs':'EPSG:4326 / CRS84 longitude, latitude; source network derives from 2019 project, resource modification is not a survey date'}
 waterprov={'dataset_url':'https://open.toronto.ca/dataset/topographic-mapping-waterbodies-and-rivers/','source_url':'https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/f352a9e9-4077-4c59-b0a9-f35a56fb24be/resource/8b2ae160-0175-40e6-b018-88f0e83f9a90/download/water-body-4326.gpkg','source_sha256':sha(RAW/'water-body-20261104.gpkg'),'source_bytes':9289728,'resource_last_modified':'2026-09-22T19:08:22.574760','retrieved_utc':'2026-11-04','crs':'EPSG:4326; selected ELEVATION attributes missing; geometry maintenance dates 2021-08-25 and 2024-10-16'}
 for p in [ped,waterprov]:p.update({'license':'Open Government Licence – Toronto','license_url':'https://open.toronto.ca/open-data-licence/','attribution':'Contains information licensed under the Open Government Licence – Toronto.'})
-prov={'version':1,'sha256':sha(OUT/'scene.json'),'bytes':(OUT/'scene.json').stat().st_size,'bbox':BBOX,'sources':[ped,waterprov,*[json.loads((F/p).read_text()) for p in ['city-terrain/provenance.json','city-roads/provenance.json','land-cover-provenance.json']]],'derivation':{'ground':'Original PolygonZ TIN clipped in EPSG:2952 and masked by official water polygons; constrained triangulation of clipped polygons retains original TIN barycentric heights, not new terrain interpolation. Triangles below 0.000001 square metres after 0.1 mm rounding are omitted. Ground converted to existing local frame, CGVD2013 metres.','paving':'Union of source-aligned round buffers (illustrative 2.6 m paths / 4 m trails), clipped to municipal water mask and original TIN triangles. Full-width barycentric heights lifted 0.06 m; no surveyed curbs or new access connections.', 'paths':'Original pedestrian alignments clipped and densified to <=5 m; route sampled every 2 m. Original IDs/directions retained; joins within 0.02 m, no new connectors.','roads':'Source arterial/collector/local/laneway centrelines, not elevated highway or rail. Joined buffers use authored class widths, clipped to original TIN and mapped water; full-width barycentric heights lifted 0.035 m. Not surveyed pavement or structural road elevations.','vegetation':'14 m grid samples within valid 2018 canopy polygons, >4 m from route; original low-poly shapes, not individual inventory.','water':'Original waterbody polygons clipped; no shoreline simplification. ELEVATION absent; illustrative constant scene level.'},'limits':out['limits']}
+prov={'version':1,'sha256':sha(OUT/'scene.json'),'bytes':(OUT/'scene.json').stat().st_size,'bbox':BBOX,'sources':[ped,waterprov,*[json.loads((F/p).read_text()) for p in ['city-terrain/provenance.json','city-roads/provenance.json','land-cover-provenance.json']]],'derivation':{'ground':'Original PolygonZ TIN clipped in EPSG:2952 and masked by official water polygons; constrained triangulation of clipped polygons retains original TIN barycentric heights, not new terrain interpolation. Triangles below 0.000001 square metres after 0.1 mm rounding are omitted. Ground converted to existing local frame, CGVD2013 metres.','paving':'Union of source-aligned round buffers (illustrative 2.6 m paths / 4 m trails), clipped to municipal water mask and original TIN triangles. Full-width barycentric heights lifted 0.06 m; no surveyed curbs or new access connections.', 'paths':'Original pedestrian alignments clipped and densified to <=5 m; route sampled every 2 m. Original IDs/directions retained; joins within 0.02 m, no new connectors.','roads':'Source arterial/collector/local/laneway centrelines, not elevated highway or rail. Joined buffers use authored class widths, clipped to original TIN and mapped water; full-width barycentric heights lifted 0.035 m. Not surveyed pavement or structural road elevations.','crossings':'Only CROSSWALK-flagged source paths overlapping illustrative road footprints: remove sidewalk-coloured paving in that overlap, then clip authored 0.6 m paint / 0.6 m gaps (5 mm numerical edge inset) to original TIN, lifted 0.045 m. No signal, access, curb-ramp or surveyed marking claims.', 'vegetation':'14 m grid samples within valid 2018 canopy polygons, >4 m from route; original low-poly shapes, not individual inventory.','water':'Original waterbody polygons clipped; no shoreline simplification. ELEVATION absent; illustrative constant scene level.'},'limits':out['limits']}
 (OUT/'provenance.json').write_text(json.dumps(prov,separators=(',',':'),allow_nan=False)+'\n')

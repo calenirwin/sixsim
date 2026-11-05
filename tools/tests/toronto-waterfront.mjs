@@ -20,11 +20,11 @@ test('Malformed assets fail before scene allocation; bounded render resources di
 test('Full-width paving follows original terrain and continuously covers the guided route',()=>{
  // Spatial index keeps checks bounded without substituting nearest-height interpolation.
  const index=vertices=>{const cells=new Map();for(let i=0;i<vertices.length;i+=9){const t=vertices.slice(i,i+9),xs=[t[0],t[3],t[6]],zs=[t[2],t[5],t[8]];for(let x=Math.floor(Math.min(...xs)/20);x<=Math.floor(Math.max(...xs)/20);x++)for(let z=Math.floor(Math.min(...zs)/20);z<=Math.floor(Math.max(...zs)/20);z++){const key=`${x}_${z}`;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(t);}}return (x,z)=>{for(const t of cells.get(`${Math.floor(x/20)}_${Math.floor(z/20)}`)||[]){const [ax,ay,az,bx,by,bz,cx,cy,cz]=t,den=(bz-cz)*(ax-cx)+(cx-bx)*(az-cz);if(Math.abs(den)<1e-8)continue;const u=((bz-cz)*(x-cx)+(cx-bx)*(z-cz))/den,v=((cz-az)*(x-cx)+(ax-cx)*(z-cz))/den;if(u>=-1e-5&&v>=-1e-5&&u+v<=1+1e-5)return u*ay+v*by+(1-u-v)*cy;}return null;};};
- const ground=index(d.groundVertices),paving=index(d.pavingVertices);
+ const ground=index(d.groundVertices),paving=index(d.pavingVertices),roads=index(d.roadVertices);
  assert.ok(d.pavingVertices.length>0&&d.pavingVertices.length<1500000);
  // Every triangle centroid, including outer edges of bends, must match the source TIN.
  for(let i=0;i<d.pavingVertices.length;i+=9){const v=d.pavingVertices,x=(v[i]+v[i+3]+v[i+6])/3,z=(v[i+2]+v[i+5]+v[i+8])/3,y=(v[i+1]+v[i+4]+v[i+7])/3,h=ground(x,z);assert.notEqual(h,null,'No paving over missing terrain or mapped water');assert.ok(Math.abs(y-h-.06)<.003,'Paving must follow TIN across its width');}
- for(let distance=0;distance<d.lengthM;distance+=.5){const {position:[x,y,z]}=walkPose(d,distance),h=paving(x,z);assert.notEqual(h,null,`Paving gap at ${distance} m`);assert.ok(Math.abs(y-1.65-h-.04)<.04,'Walking eye remains above continuous paving');}
+ for(let distance=0;distance<d.lengthM;distance+=.5){const {position:[x,y,z]}=walkPose(d,distance),h=paving(x,z)??roads(x,z);assert.notEqual(h,null,`Walking surface gap at ${distance} m`);assert.ok(Math.abs(y-1.65-h-.04)<.04,'Walking eye remains above continuous paving');}
  const scene=new THREE.Scene(),r=waterfrontScene(scene,d);assert.equal(r.group.getObjectByName('terrainDrapedSidewalks').geometry.attributes.position.count,d.pavingVertices.length/3);r.dispose();
 });
 
@@ -47,4 +47,13 @@ test('Road surfaces follow original TIN across full width without bridging missi
  for(let i=0;i<v.length;i+=9){const x=(v[i]+v[i+3]+v[i+6])/3,z=(v[i+2]+v[i+5]+v[i+8])/3,y=(v[i+1]+v[i+4]+v[i+7])/3,h=waterfrontGroundAt(d,x,z);assert.notEqual(h,null,'No road surface over missing terrain or mapped water');assert.ok(Math.abs(y-h-.035)<.003,'Road width must follow terrain rather than centreline height');}
  for(const bad of [[],[0,0,0],Array(9).fill(NaN)])assert.throws(()=>validateWaterfront({...d,roadVertices:bad}));
  const r=waterfrontScene(new THREE.Scene(),d);assert.equal(r.group.getObjectByName('terrainDrapedRoads').geometry.attributes.position.count,v.length/3);r.dispose();
+});
+
+test('Crossing paint stays on source-flagged road overlaps, follows terrain and does not cover paving',()=>{
+ const road={groundVertices:d.roadVertices},paving={groundVertices:d.pavingVertices},v=d.crossingVertices;
+ assert.ok(d.crossingSourceIds.length>0);assert.equal(new Set(d.crossingSourceIds).size,d.crossingSourceIds.length);
+ for(const id of d.crossingSourceIds)assert.ok(d.paths.some(p=>p.id===id&&p.crosswalk));
+ for(let i=0;i<v.length;i+=9){const x=(v[i]+v[i+3]+v[i+6])/3,z=(v[i+2]+v[i+5]+v[i+8])/3,y=(v[i+1]+v[i+4]+v[i+7])/3,h=waterfrontGroundAt(road,x,z);assert.notEqual(h,null,'Paint must remain over roads and outside missing terrain/water');assert.ok(Math.abs(y-h-.01)<.003);assert.equal(waterfrontGroundAt(paving,x,z),null,'Crossing must not look like a sidewalk carpet over road');}
+ for(const bad of [{...d,crossingVertices:[NaN]},{...d,crossingSourceIds:[-1]}])assert.throws(()=>validateWaterfront(bad));
+ const r=waterfrontScene(new THREE.Scene(),d);assert.equal(r.group.getObjectByName('terrainDrapedCrossings').geometry.attributes.position.count,v.length/3);r.dispose();
 });
