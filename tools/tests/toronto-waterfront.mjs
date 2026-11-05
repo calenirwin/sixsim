@@ -29,3 +29,15 @@ test('Full-width paving follows original terrain and continuously covers the gui
 });
 
 test('Missing terrain is explicit and walking never falls back to route heights',()=>{assert.equal(waterfrontGroundAt(d,100000,100000),null);assert.throws(()=>waterfrontGroundAt(d,NaN,0));assert.throws(()=>waterfrontGroundAt({groundVertices:[1e9,0,0,0,0,0,0,0,1]},0,0),/bounds/);assert.throws(()=>walkPose({...d,groundVertices:[]},0),/outside available terrain/);});
+
+import {buildingGroundJoins} from '../../client/src/toronto/buildingGroundJoins.js';
+test('Illustrative plinths preserve wall tops, follow slope, retain holes and reject unsupported gaps',()=>{
+ const ring=[[0,0],[4,0],[4,4],[0,4]],hole=[[1,1],[1,2],[2,2],[2,1]],input=structuredClone([ring,hole]);
+ const r=buildingGroundJoins(input,80,(x,z)=>78+x/10);assert.ok(r.stats.segments>8);assert.deepEqual(input,[ring,hole]);
+ for(let i=0;i<r.positions.length;i+=3){const [x,y,z]=r.positions.slice(i,i+3);assert.ok(Math.abs(y-80.01)<1e-8||Math.abs(y-(78+x/10-.05))<1e-8);}
+ assert.equal(buildingGroundJoins([ring],80,()=>null).positions.length,0);
+ assert.equal(buildingGroundJoins([ring],80,()=>70).positions.length,0);
+ assert.equal(buildingGroundJoins([ring],80,()=>81).positions.length,0);
+ const limited=buildingGroundJoins([ring],80,()=>78,{maxVertices:6});assert.equal(limited.positions.length,18);assert.ok(limited.stats.budget>0);
+ assert.throws(()=>buildingGroundJoins([ring],80,()=>78,{maxDrop:100}));
+});
