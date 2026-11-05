@@ -3,6 +3,7 @@ export function validateWaterfront(d){
  const fail=()=>{throw Error('Invalid waterfront scene');};
  if(d?.version!==1||d.frame?.lon!==-79.397||d.frame?.lat!==43.65||!Array.isArray(d.groundVertices)||d.groundVertices.length%9||d.groundVertices.length>500000||!d.groundVertices.every(Number.isFinite)||!Array.isArray(d.grassVertices)||d.grassVertices.length%9||d.grassVertices.length>500000||!d.grassVertices.every(Number.isFinite)||!Array.isArray(d.walk)||d.walk.length<2||d.walk.length>1000||!Number.isFinite(d.lengthM)||d.lengthM<100||d.lengthM>2000||!Array.isArray(d.trees)||d.trees.length>2000||!Array.isArray(d.paths)||d.paths.length>1000||!Array.isArray(d.roads)||d.roads.length>500||!Array.isArray(d.water)||d.water.length>20||d.waterLevel!==74.5)fail();
  if(!Array.isArray(d.pavingVertices)||!d.pavingVertices.length||d.pavingVertices.length%9||d.pavingVertices.length>1500000||!d.pavingVertices.every(Number.isFinite))fail();
+ if(!Array.isArray(d.roadVertices)||!d.roadVertices.length||d.roadVertices.length%9||d.roadVertices.length>1500000||!d.roadVertices.every(Number.isFinite))fail();
  const point=p=>Array.isArray(p)&&p.length===3&&p.every(Number.isFinite)&&Math.abs(p[0])<5000&&p[1]>50&&p[1]<150&&Math.abs(p[2])<5000;
  for(let i=0;i<d.walk.length;i++){const p=d.walk[i];if(!Array.isArray(p)||p.length!==4||!Number.isFinite(p[0])||!point(p.slice(1))||p[0]<0||(i&&p[0]<=d.walk[i-1][0]))fail();}
  if(d.walk[0][0]!==0||Math.abs(d.walk.at(-1)[0]-d.lengthM)>.001)fail();
@@ -35,7 +36,7 @@ export function waterfrontScene(scene,data){
  validateWaterfront(data);const group=new THREE.Group();group.name='queensQuayWaterfront';scene.add(group);
  const mat=(color,roughness=1)=>new THREE.MeshStandardMaterial({color,roughness,side:THREE.DoubleSide});
  group.add(mesh(data.groundVertices,mat(0xa7a58f)));group.add(mesh(data.grassVertices,mat(0x6e8751)));
- const road=mat(0x42494b);group.add(mesh(ribbons(data.roads,r=>({'Major Arterial':14,'Minor Arterial':11,Collector:9,Local:7,Laneway:4}[r.type]||7)),road));
+ const road=mesh(data.roadVertices,mat(0x42494b));road.name='terrainDrapedRoads';group.add(road);
  const paving=mat(0xb7b3a5);paving.onBeforeCompile=s=>{s.vertexShader='varying vec3 pavingPoint;\n'+s.vertexShader;s.vertexShader=s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\npavingPoint=position;');s.fragmentShader='varying vec3 pavingPoint;\n'+s.fragmentShader;s.fragmentShader=s.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\nvec2 joints=step(vec2(.97),fract(pavingPoint.xz/1.5)); diffuseColor.rgb*=1.-.15*max(joints.x,joints.y);');};
  const sidewalks=mesh(data.pavingVertices,paving);sidewalks.name='terrainDrapedSidewalks';group.add(sidewalks);group.add(mesh(ribbons(data.paths.filter(r=>r.crosswalk),2.6,true),mat(0xe8e2ce)));
  const water=mat(0x286a7c,.26);water.metalness=.18;water.onBeforeCompile=s=>{s.vertexShader='varying vec3 waterPoint;\n'+s.vertexShader;s.vertexShader=s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nwaterPoint=position;');s.fragmentShader='varying vec3 waterPoint;\n'+s.fragmentShader;s.fragmentShader=s.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\nfloat ripples=sin(waterPoint.x*1.8+sin(waterPoint.z*.7))*sin(waterPoint.z*2.1); diffuseColor.rgb*=.92+.12*ripples;');};

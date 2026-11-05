@@ -12,7 +12,8 @@ try{
  const state=()=>page.evaluate(()=>{const a=window.__APP;return {walk:a.cityTerrain.waterfront.state,p:a.engine.camera.position.toArray(),t:a.controls.target.toArray(),near:a.engine.camera.near,orbit:a.controls.enabled,terrain:a.cityTerrain.terrain.group.visible,frame:a.replay.f};});
  assert.ok(await page.evaluate(()=>window.__APP.cityTerrain.waterfront.group.getObjectByName('terrainDrapedSidewalks')?.geometry.attributes.position.count>1000));
  assert.ok(await page.evaluate(()=>window.__APP.cityTerrain.buildings.state.joinVertices>0&&window.__APP.cityTerrain.buildings.state.joinVertices<=100000));
- console.log('Terrain-draped street scene and illustrative plinths loaded');const start=await state();assert.equal(start.walk.distance,0);assert.equal(start.orbit,false);assert.equal(start.terrain,false);assert.equal(start.near,.4);assert.equal(start.frame,60);
+ assert.ok(await page.evaluate(()=>window.__APP.cityTerrain.waterfront.group.getObjectByName('terrainDrapedRoads')?.geometry.attributes.position.count>1000));
+ console.log('Terrain-draped roads, sidewalks and illustrative plinths loaded');const start=await state();assert.equal(start.walk.distance,0);assert.equal(start.orbit,false);assert.equal(start.terrain,false);assert.equal(start.near,.4);assert.equal(start.frame,60);
  await page.locator('#walk-forward').click({noWaitAfter:true,timeout:60000});assert.equal((await state()).walk.distance,10);await page.locator('#walk-left').click({noWaitAfter:true,timeout:60000});const turned=await state();assert.equal(turned.walk.distance,10);assert.notDeepEqual(turned.t,start.t);await page.locator('#walk-face').click({noWaitAfter:true,timeout:60000});assert.equal((await state()).walk.yaw,0);
  fs.mkdirSync('shots',{recursive:true});
  for(const [name,distance,yaw] of [['street',420,0],['shoreline',1100,0]]){

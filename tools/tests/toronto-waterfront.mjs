@@ -41,3 +41,10 @@ test('Illustrative plinths preserve wall tops, follow slope, retain holes and re
  const limited=buildingGroundJoins([ring],80,()=>78,{maxVertices:6});assert.equal(limited.positions.length,18);assert.ok(limited.stats.budget>0);
  assert.throws(()=>buildingGroundJoins([ring],80,()=>78,{maxDrop:100}));
 });
+
+test('Road surfaces follow original TIN across full width without bridging missing ground',()=>{
+ const v=d.roadVertices;assert.ok(v.length>0&&v.length<1500000);
+ for(let i=0;i<v.length;i+=9){const x=(v[i]+v[i+3]+v[i+6])/3,z=(v[i+2]+v[i+5]+v[i+8])/3,y=(v[i+1]+v[i+4]+v[i+7])/3,h=waterfrontGroundAt(d,x,z);assert.notEqual(h,null,'No road surface over missing terrain or mapped water');assert.ok(Math.abs(y-h-.035)<.003,'Road width must follow terrain rather than centreline height');}
+ for(const bad of [[],[0,0,0],Array(9).fill(NaN)])assert.throws(()=>validateWaterfront({...d,roadVertices:bad}));
+ const r=waterfrontScene(new THREE.Scene(),d);assert.equal(r.group.getObjectByName('terrainDrapedRoads').geometry.attributes.position.count,v.length/3);r.dispose();
+});
