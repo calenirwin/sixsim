@@ -22,6 +22,16 @@ try{
  for(const [name,distance,yaw] of [['crossing-after',330,0],['street',420,0],['shoreline',1100,0]]){
   await page.locator('#waterfront-distance').evaluate((e,v)=>{e.value=String(v);e.dispatchEvent(new Event('input',{bubbles:true}));},distance);if(yaw)for(let i=0;i<3;i++)await page.locator('#walk-right').click({noWaitAfter:true,timeout:60000});
   await page.waitForFunction(()=>{const b=window.__APP.cityTerrain.buildings;return b.state.pending===0&&b.state.errors.length===0;},{},{timeout:90000});await page.screenshot({path:`shots/toronto-waterfront-${name}.png`,timeout:60000});console.log('Captured',name);
+  if(name==='shoreline'){
+   await page.locator('#walk-right').click({noWaitAfter:true,timeout:60000});
+   await page.locator('#walk-right').click({noWaitAfter:true,timeout:60000});
+   for(const [layout,width,height] of [['desktop',1200,800],['mobile',390,844]]){
+    await page.setViewportSize({width,height});await page.waitForFunction(r=>Math.abs(window.__APP.engine.camera.aspect-r)<.01,width/height);
+    for(const enabled of [false,true]){await page.evaluate(async enabled=>{const a=window.__APP,e=a.cityTerrain.waterfront.group.getObjectByName('illustrativeShorelineClosure');if(e.geometry.attributes.position.count!==4728)throw Error('Missing shoreline closure');e.visible=enabled;a.engine.wake();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));},enabled);await page.screenshot({path:`shots/toronto-waterfront-edge-${layout}-${enabled?'after':'before'}.png`,timeout:60000});}
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+   }
+   await page.setViewportSize({width:1200,height:800});await page.locator('#walk-face').click({noWaitAfter:true,timeout:60000});
+  }
   if(name==='street'){
    for(const [layout,width,height] of [['desktop',1200,800],['mobile',390,844]]){
     await page.setViewportSize({width,height});await page.waitForFunction(r=>Math.abs(window.__APP.engine.camera.aspect-r)<.01,width/height);

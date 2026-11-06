@@ -57,3 +57,17 @@ test('Crossing paint stays on source-flagged road overlaps, follows terrain and 
  for(const bad of [{...d,crossingVertices:[NaN]},{...d,crossingSourceIds:[-1]}])assert.throws(()=>validateWaterfront(bad));
  const r=waterfrontScene(new THREE.Scene(),d);assert.equal(r.group.getObjectByName('terrainDrapedCrossings').geometry.attributes.position.count,v.length/3);r.dispose();
 });
+
+import {shorelineClosure} from '../../client/src/toronto/shoreline.js';
+test('Shoreline closure preserves terrain tops and only joins supported mapped edges to illustrative water',()=>{
+ const original=JSON.stringify(d),r=shorelineClosure(d);assert.equal(r.positions.length/3,4728);assert.equal(r.omitted,0);assert.deepEqual(shorelineClosure(d),r);assert.equal(JSON.stringify(d),original);
+ const source=new Set();for(let i=0;i<d.groundVertices.length;i+=3)source.add(d.groundVertices.slice(i,i+3).join(','));
+ for(let i=0;i<r.positions.length;i+=18){const [a,b,c,e,f,g]=[0,3,6,9,12,15].map(j=>r.positions.slice(i+j,i+j+3));assert.ok(source.has(a.join(','))&&source.has(b.join(',')));assert.deepEqual(e,b);assert.deepEqual(g,c);assert.deepEqual(c,[a[0],d.waterLevel,a[2]]);assert.deepEqual(f,[b[0],d.waterLevel,b[2]]);assert.ok(a[1]>c[1]&&b[1]>f[1]);}
+ const fixture={groundVertices:[0,76,0,2,77,0,0,76,2],waterLevel:74.5,water:[{rings:[[[0,0],[2,0],[2,-2],[0,-2],[0,0]]]}]};
+ assert.equal(shorelineClosure(fixture).positions.length,18);
+ assert.equal(shorelineClosure({...fixture,water:[]}).positions.length,0,'No closure across an unmapped edge');
+ assert.equal(shorelineClosure({...fixture,waterLevel:78}).positions.length,0,'Never extrude upward to cover submerged terrain');
+ assert.equal(shorelineClosure({...fixture,waterLevel:70}).positions.length,0,'Unsupported height gap omitted');
+ assert.equal(shorelineClosure({...fixture,groundVertices:[...fixture.groundVertices,2,77,0,0,76,0,2,77,2]}).positions.length,0,'Shared triangle edge is not an exposed boundary');
+ const scene=new THREE.Scene(),render=waterfrontScene(scene,d),edge=render.group.getObjectByName('illustrativeShorelineClosure');assert.equal(edge.geometry.attributes.position.count,4728);let disposed=false;edge.geometry.addEventListener('dispose',()=>disposed=true);render.dispose();assert.ok(disposed);assert.equal(scene.children.length,0);
+});
