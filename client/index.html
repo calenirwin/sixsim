@@ -39,7 +39,15 @@
   #city-discovery li button { width: 100%; min-height: 40px; white-space: normal; text-align: left; overflow-wrap: anywhere; }
   #city-discovery a { display: block; color: #bce3ff; }
   #waterfront-distance { width: 95%; min-height: 36px; }
-  #waterfront-controls button { min-height: 40px; }
+  #waterfront-controls button { min-height: 44px; }
+  #waterfront-controls :focus-visible { outline: 3px solid #ffcc64; outline-offset: 2px; }
+  #waterfront-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  #waterfront-actions button { margin: 0; }
+  #waterfront-options { margin-top: 8px; }
+  #waterfront-options[hidden] { display: none; }
+  #waterfront-distance { min-height: 44px; }
+  #city-terrain-controls.walking-waterfront:not(.walk-options-open) #toggle-city-terrain { display: none; }
+  #waterfront-status { font-size: 11px; margin-top: 4px; }
   #city-layer-details { font-size: 11px; }
   .toronto-demo-controls { margin-top: 5px; }
   #playback-time { max-width: 150px; vertical-align: middle; }
@@ -51,6 +59,9 @@
     body[data-city="toronto"] #help { top: 66px; left: 16px; right: 16px; text-align: left; }
     body[data-city="toronto"] #help button { min-height: 40px; min-width: 70px; margin-top: 6px; }
     #city-terrain-controls.exploring { max-height: 45vh; }
+    #city-terrain-controls.walking-waterfront { position: fixed; left: 12px; right: 12px; bottom: max(76px, env(safe-area-inset-bottom)); max-width: none; max-height: 50dvh; margin: 0; box-sizing: border-box; }
+    body[data-city="toronto"] #waterfront-actions button { min-width: 0; margin: 0; padding: 4px; font-size: 12px; }
+    #city-terrain-controls.walking-waterfront ~ #city-navigation-hint { display: none; }
     body[data-city="toronto"] #stats { bottom: 54px; right: 16px; }
     body[data-city="toronto"] #credits { left: 16px; right: 16px; text-align: left; }
   }
