@@ -48,7 +48,7 @@ export async function start() {
   const landCover=addLandCover(engine.scene,network.landCover,PROFILE);
   const greenSpaces=addGreenSpaces(engine.scene,network.greenSpaces,PROFILE);
 
-  document.querySelector('#help').innerHTML='Drag to orbit · right-drag to pan · scroll/pinch to zoom<br><button id="pause-playback">Pause</button> <button id="restart-playback">Restart</button>';
+  document.querySelector('#help').innerHTML='<span id="city-navigation-hint">Drag to orbit · right-drag to pan · scroll/pinch to zoom</span><br><button id="pause-playback">Pause</button> <button id="restart-playback">Restart</button>';
   document.querySelector('#help').style.pointerEvents='auto';
   for(const id of ['cross','tethers'])document.getElementById(id).style.display='none';
   let elapsed=0,paused=false,failed=false;
@@ -62,7 +62,7 @@ export async function start() {
   const togglePause=()=>setPaused(!paused);
   document.querySelector('#pause-playback').onclick=togglePause;
   document.querySelector('#restart-playback').onclick=()=>seek(0);
-  addEventListener('keydown',e=>{if(document.querySelector('dialog[open]')||/INPUT|BUTTON|SELECT|TEXTAREA/.test(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();togglePause();}if(e.code==='KeyR')seek(0);});
+  addEventListener('keydown',e=>{if(window.__APP?.cityTerrain?.active)return;if(document.querySelector('dialog[open]')||/INPUT|BUTTON|SELECT|TEXTAREA/.test(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();togglePause();}if(e.code==='KeyR')seek(0);});
   const reference=h, urls={baseline:baselineUrl,dwell:dwellUrl,custom:tracksUrl},cache=new Map();
   let mode=h.transitScenario?'custom':'baseline',request=0;
   cache.set(mode,tracks);
@@ -92,17 +92,26 @@ export async function start() {
   const sharedButton=document.createElement('button');sharedButton.id='focus-shared-junction';sharedButton.textContent='Wellington & Bathurst admission';sharedButton.hidden=!junctionProbes.current;document.querySelector('.toronto-demo-controls').append(sharedButton);
   const sharedStatus=document.createElement('div');sharedStatus.id='shared-junction-status';document.querySelector('.toronto-demo-controls').append(sharedStatus);
   sharedButton.onclick=()=>{setPaused(true);seek(0);const p=junctionProbes.current.probes[0];controls.target.set(p.x,0,p.z);engine.camera.position.set(p.x+120,180,p.z+220);controls.update();engine.wake();};
+  const accessDetails=document.createElement('details');accessDetails.id='next-node-access';accessDetails.hidden=!junctionProbes.access;
+  const accessSummary=document.createElement('summary');accessSummary.textContent='Next-node movements · permissions unknown';accessDetails.append(accessSummary);
+  for(const node of junctionProbes.access?.nodes||[]){
+    const focus=document.createElement('button');focus.id=`focus-access-${node.nodeId}`;focus.textContent=`Inspect node ${node.nodeId}`;
+    focus.onclick=()=>{setPaused(true);seek(150);const [x,z]=local.project(...node.coordinate);controls.target.set(x,0,z);engine.camera.position.set(x+120,180,z+220);controls.update();engine.wake();};accessDetails.append(focus);
+    const note=document.createElement('p');note.textContent=`Incoming edge ${node.incomingEdgeId}: held — turn/access permissions and signal control are unverified. Source-compatible connections do not authorize admission.`;accessDetails.append(note);
+    const list=document.createElement('ul');for(const m of node.movements){const row=document.createElement('li');row.dataset.edgeId=m.edgeId;row.textContent=`${m.name} (${m.edgeId}), ${m.orientation} to ${m.toNode}: ${m.topologyCandidate?'source direction/connectivity supported; turn/access unknown':m.reason}. Held.`;list.append(row);}accessDetails.append(list);
+  }
+  document.querySelector('.toronto-demo-controls').append(accessDetails);
   const cityTerrain=cityTerrainControls({engine,controls,setPaused,profile:PROFILE});
   window.__APP={cityTerrain,engine,renderer:engine.renderer,scene:engine.scene,streamer,replay,traffic,profile:PROFILE,network,contextGroup,greenSpaces,landCover,serviceGraph,roadProbe,junctionProbes,controls,tracks,seek,setPaused};
   engine.onFrame=dt=>{
     if(failed)return;
-    if(cityTerrain.active){controls.update();cityTerrain.update();document.querySelector('#stats').textContent='2023 municipal terrain · CGVD2013 metres · simulation paused';return;}
+    if(cityTerrain.active){if(!cityTerrain.waterfront?.active)controls.update();cityTerrain.update(dt);document.querySelector('#stats').textContent=cityTerrain.waterfront?.active?'Source-aligned virtual waterfront walk · simulation paused':'2023 municipal terrain · CGVD2013 metres · simulation paused';return;}
     if(streamer.error){fail(streamer.error);return;}
     controls.target.x=Math.max(manifest.bounds[0],Math.min(manifest.bounds[2],controls.target.x));
     controls.target.z=Math.max(manifest.bounds[1],Math.min(manifest.bounds[3],controls.target.z));
     streamer.update(controls.target.x,controls.target.z);
     if(!paused)elapsed=Math.min(h.simTime.at(-1),elapsed+dt);
-    ENV.time.value=elapsed;traffic.update(dt);serviceGraph.update(replay.f);roadProbe.update(replay.f);junctionProbes.update(replay.f);demoControls.update(elapsed);sharedStatus.textContent=junctionProbes.current?`Illustrative shared slot: ${junctionProbes.current.ownerId??'free'} · ${junctionProbes.current.probes.map(p=>`${p.id}: ${p.phase}`).join(' · ')} · not verified right of way`:'';probeStatus.textContent=roadProbe.current?`Wellington probe: ${roadProbe.current.status} ${roadProbe.current.admission?` · grant ${roadProbe.current.admission.grantSeconds===null?'none':roadProbe.current.admission.grantSeconds+'s'}`:''} · prescribed 5 m/s · illustrative admission · flat height; not verified traffic permission`:'';controls.update();
+    ENV.time.value=elapsed;traffic.update(dt);serviceGraph.update(replay.f);roadProbe.update(replay.f);junctionProbes.update(replay.f);demoControls.update(elapsed);sharedStatus.textContent=junctionProbes.current?`Illustrative junction: ${junctionProbes.current.ownerId?junctionProbes.current.ownerId+': reserved':'free'}${junctionProbes.current.queue?` · FIFO ${junctionProbes.current.queue.length}${junctionProbes.current.queue[0]?` (${junctionProbes.current.queue[0].id}: ${junctionProbes.current.queue[0].reason}, ${junctionProbes.current.queue[0].waitSeconds}s)`:''} · exits ${junctionProbes.current.downstream.reduce((n,e)=>n+e.capacity-e.available,0)}/${junctionProbes.current.downstream.reduce((n,e)=>n+e.capacity,0)} occupied/reserved`:''}${junctionProbes.current.probes.some(p=>'segmentReleaseSeconds' in p)?` · downstream ${junctionProbes.current.probes.filter(p=>p.phase==='downstream').length} · held before next node ${junctionProbes.current.probes.filter(p=>p.phase==='held-before-next-junction').length}/${junctionProbes.current.probes.length}`:''}${junctionProbes.current.probes.some(p=>'dischargeSeconds' in p)?` · discharged ${junctionProbes.current.probes.filter(p=>p.phase==='discharged').length}/${junctionProbes.current.probes.length}`:''} · not verified right of way`:'';probeStatus.textContent=roadProbe.current?`Wellington probe: ${roadProbe.current.status} ${roadProbe.current.admission?` · grant ${roadProbe.current.admission.grantSeconds===null?'none':roadProbe.current.admission.grantSeconds+'s'}`:''} · prescribed 5 m/s · illustrative admission · flat height; not verified traffic permission`:'';controls.update();
     document.querySelector('#stats').textContent=`${clock(h.startSeconds+elapsed)} · scheduled-trip markers, not live vehicles${h.transitScenario?.extraDwellSeconds ? " · +60s dwell experiment" : ""} · procedural materials · flat ground`;
     if(streamer.tiles.get('0_0')?.state==='ready')document.querySelector('#loading').style.display='none';
   };

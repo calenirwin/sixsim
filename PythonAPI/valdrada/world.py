@@ -262,7 +262,7 @@ class World:
 
     # ---- content
     def get_shared_junction(self) -> dict:
-        """Two prescribed probes sharing an illustrative slot; local east/up/south metres."""
+        """Finite prescribed probes and optional next-node evidence; permissions stay unverified. State uses local east/up/south metres."""
         return self._call("experimental.get_shared_junction")
 
     def get_road_probe(self) -> dict:

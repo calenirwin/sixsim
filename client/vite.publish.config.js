@@ -8,6 +8,9 @@ if(!/^[a-f0-9]{40}$/.test(commit))throw new Error('Publication requires a full c
 const sources=['toronto/district-provenance.json','toronto/network-provenance.json','toronto/green-spaces-provenance.json','toronto/land-cover-provenance.json','toronto/city-terrain/provenance.json','toronto/city-buildings/provenance.json','toronto/city-cover/provenance.json','toronto/city-roads/provenance.json','transit/provenance.json'].map(name=>JSON.parse(fs.readFileSync(new URL(`./fixtures/${name}`,import.meta.url))));
 sources.push(JSON.parse(fs.readFileSync(new URL('./fixtures/toronto/road-corridor.json',import.meta.url))).provenance);
 sources.push(JSON.parse(fs.readFileSync(new URL('./fixtures/toronto/shared-junction.json',import.meta.url))).provenance);
+sources.push(JSON.parse(fs.readFileSync(new URL('./fixtures/toronto/next-node-access.json',import.meta.url))).provenance);
+sources.push(...JSON.parse(fs.readFileSync(new URL('./fixtures/toronto/discovery/places.json',import.meta.url))).sources);
+sources.push(JSON.parse(fs.readFileSync(new URL('./fixtures/toronto/waterfront/provenance.json',import.meta.url))));
 export default mergeConfig(config,defineConfig({
   base:'/sixsim/',publicDir:false,
   define:{'import.meta.env.VITE_PUBLISHED_CITY':JSON.stringify('toronto')},

@@ -1,0 +1,63 @@
+{
+  "version": 3,
+  "basis": "illustrative-shared-admission",
+  "nodeId": 13467884,
+  "capacity": 1,
+  "order": "ready-time-then-id",
+  "realPermissions": "unverified",
+  "speedMps": 5,
+  "approachM": 20,
+  "holdM": 10,
+  "exitM": 10,
+  "windows": [
+    [
+      10,
+      100
+    ]
+  ],
+  "interruptions": [],
+  "downstream": {
+    "1146640": {
+      "capacity": 1,
+      "occupiedUntilSeconds": 20,
+      "dischargeAfterSeconds": 8
+    },
+    "8491785": {
+      "capacity": 1,
+      "occupiedUntilSeconds": 0,
+      "dischargeAfterSeconds": 8
+    }
+  },
+  "arrivals": [
+    {
+      "id": "bathurst-probe",
+      "pathId": "bathurst-probe",
+      "startSeconds": 0
+    },
+    {
+      "id": "wellington-probe",
+      "pathId": "wellington-probe",
+      "startSeconds": 0
+    },
+    {
+      "id": "bathurst-probe-2",
+      "pathId": "bathurst-probe",
+      "startSeconds": 4
+    },
+    {
+      "id": "wellington-probe-2",
+      "pathId": "wellington-probe",
+      "startSeconds": 4
+    },
+    {
+      "id": "bathurst-probe-3",
+      "pathId": "bathurst-probe",
+      "startSeconds": 8
+    },
+    {
+      "id": "wellington-probe-3",
+      "pathId": "wellington-probe",
+      "startSeconds": 8
+    }
+  ]
+}
