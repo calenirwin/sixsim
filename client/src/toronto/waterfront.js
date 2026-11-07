@@ -35,6 +35,8 @@ export function walkPose(data,distance,yaw=0){
 function mesh(positions,material){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.computeVertexNormals();const m=new THREE.Mesh(g,material);m.receiveShadow=true;return m;}
 export function waterfrontScene(scene,data){
  validateWaterfront(data);const group=new THREE.Group();group.name='queensQuayWaterfront';scene.add(group);
+ // Authored daylight fill for this illustrative walking scene; no solar calibration.
+ const fill=new THREE.HemisphereLight(0xd9e5ef,0x9a907d,.85);fill.name='waterfrontDaylightFill';group.add(fill);
  const mat=(color,roughness=1)=>new THREE.MeshStandardMaterial({color,roughness,side:THREE.DoubleSide});
  group.add(mesh(data.groundVertices,mat(0xa7a58f)));group.add(mesh(data.grassVertices,mat(0x6e8751)));
  const road=mesh(data.roadVertices,mat(0x42494b));road.name='terrainDrapedRoads';group.add(road);

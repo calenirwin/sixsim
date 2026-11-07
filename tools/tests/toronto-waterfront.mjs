@@ -71,3 +71,10 @@ test('Shoreline closure preserves terrain tops and only joins supported mapped e
  assert.equal(shorelineClosure({...fixture,groundVertices:[...fixture.groundVertices,2,77,0,0,76,0,2,77,2]}).positions.length,0,'Shared triangle edge is not an exposed boundary');
  const scene=new THREE.Scene(),render=waterfrontScene(scene,d),edge=render.group.getObjectByName('illustrativeShorelineClosure');assert.equal(edge.geometry.attributes.position.count,4728);let disposed=false;edge.geometry.addEventListener('dispose',()=>disposed=true);render.dispose();assert.ok(disposed);assert.equal(scene.children.length,0);
 });
+
+
+test('Walking daylight fill is bounded, shadow-free and owned by the removable waterfront group',()=>{
+ const scene=new THREE.Scene(),sun=new THREE.DirectionalLight(0xfff2e2,3.5);scene.add(sun);const r=waterfrontScene(scene,d),fill=r.group.getObjectByName('waterfrontDaylightFill');
+ assert.ok(fill.isHemisphereLight);assert.equal(fill.intensity,.85);assert.equal(fill.castShadow,false);assert.equal(fill.parent,r.group);assert.equal(sun.intensity,3.5);
+ r.group.visible=false;const visible=[];scene.traverseVisible(o=>{if(o.isLight)visible.push(o);});assert.deepEqual(visible,[sun]);r.group.visible=true;assert.equal(fill.intensity,.85);r.dispose();assert.deepEqual(scene.children,[sun]);
+});
