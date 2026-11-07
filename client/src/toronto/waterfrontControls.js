@@ -8,7 +8,7 @@ export function waterfrontControls({parent,engine,controls,terrain,roads,buildin
  const more=document.createElement('button');more.id='waterfront-more';more.textContent='More controls';more.hidden=true;more.setAttribute('aria-expanded','false');more.setAttribute('aria-controls','waterfront-options');panel.insertBefore(more,walking);
  const actions=document.createElement('div');actions.id='waterfront-actions';walking.append(actions);
  const options=document.createElement('div');options.id='waterfront-options';options.hidden=true;walking.append(options);
- function expand(value){options.hidden=!value;more.setAttribute('aria-expanded',String(value));more.textContent=value?'Less controls':'More controls';parent.classList.toggle('walk-options-open',value);if(!value&&options.contains(document.activeElement))more.focus();}
+ function expand(value){options.hidden=!value;more.setAttribute('aria-expanded',String(value));more.textContent=value?'Fewer controls':'More controls';parent.classList.toggle('walk-options-open',value);if(!value&&options.contains(document.activeElement))more.focus();}
  more.onclick=()=>{held=0;expand(options.hidden);};
  const hint=document.createElement('div');hint.textContent='Guided virtual walk · W/S to move · A/D to look · Escape to leave';options.append(hint);
  const slider=document.createElement('input');slider.type='range';slider.id='waterfront-distance';slider.min=0;slider.step=1;slider.setAttribute('aria-label','Distance along waterfront walk');options.append(slider);
