@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {pavingMaterial} from './paving.js';
 import {shorelineClosure} from './shoreline.js';
 export function validateWaterfront(d){
  const fail=()=>{throw Error('Invalid waterfront scene');};
@@ -40,7 +41,7 @@ export function waterfrontScene(scene,data){
  const mat=(color,roughness=1)=>new THREE.MeshStandardMaterial({color,roughness,side:THREE.DoubleSide});
  group.add(mesh(data.groundVertices,mat(0xa7a58f)));group.add(mesh(data.grassVertices,mat(0x6e8751)));
  const road=mesh(data.roadVertices,mat(0x42494b));road.name='terrainDrapedRoads';group.add(road);
- const paving=mat(0xb7b3a5);paving.onBeforeCompile=s=>{s.vertexShader='varying vec3 pavingPoint;\n'+s.vertexShader;s.vertexShader=s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\npavingPoint=position;');s.fragmentShader='varying vec3 pavingPoint;\n'+s.fragmentShader;s.fragmentShader=s.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\nvec2 joints=step(vec2(.97),fract(pavingPoint.xz/1.5)); diffuseColor.rgb*=1.-.15*max(joints.x,joints.y);');};
+ const paving=pavingMaterial();
  const sidewalks=mesh(data.pavingVertices,paving);sidewalks.name='terrainDrapedSidewalks';group.add(sidewalks);const crossings=mesh(data.crossingVertices,mat(0xe8e2ce));crossings.name='terrainDrapedCrossings';group.add(crossings);
  const closure=shorelineClosure(data),edge=mesh(closure.positions,mat(0x858574));edge.name='illustrativeShorelineClosure';edge.userData.omitted=closure.omitted;group.add(edge);
  const water=mat(0x286a7c,.26);water.metalness=.18;water.onBeforeCompile=s=>{s.vertexShader='varying vec3 waterPoint;\n'+s.vertexShader;s.vertexShader=s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nwaterPoint=position;');s.fragmentShader='varying vec3 waterPoint;\n'+s.fragmentShader;s.fragmentShader=s.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\nfloat ripples=sin(waterPoint.x*1.8+sin(waterPoint.z*.7))*sin(waterPoint.z*2.1); diffuseColor.rgb*=.92+.12*ripples;');};

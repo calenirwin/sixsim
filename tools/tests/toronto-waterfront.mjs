@@ -78,3 +78,10 @@ test('Walking daylight fill is bounded, shadow-free and owned by the removable w
  assert.ok(fill.isHemisphereLight);assert.equal(fill.intensity,.85);assert.equal(fill.castShadow,false);assert.equal(fill.parent,r.group);assert.equal(sun.intensity,3.5);
  r.group.visible=false;const visible=[];scene.traverseVisible(o=>{if(o.isLight)visible.push(o);});assert.deepEqual(visible,[sun]);r.group.visible=true;assert.equal(fill.intensity,.85);r.dispose();assert.deepEqual(scene.children,[sun]);
 });
+
+
+test('Filtered paving preserves source geometry and uses independent reversible diagnostic uniforms',()=>{
+ const a=waterfrontScene(new THREE.Scene(),d),b=waterfrontScene(new THREE.Scene(),d),mesh=a.group.getObjectByName('terrainDrapedSidewalks'),material=mesh.material,uniform=material.userData.filteredJoints;
+ assert.deepEqual(Array.from(mesh.geometry.attributes.position.array),Array.from(new Float32Array(d.pavingVertices)));assert.equal(material.map,null);assert.equal(material.roughness,1);assert.equal(uniform.value,1);
+ const shader={uniforms:{},vertexShader:'#include <begin_vertex>',fragmentShader:'#include <color_fragment>'};material.onBeforeCompile(shader);assert.equal(shader.uniforms.pavingFiltered,uniform);uniform.value=0;assert.equal(b.group.getObjectByName('terrainDrapedSidewalks').material.userData.filteredJoints.value,1);uniform.value=1;a.dispose();b.dispose();
+});
