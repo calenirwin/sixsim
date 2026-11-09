@@ -87,11 +87,20 @@ test('Filtered paving preserves source geometry and uses independent reversible 
 });
 
 
-import {canopyGeometry} from '../../client/src/toronto/vegetation.js';
+import {canopyGeometry,trunkContactDrop} from '../../client/src/toronto/vegetation.js';
 test('Illustrative crowns retain triangle budget, deterministic shape, smooth seams and source positions',()=>{
  const a=canopyGeometry(),b=canopyGeometry(),legacy=canopyGeometry({shaped:false});assert.equal(a.index.count/3,80);assert.equal(a.attributes.position.count,42);assert.equal(a.getAttribute('uv'),undefined);assert.deepEqual(a.attributes.position.array,b.attributes.position.array);assert.notDeepEqual(a.attributes.position.array,legacy.attributes.position.array);
  for(let i=0;i<a.attributes.position.count;i++){const p=a.attributes.position,n=a.attributes.normal;assert.ok(Math.hypot(p.getX(i),p.getY(i),p.getZ(i))<=1.00001);assert.ok(Math.abs(Math.hypot(n.getX(i),n.getY(i),n.getZ(i))-1)<1e-5);}
  const r=waterfrontScene(new THREE.Scene(),d),crowns=r.group.getObjectByName('illustrativeTreeCrowns'),trunks=r.group.getObjectByName('illustrativeTreeTrunks'),m=new THREE.Matrix4(),p=new THREE.Vector3(),q=new THREE.Quaternion(),scale=new THREE.Vector3();assert.equal(crowns.count,729);assert.equal(trunks.count,729);
- for(let i=0;i<d.trees.length;i++){const [x,y,z]=d.trees[i];crowns.getMatrixAt(i,m);m.decompose(p,q,scale);assert.ok(p.distanceTo(new THREE.Vector3(x,y+5.4,z))<.001);assert.ok(Math.abs(scale.x-(2.6+i%5*.22))<1e-5);trunks.getMatrixAt(i,m);m.decompose(p,q,scale);assert.ok(p.distanceTo(new THREE.Vector3(x,y+1.9,z))<.001);assert.ok(q.angleTo(new THREE.Quaternion())<1e-5);}
+ for(let i=0;i<d.trees.length;i++){const [x,y,z]=d.trees[i];crowns.getMatrixAt(i,m);m.decompose(p,q,scale);assert.ok(p.distanceTo(new THREE.Vector3(x,y+5.4,z))<.001);assert.ok(Math.abs(scale.x-(2.6+i%5*.22))<1e-5);trunks.getMatrixAt(i,m);m.decompose(p,q,scale);assert.ok(p.distanceTo(new THREE.Vector3(x,y+1.9-trunkContactDrop([x,y,z],(x,z)=>waterfrontGroundAt(d,x,z))/2,z))<.001);assert.ok(q.angleTo(new THREE.Quaternion())<1e-5);}
  assert.equal(crowns.geometry.index.count*crowns.count/3,58320);a.dispose();b.dispose();legacy.dispose();r.dispose();
+});
+
+
+test('Trunk contact closes small downhill gaps without moving source tops or crossing missing terrain',()=>{
+ assert.equal(trunkContactDrop([0,76,0],()=>76),0);assert.ok(Math.abs(trunkContactDrop([0,76,0],(x,z)=>76+z*.4)-.122)<1e-6);
+ assert.equal(trunkContactDrop([0,76,0],()=>null),0);assert.equal(trunkContactDrop([0,76,0],(x,z)=>z>.1?null:76),0);assert.equal(trunkContactDrop([0,76,0],(x,z)=>76+z*2),0);assert.equal(trunkContactDrop([0,76,0],()=>75),0);
+ const r=waterfrontScene(new THREE.Scene(),d),t=r.group.getObjectByName('illustrativeTreeTrunks'),m=new THREE.Matrix4();let adjusted=0;
+ for(let i=0;i<d.trees.length;i++){const [x,y,z]=d.trees[i],drop=trunkContactDrop(d.trees[i],(x,z)=>waterfrontGroundAt(d,x,z));t.getMatrixAt(i,m);const top=new THREE.Vector3(0,1.9,0).applyMatrix4(m);assert.ok(top.distanceTo(new THREE.Vector3(x,y+3.8,z))<.001);if(drop){adjusted++;assert.ok(drop<=.25);for(let k=0;k<6;k++){const a=k*Math.PI/3,b=new THREE.Vector3(.28*Math.sin(a),-1.9,.28*Math.cos(a)).applyMatrix4(m);assert.ok(b.y<waterfrontGroundAt(d,b.x,b.z)+.001);}}}
+ assert.ok(adjusted>0);assert.equal(t.count,729);assert.equal(t.geometry.index.count/3,24);r.dispose();
 });

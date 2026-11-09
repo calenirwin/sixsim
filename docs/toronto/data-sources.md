@@ -336,3 +336,5 @@ At the waterfront, a neutral vertical surface closes exposed terrain edges only 
 The guided waterfront scene uses a modest authored sky/ground fill to keep shaded façades readable alongside the existing sun and cast shadows. It is illustrative daylight rather than calibrated illumination or a measured time of day; leaving the walk removes the fill from the visible scene without changing city-mode lighting or exposure.
 
 Waterfront tree crowns use deterministic, irregular low-poly forms and varied orientations within the original illustrative crown envelope. Locations still sample the 2018 canopy classification; crown forms, dimensions and colours do not identify tree species or represent individual inventory measurements.
+
+Illustrative trunk feet may extend downward by at most 0.25 m to meet supported terrain around their base, leaving source coordinates, trunk tops and crowns unchanged. Missing terrain, inconsistent centre heights and larger slope gaps are not bridged. This is visual ground contact, not surveyed roots or tree-inventory geometry.

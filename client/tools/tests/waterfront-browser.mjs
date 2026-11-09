@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';import fs from 'node:fs';import {preview
 // Opt in to historical before/after pairs when diagnosing a visual regression:
 // WATERFRONT_DIAGNOSTIC_SHOTS=1 npm --prefix client run test:waterfront
 // Optional matched vegetation review; default remains six captures.
+const contactShots=process.env.WATERFRONT_CONTACT_SHOTS==='1';
 const vegetationShots=process.env.WATERFRONT_VEGETATION_SHOTS==='1';
 const diagnosticShots=process.env.WATERFRONT_DIAGNOSTIC_SHOTS==='1';
 const server=await preview({configFile:'vite.publish.config.js',preview:{host:'127.0.0.1',port:0}});let browser;
@@ -80,6 +81,23 @@ try{
    await page.setViewportSize({width:1200,height:800});await page.locator('#walk-face').click({noWaitAfter:true,timeout:60000});
   }
   if(name==='street'){
+   if(contactShots){
+    await page.locator('#waterfront-distance').evaluate(e=>{e.value='288';e.dispatchEvent(new Event('input',{bubbles:true}));});
+    for(let i=0;i<3;i++)await page.locator('#walk-left').click({noWaitAfter:true,timeout:60000});
+    await page.locator('#waterfront-more').click({noWaitAfter:true,timeout:60000});
+    for(const [layout,width,height] of [['desktop',1200,800],['mobile',390,844]]){
+     await page.setViewportSize({width,height});await page.waitForFunction(r=>Math.abs(window.__APP.engine.camera.aspect-r)<.01,width/height);
+     for(const grounded of [false,true]){
+      await page.evaluate(async grounded=>{const a=window.__APP,t=a.cityTerrain.waterfront.group.getObjectByName('illustrativeTreeTrunks'),m=t.instanceMatrix.array;
+       if(!grounded){window.__trunkContactMatrices=m.slice();let changed=0;for(let i=0;i<t.count;i++){const k=i*16;if(m[k+5]>1.00001)changed++;m[k+13]+=1.9*(m[k+5]-1);m[k+5]=1;}if(changed!==398)throw Error('Unexpected contact adjustment count');}
+       else{m.set(window.__trunkContactMatrices);delete window.__trunkContactMatrices;}
+       t.instanceMatrix.needsUpdate=true;t.computeBoundingSphere();a.engine.wake();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      },grounded);await capture(`shots/toronto-waterfront-contact-${layout}-${grounded?'after':'before'}.png`);
+     }
+    }
+    await page.setViewportSize({width:1200,height:800});await page.locator('#waterfront-more').click({noWaitAfter:true,timeout:60000});await page.locator('#walk-face').click({noWaitAfter:true,timeout:60000});await page.locator('#waterfront-distance').evaluate(e=>{e.value='420';e.dispatchEvent(new Event('input',{bubbles:true}));});
+   }
+
    for(const [layout,width,height] of [['desktop',1200,800],['mobile',390,844]]){
     await page.setViewportSize({width,height});await page.waitForFunction(r=>Math.abs(window.__APP.engine.camera.aspect-r)<.01,width/height);
     for(const enabled of [false,true]){await page.evaluate(async enabled=>{const a=window.__APP;for(const t of a.cityTerrain.buildings.tiles.values())t.data.group.children[0].material.userData.streetDetail.value=enabled?1:0;a.engine.wake();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));},enabled);await capture(`shots/toronto-waterfront-frontage-${layout}-${enabled?'after':'before'}.png`,true);}
