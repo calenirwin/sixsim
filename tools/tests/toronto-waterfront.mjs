@@ -85,3 +85,13 @@ test('Filtered paving preserves source geometry and uses independent reversible 
  assert.deepEqual(Array.from(mesh.geometry.attributes.position.array),Array.from(new Float32Array(d.pavingVertices)));assert.equal(material.map,null);assert.equal(material.roughness,1);assert.equal(uniform.value,1);
  const shader={uniforms:{},vertexShader:'#include <begin_vertex>',fragmentShader:'#include <color_fragment>'};material.onBeforeCompile(shader);assert.equal(shader.uniforms.pavingFiltered,uniform);uniform.value=0;assert.equal(b.group.getObjectByName('terrainDrapedSidewalks').material.userData.filteredJoints.value,1);uniform.value=1;a.dispose();b.dispose();
 });
+
+
+import {canopyGeometry} from '../../client/src/toronto/vegetation.js';
+test('Illustrative crowns retain triangle budget, deterministic shape, smooth seams and source positions',()=>{
+ const a=canopyGeometry(),b=canopyGeometry(),legacy=canopyGeometry({shaped:false});assert.equal(a.index.count/3,80);assert.equal(a.attributes.position.count,42);assert.equal(a.getAttribute('uv'),undefined);assert.deepEqual(a.attributes.position.array,b.attributes.position.array);assert.notDeepEqual(a.attributes.position.array,legacy.attributes.position.array);
+ for(let i=0;i<a.attributes.position.count;i++){const p=a.attributes.position,n=a.attributes.normal;assert.ok(Math.hypot(p.getX(i),p.getY(i),p.getZ(i))<=1.00001);assert.ok(Math.abs(Math.hypot(n.getX(i),n.getY(i),n.getZ(i))-1)<1e-5);}
+ const r=waterfrontScene(new THREE.Scene(),d),crowns=r.group.getObjectByName('illustrativeTreeCrowns'),trunks=r.group.getObjectByName('illustrativeTreeTrunks'),m=new THREE.Matrix4(),p=new THREE.Vector3(),q=new THREE.Quaternion(),scale=new THREE.Vector3();assert.equal(crowns.count,729);assert.equal(trunks.count,729);
+ for(let i=0;i<d.trees.length;i++){const [x,y,z]=d.trees[i];crowns.getMatrixAt(i,m);m.decompose(p,q,scale);assert.ok(p.distanceTo(new THREE.Vector3(x,y+5.4,z))<.001);assert.ok(Math.abs(scale.x-(2.6+i%5*.22))<1e-5);trunks.getMatrixAt(i,m);m.decompose(p,q,scale);assert.ok(p.distanceTo(new THREE.Vector3(x,y+1.9,z))<.001);assert.ok(q.angleTo(new THREE.Quaternion())<1e-5);}
+ assert.equal(crowns.geometry.index.count*crowns.count/3,58320);a.dispose();b.dispose();legacy.dispose();r.dispose();
+});

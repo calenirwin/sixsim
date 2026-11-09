@@ -1,6 +1,9 @@
+import {canopyGeometry} from '../../src/toronto/vegetation.js';
 import assert from 'node:assert/strict';import fs from 'node:fs';import {preview} from 'vite';import {chromium} from 'playwright';
 // Opt in to historical before/after pairs when diagnosing a visual regression:
 // WATERFRONT_DIAGNOSTIC_SHOTS=1 npm --prefix client run test:waterfront
+// Optional matched vegetation review; default remains six captures.
+const vegetationShots=process.env.WATERFRONT_VEGETATION_SHOTS==='1';
 const diagnosticShots=process.env.WATERFRONT_DIAGNOSTIC_SHOTS==='1';
 const server=await preview({configFile:'vite.publish.config.js',preview:{host:'127.0.0.1',port:0}});let browser;
 try{
@@ -33,6 +36,23 @@ try{
   await page.locator('#waterfront-distance').evaluate((e,v)=>{e.value=String(v);e.dispatchEvent(new Event('input',{bubbles:true}));},distance);if(yaw)for(let i=0;i<3;i++)await page.locator('#walk-right').click({noWaitAfter:true,timeout:60000});
   await page.waitForFunction(()=>{const b=window.__APP.cityTerrain.buildings;return b.state.pending===0&&b.state.errors.length===0;},{},{timeout:90000});await capture(`shots/toronto-waterfront-${name}.png`);console.log('Captured',name);
   if(name==='shoreline'){
+   assert.deepEqual(await page.evaluate(()=>{const g=window.__APP.cityTerrain.waterfront.group,c=g.getObjectByName('illustrativeTreeCrowns'),t=g.getObjectByName('illustrativeTreeTrunks');return [c.count,t.count,c.geometry.index.count/3,c.geometry.attributes.position.count];}),[729,729,80,42]);
+   if(vegetationShots){
+    await page.locator('#waterfront-more').click({noWaitAfter:true,timeout:60000});
+    for(const [layout,width,height] of [['desktop',1200,800],['mobile',390,844]]){
+     await page.setViewportSize({width,height});await page.waitForFunction(r=>Math.abs(window.__APP.engine.camera.aspect-r)<.01,width/height);
+     for(const shaped of [false,true]){
+      const geo=canopyGeometry({shaped}),payload={shaped,positions:Array.from(geo.attributes.position.array),normals:Array.from(geo.attributes.normal.array)};geo.dispose();
+      await page.evaluate(async ({shaped,positions,normals})=>{const a=window.__APP,c=a.cityTerrain.waterfront.group.getObjectByName('illustrativeTreeCrowns'),g=c.geometry;
+       if(!shaped){window.__crownMatrices=c.instanceMatrix.array.slice();for(let i=0;i<c.count;i++){const m=c.instanceMatrix.array,k=i*16,r=Math.hypot(m[k],m[k+2]);m[k]=r;m[k+2]=0;m[k+8]=0;m[k+10]=r;}}else{c.instanceMatrix.array.set(window.__crownMatrices);delete window.__crownMatrices;}
+       c.instanceMatrix.needsUpdate=true;g.attributes.position.array.set(positions);g.attributes.normal.array.set(normals);g.attributes.position.needsUpdate=true;g.attributes.normal.needsUpdate=true;g.computeBoundingSphere();c.computeBoundingSphere();a.engine.wake();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      },payload);
+      await capture(`shots/toronto-waterfront-vegetation-${layout}-${shaped?'after':'before'}.png`);
+     }
+    }
+    await page.setViewportSize({width:1200,height:800});await page.locator('#waterfront-more').click({noWaitAfter:true,timeout:60000});
+   }
+
    await page.locator('#walk-right').click({noWaitAfter:true,timeout:60000});
    await page.locator('#walk-right').click({noWaitAfter:true,timeout:60000});
    for(const [layout,width,height] of [['desktop',1200,800],['mobile',390,844]]){

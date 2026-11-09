@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {canopyGeometry} from './vegetation.js';
 import {pavingMaterial} from './paving.js';
 import {shorelineClosure} from './shoreline.js';
 export function validateWaterfront(d){
@@ -46,8 +47,9 @@ export function waterfrontScene(scene,data){
  const closure=shorelineClosure(data),edge=mesh(closure.positions,mat(0x858574));edge.name='illustrativeShorelineClosure';edge.userData.omitted=closure.omitted;group.add(edge);
  const water=mat(0x286a7c,.26);water.metalness=.18;water.onBeforeCompile=s=>{s.vertexShader='varying vec3 waterPoint;\n'+s.vertexShader;s.vertexShader=s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nwaterPoint=position;');s.fragmentShader='varying vec3 waterPoint;\n'+s.fragmentShader;s.fragmentShader=s.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\nfloat ripples=sin(waterPoint.x*1.8+sin(waterPoint.z*.7))*sin(waterPoint.z*2.1); diffuseColor.rgb*=.92+.12*ripples;');};
  for(const w of data.water){const ring=r=>r.map(([x,z])=>new THREE.Vector2(x,-z)),s=new THREE.Shape(ring(w.rings[0]));for(const hole of w.rings.slice(1))s.holes.push(new THREE.Path(ring(hole)));const g=new THREE.ShapeGeometry(s);g.rotateX(-Math.PI/2);g.translate(0,data.waterLevel,0);group.add(new THREE.Mesh(g,water));}
- const trunk=new THREE.InstancedMesh(new THREE.CylinderGeometry(.18,.28,3.8,6),mat(0x665244),data.trees.length),leaves=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,1),mat(0xffffff),data.trees.length),o=new THREE.Object3D();
- data.trees.forEach(([x,y,z],i)=>{o.position.set(x,y+1.9,z);o.scale.set(1,1,1);o.updateMatrix();trunk.setMatrixAt(i,o.matrix);o.position.set(x,y+5.4,z);const r=2.6+(i%5)*.22;o.scale.set(r,3.2,r);o.updateMatrix();leaves.setMatrixAt(i,o.matrix);leaves.setColorAt(i,new THREE.Color([0x5e7950,0x78945e,0x41674b][i%3]));});trunk.castShadow=true;leaves.castShadow=true;group.add(trunk,leaves);
+ const trunk=new THREE.InstancedMesh(new THREE.CylinderGeometry(.18,.28,3.8,6),mat(0x665244),data.trees.length),leaves=new THREE.InstancedMesh(canopyGeometry(),mat(0xffffff),data.trees.length),o=new THREE.Object3D();
+ trunk.name='illustrativeTreeTrunks';leaves.name='illustrativeTreeCrowns';
+ data.trees.forEach(([x,y,z],i)=>{o.rotation.y=0;o.position.set(x,y+1.9,z);o.scale.set(1,1,1);o.updateMatrix();trunk.setMatrixAt(i,o.matrix);o.rotation.y=i*2.399963229728653;o.position.set(x,y+5.4,z);const r=2.6+(i%5)*.22;o.scale.set(r,3.2,r);o.updateMatrix();leaves.setMatrixAt(i,o.matrix);leaves.setColorAt(i,new THREE.Color([0x5e7950,0x78945e,0x41674b][i%3]));});trunk.castShadow=true;leaves.castShadow=true;group.add(trunk,leaves);
  group.userData={basis:'source-grounded geometry with illustrative materials and vegetation',trees:data.trees.length,groundTriangles:data.groundVertices.length/9,lengthM:data.lengthM};
  return {group,dispose(){const materials=new Set();group.traverse(o=>{o.geometry?.dispose();if(o.material)materials.add(o.material);});for(const m of materials)m.dispose();group.removeFromParent();}};
 }
