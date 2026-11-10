@@ -1,6 +1,25 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import crypto from 'node:crypto';import * as THREE from 'three';
 import {validateWaterfront,walkPose,waterfrontScene,waterfrontGroundAt} from '../../client/src/toronto/waterfront.js';
 const bytes=fs.readFileSync('client/fixtures/toronto/waterfront/scene.json'),d=JSON.parse(bytes),p=JSON.parse(fs.readFileSync('client/fixtures/toronto/waterfront/provenance.json'));
+import {auditTreeContact} from '../toronto/audit-tree-contact.mjs';
+test('Contact audit distinguishes steep supported ground from mapped-water absence without modifying the scene',()=>{
+ const original=JSON.stringify(d),audit=auditTreeContact(d);
+ assert.deepEqual(audit,auditTreeContact(d));assert.equal(JSON.stringify(d),original);
+ assert.deepEqual(audit.counts,{extended:398,negligible:326,missingCentre:1,inconsistentCentre:0,missingPerimeter:0,overCap:4});
+ assert.equal(Object.values(audit.counts).reduce((a,b)=>a+b,0),d.trees.length);
+ assert.deepEqual(audit.unsupported.map(t=>t.index),[385,464,498,519,707]);
+ for(const t of audit.unsupported.slice(0,4)){
+  assert.equal(t.reason,'overCap');assert.equal(t.extensionM,0);assert.deepEqual(t.mappedWater,[]);
+  assert.ok(t.perimeterM.every(Number.isFinite));assert.ok(Math.abs(t.centreM-t.position[1])<.003);
+  assert.ok(t.gapM>.33&&t.gapM<.59);assert.ok(t.nearestWalk.distanceM>64&&t.nearestWalk.distanceM<298);
+ }
+ const water=audit.unsupported[4];assert.equal(water.reason,'missingCentre');assert.equal(water.centreM,null);assert.equal(water.gapM,null);
+ assert.deepEqual(water.perimeterM,Array(6).fill(null));assert.deepEqual(water.mappedWater,[{id:403,name:'Toronto Harbour'}]);
+ assert.ok(water.nearestWalk.distanceM>528&&water.nearestWalk.distanceM<529);assert.ok(Math.abs(water.nearestWalk.alongM-d.lengthM)<.0001);
+ // Mapped-water diagnosis must respect holes, without manufacturing terrain underneath.
+ const holes=structuredClone(d),[x,,z]=holes.trees[707];holes.water=[{id:99,name:'synthetic hole test',rings:[[[x-2,z-2],[x+2,z-2],[x+2,z+2],[x-2,z+2]],[[x-1,z-1],[x+1,z-1],[x+1,z+1],[x-1,z+1]]]}];
+ const inHole=auditTreeContact(holes).unsupported.find(t=>t.index===707);assert.deepEqual(inHole.mappedWater,[]);assert.equal(inHole.reason,'missingCentre');
+});
 test('Pinned waterfront budgets, original source IDs and continuous path remain reproducible',()=>{
  assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),p.sha256);assert.equal(bytes.length,p.bytes);assert.equal(validateWaterfront(d),d);assert.equal(d.groundVertices.length/9,13181);assert.equal(d.trees.length,729);assert.equal(d.sourceRoute.length,15);assert.ok(d.maxJoinM<.02);assert.ok(d.lengthM>1100&&d.lengthM<1102);
  const inside=(q,ring)=>{let c=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if(((a[1]>q[1])!==(b[1]>q[1]))&&(q[0]<(b[0]-a[0])*(q[1]-a[1])/(b[1]-a[1])+a[0]))c=!c;}return c;};
