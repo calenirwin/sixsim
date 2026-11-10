@@ -37,7 +37,7 @@ try{
   await page.locator('#waterfront-distance').evaluate((e,v)=>{e.value=String(v);e.dispatchEvent(new Event('input',{bubbles:true}));},distance);if(yaw)for(let i=0;i<3;i++)await page.locator('#walk-right').click({noWaitAfter:true,timeout:60000});
   await page.waitForFunction(()=>{const b=window.__APP.cityTerrain.buildings;return b.state.pending===0&&b.state.errors.length===0;},{},{timeout:90000});await capture(`shots/toronto-waterfront-${name}.png`);console.log('Captured',name);
   if(name==='shoreline'){
-   assert.deepEqual(await page.evaluate(()=>{const g=window.__APP.cityTerrain.waterfront.group,c=g.getObjectByName('illustrativeTreeCrowns'),t=g.getObjectByName('illustrativeTreeTrunks');return [c.count,t.count,c.geometry.index.count/3,c.geometry.attributes.position.count];}),[729,729,80,42]);
+   assert.deepEqual(await page.evaluate(()=>{const g=window.__APP.cityTerrain.waterfront.group,c=g.getObjectByName('illustrativeTreeCrowns'),t=g.getObjectByName('illustrativeTreeTrunks');return [c.count,t.count,c.geometry.index.count/3,c.geometry.attributes.position.count];}),[728,728,80,42]);
    if(vegetationShots){
     await page.locator('#waterfront-more').click({noWaitAfter:true,timeout:60000});
     for(const [layout,width,height] of [['desktop',1200,800],['mobile',390,844]]){

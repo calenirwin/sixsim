@@ -1,27 +1,43 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import crypto from 'node:crypto';import * as THREE from 'three';
 import {validateWaterfront,walkPose,waterfrontScene,waterfrontGroundAt} from '../../client/src/toronto/waterfront.js';
 const bytes=fs.readFileSync('client/fixtures/toronto/waterfront/scene.json'),d=JSON.parse(bytes),p=JSON.parse(fs.readFileSync('client/fixtures/toronto/waterfront/provenance.json'));
+test('Water exclusion retains candidate identities and every surviving tree transform and colour',()=>{
+ assert.deepEqual(d.treeStyleIds,[...Array(729).keys()].filter(i=>i!==707));
+ const excluded=p.derivation.vegetation_exclusions;assert.equal(excluded.length,1);
+ assert.deepEqual(excluded[0].gridEPSG2952,[314594,4833220]);assert.deepEqual(excluded[0].canopyFeatureIds,[179]);assert.deepEqual(excluded[0].waterFeatureIds,[403]);
+ const historic=structuredClone(d);delete historic.treeStyleIds;historic.trees.splice(707,0,excluded[0].position);
+ const old=waterfrontScene(new THREE.Scene(),historic),current=waterfrontScene(new THREE.Scene(),d);
+ for(const name of ['illustrativeTreeTrunks','illustrativeTreeCrowns']){
+  const a=old.group.getObjectByName(name),b=current.group.getObjectByName(name);
+  for(let i=0;i<b.count;i++){
+   const id=d.treeStyleIds[i];assert.deepEqual(b.instanceMatrix.array.slice(i*16,i*16+16),a.instanceMatrix.array.slice(id*16,id*16+16));
+   if(b.instanceColor)assert.deepEqual(b.instanceColor.array.slice(i*3,i*3+3),a.instanceColor.array.slice(id*3,id*3+3));
+  }
+ }
+ old.dispose();current.dispose();
+ for(const ids of [[],Array(d.trees.length).fill(0),d.treeStyleIds.map((n,i)=>i===0?-1:n)])assert.throws(()=>validateWaterfront({...d,treeStyleIds:ids}));
+});
 import {auditTreeContact} from '../toronto/audit-tree-contact.mjs';
 test('Contact audit distinguishes steep supported ground from mapped-water absence without modifying the scene',()=>{
  const original=JSON.stringify(d),audit=auditTreeContact(d);
  assert.deepEqual(audit,auditTreeContact(d));assert.equal(JSON.stringify(d),original);
- assert.deepEqual(audit.counts,{extended:398,negligible:326,missingCentre:1,inconsistentCentre:0,missingPerimeter:0,overCap:4});
+ assert.deepEqual(audit.counts,{extended:398,negligible:326,missingCentre:0,inconsistentCentre:0,missingPerimeter:0,overCap:4});
  assert.equal(Object.values(audit.counts).reduce((a,b)=>a+b,0),d.trees.length);
- assert.deepEqual(audit.unsupported.map(t=>t.index),[385,464,498,519,707]);
+ assert.deepEqual(audit.unsupported.map(t=>t.index),[385,464,498,519]);
  for(const t of audit.unsupported.slice(0,4)){
   assert.equal(t.reason,'overCap');assert.equal(t.extensionM,0);assert.deepEqual(t.mappedWater,[]);
   assert.ok(t.perimeterM.every(Number.isFinite));assert.ok(Math.abs(t.centreM-t.position[1])<.003);
   assert.ok(t.gapM>.33&&t.gapM<.59);assert.ok(t.nearestWalk.distanceM>64&&t.nearestWalk.distanceM<298);
  }
- const water=audit.unsupported[4];assert.equal(water.reason,'missingCentre');assert.equal(water.centreM,null);assert.equal(water.gapM,null);
+ const historic=structuredClone(d);historic.trees.push(p.derivation.vegetation_exclusions[0].position);historic.treeStyleIds.push(707);const water=auditTreeContact(historic).unsupported.at(-1);assert.equal(water.reason,'missingCentre');assert.equal(water.centreM,null);assert.equal(water.gapM,null);
  assert.deepEqual(water.perimeterM,Array(6).fill(null));assert.deepEqual(water.mappedWater,[{id:403,name:'Toronto Harbour'}]);
  assert.ok(water.nearestWalk.distanceM>528&&water.nearestWalk.distanceM<529);assert.ok(Math.abs(water.nearestWalk.alongM-d.lengthM)<.0001);
  // Mapped-water diagnosis must respect holes, without manufacturing terrain underneath.
- const holes=structuredClone(d),[x,,z]=holes.trees[707];holes.water=[{id:99,name:'synthetic hole test',rings:[[[x-2,z-2],[x+2,z-2],[x+2,z+2],[x-2,z+2]],[[x-1,z-1],[x+1,z-1],[x+1,z+1],[x-1,z+1]]]}];
- const inHole=auditTreeContact(holes).unsupported.find(t=>t.index===707);assert.deepEqual(inHole.mappedWater,[]);assert.equal(inHole.reason,'missingCentre');
+ const holes=structuredClone(historic),[x,,z]=holes.trees.at(-1);holes.water=[{id:99,name:'synthetic hole test',rings:[[[x-2,z-2],[x+2,z-2],[x+2,z+2],[x-2,z+2]],[[x-1,z-1],[x+1,z-1],[x+1,z+1],[x-1,z+1]]]}];
+ const inHole=auditTreeContact(holes).unsupported.find(t=>t.index===728);assert.deepEqual(inHole.mappedWater,[]);assert.equal(inHole.reason,'missingCentre');
 });
 test('Pinned waterfront budgets, original source IDs and continuous path remain reproducible',()=>{
- assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),p.sha256);assert.equal(bytes.length,p.bytes);assert.equal(validateWaterfront(d),d);assert.equal(d.groundVertices.length/9,13181);assert.equal(d.trees.length,729);assert.equal(d.sourceRoute.length,15);assert.ok(d.maxJoinM<.02);assert.ok(d.lengthM>1100&&d.lengthM<1102);
+ assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),p.sha256);assert.equal(bytes.length,p.bytes);assert.equal(validateWaterfront(d),d);assert.equal(d.groundVertices.length/9,13181);assert.equal(d.trees.length,728);assert.equal(d.sourceRoute.length,15);assert.ok(d.maxJoinM<.02);assert.ok(d.lengthM>1100&&d.lengthM<1102);
  const inside=(q,ring)=>{let c=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if(((a[1]>q[1])!==(b[1]>q[1]))&&(q[0]<(b[0]-a[0])*(q[1]-a[1])/(b[1]-a[1])+a[0]))c=!c;}return c;};
  for(let i=0;i<d.groundVertices.length;i+=9){const v=d.groundVertices,q=[(v[i]+v[i+3]+v[i+6])/3,(v[i+2]+v[i+5]+v[i+8])/3];assert.ok(!d.water.some(w=>inside(q,w.rings[0])&&!w.rings.slice(1).some(r=>inside(q,r))),'Ground must not cover mapped harbour');}
  for(const row of d.walk){const q=[row[1],row[3]];assert.ok(!d.water.some(w=>inside(q,w.rings[0])&&!w.rings.slice(1).some(r=>inside(q,r))),'Walk must not enter mapped water');}
@@ -33,7 +49,7 @@ test('Eye-level walking clamps endpoints, rejects invalid inputs and preserves s
 });
 test('Malformed assets fail before scene allocation; bounded render resources dispose',()=>{
  for(const mutate of [x=>x.walk[1][0]=0,x=>x.waterLevel=NaN,x=>x.trees[0][1]=null,x=>x.pavingVertices[0]=NaN,x=>x.pavingVertices.pop(),x=>x.paths[0].points[0][0]=Infinity]){const bad=structuredClone(d);mutate(bad);assert.throws(()=>validateWaterfront(bad));}
- const scene=new THREE.Scene(),r=waterfrontScene(scene,d);assert.equal(r.group.userData.trees,729);assert.ok(r.group.children.length<20);r.dispose();assert.equal(scene.children.length,0);
+ const scene=new THREE.Scene(),r=waterfrontScene(scene,d);assert.equal(r.group.userData.trees,728);assert.ok(r.group.children.length<20);r.dispose();assert.equal(scene.children.length,0);
 });
 
 test('Full-width paving follows original terrain and continuously covers the guided route',()=>{
@@ -110,9 +126,9 @@ import {canopyGeometry,trunkContactDrop} from '../../client/src/toronto/vegetati
 test('Illustrative crowns retain triangle budget, deterministic shape, smooth seams and source positions',()=>{
  const a=canopyGeometry(),b=canopyGeometry(),legacy=canopyGeometry({shaped:false});assert.equal(a.index.count/3,80);assert.equal(a.attributes.position.count,42);assert.equal(a.getAttribute('uv'),undefined);assert.deepEqual(a.attributes.position.array,b.attributes.position.array);assert.notDeepEqual(a.attributes.position.array,legacy.attributes.position.array);
  for(let i=0;i<a.attributes.position.count;i++){const p=a.attributes.position,n=a.attributes.normal;assert.ok(Math.hypot(p.getX(i),p.getY(i),p.getZ(i))<=1.00001);assert.ok(Math.abs(Math.hypot(n.getX(i),n.getY(i),n.getZ(i))-1)<1e-5);}
- const r=waterfrontScene(new THREE.Scene(),d),crowns=r.group.getObjectByName('illustrativeTreeCrowns'),trunks=r.group.getObjectByName('illustrativeTreeTrunks'),m=new THREE.Matrix4(),p=new THREE.Vector3(),q=new THREE.Quaternion(),scale=new THREE.Vector3();assert.equal(crowns.count,729);assert.equal(trunks.count,729);
- for(let i=0;i<d.trees.length;i++){const [x,y,z]=d.trees[i];crowns.getMatrixAt(i,m);m.decompose(p,q,scale);assert.ok(p.distanceTo(new THREE.Vector3(x,y+5.4,z))<.001);assert.ok(Math.abs(scale.x-(2.6+i%5*.22))<1e-5);trunks.getMatrixAt(i,m);m.decompose(p,q,scale);assert.ok(p.distanceTo(new THREE.Vector3(x,y+1.9-trunkContactDrop([x,y,z],(x,z)=>waterfrontGroundAt(d,x,z))/2,z))<.001);assert.ok(q.angleTo(new THREE.Quaternion())<1e-5);}
- assert.equal(crowns.geometry.index.count*crowns.count/3,58320);a.dispose();b.dispose();legacy.dispose();r.dispose();
+ const r=waterfrontScene(new THREE.Scene(),d),crowns=r.group.getObjectByName('illustrativeTreeCrowns'),trunks=r.group.getObjectByName('illustrativeTreeTrunks'),m=new THREE.Matrix4(),p=new THREE.Vector3(),q=new THREE.Quaternion(),scale=new THREE.Vector3();assert.equal(crowns.count,728);assert.equal(trunks.count,728);
+ for(let i=0;i<d.trees.length;i++){const [x,y,z]=d.trees[i];crowns.getMatrixAt(i,m);m.decompose(p,q,scale);assert.ok(p.distanceTo(new THREE.Vector3(x,y+5.4,z))<.001);assert.ok(Math.abs(scale.x-(2.6+d.treeStyleIds[i]%5*.22))<1e-5);trunks.getMatrixAt(i,m);m.decompose(p,q,scale);assert.ok(p.distanceTo(new THREE.Vector3(x,y+1.9-trunkContactDrop([x,y,z],(x,z)=>waterfrontGroundAt(d,x,z))/2,z))<.001);assert.ok(q.angleTo(new THREE.Quaternion())<1e-5);}
+ assert.equal(crowns.geometry.index.count*crowns.count/3,58240);a.dispose();b.dispose();legacy.dispose();r.dispose();
 });
 
 
@@ -121,5 +137,5 @@ test('Trunk contact closes small downhill gaps without moving source tops or cro
  assert.equal(trunkContactDrop([0,76,0],()=>null),0);assert.equal(trunkContactDrop([0,76,0],(x,z)=>z>.1?null:76),0);assert.equal(trunkContactDrop([0,76,0],(x,z)=>76+z*2),0);assert.equal(trunkContactDrop([0,76,0],()=>75),0);
  const r=waterfrontScene(new THREE.Scene(),d),t=r.group.getObjectByName('illustrativeTreeTrunks'),m=new THREE.Matrix4();let adjusted=0;
  for(let i=0;i<d.trees.length;i++){const [x,y,z]=d.trees[i],drop=trunkContactDrop(d.trees[i],(x,z)=>waterfrontGroundAt(d,x,z));t.getMatrixAt(i,m);const top=new THREE.Vector3(0,1.9,0).applyMatrix4(m);assert.ok(top.distanceTo(new THREE.Vector3(x,y+3.8,z))<.001);if(drop){adjusted++;assert.ok(drop<=.25);for(let k=0;k<6;k++){const a=k*Math.PI/3,b=new THREE.Vector3(.28*Math.sin(a),-1.9,.28*Math.cos(a)).applyMatrix4(m);assert.ok(b.y<waterfrontGroundAt(d,b.x,b.z)+.001);}}}
- assert.ok(adjusted>0);assert.equal(t.count,729);assert.equal(t.geometry.index.count/3,24);r.dispose();
+ assert.ok(adjusted>0);assert.equal(t.count,728);assert.equal(t.geometry.index.count/3,24);r.dispose();
 });

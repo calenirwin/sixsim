@@ -1,5 +1,6 @@
 """Bounded waterfront geometry from pinned City sources; original triangles, no invented joins."""
 import json,hashlib,math,sys
+from placement_masks import excluded_by_water
 from pathlib import Path
 import numpy as np,pyogrio,pyogrio.raw,pyproj,shapely
 from shapely.geometry import box,LineString,Point
@@ -24,9 +25,9 @@ def height(lon,lat):
  if not vals or max(vals)-min(vals)>.01:return None
  return vals[0]
 # The TIN is bare-earth context, not bathymetry: remove mapped water before rendering ground.
-m,f,w,a=pyogrio.raw.read(RAW/'water-body-20261104.gpkg',bbox=tuple(BBOX),return_fids=True);assert m['crs']=='EPSG:4326';water=[];waterGeometries=[]
+m,f,w,a=pyogrio.raw.read(RAW/'water-body-20261104.gpkg',bbox=tuple(BBOX),return_fids=True);assert m['crs']=='EPSG:4326';water=[];waterGeometries=[];waterSourceMasks=[]
 for fid,blob,name in zip(f,w,a[list(m['fields']).index('WATERBODY_NAME')]):
- g=shapely.from_wkb(blob).intersection(extent);assert g.is_valid;waterGeometries.append(g)
+ g=shapely.from_wkb(blob).intersection(extent);assert g.is_valid;waterGeometries.append(g);waterSourceMasks.append((int(fid),transform(to.transform,g)))
  for p in shapely.get_parts(g):
   if p.geom_type=='Polygon' and p.area>1e-10:water.append({'id':int(fid),'name':name,'rings':[[list(local(*q[:2])) for q in ring.coords] for ring in [p.exterior,*p.interiors]]})
 waterMask=transform(to.transform,unary_union(waterGeometries))
@@ -50,11 +51,13 @@ def groundMesh(region,lift=0):
  return verts
 verts=groundMesh(metric.difference(waterMask))
 # Sample illustrative vegetation only within source 2018 canopy polygons, never present these as inventoried individual trees.
-m,f,w,a=pyogrio.raw.read(RAW/'LandCover2018.gdb',layer='LandCover2018',bbox=metric.bounds,columns=['gridcode'],return_fids=True);canopy=[];grass=[]
-for blob,code in zip(w,a[0]):
+m,f,w,a=pyogrio.raw.read(RAW/'LandCover2018.gdb',layer='LandCover2018',bbox=metric.bounds,columns=['gridcode'],return_fids=True);canopy=[];grass=[];canopySources=[]
+for fid,blob,code in zip(f,w,a[0]):
  if int(code) not in (1,2):continue
  for p in shapely.get_parts(shapely.from_wkb(blob)):
-  if p.is_valid and p.intersects(metric):(canopy if int(code)==1 else grass).append(p.intersection(metric))
+  if p.is_valid and p.intersects(metric):
+   (canopy if int(code)==1 else grass).append(p.intersection(metric))
+   if int(code)==1:canopySources.append((int(fid),p))
 canopy=unary_union(canopy);grassVertices=groundMesh(unary_union(grass).difference(waterMask),.02)
 # Clip source pedestrian alignments, retaining IDs and crossing evidence.
 features=json.loads((RAW/'pedestrian-20261104.geojson').read_text())['features'];byid={p['properties']['OBJECTID']:p for p in features};paths=[]
@@ -128,18 +131,25 @@ loc=LineString([local(*q) for q in route]);walk=[]
 for i in range(math.ceil(loc.length/2)+1):
  d=min(i*2,loc.length);q=loc.interpolate(d);h=height(q.x/X-79.397,43.65-q.y/R);assert h is not None;walk.append([round(d,4),round(q.x,4),round(h+.10,4),round(q.y,4)])
 # Seeded grid samples; heights/shapes of tree models are authored, not inventory measurements.
-trees=[]
+trees=[];treeStyleIds=[];excludedTrees=[];candidateIndex=0
 for x in range(math.ceil(metric.bounds[0]/14)*14,int(metric.bounds[2]),14):
  for y in range(math.ceil(metric.bounds[1]/14)*14,int(metric.bounds[3]),14):
   if not canopy.covers(Point(x,y)):continue
   lon,lat=back.transform(x,y);lx,lz=local(lon,lat);h=height(lon,lat)
-  if h is not None and loc.distance(Point(lx,lz))>4:trees.append([round(lx,3),round(h,3),round(lz,3)])
+  if h is not None and loc.distance(Point(lx,lz))>4:
+   position=[round(lx,3),round(h,3),round(lz,3)]
+   # Boundary-inclusive exclusion, using the same official water mask as ground.
+   # Hole interiors remain eligible; do not infer a planting surface from old canopy.
+   if excluded_by_water(waterMask,Point(x,y)):
+    excludedTrees.append({'candidateIndex':candidateIndex,'gridEPSG2952':[x,y],'position':position,'reason':'mapped-water-centre','canopyFeatureIds':sorted(set(fid for fid,g in canopySources if g.covers(Point(x,y)))),'waterFeatureIds':sorted(set(fid for fid,g in waterSourceMasks if g.covers(Point(x,y))))})
+   else:trees.append(position);treeStyleIds.append(candidateIndex)
+   candidateIndex+=1
 assert len(trees)<2000 and len(verts)<500000 and len(paths)<1000
-out={'version':1,'bbox':BBOX,'frame':{'lon':-79.397,'lat':43.65},'groundVertices':verts,'grassVertices':grassVertices,'pavingVertices':pavingVertices,'roadVertices':roadVertices,'crossingVertices':crossingVertices,'crossingSourceIds':sorted(set(crossingSourceIds)),'water':water,'waterLevel':74.5,'trees':trees,'paths':paths,'roads':roads,'walk':walk,'sourceRoute':sourceRoute,'lengthM':loc.length,'maxJoinM':maxJoin,'limits':['Guided virtual walk on source pedestrian alignments; not verified present access, crossing permission or collision simulation.','Original 2023 CGVD2013 bare-earth triangles; no bridge or structural road elevations inferred.','Water footprint follows City topographic mapping; constant 74.5 scene-metre water level is illustrative, not a measured level or datum conversion.','Pedestrian ribbon widths, paving, crossing stripes, facades and tree shapes are original illustration. Trees sample 2018 canopy, not individual inventory locations.','Municipal massing bases remain coarse terrain-relative illustrations; fine ground may intersect them.']}
+out={'version':1,'bbox':BBOX,'frame':{'lon':-79.397,'lat':43.65},'groundVertices':verts,'grassVertices':grassVertices,'pavingVertices':pavingVertices,'roadVertices':roadVertices,'crossingVertices':crossingVertices,'crossingSourceIds':sorted(set(crossingSourceIds)),'water':water,'waterLevel':74.5,'trees':trees,'treeStyleIds':treeStyleIds,'paths':paths,'roads':roads,'walk':walk,'sourceRoute':sourceRoute,'lengthM':loc.length,'maxJoinM':maxJoin,'limits':['Guided virtual walk on source pedestrian alignments; not verified present access, crossing permission or collision simulation.','Original 2023 CGVD2013 bare-earth triangles; no bridge or structural road elevations inferred.','Water footprint follows City topographic mapping; constant 74.5 scene-metre water level is illustrative, not a measured level or datum conversion.','Pedestrian ribbon widths, paving, crossing stripes, facades and tree shapes are original illustration. Trees sample 2018 canopy, not individual inventory locations.','Municipal massing bases remain coarse terrain-relative illustrations; fine ground may intersect them.']}
 (OUT/'scene.json').write_text(json.dumps(out,separators=(',',':'),allow_nan=False)+'\n');print({'triangles':len(verts)//9,'waterParts':len(water),'trees':len(trees),'paths':len(paths),'walkLength':loc.length,'maxJoinM':maxJoin,'bytes':(OUT/'scene.json').stat().st_size})
 F=Path(__file__).resolve().parents[2]/'fixtures/toronto'
 ped={'dataset_url':'https://open.toronto.ca/dataset/pedestrian-network/','source_url':'https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/4b5c7a84-dea1-4137-875d-71d7f662c83f/resource/33835def-35f2-4705-a348-b7983e8e66a1/download/pedestrian-network-data-4326.geojson','source_sha256':sha(RAW/'pedestrian-20261104.geojson'),'source_bytes':36736103,'resource_last_modified':'2026-02-20T20:56:49.912115','retrieved_utc':'2026-11-04','crs':'EPSG:4326 / CRS84 longitude, latitude; source network derives from 2019 project, resource modification is not a survey date'}
 waterprov={'dataset_url':'https://open.toronto.ca/dataset/topographic-mapping-waterbodies-and-rivers/','source_url':'https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/f352a9e9-4077-4c59-b0a9-f35a56fb24be/resource/8b2ae160-0175-40e6-b018-88f0e83f9a90/download/water-body-4326.gpkg','source_sha256':sha(RAW/'water-body-20261104.gpkg'),'source_bytes':9289728,'resource_last_modified':'2026-09-22T19:08:22.574760','retrieved_utc':'2026-11-04','crs':'EPSG:4326; selected ELEVATION attributes missing; geometry maintenance dates 2021-08-25 and 2024-10-16'}
 for p in [ped,waterprov]:p.update({'license':'Open Government Licence – Toronto','license_url':'https://open.toronto.ca/open-data-licence/','attribution':'Contains information licensed under the Open Government Licence – Toronto.'})
-prov={'version':1,'sha256':sha(OUT/'scene.json'),'bytes':(OUT/'scene.json').stat().st_size,'bbox':BBOX,'sources':[ped,waterprov,*[json.loads((F/p).read_text()) for p in ['city-terrain/provenance.json','city-roads/provenance.json','land-cover-provenance.json']]],'derivation':{'ground':'Original PolygonZ TIN clipped in EPSG:2952 and masked by official water polygons; constrained triangulation of clipped polygons retains original TIN barycentric heights, not new terrain interpolation. Triangles below 0.000001 square metres after 0.1 mm rounding are omitted. Ground converted to existing local frame, CGVD2013 metres.','paving':'Union of source-aligned round buffers (illustrative 2.6 m paths / 4 m trails), clipped to municipal water mask and original TIN triangles. Full-width barycentric heights lifted 0.06 m; no surveyed curbs or new access connections.', 'paths':'Original pedestrian alignments clipped and densified to <=5 m; route sampled every 2 m. Original IDs/directions retained; joins within 0.02 m, no new connectors.','roads':'Source arterial/collector/local/laneway centrelines, not elevated highway or rail. Joined buffers use authored class widths, clipped to original TIN and mapped water; full-width barycentric heights lifted 0.035 m. Not surveyed pavement or structural road elevations.','crossings':'Only CROSSWALK-flagged source paths overlapping illustrative road footprints: remove sidewalk-coloured paving in that overlap, then clip authored 0.6 m paint / 0.6 m gaps (5 mm numerical edge inset) to original TIN, lifted 0.045 m. No signal, access, curb-ramp or surveyed marking claims.', 'vegetation':'14 m grid samples within valid 2018 canopy polygons, >4 m from route; original low-poly shapes, not individual inventory.','water':'Original waterbody polygons clipped; no shoreline simplification. ELEVATION absent; illustrative constant scene level.'},'limits':out['limits']}
+prov={'version':1,'sha256':sha(OUT/'scene.json'),'bytes':(OUT/'scene.json').stat().st_size,'bbox':BBOX,'sources':[ped,waterprov,*[json.loads((F/p).read_text()) for p in ['city-terrain/provenance.json','city-roads/provenance.json','land-cover-provenance.json']]],'derivation':{'ground':'Original PolygonZ TIN clipped in EPSG:2952 and masked by official water polygons; constrained triangulation of clipped polygons retains original TIN barycentric heights, not new terrain interpolation. Triangles below 0.000001 square metres after 0.1 mm rounding are omitted. Ground converted to existing local frame, CGVD2013 metres.','paving':'Union of source-aligned round buffers (illustrative 2.6 m paths / 4 m trails), clipped to municipal water mask and original TIN triangles. Full-width barycentric heights lifted 0.06 m; no surveyed curbs or new access connections.', 'paths':'Original pedestrian alignments clipped and densified to <=5 m; route sampled every 2 m. Original IDs/directions retained; joins within 0.02 m, no new connectors.','roads':'Source arterial/collector/local/laneway centrelines, not elevated highway or rail. Joined buffers use authored class widths, clipped to original TIN and mapped water; full-width barycentric heights lifted 0.035 m. Not surveyed pavement or structural road elevations.','crossings':'Only CROSSWALK-flagged source paths overlapping illustrative road footprints: remove sidewalk-coloured paving in that overlap, then clip authored 0.6 m paint / 0.6 m gaps (5 mm numerical edge inset) to original TIN, lifted 0.045 m. No signal, access, curb-ramp or surveyed marking claims.', 'vegetation':'14 m EPSG:2952 grid samples within valid 2018 canopy polygons, >4 m from route. Reject centres covered by the official water mask, including boundary; hole interiors remain eligible. Stable pre-exclusion candidate IDs retain illustrative styling. Original low-poly shapes, not individual inventory.','vegetation_exclusions':excludedTrees,'water':'Original waterbody polygons clipped; no shoreline simplification. ELEVATION absent; illustrative constant scene level.'},'limits':out['limits']}
 (OUT/'provenance.json').write_text(json.dumps(prov,separators=(',',':'),allow_nan=False)+'\n')

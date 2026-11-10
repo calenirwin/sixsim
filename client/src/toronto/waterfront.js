@@ -12,6 +12,7 @@ export function validateWaterfront(d){
  for(let i=0;i<d.walk.length;i++){const p=d.walk[i];if(!Array.isArray(p)||p.length!==4||!Number.isFinite(p[0])||!point(p.slice(1))||p[0]<0||(i&&p[0]<=d.walk[i-1][0]))fail();}
  if(d.walk[0][0]!==0||Math.abs(d.walk.at(-1)[0]-d.lengthM)>.001)fail();
  for(const p of d.trees)if(!point(p))fail();
+ if(d.treeStyleIds!==undefined&&(!Array.isArray(d.treeStyleIds)||d.treeStyleIds.length!==d.trees.length||!d.treeStyleIds.every(id=>Number.isSafeInteger(id)&&id>=0&&id<100000)||new Set(d.treeStyleIds).size!==d.trees.length))fail();
  for(const r of [...d.paths,...d.roads])if(!Number.isSafeInteger(r.id)||!Array.isArray(r.points)||r.points.length<2||r.points.length>2000||!r.points.every(point))fail();
  for(const w of d.water){if(!Array.isArray(w.rings)||!w.rings.length)fail();for(const ring of w.rings)if(!Array.isArray(ring)||ring.length<4||ring.length>20000||!ring.every(p=>Array.isArray(p)&&p.length===2&&p.every(v=>Number.isFinite(v)&&Math.abs(v)<5000)))fail();}
  return d;
@@ -49,7 +50,7 @@ export function waterfrontScene(scene,data){
  for(const w of data.water){const ring=r=>r.map(([x,z])=>new THREE.Vector2(x,-z)),s=new THREE.Shape(ring(w.rings[0]));for(const hole of w.rings.slice(1))s.holes.push(new THREE.Path(ring(hole)));const g=new THREE.ShapeGeometry(s);g.rotateX(-Math.PI/2);g.translate(0,data.waterLevel,0);group.add(new THREE.Mesh(g,water));}
  const trunk=new THREE.InstancedMesh(new THREE.CylinderGeometry(.18,.28,3.8,6),mat(0x665244),data.trees.length),leaves=new THREE.InstancedMesh(canopyGeometry(),mat(0xffffff),data.trees.length),o=new THREE.Object3D();
  trunk.name='illustrativeTreeTrunks';leaves.name='illustrativeTreeCrowns';
- data.trees.forEach(([x,y,z],i)=>{const drop=trunkContactDrop([x,y,z],(x,z)=>waterfrontGroundAt(data,x,z));o.rotation.y=0;o.position.set(x,y+1.9-drop/2,z);o.scale.set(1,(3.8+drop)/3.8,1);o.updateMatrix();trunk.setMatrixAt(i,o.matrix);o.rotation.y=i*2.399963229728653;o.position.set(x,y+5.4,z);const r=2.6+(i%5)*.22;o.scale.set(r,3.2,r);o.updateMatrix();leaves.setMatrixAt(i,o.matrix);leaves.setColorAt(i,new THREE.Color([0x5e7950,0x78945e,0x41674b][i%3]));});trunk.castShadow=true;leaves.castShadow=true;group.add(trunk,leaves);
+ data.trees.forEach(([x,y,z],i)=>{const style=data.treeStyleIds?.[i]??i,drop=trunkContactDrop([x,y,z],(x,z)=>waterfrontGroundAt(data,x,z));o.rotation.y=0;o.position.set(x,y+1.9-drop/2,z);o.scale.set(1,(3.8+drop)/3.8,1);o.updateMatrix();trunk.setMatrixAt(i,o.matrix);o.rotation.y=style*2.399963229728653;o.position.set(x,y+5.4,z);const r=2.6+(style%5)*.22;o.scale.set(r,3.2,r);o.updateMatrix();leaves.setMatrixAt(i,o.matrix);leaves.setColorAt(i,new THREE.Color([0x5e7950,0x78945e,0x41674b][style%3]));});trunk.castShadow=true;leaves.castShadow=true;group.add(trunk,leaves);
  group.userData={basis:'source-grounded geometry with illustrative materials and vegetation',trees:data.trees.length,groundTriangles:data.groundVertices.length/9,lengthM:data.lengthM};
  return {group,dispose(){const materials=new Set();group.traverse(o=>{o.geometry?.dispose();if(o.material)materials.add(o.material);});for(const m of materials)m.dispose();group.removeFromParent();}};
 }
