@@ -1,6 +1,27 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import crypto from 'node:crypto';import * as THREE from 'three';
 import {validateWaterfront,walkPose,waterfrontScene,waterfrontGroundAt} from '../../client/src/toronto/waterfront.js';
 const bytes=fs.readFileSync('client/fixtures/toronto/waterfront/scene.json'),d=JSON.parse(bytes),p=JSON.parse(fs.readFileSync('client/fixtures/toronto/waterfront/provenance.json'));
+import {auditTrunkWater,footprintWaterRelation} from '../toronto/audit-trunk-water.mjs';
+test('Footprint audit detects crossed edges, tangencies and enclosed water while respecting land holes',()=>{
+ const square=[[0,0],[2,0],[2,2],[0,2]],relation=ring=>footprintWaterRelation(square,[ring]);
+ assert.equal(relation([[.9,-1],[1.1,-1],[1.1,3],[.9,3]]).intersects,true,'Water sliver crosses edges without containing footprint vertices');
+ assert.equal(relation([[.5,.5],[1,.5],[1,1],[.5,1]]).intersects,true,'Enclosed water');
+ assert.equal(relation([[2,0],[3,0],[3,1],[2,1]]).intersects,true,'Shared edge');
+ assert.equal(relation([[2,2],[3,2],[3,3],[2,3]]).intersects,true,'Corner touch');
+ assert.equal(relation([[3,0],[4,0],[4,2],[3,2]]).clearanceM,1);
+ const outer=[[-5,-5],[5,-5],[5,5],[-5,5]],hole=[[-1,-1],[3,-1],[3,3],[-1,3]];
+ assert.deepEqual(footprintWaterRelation(square,[outer,hole]),{intersects:false,clearanceM:1});
+ assert.equal(footprintWaterRelation(square,[outer]).intersects,true,'Water contains entire footprint');
+ assert.deepEqual(footprintWaterRelation(square.slice().reverse(),[outer.slice().reverse(),hole.slice().reverse()]),{intersects:false,clearanceM:1});
+});
+test('All pinned rendered trunk bases clear mapped water without changing data or placement policy',()=>{
+ const original=JSON.stringify(d),audit=auditTrunkWater(d);assert.equal(JSON.stringify(d),original);assert.deepEqual(audit,auditTrunkWater(d));
+ assert.equal(audit.trees,728);assert.equal(audit.footprintVertices,6);assert.ok(Math.abs(audit.baseRadiusM-.28)<1e-7);assert.deepEqual(audit.intersections,[]);
+ assert.equal(audit.nearest[0].candidateId,692);assert.ok(audit.nearest[0].nearest.clearanceM>1.475&&audit.nearest[0].nearest.clearanceM<1.476);
+ // Put mapped water directly under the actual float32-transformed footprint.
+ const f=audit.nearest[0].footprint,s=structuredClone(d);s.water=[{id:999,name:'test footprint',rings:[f]}];
+ assert.ok(auditTrunkWater(s).intersections.some(r=>r.candidateId===692));
+});
 test('Water exclusion retains candidate identities and every surviving tree transform and colour',()=>{
  assert.deepEqual(d.treeStyleIds,[...Array(729).keys()].filter(i=>i!==707));
  const excluded=p.derivation.vegetation_exclusions;assert.equal(excluded.length,1);
