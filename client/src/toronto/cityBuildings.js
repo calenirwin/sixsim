@@ -7,9 +7,11 @@ export function validateCityBuildings(m){
  if(bytes>120000000||bytes!==m.counts?.bytes||parts!==m.counts?.retainedParts)throw Error('Municipal building budget/count mismatch');return m;
 }
 export class CityBuildings {
- constructor(scene,manifest,{base,fetcher=fetch,assemble=assembleMassingTile,onChange=()=>{}}={}){this.manifest=validateCityBuildings(manifest);this.base=base;this.fetcher=(...args)=>fetcher(...args);this.assemble=assemble;this.onChange=onChange;this.group=new THREE.Group();this.group.name='municipalBuildings';scene.add(this.group);this.tiles=new Map();this.pending=new Map();this.errors=new Map();this.wanted=new Set();this.vertices=0;this.bytes=0;this.enabled=true;this.generation=0;}
+ constructor(scene,manifest,{base,fetcher=fetch,assemble=assembleMassingTile,onChange=()=>{}}={}){this.manifest=validateCityBuildings(manifest);this.base=base;this.fetcher=(...args)=>fetcher(...args);this.assemble=assemble;this.onChange=onChange;this.group=new THREE.Group();this.group.name='municipalBuildings';scene.add(this.group);this.tiles=new Map();this.pending=new Map();this.errors=new Map();this.wanted=new Set();this.vertices=0;this.bytes=0;this.enabled=true;this.generation=0;this.groundSample=null;}
  clear(){this.generation++;for(const p of this.pending.values())p.controller.abort();this.pending.clear();for(const key of [...this.tiles.keys()])this.remove(key);this.wanted.clear();}
  remove(key){const t=this.tiles.get(key);if(t){t.data.dispose(this.group);this.vertices-=t.vertices;this.bytes-=t.bytes;this.tiles.delete(key);}}
+ setGroundJoin(sample){this.groundSample=sample;this.refreshGroundJoins();}
+ refreshGroundJoins(){let remaining=100000;for(const t of this.tiles.values()){t.join=t.data.setGroundJoin?.(this.groundSample,remaining)||{vertices:0};remaining-=t.join.vertices;} }
  retry(){this.errors.clear();}
  update(target,distance){
   const wanted=[];if(this.enabled&&distance<=5000){const x=Math.floor(target.x/512),z=Math.floor(target.z/512);for(let j=-1;j<=1;j++)for(let i=-1;i<=1;i++){const key=`${x+i}_${z+j}`;if(this.manifest.tiles[key])wanted.push(key);}wanted.sort((a,b)=>{const dist=k=>{const [x,z]=k.split('_').map(Number);return Math.hypot((x+.5)*512-target.x,(z+.5)*512-target.z);};return dist(a)-dist(b);});}
@@ -22,10 +24,10 @@ export class CityBuildings {
   try{const r=await this.fetcher(new URL(record.f,this.base),{signal:controller.signal});if(!r.ok)throw Error(`HTTP ${r.status}`);const bytes=await r.arrayBuffer();if(!current())return;if(bytes.byteLength!==record.bytes)throw Error('Tile byte mismatch');const sha=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');if(sha!==record.sha256)throw Error('Tile checksum mismatch');if(!current())return;
    data=await this.assemble(key,bytes,{profile:this.manifest.profile});const vertices=data.group.children.reduce((n,m)=>n+(m.geometry?.attributes.position.count||0),0);
    if(!current()){data.dispose(this.group);data=null;return;}if(this.bytes+bytes.byteLength>12000000||this.vertices+vertices>1200000){data.dispose(this.group);data=null;throw Error('Nearby geometry budget reached');}
-   this.group.add(data.group);this.tiles.set(key,{data,vertices,bytes:bytes.byteLength});this.vertices+=vertices;this.bytes+=bytes.byteLength;data=null;
+   this.group.add(data.group);this.tiles.set(key,{data,vertices,bytes:bytes.byteLength});this.vertices+=vertices;this.bytes+=bytes.byteLength;data=null;const remaining=100000-[...this.tiles.values()].reduce((n,t)=>n+(t.join?.vertices||0),0);this.tiles.get(key).join=this.tiles.get(key).data.setGroundJoin?.(this.groundSample,remaining)||{vertices:0};
   }catch(e){if(current()&&e.name!=='AbortError')this.errors.set(key,e.message);if(data)data.dispose(this.group);}finally{if(this.pending.get(key)===token)this.pending.delete(key);this.onChange();}
  }
- get state(){return {tiles:this.tiles.size,pending:this.pending.size,vertices:this.vertices,bytes:this.bytes,errors:[...this.errors.entries()],parts:[...this.tiles.values()].reduce((n,t)=>n+t.data.records.length,0)};}
+ get state(){return {joinVertices:[...this.tiles.values()].reduce((n,t)=>n+(t.join?.vertices||0),0),tiles:this.tiles.size,pending:this.pending.size,vertices:this.vertices,bytes:this.bytes,errors:[...this.errors.entries()],parts:[...this.tiles.values()].reduce((n,t)=>n+t.data.records.length,0)};}
  dispose(){this.enabled=false;this.clear();this.group.removeFromParent();}
 }
 

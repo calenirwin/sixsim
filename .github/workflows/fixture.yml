@@ -7,7 +7,7 @@ permissions:
 jobs:
   web-fixture:
     runs-on: ubuntu-latest
-    # Software-rendered browser coverage plus fixture checks can exceed 15 minutes.
+    # Fixture, source, API and inherited-browser regression checks.
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -41,8 +41,6 @@ jobs:
       - run: npm --prefix client run build
       - run: node tools/tests/city-browser.mjs
         working-directory: client
-      - run: npm --prefix client run build:publish
-      - run: npm --prefix client run test:publish
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -57,9 +55,35 @@ jobs:
           path: client/dist-toronto/
           if-no-files-found: error
 
+  publication-browser:
+    runs-on: ubuntu-latest
+    # Isolate the software-rendered publication suite from the preceding fixture tests.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm --prefix client ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - run: npm --prefix client run build:publish
+      - run: npm --prefix client run test:publish
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: publication-browser-screenshots
+          path: client/shots/toronto-publish-*.png
+          if-no-files-found: ignore
+
   static-space:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Software-rendered browser checks plus package upload need bounded headroom.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -111,3 +135,23 @@ jobs:
           path: |
             client/shots/toronto-city-terrain-*.png
             client/shots/toronto-city-buildings-*.png
+
+  waterfront-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts
+      - run: npm --prefix client ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - run: npm --prefix client run build:publish
+      - run: npm --prefix client run test:waterfront
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: waterfront-screenshots
+          path: client/shots/toronto-waterfront-*.png
+          if-no-files-found: ignore

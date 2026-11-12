@@ -67,7 +67,7 @@ test('paired recordings preserve world state and can replace an inherited replay
  const baselineBytes=fs.readFileSync(baseline.file),dwellBytes=fs.readFileSync(dwell.file);
  await exportTorontoComparison();assert.deepEqual(fs.readFileSync(baseline.file),baselineBytes);assert.deepEqual(fs.readFileSync(dwell.file),dwellBytes);
  const s=recordingSession(dwell,dwell.file,dwell.header.profile),{world:W}=await torontoWorld({scenario:dwell.header.transitScenario});
- assert.equal(s.roadProbe.group.visible,false);assert.equal(s.junctionProbes.current.probes.length,2);
+ assert.equal(s.roadProbe.group.visible,false);assert.equal(s.junctionProbes.current.probes.length,6);
  await W.step(70);ENV.time.value=70;s.traffic.update(0);s.serviceGraph.update(s.replay.f);
  assert.equal(s.replay.f,70);
  for(const a of W.transit.actors){const id=dwell.header.actors.find(r=>r.sourceId===a.id).id,decoded=dwell.frames[70].veh.find(v=>v.id===id);assert.ok(Math.hypot(decoded.x-a.x,decoded.z-a.z)<.001);assert.deepEqual(s.serviceGraph.occupancy.find(r=>r[0]===id),[id,a.graph.nodeId,a.graph.edgeId,a.graph.progress]);}

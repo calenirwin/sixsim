@@ -1059,7 +1059,7 @@ export function initApi(ctx) {
     },
     'experimental.get_shared_junction': () => {
       need(ctx.junctionProbes,'unavailable','No shared junction experiment configured');
-      return {definition:ctx.junctionProbes.definition,policy:ctx.junctionProbes.policy,reservations:ctx.junctionProbes.reservations,state:ctx.junctionProbes.state};
+      return {definition:ctx.junctionProbes.definition,policy:ctx.junctionProbes.policy,reservations:ctx.junctionProbes.reservations,state:ctx.junctionProbes.state,...(ctx.nextNodeAccess?{nextNodeAccess:structuredClone(ctx.nextNodeAccess)}:{})};
     },
     'experimental.get_road_probe': () => {
       need(ctx.roadProbe,'unavailable','No constrained road probe configured');

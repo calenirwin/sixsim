@@ -1,3 +1,4 @@
+import {nextNodeAccess} from '../../client/src/toronto/nextNodeAccess.js';
 import {sharedJunction} from '../../client/src/toronto/sharedJunction.js';
 import {roadProbe} from '../../client/src/toronto/roadProbe.js';
 import {roadGraph} from '../../client/src/toronto/roadGraph.js';
@@ -23,7 +24,7 @@ function environmentScenario() {
   const file=process.env.TORONTO_TRANSIT_SCENARIO;
   return file?JSON.parse(fs.readFileSync(path.resolve(root,file))):null;
 }
-export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = environmentScenario(), roadAdmission = JSON.parse(fs.readFileSync(path.join(root,'tools/toronto/scenarios/wellington-admission.json'))), sharedAdmission = JSON.parse(fs.readFileSync(path.join(root,'tools/toronto/scenarios/shared-junction.json'))) } = {}) {
+export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = environmentScenario(), roadAdmission = JSON.parse(fs.readFileSync(path.join(root,'tools/toronto/scenarios/wellington-admission.json'))), sharedAdmission = JSON.parse(fs.readFileSync(path.join(root,'tools/toronto/scenarios/shared-junction-travel.json'))) } = {}) {
   const tilesDir = path.join(root, 'client/.generated/toronto');
   const massing=fs.readFileSync(path.join(root,'client/fixtures/toronto/district.geojson'));
   const massingProvenance=JSON.parse(fs.readFileSync(path.join(root,'client/fixtures/toronto/district-provenance.json')));
@@ -69,6 +70,7 @@ export async function torontoWorld({ startSeconds = 28800, seed = 1, scenario = 
   for(const e of probe.definition.edges){const source=world.cityRoadGraph.edges.get(e.id);if(!source||source[1]!==e.fromNode||source[2]!==e.toNode||source[3]!==e.direction||source[4]!==e.sourceLengthM)throw Error('Corridor source graph mismatch');}
   if(junction)for(const e of junction.definition.edges){const r=world.cityRoadGraph.edges.get(e.id);if(!r||JSON.stringify(r.slice(1))!==JSON.stringify([e.fromNode,e.toNode,e.direction,e.sourceLengthM]))throw Error('Shared junction source graph mismatch');}
   network.cityRoads.sourceEdgeRecords=world.cityRoadGraph.edges.size;network.cityRoads.directedTraversalArcs=[...world.cityRoadGraph.adj.values()].reduce((n,a)=>n+a.length,0);
+  if(junction?.policy.version===4){const access=nextNodeAccess();for(const n of access.nodes){if(!junction.definition.edges.some(e=>e.id===n.incomingEdgeId&&e.toNode===n.nodeId))throw Error('Next-node incoming mismatch');for(const m of n.movements){const e=world.cityRoadGraph.edges.get(m.edgeId);if(!e||!(e[1]===m.fromNode&&e[2]===m.toNode||e[2]===m.fromNode&&e[1]===m.toNode)||e[3] !== (m.directionEvidence.rawCode??0))throw Error('Next-node source graph mismatch');}}Object.defineProperty(world,'nextNodeAccess',{get:()=>structuredClone(access)});}
   world.sourceNetwork=network;world.cityBuildings=cityBuildings;
   const sampledTerrain=terrainGrid(terrainMeta,terrainBytes.buffer.slice(terrainBytes.byteOffset,terrainBytes.byteOffset+terrainBytes.byteLength)),terrainFrame=localFrame(PROFILE.geoOrigin);
   world.terrain={sampleGeographic:(lon,lat)=>sampledTerrain.sample(...terrainFrame.project(lon,lat)),meta:terrainMeta};
