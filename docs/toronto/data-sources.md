@@ -338,3 +338,7 @@ The guided waterfront scene uses a modest authored sky/ground fill to keep shade
 Waterfront tree crowns use deterministic, irregular low-poly forms and varied orientations within the original illustrative crown envelope. Locations still sample the 2018 canopy classification; crown forms, dimensions and colours do not identify tree species or represent individual inventory measurements.
 
 Illustrative trunk feet may extend downward by at most 0.25 m to meet supported terrain around their base, leaving source coordinates, trunk tops and crowns unchanged. Missing terrain, inconsistent centre heights and larger slope gaps are not bridged. This is visual ground contact, not surveyed roots or tree-inventory geometry.
+
+### Quay elevation references
+
+Waterfront Toronto’s [December 2019 East Bayfront boardwalk design presentation, page 23](https://www.waterfrontoronto.ca/sites/default/files/documents/2-dec--2019-wdrp-east-bayfront-boardwalk---in-water-pipe-detailed-design-intro---presentation.pdf) labels Spadina Slip dock-wall and WaveDeck levels, but the diagram is marked DRAFT and does not establish a vertical datum or georeferenced wall profile. It is a design reference, not an imported survey surface; its heights must not be mixed with the CGVD2013 TIN without verified datum and alignment. The City’s [Water Line layer](https://open.toronto.ca/dataset/topographic-mapping-water-line/) represents narrow waterways rather than harbour quay walls.
